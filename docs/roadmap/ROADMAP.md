@@ -257,8 +257,11 @@ Curator product exposure remain open. Exact `56b7f5d0...` privately qualified
 Librarian; hosted head `7505247e...` merged it through PR #169 as `d7a7e003...`.
 Exact executable `0665c486...` then privately qualified Analyst's grounded
 cited-answer internal core; lock-only `8fee7a5c...` publishes the matching
-batch-invariant route lock. Analyst hosted review/merge and product exposure,
-plus Coordinator and Auditor implementation, remain open. Proven selected-route
+batch-invariant route lock. Hosted head `da1127f8...` passed all 12 checks and
+PR #170 merged Analyst as `52c45d22...`. Exact `fed729b3...` then privately
+qualified Coordinator's selection-only source-cited proposal-bundle internal
+core. Coordinator hosted review/merge and product exposure plus Auditor
+implementation remain open. Proven selected-route
 limits of four rapid/eight complex are not simultaneous-model,
 sustained-capacity, or production-SLO evidence. One Spark cannot retain both
 unchanged full profiles simultaneously, so warm two-route promotion requires a
@@ -269,11 +272,14 @@ gates or handoffs. If one node cannot satisfy simultaneous evidence, the routes
 use separate owned nodes rather than model fallback or per-request swapping. No
 generic TPS or production promotion follows from the sequential lifecycle gate.
 
-Analyst's three exact synchronized repeat waves prove repeatability only inside
-the same warm provider process; they do not prove cross-start/global
-determinism. The current public server read-back is 1,384 tests: 1,342 passed and
-42 declared skips. The governed fixed membership is 173 tests: 169 passed and
-four declared skips.
+Analyst's and Coordinator's separate three-wave exact synchronized repeats
+prove repeatability only inside one unchanged warm provider process; they do
+not prove cross-start/global determinism. Coordinator additionally proves one
+lease per invocation, current Curator lineage, server-owned bundle content and
+citations, exact audit/restart read-back, and teardown—not autonomous action or
+product readiness. The current public server read-back is 1,449 tests: 1,404
+passed and 45 declared skips. The governed fixed membership is 173 tests: 169
+passed and four declared skips.
 
 ## Prior merged phase: tenant-scoped identity and access (Phase 7)
 

@@ -2,12 +2,13 @@
 
 **As of:** 2026-08-13
 
-**Most recent merged closure:** [PR #169](https://github.com/mcnatg1/yap/pull/169)
-merged the privately qualified no-LLM Librarian internal core as
-`d7a7e0033c976838ab1d28982da2c3f94eaf8e3e` from exact hosted head
-`7505247e120a4008aa4245840b424961dbe62796`. PR #168 previously merged
-the profile-capacity successor and Curator core as `284ab96b...`; the earlier
-admission, Scribe, Archivist, and Student merges retain their exact evidence.
+**Most recent merged closure:** [PR #170](https://github.com/mcnatg1/yap/pull/170)
+merged the privately qualified Analyst internal core as
+`52c45d2284176f60905f5c3934a0fb878c3a1dd3` from exact hosted head
+`da1127f82bf3a5e3ea05c0752a2a7e6d1a72328a` after all 12 required checks
+passed. PRs #168 and #169 previously merged the profile-capacity/Curator and
+Librarian cores; the earlier admission, Scribe, Archivist, and Student merges
+retain their exact evidence.
 The broker admits authenticated work
 only to already-warm Qwen/Gemma services with bounded owner-fair queues; it does
 not start, swap, or silently substitute a model.
@@ -120,7 +121,7 @@ At the lock-only successor, the unchanged executable inputs freshly requalified
 Curator, Scribe, Student, and Librarian with public-safe evidence SHA-256 values `330ddab8...`,
 `7ef51c6d...`, `5c2525b3...`, and `ca7ead2a...`, respectively. The aggregate
 governed gate passed with public-safe evidence SHA-256 `5d4b6e10...`. The current
-complete portable server read-back is 1,384 tests: 1,342 passed and 42 declared
+complete portable server read-back is 1,449 tests: 1,404 passed and 45 declared
 skips; the governed fixed set is 173 tests: 169 passed and four declared skips.
 The rapid route remains four active distinct owners. The live complex probe held
 eight active owners and queued the ninth. These are selected-route boundaries,
@@ -171,9 +172,10 @@ envelope hash, or individual latency is published. Every product surface
 remains pending. See the
 [Librarian evidence](evidence/librarian-permission-safe-evidence/VERIFICATION.md).
 
-Analyst is a privately qualified internal candidate at exact executable head
-`0665c486...`; lock-only successor `8fee7a5c...` publishes the matching route
-lock. Its `analyst-grounded-cited-answers-qualified` evidence SHA-256 is
+Analyst is a privately qualified merged internal core. Exact executable head
+`0665c486...` supplied its qualification; lock-only successor `8fee7a5c...`
+publishes the matching route lock. Its
+`analyst-grounded-cited-answers-qualified` evidence SHA-256 is
 `940fd7c6c275018c721c54dd2cf8a832e64007907248b2a88a39d928ce891305`.
 Three synchronized eight-owner repeat waves exactly matched 24 of 24
 normal invocations; all 29 terminal outcomes matched, including 12 answers and
@@ -185,8 +187,30 @@ determinism. Exact `63c3d9fd...` produced conflicting official/diagnostic
 same-head outcomes under the earlier concurrent online runtime, emitted no
 receipt, remains terminal, and is not reused. See the
 [Analyst evidence](evidence/analyst-grounded-cited-answers/VERIFICATION.md).
-The roster is five merged roles plus Analyst as the sixth qualified candidate;
-Coordinator and Auditor remain later workflows.
+Hosted head `da1127f8...` passed all 12 checks, and PR #170 merged the core as
+`52c45d22...`. Analyst still has no HTTP, native, renderer, UI, or product
+surface.
+
+Coordinator is a privately qualified internal candidate at exact executable
+head `fed729b3dcbb7bba4c89daaa9d857bf57976ab8e`. Its
+`coordinator-proposal-bundle-selection-qualified` public-safe evidence SHA-256
+is `1bce03b6844d633b09504d9c27ddeac8c96521c569d1eedeecf4f0de2cef5334`.
+Three synchronized eight-owner service waves matched all 24 normal calls, and
+all 29 unique terminal outcomes matched: 15 complete bundles, ten unavailable,
+one failed invalid-output control, and three cancellations. The server derived
+all 18 selected proposal items and 18 citations from current owner-visible
+Curator proposals; every bundle was noncanonical and review-required. Exact
+Curator lineage/current-authority read-back, one Coordinator lease per
+invocation, c8/ninth-queued containment, two PostgreSQL restart/read-backs,
+content-free audits, and teardown passed. Coordinator writes no proposal, plan,
+task, source, or active knowledge and performs no autonomous action. Exact
+`11f325bb...` failed closed in the admission verifier, emitted no receipt, and
+is terminal/nonreusable; its harness teardown passed. See the
+[Coordinator evidence](evidence/coordinator-proposal-bundles/VERIFICATION.md).
+
+The roster is six merged roles plus Coordinator as the seventh qualified
+candidate; Auditor remains the final unimplemented workflow. Coordinator hosted
+review/merge and every non-Scribe role product surface remain pending.
 
 These results do not prove simultaneous Qwen/Gemma residency, sustained
 capacity/fairness, a production SLO, or deployment. The unchanged `0.40` and
@@ -467,7 +491,7 @@ rewrite that target; this status document distinguishes what currently executes.
 | Meeting-transcription maintainability checkpoint | Merged and closed | The [ownership review](plans/completed/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md) keeps server result adapters independent from worker admission, accepts only current persisted contracts, excludes evaluation code from the request-time image, linearizes native publication/cancellation, and bounds selected History speaker detail. Historical candidate `fb0985e...` passed before documentation successor `e22368fc...` exposed `GHSA-mwp4-54f8-5fhr`. Patched candidate `393710999b53a4bd1b00639e30c0fec88b152530` then passed the canonical build, receipt-bound image preflight, real History/cancellation lifecycle with teardown, single 18-child matrix, receipt validation, and required CI/CodeQL jobs. PR #143 merged as `8fb511ad2fd7217a87e95ddba31d74dfa474fac2`. This did not change model-quality, capacity, or production-promotion qualification. Private evidence remains outside Git and hosted artifacts. |
 | Phase 9 | Merged and gated | Pinned OKF compilation, immutable terminology snapshots, Postgres/pgvector generation and permission-safe retrieval, governed agents/RAG/MCP, explicit no-fallback routing, and private Qwen rapid/Gemma complex workload qualification execute. Exact candidate `a4f34678...` passed the complete Phase 9 gate with real Postgres restart/recovery and exact teardown. Exact hosted-green head `fa26caaf...` merged through PR #152 as `ae81ff06...`. Production service integration and Phase 10 capacity remain unproved. |
 | Post-Phase-9 maintainability checkpoint | Merged and closed | The [governed-knowledge ownership and maintainability review](plans/completed/2026-08-10-governed-knowledge-ownership-and-maintainability-review.md) resolved its accepted public findings at reviewed executable head `a76ed9b0...`, including bounded final structural decoding without tool replay, one exact cited-proposal fixture contract, candidate-specific Qwen 26.07+XGrammar 0.2.1 / Gemma 26.06 runtimes, and separate common/proposal rapid-route qualification bounds. The fresh exact-head route qualification returned `required-workload-routes-qualified`; schema-3 public lock commit `2cf1e92c...` passed semantic admission; exact aggregate candidate `22c3f369...` passed the checkpoint gate. Final hosted head `84c22ec9...` passed every required CI and CodeQL lane and merged through PR #153 as `ca151b1b...`. No Phase 10 behavior was added. |
-| Phase 10 | Five role cores merged; Analyst qualified candidate; two workflows later | PRs #164/#165/#166/#168/#169 merged Scribe, Archivist, Student, Curator, and Librarian internal cores. Exact executable `0665c486...` passed the successor lifecycle and batch-invariant Qwen/Gemma route qualification and qualified Analyst. Lock-only `8fee7a5c...` publishes the matching route lock, freshly requalified affected workflows, and passed the aggregate governed gate. Analyst hosted review/merge and every non-Scribe role product surface remain pending. Coordinator, Auditor, simultaneous full-profile residency, sustained capacity/SLOs, production operations, and explicit IT/security handoffs remain open. |
+| Phase 10 | Six role cores merged; Coordinator qualified candidate; Auditor later | PRs #164/#165/#166/#168/#169/#170 merged Scribe, Archivist, Student, Curator, Librarian, and Analyst internal cores. Exact `fed729b3...` privately qualified the Coordinator selection-only proposal-bundle core with 29/29 exact terminals, one lease per invocation, current Curator lineage, and exact teardown. Coordinator hosted review/merge and every non-Scribe role product surface remain pending. Auditor, simultaneous full-profile residency, sustained capacity/SLOs, production operations, and explicit IT/security handoffs remain open. |
 
 Admitted checkpoint head `4ab13497b19ef74ff54e3bc96b9718058f3b1e11`
 is failed historical evidence and cannot be retried or relabeled. Its exact
@@ -1251,13 +1275,13 @@ The concise
 is the ordered closeout checklist: validate the complete workflow before broad
 provider optimization or non-blocking architecture work.
 
-1. Preserve the five merged internal role boundaries without claiming product
+1. Preserve the six merged internal role boundaries without claiming product
    surfaces, knowledge activation, sustained capacity, simultaneous residency,
    or production promotion.
-2. Obtain hosted review and merge for the qualified internal Analyst slice; no
-   Analyst product surface exists yet. Then deliver Coordinator and Auditor as
-   bounded workflows; do not substitute an eight-prompt facade for their
-   source, permission, persistence, and failure owners.
+2. Obtain hosted review and merge for the qualified internal Coordinator slice;
+   no Coordinator product surface or autonomous action exists. Then deliver
+   Auditor as the final bounded workflow; do not substitute an eight-prompt
+   facade for its source, permission, persistence, and failure owners.
 3. Provision a second full-strength owned GPU node and IT-controlled private
    routing if the single Spark cannot keep the unchanged Qwen and Gemma profiles
    warm together. Do not reduce either qualified profile or swap models per

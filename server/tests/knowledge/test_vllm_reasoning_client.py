@@ -13,6 +13,8 @@ from yap_server.knowledge.knowledge_tool_contract import KnowledgeToolCancelled
 from yap_server.knowledge.vllm_reasoning_client import (
     BoundedVllmJsonClient,
     VllmReasoningClient,
+    VllmRequestRejected,
+    VllmTransportNotContained,
 )
 
 
@@ -201,6 +203,10 @@ class VllmReasoningClientTests(unittest.TestCase):
         with self.assertRaises(ReasoningRetryableError):
             self.client("governed prompt", threading.Event())
 
+        _Handler.status = 401
+        with self.assertRaises(VllmRequestRejected):
+            self.client("governed prompt", threading.Event())
+
     def test_render_chat_counts_exact_tokens_and_fails_closed(self) -> None:
         transport = BoundedVllmJsonClient(
             endpoint=f"http://127.0.0.1:{self.server.server_port}",
@@ -269,7 +275,7 @@ class VllmReasoningClientTests(unittest.TestCase):
             request.join(timeout=2.0)
 
         self.assertFalse(request.is_alive())
-        self.assertIsInstance(outcome[0], RuntimeError)
+        self.assertIsInstance(outcome[0], VllmTransportNotContained)
         self.assertIn("transport did not stop", str(outcome[0]))
 
     def test_request_timeout_is_a_total_wall_clock_deadline(self) -> None:

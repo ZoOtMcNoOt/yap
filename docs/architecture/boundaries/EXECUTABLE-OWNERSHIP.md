@@ -1113,9 +1113,10 @@ See the [Librarian verification record](../../evidence/librarian-permission-safe
 
 ### 32. Analyst grounded cited-answer core
 
-- **Status:** privately qualified unmerged internal candidate at exact executable
-  head `0665c486...`; lock-only `8fee7a5c...` publishes the matching route lock.
-  Hosted review/merge and all product surfaces remain pending.
+- **Status:** privately qualified merged internal core. Exact executable head
+  `0665c486...` supplied qualification; lock-only `8fee7a5c...` publishes the
+  matching route lock; hosted head `da1127f8...` merged through PR #170 as
+  `52c45d22...`. All product surfaces remain pending.
 - **Entry point:** `yap_server/agents/analyst_service.py` owns one bounded
   authenticated interactive complex-route request composed through
   `analyst_runtime.py`.
@@ -1140,6 +1141,41 @@ terminals matched, and 12 answers contained 15 server-owned citations. Exact
 sensitive runtime and is not reused. See the
 [Analyst verification record](../../evidence/analyst-grounded-cited-answers/VERIFICATION.md).
 
+### 33. Coordinator source-cited proposal-bundle core
+
+- **Status:** privately qualified unmerged internal candidate at exact
+  executable head `fed729b3...`. Hosted review/merge and all product surfaces
+  remain pending.
+- **Entry point:** `yap_server/agents/coordinator_service.py` owns one bounded
+  authenticated background complex-route request composed through
+  `coordinator_runtime.py`. It submits no nested role-service request.
+- **Authoritative owner:** the owner-scoped proposal reader in
+  `knowledge_proposals.py` pins the active generation, takes the tenant/owner
+  advisory locks, requires exact succeeded Curator lineage, reauthorizes every
+  current citation, and returns only current eligible proposals. The model may
+  select ordered indexes only; server-owned Coordinator code derives all bundle
+  text, proposal identities, and citations.
+- **Persisted state:** the immutable Coordinator result-audit ledger records
+  bounded content-free request, evidence, bundle, citation, authority, model,
+  provider, and terminal identities. Coordinator does not publish a proposal,
+  plan, task, source mutation, or knowledge activation.
+- **Failure/recovery:** empty/hidden/foreign/stale evidence, invalid model
+  output, cross-owner access, replay conflict, provider loss, cancellation,
+  deadline, and audit failure return typed fail-closed outcomes with no bundle.
+  Success re-reads and exact-compares current evidence in the terminal audit
+  transaction before returning.
+- **Duplicate owner:** none. The proposal ledger owns Curator artifacts; the
+  proposal reader owns current authorization; `CoordinatorService` owns one
+  workflow lease and termination; the Coordinator result-audit ledger owns
+  durable terminal identity; the broker owns admission.
+
+Three synchronized repeat waves matched 24 of 24 normal service calls, all 29
+terminals matched, and 15 server-derived noncanonical review-required bundles
+contained 18 selected items and 18 citations. Exact `11f325bb...` remains
+terminal no-receipt evidence from the superseded deadline-lifecycle verifier
+and is not reused. See the
+[Coordinator verification record](../../evidence/coordinator-proposal-bundles/VERIFICATION.md).
+
 ## Persistent-state owners
 
 | State | Owner | Projection/consumer |
@@ -1158,7 +1194,7 @@ sensitive runtime and is not reused. See the
 | Knowledge builds, active pointer, permissions, embeddings, and activation history | Postgres generation ledger | permission view and retrieval |
 | Permission-safe cited retrieval | Postgres permission/retrieval owners | governed tools, RAG, MCP |
 | Governed proposals and tool audit identities | proposal and audit ledgers | review workflow and generation retention |
-| Librarian and Analyst terminal identities | immutable role result-audit ledgers | permission-safe evidence and grounded cited-answer replay; no evidence/answer bytes |
+| Librarian, Analyst, and Coordinator terminal identities | immutable role result-audit ledgers | permission-safe evidence, grounded cited-answer, and proposal-bundle replay; no evidence/answer/bundle bytes |
 | Agent workload route selection | explicit server route selector | governed RAG invocation |
 | Private route and aggregate gate evidence | evaluation lifecycle and gate owners | public-safe hashes/outcomes only |
 | Boot-scoped provider lifecycle snapshot | one Rust provider supervisor | systemd/operators; not durable application truth |
@@ -1167,6 +1203,8 @@ sensitive runtime and is not reused. See the
 | Archivist ingestion outcomes | reviewed-capture, source-admission, and generation ledgers | typed staged-generation result; no activation |
 | Student workflow outcomes | immutable Student result-audit ledger | typed source-supported question result; question text is not durable audit state |
 | Librarian workflow outcomes | immutable Librarian result-audit ledger | typed permission-safe evidence result; evidence text is not durable audit state |
+| Analyst workflow outcomes | immutable Analyst result-audit ledger | typed grounded cited-answer result; answer/evidence text is not durable audit state |
+| Coordinator workflow outcomes | immutable Coordinator result-audit ledger | typed proposal-bundle result; objective/proposal/citation bytes are not durable audit state |
 | Presentation preferences/drafts | feature-specific frontend storage/state | React only |
 
 ## No-multiple-owner invariant

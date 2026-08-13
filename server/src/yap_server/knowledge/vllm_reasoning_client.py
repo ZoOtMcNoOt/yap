@@ -20,6 +20,14 @@ from .governed_answer_protocol import (
 from .knowledge_tool_contract import KnowledgeToolCancelled
 
 
+class VllmRequestRejected(RuntimeError):
+    """The vLLM server completed the exchange but rejected the request."""
+
+
+class VllmTransportNotContained(RuntimeError):
+    """The bounded transport worker did not stop after cancellation or timeout."""
+
+
 class BoundedVllmJsonClient:
     """Exchange bounded JSON with one loopback vLLM endpoint."""
 
@@ -125,13 +133,17 @@ class BoundedVllmJsonClient:
                     _close_connection(connection)
                     worker.join(timeout=1.0)
                     if worker.is_alive():
-                        raise RuntimeError("vLLM reasoning transport did not stop")
+                        raise VllmTransportNotContained(
+                            "vLLM reasoning transport did not stop"
+                        )
                     raise ReasoningRetryableError("vLLM reasoning timed out")
                 if cancellation.wait(min(0.01, remaining)):
                     _close_connection(connection)
                     worker.join(timeout=1.0)
                     if worker.is_alive():
-                        raise RuntimeError("vLLM reasoning transport did not stop")
+                        raise VllmTransportNotContained(
+                            "vLLM reasoning transport did not stop"
+                        )
                     raise KnowledgeToolCancelled("vLLM reasoning was cancelled")
             result = outcome.get_nowait()
             if isinstance(result, BaseException):
@@ -235,7 +247,7 @@ def _request(
         if path.endswith("/render") and response.status in {400, 413, 422}:
             raise ValueError("vLLM chat request exceeds or differs from the route")
         if response.status != 200:
-            raise RuntimeError("vLLM reasoning request was rejected")
+            raise VllmRequestRejected("vLLM reasoning request was rejected")
         if len(response_body) > maximum_response_bytes:
             raise ValueError("vLLM response exceeds its byte bound")
         outcome.put_nowait(_response_json(response_body))
@@ -262,4 +274,9 @@ def _response_json(body: bytes) -> dict[str, object]:
     return value
 
 
-__all__ = ["BoundedVllmJsonClient", "VllmReasoningClient"]
+__all__ = [
+    "BoundedVllmJsonClient",
+    "VllmReasoningClient",
+    "VllmRequestRejected",
+    "VllmTransportNotContained",
+]

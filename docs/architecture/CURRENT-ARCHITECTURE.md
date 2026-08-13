@@ -2,8 +2,8 @@
 
 This document describes the merged executable Phase 1–9 system plus the Phase
 10 supervised-provider lifecycle, immutable Qwen/Gemma profiles, bounded owner-
-fair admission, and five merged role cores, together with the privately
-qualified Analyst internal candidate. The lifecycle/admission
+fair admission, and six merged role cores, together with the privately
+qualified Coordinator internal candidate. The lifecycle/admission
 hosted closures merged through PRs #155, #157, and #158; the admission merge is
 `84d95842950860e3f8d5cc70895aaae9243abe9c`. Exact Scribe head
 `e585842485a7cd38b2935cc8f79314b19b37f7fd` is the first authenticated
@@ -26,10 +26,11 @@ merged the profile-capacity successor and Curator internal core as
 `284ab96b...`. Curator has no HTTP/native/UI product surface. Exact
 `56b7f5d0...` qualified the no-LLM Librarian core; hosted head `7505247e...`
 merged it through PR #169 as `d7a7e003...`. Exact executable `0665c486...`
-privately qualified Analyst as an internal candidate, and lock-only
-`8fee7a5c...` publishes its matching batch-invariant route lock. Analyst merge/
-product promotion, Coordinator, Auditor, and capacity/operations layers remain
-open.
+privately qualified Analyst, and lock-only `8fee7a5c...` publishes its matching
+batch-invariant route lock. Hosted head `da1127f8...` passed all 12 checks, and
+PR #170 merged Analyst as `52c45d22...`. Exact `fed729b3...` now privately
+qualifies Coordinator as an internal candidate. Coordinator merge/product
+promotion, Auditor, and capacity/operations layers remain open.
 Phase 7
 implements provider-neutral
 OIDC verification with Entra policy, fail-closed authentication, tenant-scoped
@@ -1125,7 +1126,7 @@ entered broker submission. See the
 [Librarian evidence](../evidence/librarian-permission-safe-evidence/VERIFICATION.md).
 Endpoints, UI, and production operation remain pending.
 
-Exact executable candidate `0665c486...` privately qualifies Analyst as an
+Exact executable candidate `0665c486...` privately qualified Analyst as an
 internal complex-route workflow. Analyst first obtains a permission-safe
 Librarian pack, reauthorizes its exact current generation in transaction, and
 accepts only model-selected whole evidence-item indexes. The server derives the
@@ -1135,8 +1136,24 @@ synchronized repeat waves matched 24 of 24 normals, all 29 terminals matched,
 and 12 answers contained 15 server-owned citations. Lock-only `8fee7a5c...`
 publishes the matching route lock. See the
 [Analyst evidence](../evidence/analyst-grounded-cited-answers/VERIFICATION.md).
-Hosted review/merge, every endpoint/UI surface, and production operation remain
+Hosted head `da1127f8...` passed all 12 checks, and PR #170 merged the core as
+`52c45d22...`. Every endpoint/UI surface and production operation remain
 pending.
+
+Exact executable candidate `fed729b3...` privately qualifies Coordinator as an
+internal background complex-route workflow. One explicit authenticated request
+admits one Coordinator lease, reads only the caller's current open Curator
+proposals, exact-revalidates Curator lineage and current knowledge authority,
+and permits Gemma to select only ordered proposal indexes. Server-owned code
+derives proposal text and citations into a noncanonical, review-required bundle;
+Coordinator writes no plan, task, proposal, source, or active knowledge. Three
+synchronized repeat waves matched 24 of 24 normal calls, all 29 terminals
+matched, and 15 bundles contained 18 selected items with 18 citations. Exact
+`11f325bb...` failed closed before receipt publication on a verifier mismatch
+and is not reused. See the
+[Coordinator evidence](../evidence/coordinator-proposal-bundles/VERIFICATION.md).
+Hosted review/merge, every endpoint/UI surface, autonomous action, and
+production operation remain pending.
 
 A post-aggregate observation on 2026-08-12 found Qwen rapid warm and the
 broker active against exact rapid profile hash `14712e69...`; the observed

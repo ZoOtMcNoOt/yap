@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 2,
+  "qualificationScope": "coordinator-proposal-bundle-selection",
+  "qualified": true,
+  "caseCount": 8,
+  "ownerCount": 8,
+  "invocationCount": 29,
+  "maximumNormalP95Milliseconds": 85000,
+  "synchronizedWaveCount": 3,
+  "ownersPerSynchronizedWave": 8,
+  "synchronizedInvocationCount": 24,
+  "exactSynchronizedInvocationCount": 24,
+  "exactSynchronizedWaveCount": 3,
+  "synchronizedWaves": [
+    {
+      "waveId": "repeat-1",
+      "caseOrder": [
+        "exact-single-selection",
+        "ordered-multi-selection",
+        "instruction-as-data-selection",
+        "release-summary-selection",
+        "relationship-review-selection",
+        "unsupported-objective-unavailable",
+        "hidden-only-unavailable",
+        "absent-unavailable"
+      ]
+    },
+    {
+      "waveId": "repeat-2",
+      "caseOrder": [
+        "exact-single-selection",
+        "ordered-multi-selection",
+        "instruction-as-data-selection",
+        "release-summary-selection",
+        "relationship-review-selection",
+        "unsupported-objective-unavailable",
+        "hidden-only-unavailable",
+        "absent-unavailable"
+      ]
+    },
+    {
+      "waveId": "repeat-3",
+      "caseOrder": [
+        "exact-single-selection",
+        "ordered-multi-selection",
+        "instruction-as-data-selection",
+        "release-summary-selection",
+        "relationship-review-selection",
+        "unsupported-objective-unavailable",
+        "hidden-only-unavailable",
+        "absent-unavailable"
+      ]
+    }
+  ],
+  "completeCount": 15,
+  "unavailableCount": 10,
+  "failedCount": 1,
+  "cancelledCount": 3,
+  "exactTerminalMatchCount": 29,
+  "exactBundleMatchCount": 15,
+  "uniqueRequestIdCount": 29,
+  "bundleCount": 15,
+  "itemCount": 18,
+  "citationCount": 18,
+  "terminalMismatchCount": 0,
+  "warmProviderRepeatabilityMet": true,
+  "normalP95WithinBound": true,
+  "serverDerivedBundleExact": true,
+  "serverOwnedCitationsExact": true,
+  "selectionOrderExact": true,
+  "selectionOnlyContractMet": true,
+  "noncanonicalReviewRequiredExact": true,
+  "hiddenOnlyIndistinguishable": true,
+  "unavailableBundleAbsent": true,
+  "cancellationFailedClosed": true,
+  "deadlineFailedClosed": true,
+  "staleGenerationFailedClosed": true,
+  "invalidOutputFailedClosed": true,
+  "workerContainmentMet": true
+}
