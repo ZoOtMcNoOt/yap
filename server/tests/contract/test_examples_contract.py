@@ -9,8 +9,7 @@ def _replace_json_pointer(document: object, pointer: str, replacement: object) -
     if not pointer.startswith("/"):
         raise AssertionError(f"invalid fixture pointer: {pointer}")
     tokens = [
-        token.replace("~1", "/").replace("~0", "~")
-        for token in pointer[1:].split("/")
+        token.replace("~1", "/").replace("~0", "~") for token in pointer[1:].split("/")
     ]
     target = document
     for token in tokens[:-1]:
@@ -37,7 +36,9 @@ class ContractTests(unittest.TestCase):
             "openapi.json": document,
             "live-events.schema.json": live_schema,
         }
-        health_example = contract_schema.load_json(http_contract.EXAMPLES_ROOT / "health.ok.json")
+        health_example = contract_schema.load_json(
+            http_contract.EXAMPLES_ROOT / "health.ok.json"
+        )
         asr_capabilities_example = contract_schema.load_json(
             http_contract.EXAMPLES_ROOT / "asr-capabilities.ok.json"
         )
@@ -53,8 +54,12 @@ class ContractTests(unittest.TestCase):
         lid_cancellation_example = contract_schema.load_json(
             http_contract.EXAMPLES_ROOT / "lid-preflight.cancellation.json"
         )
-        job_example = contract_schema.load_json(http_contract.EXAMPLES_ROOT / "job.accepted.json")
-        partial_example = contract_schema.load_json(http_contract.EXAMPLES_ROOT / "live.partial.json")
+        job_example = contract_schema.load_json(
+            http_contract.EXAMPLES_ROOT / "job.accepted.json"
+        )
+        partial_example = contract_schema.load_json(
+            http_contract.EXAMPLES_ROOT / "live.partial.json"
+        )
 
         schemas = document["components"]["schemas"]
         contract_schema.assert_schema_subset(
@@ -199,9 +204,9 @@ class ContractTests(unittest.TestCase):
             with self.subTest(case=case["id"]):
                 self.assertNotIn(case["id"], case_ids)
                 case_ids.add(case["id"])
-                response = document["paths"][case["path"]][case["method"]][
-                    "responses"
-                ][str(case["status"])]
+                response = document["paths"][case["path"]][case["method"]]["responses"][
+                    str(case["status"])
+                ]
                 schema = response["content"]["application/json"]["schema"]
                 target, target_name = contract_schema.resolve_reference(
                     schema["$ref"],
@@ -331,6 +336,7 @@ class ContractTests(unittest.TestCase):
             job_status=False,
             transcript_correction=False,
             librarian_queries=False,
+            archivist_ingestions=False,
         )
         view = HealthView(
             service="yap-server",
@@ -348,9 +354,13 @@ class ContractTests(unittest.TestCase):
                 "jobStatus": False,
                 "transcriptCorrection": False,
                 "librarianQueries": False,
+                "archivistIngestions": False,
             },
         )
-        self.assertEqual(view.to_wire(), contract_schema.load_json(http_contract.EXAMPLES_ROOT / "health.ok.json"))
+        self.assertEqual(
+            view.to_wire(),
+            contract_schema.load_json(http_contract.EXAMPLES_ROOT / "health.ok.json"),
+        )
         self.assertFalse(hasattr(view, "__dict__"))
         with self.assertRaises((AttributeError, TypeError)):
             view.status = "broken"  # type: ignore[misc]

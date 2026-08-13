@@ -20,6 +20,12 @@ HTTP_OPERATIONS = {
     ("/v1/librarian-queries", "post"): "submitLibrarianQuery",
     ("/v1/librarian-queries/{requestId}", "get"): "getLibrarianQuery",
     ("/v1/librarian-queries/{requestId}", "delete"): "cancelLibrarianQuery",
+    ("/v1/archivist-ingestions", "post"): "submitArchivistIngestion",
+    ("/v1/archivist-ingestions/{requestId}", "get"): "getArchivistIngestion",
+    (
+        "/v1/archivist-ingestions/{requestId}",
+        "delete",
+    ): "cancelArchivistIngestion",
     ("/v1/jobs", "post"): "createJob",
     ("/v1/jobs/{jobId}", "get"): "getJob",
     ("/v1/jobs/{jobId}/result", "get"): "getJobResult",
@@ -72,6 +78,18 @@ OPERATION_RUNTIME = {
     ("/v1/librarian-queries/{requestId}", "delete"): (
         "Implemented only when the authenticated Librarian runtime verifies",
         "Librarian permission-safe evidence",
+    ),
+    ("/v1/archivist-ingestions", "post"): (
+        "Implemented only when the authenticated Archivist runtime verifies",
+        "Archivist reviewed-source staging",
+    ),
+    ("/v1/archivist-ingestions/{requestId}", "get"): (
+        "Implemented only when the authenticated Archivist runtime verifies",
+        "Archivist reviewed-source staging",
+    ),
+    ("/v1/archivist-ingestions/{requestId}", "delete"): (
+        "Implemented only when the authenticated Archivist runtime verifies",
+        "Archivist reviewed-source staging",
     ),
     ("/v1/jobs", "post"): (
         "Implemented in the loopback batch runtime",
@@ -130,6 +148,10 @@ RUNTIME_PATH_EXAMPLES = {
     "/v1/librarian-queries/{requestId}": (
         "/v1/librarian-queries/librarian-query-11111111111111111111111111111111"
     ),
+    "/v1/archivist-ingestions": "/v1/archivist-ingestions",
+    "/v1/archivist-ingestions/{requestId}": (
+        "/v1/archivist-ingestions/archivist-ingestion-11111111111111111111111111111111"
+    ),
     "/v1/jobs": "/v1/jobs",
     "/v1/jobs/{jobId}": "/v1/jobs/job-01",
     "/v1/jobs/{jobId}/result": "/v1/jobs/job-01/result",
@@ -137,9 +159,7 @@ RUNTIME_PATH_EXAMPLES = {
     CHUNK_PATH: "/v1/jobs/job-01/chunks/mic/0-15",
     "/v1/jobs/{jobId}/commit": "/v1/jobs/job-01/commit",
     "/v1/jobs/{jobId}/stages": "/v1/jobs/job-01/stages",
-    "/v1/jobs/{jobId}/stages/{stage}/retry": (
-        "/v1/jobs/job-01/stages/asr/retry"
-    ),
+    "/v1/jobs/{jobId}/stages/{stage}/retry": ("/v1/jobs/job-01/stages/asr/retry"),
     "/v1/live": "/v1/live",
 }
 
@@ -233,6 +253,30 @@ HTTP_SCHEMA_CONTRACTS: list[dict[str, Any]] = [
         "method": "delete",
         "request": None,
         "success": {"202": "#/components/schemas/LibrarianQueryJobView"},
+        "errors": ["401", "403", "404", "501", "503"],
+    },
+    {
+        "path": "/v1/archivist-ingestions",
+        "method": "post",
+        "request": (
+            "application/json",
+            "#/components/schemas/ArchivistIngestionRequest",
+        ),
+        "success": {"202": "#/components/schemas/ArchivistIngestionJobView"},
+        "errors": ["400", "401", "403", "404", "409", "429", "501", "503"],
+    },
+    {
+        "path": "/v1/archivist-ingestions/{requestId}",
+        "method": "get",
+        "request": None,
+        "success": {"200": "#/components/schemas/ArchivistIngestionJobView"},
+        "errors": ["401", "403", "404", "501", "503"],
+    },
+    {
+        "path": "/v1/archivist-ingestions/{requestId}",
+        "method": "delete",
+        "request": None,
+        "success": {"202": "#/components/schemas/ArchivistIngestionJobView"},
         "errors": ["401", "403", "404", "501", "503"],
     },
     {
