@@ -124,7 +124,6 @@ class AnalystEvidenceModel:
                     "type": "array",
                     "items": {"type": "integer", "minimum": 0},
                     "maxItems": 5,
-                    "uniqueItems": True,
                 },
             },
             "required": ["outcome", "evidenceIndexes"],

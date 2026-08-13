@@ -167,6 +167,11 @@ class AnalystModelTests(unittest.TestCase):
             payload["tool_choice"]["function"]["name"],
             "return_analyst_selection",
         )
+        index_schema = payload["tools"][0]["function"]["parameters"]["properties"][
+            "evidenceIndexes"
+        ]
+        self.assertEqual(index_schema["maxItems"], 5)
+        self.assertNotIn("uniqueItems", index_schema)
         user = json.loads(payload["messages"][1]["content"])
         self.assertEqual(
             [item["sourceEvidenceIndex"] for item in user["visibleEvidence"]],
