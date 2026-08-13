@@ -137,7 +137,7 @@ flowchart TB
 
     subgraph Sidecars["Local runtime + team services"]
         CR["in-process sherpa-onnx<br/>Nemotron INT8 fallback"]
-        LL["Team Qwen/Gemma services<br/>warm exact profiles · bounded admission"]
+        LL["Team Qwen/Gemma routes<br/>selected route already warm · bounded admission"]
         KW["DEFERRED speaker-evidence worker<br/>anonymous · bounded · cold"]
     end
 
@@ -198,7 +198,11 @@ public-lock/aggregate head `135cc2ba...` qualified both routes and passed the
 complete admission-slice gate. Qualified Scribe and the no-LLM Archivist core
 are merged. Student is privately qualified at exact head `428d6e48...` and
 hosted-green head `b03c6e79...` merged through PR #166 as `2254605e...`.
-Curator is current unqualified development work; Auditor, Librarian, Analyst,
+Exact route head `dab19fe...` qualified the unchanged rapid/complex profiles
+sequentially at selected-route capacities four/eight, exact workflow head
+`7cd24deb...` requalified Scribe/Student and qualified the nonmutating Curator
+candidate, and exact aggregate head `7f896b34...` passed. PR #168 remains
+draft; Curator is not merged or product-exposed. Auditor, Librarian, Analyst,
 and Coordinator remain absent. The
 accepted performance topology is provider-specific: Cohere batch
 uses a digest-pinned vLLM candidate, Nemotron keeps a Transformers correctness
@@ -374,7 +378,7 @@ flowchart TB
 
     subgraph Sidecars["Local runtime + team services"]
         CR["sherpa-onnx<br/>Nemotron INT8 fallback"]
-        LL["Team Qwen/Gemma services<br/>already-warm exact profiles · server-owned"]
+        LL["Team Qwen/Gemma routes<br/>selected route already warm · server-owned"]
         KW["DEFERRED speaker-evidence worker<br/>optional · anonymous · bounded"]
     end
 
@@ -531,7 +535,7 @@ Everything from the original 7-layer flowchart and master spec is represented be
 | **Failure states** (Scribe, Archivist, …) | ✅ | § Failure states | Full spec below |
 | **Bottleneck / resource caps** | ✅ | § Resource profiling | Bounded sinks, bounded session clusters, benchmarked CPU/RSS/latency gates |
 | **Silero VAD (L2 + segments → L3)** | ✅ | [ADR 0006](adr/0006-silero-agents-state-machine.md) | Imported-file path executes through pinned `sherpa-onnx`; live path remains a separate target; reprocessing may re-VAD retained source |
-| **Eight bounded role workflows** | ✅ Reconciled | [ADR 0031](adr/0031-eight-agent-voice-os-roster.md) | Shared authenticated bounded admission is merged; Scribe, Archivist, and the internal Student core are merged. Curator/profile-capacity successors are unqualified current work, and four later role workflows remain. Historical local mutex context is retained in ADR 0006. |
+| **Eight bounded role workflows** | ✅ Reconciled | [ADR 0031](adr/0031-eight-agent-voice-os-roster.md) | Shared authenticated bounded admission is merged; Scribe, Archivist, and the internal Student core are merged. The Curator/profile-capacity successor is privately qualified under draft PR #168, and four later role workflows remain. Historical one-slot evidence and local-mutex context remain scoped to their exact heads. |
 | **Runtime state machine** | ✅ | [ADR 0006](adr/0006-silero-agents-state-machine.md) | One client-local Nemotron session; server pools schedule independently; bounded LLM queue |
 | **16 GB RAM budget** | ✅ Reconciled | ADR 0020 | No diarization model is promoted without measured CPU, RSS, and latency evidence |
 | **Recordings / file drop (Yap)** | ✅ | ADR 0001, 0003, 0014 | Server batch only; queue/block during disconnects; never use local Nemotron |
@@ -972,7 +976,7 @@ timeline
 | **7** | Merged and gated | Phase 7 merged as `66d314d7`; its adversarial checkpoint closed at `ef6d977`. The merged work has a provider-neutral OIDC verifier with Entra policy, fail-closed defaults, token-derived `(tid, oid)` ownership, owner-scoped jobs/LID, authenticated bounded private WebSocket admission, and a qualified native lower handshake. The desktop has only a narrow native token-provider seam; no production adapter is approved. Exact application/runtime candidate `dc6359162fb16909d38f410cdb75c2729d83972f` passed the one complete private 25-cell matrix and independent receipt validation. Hosted CI exposed only runner-portability defects. Reviewed repairs through `c1d81fc085218cf91a4e370087bcc5927e5b1f70` change hosted/gate tooling, its contracts, and documentation—not shipped product/runtime or candidate-manifest behavior—so the passed candidate matrix remains authoritative. Purpose grants, revocation, and their audit records are implemented and unit-tested but reachable only from tests: nothing calls `IdentityAuthorizationService`, so `access_disabled` and grants can be changed only by editing `identity.sqlite` directly. The layer is not a shipped capability; a future purpose-authorized speaker reconciliation/naming workflow must expose or remove it under review. Real IT-provided Entra policy conformance remains open. |
 | **8** | Closed as unadvertised baseline | ADR 0020, ADR 0027, and the source-aware design are canonical. PR #144 merged exact 30-second Tiron epochs, request-scoped reuse of its ECAPA encoder, an eight-slot decode-window boundary, a 32-speaker session target, a 64-speaker ceiling, strict `Unknown`, and clean one-speaker History projection. The server has one meeting-inference path and no ASR-plus-diarization fallback. Exact candidate `3ddb930...` recorded `unadvertised-baseline` because the independent private holdout was unconfigured; Tiron remains explicit Preview and absent from the default catalog. |
 | **9** | Merged and gated | Google OKF conformance, deterministic compilation, immutable terminology snapshots, Postgres permission/relationship generations, pgvector retrieval, governed agents/RAG/MCP, explicit no-fallback routing, and privately qualified Qwen rapid/Gemma complex vLLM routes execute. Exact candidate `a4f34678...` passed the complete Phase 9 gate with real Postgres restart/recovery and exact teardown. Exact hosted-green head `fa26caaf...` merged through PR #152 as `ae81ff06...`. The separate maintainability checkpoint gate passed at exact head `22c3f369...`; final hosted head `84c22ec9...` merged through PR #153 as `ca151b1b...`. Postgres remains the sole projection because no measured gap justified Neo4j. Production supervision, simultaneous residency, sustained mixed-user capacity, and external serving remain Phase 10. |
-| **10** | Slices 10.1–10.3 plus Scribe, Archivist, and Student merged; Curator/profile-capacity successor unqualified | The merged baseline implements one systemd-contained Rust provider-launcher lifecycle, immutable Qwen/Gemma profiles, bounded owner-fair admission, qualified Scribe, the no-LLM Archivist core, and the internal Student core. PR #164 merged Scribe as `ec3af506...`; PR #165 merged Archivist as `2a7ec819...`; hosted-green Student head `b03c6e79...` passed all 12 checks and PR #166 merged it as `2254605e...` after exact `428d6e48...` private qualification with public-safe evidence SHA-256 `f597cca7...`. Raw ASR remains authoritative and only a user-accepted correction revision can publish. Exact Student predecessor `0970d74c...` remains terminal `deterministic-no-student`. Student product integration, the unqualified Curator/profile-capacity candidates, the four later workflows (Auditor, Librarian, Analyst, and Coordinator), a second full-strength GPU node/private routing for warm two-route residency, mixed-load capacity promotion, observability, corporate access hardening, HTTP/3 edge promotion, publication governance, and repo split remain later slices or IT handoffs. |
+| **10** | Three role cores merged; Curator/profile-capacity successor privately qualified under draft PR #168 | The merged baseline implements one systemd-contained Rust provider-launcher lifecycle, immutable Qwen/Gemma profiles, bounded owner-fair admission, qualified Scribe, the no-LLM Archivist core, and the internal Student core. PR #164 merged Scribe as `ec3af506...`; PR #165 merged Archivist as `2a7ec819...`; hosted-green Student head `b03c6e79...` passed all 12 checks and PR #166 merged it as `2254605e...`. Exact route head `dab19fe...` returned `required-workload-routes-qualified`; exact workflow head `7cd24deb...` requalified Scribe/Student and returned `curator-knowledge-proposals-qualified`; exact public-lock/aggregate head `7f896b34...` returned `governed-knowledge-gate-passed`. Raw ASR remains authoritative and Curator may append only a noncanonical proposal. PR #168 remains draft. Student/Curator product integration, hosted merge, the four later workflows (Auditor, Librarian, Analyst, and Coordinator), a second full-strength GPU node/private route for simultaneous residency, sustained mixed-load capacity promotion, observability, corporate access hardening, HTTP/3 edge promotion, publication governance, and repo split remain later slices or IT handoffs. |
 
 The client-convergence PR was an MVP prerequisite merged separately before this
 server-node change; it does not rename canonical Phase 4 or imply that the
@@ -1039,11 +1043,12 @@ evidence SHA-256 `316631d5...` after seven of eight cases completed. The
 protected prompt-only successor `428d6e48...` is complete-portable-test green
 and returned `student-learning-questions-qualified` with public-safe evidence
 SHA-256 `f597cca7...`; hosted-green head `b03c6e79...` passed all 12 checks and
-PR #166 merged the internal core as `2254605e...`. Product integration remains
-open. The current Curator/profile-capacity successors are unqualified, and the
-four later workflows (Auditor, Librarian, Analyst, and Coordinator) are next,
-alongside the separate
-full-strength second-node capacity topology.
+PR #166 merged the internal core as `2254605e...`. Exact route head
+`dab19fe...`, workflow head `7cd24deb...`, and aggregate head `7f896b34...`
+privately qualify the current profile-capacity/Curator candidate under draft PR
+#168. Hosted merge and Student/Curator product integration remain open. The four
+later workflows (Auditor, Librarian, Analyst, and Coordinator) are next,
+alongside the separate full-strength second-node capacity topology.
 Live ASR,
 managed LAN/enterprise and
 live-endpoint discovery, external
@@ -1069,7 +1074,7 @@ Each phase ships **code + doc/product sync** together, so positioning never lags
 | **7** Identity/access | Provider-neutral OIDC validation with Entra policy, fail-closed native token-provider seam, replacement of the fixed development owner, purpose grants that are implemented but called by nothing, tenant-scoped identity DB, and authenticated private live admission; production adapter and enterprise conformance require separate approval | [ADR 0016](adr/0016-auth-identity-bridge.md); sign-in/access UX |
 | **8** Meeting evidence | Anonymous local labels, pinned Tiron eight-window/eight-global baseline, one integrated source-time epoch route with request-scoped reconciliation, frozen messy-meeting public/independent evidence, attendance/window/global-roster pressure, timestamped result revisions, server reconciliation, deliberate voice-enrollment UX and profile lifecycle | [ADR 0020](adr/0020-meeting-capture-diarization-authority.md); [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md); [source-aware design](specs/source-aware-diarization.md) |
 | **9** Knowledge/agents | Google OKF profile, immutable terminology, deterministic compiler, Postgres/pgvector relationship/vector baseline, governed RAG/MCP, and qualified Qwen/Gemma vLLM workload routes | Complete zero-skip Postgres/restart/private-route-evidence gate passed at `a4f34678...`; PR #152 merged the reviewed exact head as `ae81ff067...`. The post-phase maintainability checkpoint gate passed at `22c3f369...`; hosted head `84c22ec9...` merged through PR #153 as `ca151b1b...`. Production supervision/capacity remains Phase 10, and another projection requires a measured baseline gap. |
-| **10** Enterprise/release | Slices 10.1–10.3, qualified Scribe, the Archivist core, and the internal Student core are merged through PRs #155/#157/#158/#164/#165/#166. Exact Student head `428d6e48...` is privately qualified with public-safe evidence SHA-256 `f597cca7...`; hosted-green head `b03c6e79...` merged as `2254605e...`, while product exposure remains open. Exact predecessor `0970d74c...` remains terminal `deterministic-no-student`. The current Curator/profile-capacity successors are unqualified, and the four later workflows (Auditor, Librarian, Analyst, and Coordinator) remain before second-node full-profile residency, sustained mixed-load capacity promotion, observability, enterprise access, secure-edge evidence, packaging, and repo split. | [ADRs 0030](adr/0030-rust-supervised-provider-service-lifecycle.md) and [0031](adr/0031-eight-agent-voice-os-roster.md), the active Phase 10/roster plans, the [Scribe evidence](evidence/scribe-transcript-correction/VERIFICATION.md), the [Archivist evidence](evidence/archivist-ingestion/VERIFICATION.md), the [Student evidence](evidence/student-learning/VERIFICATION.md), later Curator/profile-capacity evidence, route-specific capacity/SLO evidence, CI/CD migration, and cross-repo link update. |
+| **10** Enterprise/release | Slices 10.1–10.3, qualified Scribe, the Archivist core, and the internal Student core are merged through PRs #155/#157/#158/#164/#165/#166. Exact route head `dab19fe...` qualified unchanged full profiles sequentially at selected-route capacities four/eight; exact workflow head `7cd24deb...` requalified Scribe/Student and qualified the nonmutating Curator candidate; exact public-lock/aggregate head `7f896b34...` passed. PR #168 remains draft. The four later workflows (Auditor, Librarian, Analyst, and Coordinator), hosted merge, Student/Curator product exposure, second-node simultaneous full-profile residency, sustained mixed-load capacity promotion, observability, enterprise access, secure-edge evidence, packaging, and repo split remain open. | [ADRs 0030](adr/0030-rust-supervised-provider-service-lifecycle.md) and [0031](adr/0031-eight-agent-voice-os-roster.md), the active Phase 10/roster plans, the [Scribe evidence](evidence/scribe-transcript-correction/VERIFICATION.md), the [Archivist evidence](evidence/archivist-ingestion/VERIFICATION.md), the [Student evidence](evidence/student-learning/VERIFICATION.md), the [Curator evidence](evidence/curator-knowledge-proposals/VERIFICATION.md), the [profile-capacity evidence](evidence/agent-admission-profile-capacity/VERIFICATION.md), route-specific sustained capacity/SLO evidence, CI/CD migration, and cross-repo link update. |
 
 ---
 

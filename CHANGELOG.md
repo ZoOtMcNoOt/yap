@@ -5,15 +5,18 @@ immutable evidence belong in phase/checkpoint evidence records.
 
 ## Unreleased — Phase 10 Curator and admission-capacity successor
 
-- Develops an explicit-submission-only Curator workflow that may publish a
+- Adds an explicit-submission-only Curator workflow that may publish a
   governed noncanonical proposal but cannot activate knowledge or mutate source
   truth.
-- Develops a profile-bound admission successor for the existing rapid and
-  complex routes. It does not itself prove simultaneous model residency,
-  sustained capacity, production SLOs, or deployment readiness.
-- Both changes remain unqualified current work until exact-head private
-  evidence, reviewed hosted checks, and merge close. No Curator product surface
-  is claimed.
+- Qualifies the profile-bound admission successor at four rapid and eight
+  complex active distinct owners on the selected unchanged full route, with one
+  active request per owner, explicit overflow queueing, and exact containment.
+- Exact `7cd24deb...` privately qualified Curator, Scribe, and Student against
+  the successor; exact public-lock/aggregate head `7f896b34...` passed the
+  governed gate. Public-safe records are indexed under `docs/evidence/`.
+- PR #168 remains draft. These results do not claim hosted review/merge, a
+  Curator product surface, simultaneous Qwen/Gemma residency, sustained
+  capacity, production SLOs, or deployment readiness.
 
 ## 2026-08-12 — Phase 10 bounded role cores
 

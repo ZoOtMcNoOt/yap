@@ -5,9 +5,11 @@ merged through PR #164. Slice D Archivist merged through PR #165 as
 `2a7ec819edbf03a4f3fd3fe8de92ddad5bfd71f9`. Student's exact `428d6e48...`
 topic-copy prompt repair is privately qualified on the unchanged full Qwen
 rapid profile; hosted-green head `b03c6e79...` passed all 12 checks and PR #166
-merged the internal core as `2254605e...`. Student product integration, the
-unqualified Curator/profile-capacity successors, simultaneous-capacity
-evidence, and later role slices remain open.
+merged the internal core as `2254605e...`. Exact route head `dab19fe...`,
+workflow head `7cd24deb...`, and aggregate/public-lock head `7f896b34...`
+privately qualify the Curator/profile-capacity successor under draft PR #168.
+Student/Curator product integration, hosted merge, simultaneous-capacity
+evidence, and four later role slices remain open.
 
 **Current branch:** `agent/phase10-curator` for the final Slice D workflow and
 its profile-capacity admission successor.
@@ -259,9 +261,9 @@ successor is the exact qualified head recorded above.
   deterministic compilation/staging outcomes without an LLM.
 - [x] Student creates bounded cited questions from permission-safe admitted
   conversations and never mutates source or knowledge.
-- [ ] Curator consumes reviewed answers and source citations, writes governed
+- [x] Curator consumes reviewed answers and source citations, writes governed
   proposals only, and cannot directly activate knowledge.
-- [ ] Prove restart read-back, duplicate/idempotent transitions, cross-owner
+- [x] Prove restart read-back, duplicate/idempotent transitions, cross-owner
   rejection, cancellation, invalid output, and no-success-after-failure audit.
 
 Exact Archivist source candidate `3ec9885ee902926f3f7672d2438e1da23c18c284`
@@ -341,15 +343,19 @@ Hosted-green head `b03c6e79f19bad451437c3f0c495daa67bb7171f` then passed all
 12 required checks and PR #166 merged the internal Student core as
 `2254605ed19a592d2db1747d576762ccf11a5cc0`.
 
-The current branch contains an explicit-submission-only Curator candidate and a
-profile-capacity admission successor. Curator may append only a governed
-noncanonical proposal and cannot activate knowledge or mutate source truth. The
-successor derives four rapid and eight complex active limits from the immutable
-profiles while retaining one active request per owner. Neither candidate has
-exact-head private qualification, a replacement public lock, hosted review, or
-merge. Historical one-slot, Scribe, and Student receipts are not reused for
-these protected changes, and configured limits are not sustained-capacity or
-simultaneous-residency evidence.
+The current branch contains a privately qualified explicit-submission-only
+Curator candidate and profile-capacity admission successor. Curator may append
+only a governed noncanonical proposal and cannot activate knowledge or mutate
+source truth. Exact route head `dab19fe...` qualified unchanged full Qwen and
+Gemma profiles sequentially at rapid-four/complex-eight selected-route limits.
+Exact workflow head `7cd24deb...` returned
+`curator-knowledge-proposals-qualified`: eight cases/eight owners, four
+proposals, four rejections, zero terminal failures, complex eight/ninth queued,
+exact PostgreSQL lifecycle/read-back, and teardown. Exact aggregate/public-lock
+head `7f896b34...` passed. Historical one-slot, Scribe, and Student receipts
+were not reused for these protected changes. PR #168 remains draft; hosted
+merge and product exposure remain open. This evidence does not prove sustained
+capacity, simultaneous Qwen/Gemma residency, production SLOs, or deployment.
 
 ## Slice E — knowledge and coordination agents
 

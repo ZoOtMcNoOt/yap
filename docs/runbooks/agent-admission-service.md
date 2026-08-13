@@ -10,14 +10,15 @@ native/server workflow merged through PR #164 as `ec3af506...`. Simultaneous
 full-profile residency, sustained capacity, later workflows, and production
 operations evidence remain open.
 
-The current development branch contains an unqualified successor that derives
-active route limits from the immutable service profiles (four rapid, eight
-complex) while retaining Server IO at one and one active request per owner
-globally. Because that work changes protected broker/profile inputs, it requires
-fresh exact-head route and affected-workflow qualification, a replacement
-public lock, hosted review, and merge. Until those close, the one-slot exact-head
-contract documented below remains the qualified merged runbook boundary. Do not
-use the candidate limits as sustained-capacity, simultaneous-residency, or
+The current protected successor derives active route limits from the immutable
+service profiles (four rapid, eight complex) while retaining Server IO at one
+and one active request per owner globally. Exact route head `dab19fe...`
+qualified both unchanged full profiles sequentially; exact workflow head
+`7cd24deb...` qualified Scribe, Student, and Curator; and replacement public-
+lock/aggregate head `7f896b34...` passed. PR #168 remains draft, so hosted
+review/merge and production enablement remain open. The earlier one-slot
+contract below is retained as historical exact-head evidence. Do not use the
+selected-route limits as sustained-capacity, simultaneous-residency, or
 production-SLO evidence.
 
 ## Ownership and safety boundary
@@ -31,10 +32,13 @@ production-SLO evidence.
 
 The broker admits only work whose exact provider snapshot is already ready. It
 does not enable or start provider units, call Docker, swap a model, or substitute
-one route for another. The initial capacity is deliberately one active request
-per route. Increase it only from route-specific simultaneous-residency and
-sustained multi-owner evidence; if one node cannot pass, use separate owned
-service nodes.
+one route for another. The current candidate capacity is the selected ready
+profile's exact maximum-sequence limit: four rapid, eight complex, or one Server
+IO request, with one active request per owner globally. These limits were
+qualification-probed on each selected route; they are not permission to claim
+simultaneous model residency or sustained throughput. Because one Spark cannot
+hold the unchanged `0.40` and `0.70` profiles together, warm two-route promotion
+still requires a second owned service node and private route.
 
 Admission state is boot-scoped and in memory. The service uses `Restart=no`.
 After a broker failure, new work remains closed until the operator has contained
@@ -93,6 +97,12 @@ released until cancellation is acknowledged. Terminal results are bounded and
 token-protected; a duplicate request ID discloses nothing without the original
 token.
 
+For model-backed routes, active lease counts are additionally bounded by the
+selected immutable profile: four for rapid and eight for complex. One owner may
+still hold only one active request. Overflow owners remain queued within the
+global/per-owner bounds and queue-inclusive deadline; capacity is never borrowed
+from another route.
+
 No bearer, client ID, scope, provider credential, prompt, response, transcript,
 or model output belongs in this socket protocol, unit environment, service
 state, logs, or public evidence.
@@ -126,11 +136,27 @@ and exact teardown. These are admission-contract checks. They are not
 simultaneous-model, capacity, production-availability, endpoint, or deployment
 evidence.
 
+That paragraph is historical evidence for the merged one-slot head. The current
+successor's exact route head `dab19fe...` returned
+`required-workload-routes-qualified` with public-safe evidence SHA-256
+`96228914...`; it admitted Qwen and Gemma sequentially on unchanged full
+profiles and completed exact teardown. Exact `7cd24deb...` workflow gates held
+four rapid owners plus a queued fifth and eight complex owners plus a queued
+ninth, contained every lease, and required unchanged provider/broker identity.
+Exact aggregate/public-lock head `7f896b34...` returned
+`governed-knowledge-gate-passed` with public-safe evidence SHA-256
+`fd197b98...`. See the
+[profile-capacity evidence](../evidence/agent-admission-profile-capacity/VERIFICATION.md).
+PR #168 remains draft; none of these facts is a sustained-load or production
+availability claim.
+
 ## Later enablement and recovery
 
 Do not enable or start the admission unit until all of these are true:
 
-1. PR #158 has passed hosted exact-head review and merged (complete);
+1. PR #158 has passed hosted exact-head review and merged (complete), while the
+   profile-capacity successor in draft PR #168 must still complete hosted review
+   and merge;
 2. the selected provider topology has passed simultaneous-residency evidence;
 3. the authenticated Python workflow owns cancellation through final worker
    termination and can prove no work survives a released lease; and

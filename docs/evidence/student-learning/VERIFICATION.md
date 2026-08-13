@@ -5,8 +5,10 @@ is complete-portable-test green and privately qualified. Hosted-green head
 `b03c6e79f19bad451437c3f0c495daa67bb7171f` passed all 12 required checks and
 PR #166 merged the internal core as
 `2254605ed19a592d2db1747d576762ccf11a5cc0`. HTTP/native/UI exposure, Curator
-integration, the profile-capacity successor, and the aggregate Phase 10 gate
-remain pending.
+integration, and product promotion remain pending. The later profile-capacity
+successor was freshly qualified with Student at exact head
+`7cd24deb1131ecf89258ddb821c6bffae8e0cd25`; PR #168 remains draft, so that
+successor is not yet hosted-green or merged.
 
 ## Current candidate contract
 
@@ -74,6 +76,24 @@ remain pending.
   product surface or extend the exact `428d6e48...` private receipt to later
   broker/model-client changes.
 
+## Profile-capacity successor qualification
+
+Exact protected successor `7cd24deb1131ecf89258ddb821c6bffae8e0cd25`
+returned `student-learning-questions-qualified` with public-safe evidence
+SHA-256
+`d3561e1a03653fa7c8adb887cb161eb13a59f1573b15cd7f861731a71449c305`.
+All eight distinct owners completed with one source-grounded question each and
+zero terminal failures. The gate held the unchanged rapid route at four active
+distinct owners, observed a fifth owner queued, required unchanged warm-provider
+and broker identities, exercised PostgreSQL restart/read-back and exact owner
+boundaries, and completed exact teardown. Student still launches, swaps,
+substitutes, or reduces no model.
+
+This new exact-head receipt qualifies the protected admission successor without
+relabeling PR #166's historical merge receipt. It is internal candidate evidence,
+not PR #168 hosted review/merge or product exposure. See the
+[profile-capacity evidence](../agent-admission-profile-capacity/VERIFICATION.md).
+
 ## Terminal private evidence
 
 Exact head `0970d74c7961a63bd1b2366bc0ecef6b5fc55714` returned
@@ -130,13 +150,14 @@ output cap, timeout, queue bound, or acceptance threshold.
 
 Student is a merged internal core. There is no Student HTTP endpoint, native
 adapter, renderer/UI workflow, user review surface, or production deployment.
-The current development branch's profile-capacity admission successor changes
-protected broker/model-client inputs and requires fresh exact-head route and
-affected-workflow qualification; this historical receipt cannot be relabeled
-for that successor. Current evidence does not prove sustained multi-owner throughput,
-route p95/p99 SLOs, simultaneous full Qwen/Gemma residency, a two-node warm
-topology, the unqualified Curator candidate, the four later workflows (Auditor,
-Librarian, Analyst, and Coordinator), or aggregate Phase
-10 completion. The current single Spark keeps the unchanged full Qwen rapid
-route warm for this work; full-strength two-route promotion requires a second
-owned GPU node and private routing rather than throttling or model swapping.
+The current development branch's profile-capacity admission successor changed
+protected broker/model-client inputs and therefore received its own exact-head
+route and affected-workflow qualifications; the historical PR #166 receipt is
+not relabeled. Current evidence does not prove sustained multi-owner throughput,
+route p95/p99 SLOs, simultaneous full Qwen/Gemma residency, or a two-node warm
+topology. Curator is a qualified internal candidate pending hosted review/merge;
+the four later workflows (Auditor, Librarian, Analyst, and Coordinator), and
+aggregate Phase 10 completion remain open. A fresh post-aggregate observation
+on 2026-08-12 found the unchanged full Qwen rapid route warm on the current
+single Spark. Full-strength two-route promotion requires a second owned GPU
+node and private routing rather than throttling or model swapping.

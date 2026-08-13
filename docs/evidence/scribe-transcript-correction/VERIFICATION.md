@@ -2,7 +2,11 @@
 
 **Status:** Exact private qualification gate and hosted review passed. PR #164
 merged the Scribe slice; this evidence does not promote a production service or
-close the other seven Voice OS roles.
+by itself close any other Voice OS role.
+
+The later profile-capacity successor was freshly requalified at exact head
+`7cd24deb1131ecf89258ddb821c6bffae8e0cd25`; PR #168 remains draft, so that
+successor is not yet hosted-green or merged.
 
 ## Exact candidate
 
@@ -59,11 +63,29 @@ content, process records, and filesystem locations remain outside Git.
 - The local and private-server checkouts were exact, clean, and bound to the
   same candidate head before and after the gate.
 
+## Profile-capacity successor qualification
+
+Exact protected successor `7cd24deb1131ecf89258ddb821c6bffae8e0cd25`
+returned `scribe-transcript-correction-qualified` with public-safe evidence
+SHA-256
+`9c3c44c58befe1f2c2985956bad6fa5703b4b7668bd5a546a0bdf11bcb92263e`.
+All 24 cases completed across eight distinct owners and 16 distinct real-ASR
+English/Spanish audio inputs, with zero terminal failures. Every frozen
+correction-benefit, protected-fact, no-regression, raw-fallback, latency,
+database, lifecycle, and teardown acceptance check passed. The selected rapid
+route used the unchanged full profile and the shared broker; no request-time
+model launch, swap, substitution, or profile reduction was introduced.
+
+This exact-head rerun qualifies Scribe against the protected profile-capacity
+successor. It does not retroactively change PR #164's historical receipt or
+claim PR #168 hosted review/merge. See the
+[profile-capacity evidence](../agent-admission-profile-capacity/VERIFICATION.md).
+
 ## Deliberate limits
 
-This gate proves a bounded manual finalized-transcript correction workflow. It
-does not prove general acoustic error recovery, ASR n-best/confidence use,
+These gates prove a bounded manual finalized-transcript correction workflow.
+They do not prove general acoustic error recovery, ASR n-best/confidence use,
 automatic live correction, meeting summarization, simultaneous Qwen and Gemma
 residency, sustained mixed-route capacity, p50/p95/p99 production SLOs,
-observability, external serving, enterprise deployment, or the other seven
-Voice OS workflows. Those remain separate Phase 10 slices and gates.
+observability, external serving, enterprise deployment, or completion of the
+other Voice OS workflows. Those remain separate Phase 10 slices and gates.

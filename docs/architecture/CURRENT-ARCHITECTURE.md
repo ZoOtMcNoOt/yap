@@ -17,9 +17,13 @@ rapid profile with public-safe evidence SHA-256 `f597cca7...`; hosted-green
 head `b03c6e79...` passed all 12 checks and PR #166 merged the internal core as
 `2254605e...`. Student product exposure remains open; exact predecessor
 `0970d74c...` remains terminal `deterministic-no-student` evidence. The current
-Curator and profile-capacity successor are unqualified development candidates,
-not part of the merged baseline. Later Phase 10 roles and capacity/operations
-layers remain open. Phase 7
+profile-capacity successor and Curator are privately qualified internal
+candidates under draft PR #168, not part of the merged or product-promoted
+baseline. Exact route head `dab19fe...` qualified the unchanged Qwen/Gemma
+profiles sequentially, exact workflow head `7cd24deb...` qualified Scribe,
+Student, and Curator, and public-lock/aggregate head `7f896b34...` passed the
+governed gate. Later Phase 10 roles and capacity/operations layers remain open.
+Phase 7
 implements provider-neutral
 OIDC verification with Entra policy, fail-closed authentication, tenant-scoped
 ownership, authenticated bounded private WebSocket admission, and the native
@@ -952,7 +956,7 @@ scope, and exact teardown. Hosted-green head `6d1400cc...` merged through PR
 
 The intended multi-user topology keeps both exact route services warm behind
 bounded owner-fair admission; request handling never launches or swaps a model.
-Exact protected head `7bd93dc6...` implements the admission substrate in Rust:
+Merged historical protected head `7bd93dc6...` implemented the admission substrate in Rust:
 all eight role/purpose/route/class bindings, one conservative active slot per
 route, bounded global and per-owner queues, owner round robin, weighted priority,
 idle-only exclusion, queue-inclusive deadlines, token-bound terminal controls,
@@ -1069,23 +1073,34 @@ and PR #166 merged the internal core as `2254605e...`. Product exposure remains
 open. See the
 [public verification record](../evidence/student-learning/VERIFICATION.md).
 
-The current multi-user contract is one warm Qwen rapid lane with owner-fair
-queueing, not eight parallel GPU sequences: one active request per route, 64
-global pending, four active-plus-pending per owner, round-robin owners, and
-queue-inclusive workflow deadlines. Private Scribe and exact `428d6e48...`
-Student qualification each synchronized eight distinct owners through that
-warm generation; neither proves eight parallel GPU executions or sustained
-capacity.
+The merged PR #158 scheduler and its one-active-slot-per-route qualification
+remain exact historical evidence for that head. The current protected successor
+instead derives active limits from the immutable rapid and complex profiles:
+four and eight, with Server IO at one, 64 global pending, four active-plus-
+pending per owner, one active request per owner, round-robin owners, and queue-
+inclusive workflow deadlines. Exact route head `dab19fe...` returned
+`required-workload-routes-qualified` with public-safe evidence SHA-256
+`96228914...`; Qwen and Gemma were admitted sequentially on their unchanged full
+profiles and each route completed exact teardown. Exact aggregate/public-lock
+head `7f896b34...` returned `governed-knowledge-gate-passed` with public-safe
+evidence SHA-256 `fd197b98...`.
 
-The current development branch contains a profile-capacity admission successor
-that derives active limits from the immutable rapid and complex profiles (four
-and eight) while preserving one active request per owner. It also contains an
-explicit-submission-only Curator candidate that can publish only a noncanonical
-proposal and cannot activate knowledge or mutate source truth. These candidates
-have no exact-head route/workflow qualification, public lock, hosted review, or
-merge. Until fresh evidence closes, the one-active-slot-per-route contract above
-remains the qualified merged boundary. Configured profile limits and an
-owner-synchronized wave do not prove simultaneous Qwen/Gemma residency,
+Exact workflow head `7cd24deb...` requalified Scribe and Student against the
+successor and qualified the explicit-submission-only Curator candidate. The
+rapid workflow gate held four active distinct owners and queued the fifth; the
+complex gate held eight and queued the ninth. Curator may publish only a
+noncanonical proposal and cannot activate knowledge or mutate source truth.
+See the [profile-capacity evidence](../evidence/agent-admission-profile-capacity/VERIFICATION.md)
+and [Curator evidence](../evidence/curator-knowledge-proposals/VERIFICATION.md).
+PR #168 remains draft, so hosted review/merge and every Curator product surface
+remain open.
+
+A fresh post-aggregate observation on 2026-08-12 found Qwen rapid warm and the
+broker active against exact rapid profile hash `14712e69...`; the observed
+rapid limit was four active distinct owners rather than one. That transient
+read-back is not an availability claim. Gemma's complex limit of eight was
+proved on its selected-route gate, not while both models were resident together. These
+route-specific results do not prove simultaneous Qwen/Gemma residency,
 sustained capacity, production p95/p99, or deployment readiness.
 
 Simultaneous route residency, sustained multi-owner capacity/fairness,

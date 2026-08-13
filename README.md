@@ -8,9 +8,10 @@ Phases 1–9 and the post-phase architecture checkpoints are merged. Phase 10 ha
 also merged the Rust-owned supervised-provider lifecycle, immutable Qwen/Gemma
 profiles, bounded already-warm admission, Scribe transcript correction, the
 no-LLM Archivist core, and the internal Student learning-question core through
-PR #166. Student has no HTTP, native, or renderer surface. The current Curator
-and profile-capacity successor are unqualified development work, not part of
-the merged or promoted boundary. Production identity, simultaneous full-profile
+PR #166. Student has no HTTP, native, or renderer surface. The current
+profile-capacity successor and explicit-submission-only Curator are privately
+qualified internal candidates under draft PR #168, not part of the merged or
+product-promoted boundary. Production identity, simultaneous full-profile
 residency, sustained capacity, enterprise deployment, and the remaining role
 workflows stay explicitly gated.
 
@@ -47,8 +48,12 @@ what is verified, what is still absent, and what happens next.
 - The merged team agent plane uses hash-locked Qwen rapid-automation and Gemma
   complex-orchestration vLLM routes with no cross-route fallback. Scribe is the
   only current desktop-facing LLM workflow. Archivist and Student are bounded
-  internal cores; Curator and the profile-capacity admission successor remain
-  unqualified current work.
+  merged internal cores. Curator is the fourth implemented role and is a
+  privately qualified internal candidate under draft PR #168; Auditor,
+  Librarian, Analyst, and Coordinator remain unimplemented. The qualified
+  profile-capacity successor admits four rapid or eight complex active distinct
+  owners on the selected already-warm route, while preserving one active request
+  per owner; this is not simultaneous-residency or sustained-capacity evidence.
 - Result identity, hashes, paths, sizes, authority, and transcript bytes are
   verified natively before History presents completion.
 

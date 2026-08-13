@@ -9,7 +9,7 @@ The inventory includes the repository's tracked source, text, policy, and
 provenance contract extensions and excludes only the two tracked OpenAPI products, the
 package lock, and the two generated dependency-inventory JSON products named in
 the script. The four large JSON gate/evaluation contracts remain included as
-hand-maintained policy. At this staged candidate tree the complete 250-line
+hand-maintained policy. At this current candidate tree the complete 250-line
 inventory is 541 files: 297 listed below at 350 or more lines and 244 from 250
 through 349.
 
@@ -74,23 +74,23 @@ Each line contains up to two independent entries in the form
   466 CURRENT-DOC          docs/adr/0014-server-tier-compute-topology.md ||   390 CURRENT-DOC          docs/adr/0016-auth-identity-bridge.md
   373 CURRENT-DOC          docs/adr/0017-knowledge-base-compiler.md ||   805 CURRENT-DOC          docs/adr/0024-global-language-routing.md
   643 CURRENT-DOC          docs/adr/0025-provider-specific-asr-serving.md ||   438 CURRENT-DOC          docs/adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md
- 1099 CURRENT-DOC          docs/architecture/boundaries/EXECUTABLE-OWNERSHIP.md ||  1186 CURRENT-DOC          docs/architecture/CURRENT-ARCHITECTURE.md
- 1177 CURRENT-DOC          docs/CURRENT-STATUS.md ||   526 CURRENT-DOC          docs/evidence/governed-knowledge-maintainability/VERIFICATION.md
- 1013 CURRENT-DOC          docs/plans/active/2026-07-17-voiceos-decision-evidence-queue.md ||   389 CURRENT-DOC          docs/plans/active/2026-08-11-eight-agent-voice-os-delivery.md
+ 1112 CURRENT-DOC          docs/architecture/boundaries/EXECUTABLE-OWNERSHIP.md ||  1201 CURRENT-DOC          docs/architecture/CURRENT-ARCHITECTURE.md
+ 1224 CURRENT-DOC          docs/CURRENT-STATUS.md ||   541 CURRENT-DOC          docs/evidence/governed-knowledge-maintainability/VERIFICATION.md
+ 1015 CURRENT-DOC          docs/plans/active/2026-07-17-voiceos-decision-evidence-queue.md ||   395 CURRENT-DOC          docs/plans/active/2026-08-11-eight-agent-voice-os-delivery.md
   627 HISTORICAL-DOC       docs/plans/archived/2026-07-05-client-state-machine-implementation.md ||   561 HISTORICAL-DOC       docs/plans/archived/2026-07-08-local-audio-preprocessing-stack.md
   525 HISTORICAL-DOC       docs/plans/archived/2026-07-09-client-hardening-storage.md ||   988 HISTORICAL-DOC       docs/plans/archived/2026-07-10-client-audio-foundation.md
   450 HISTORICAL-DOC       docs/plans/completed/2026-07-08-model-download-ux.md ||   855 HISTORICAL-DOC       docs/plans/completed/2026-07-10-server-contract-durable-connector.md
  1953 HISTORICAL-DOC       docs/plans/completed/2026-07-16-audio-preprocessing-and-language-routing.md ||   391 HISTORICAL-DOC       docs/plans/completed/2026-07-18-codebase-ownership-and-maintainability-review.md
   646 HISTORICAL-DOC       docs/plans/completed/2026-07-25-tenant-scoped-identity-and-job-authorization.md ||   923 HISTORICAL-DOC       docs/research/2026-07-16-dynamic-language-detection-evaluation.md
-  913 HISTORICAL-DOC       docs/research/2026-07-17-asr-evaluation-corpus-and-runtime-matrix.md ||   357 CURRENT-DOC          docs/roadmap/ROADMAP.md
+  913 HISTORICAL-DOC       docs/research/2026-07-17-asr-evaluation-corpus-and-runtime-matrix.md ||   361 CURRENT-DOC          docs/roadmap/ROADMAP.md
   886 CURRENT-DOC          docs/runbooks/integrated-identity-access-gate.md ||   506 CURRENT-DOC          docs/runbooks/integrated-preprocessing-language-routing-gate.md
  1154 CURRENT-DOC          docs/runbooks/yap-server-node-setup.md ||   554 CURRENT-DOC          docs/specs/source-aware-diarization.md
-  586 CURRENT-DOC          docs/specs/testing-strategy.md ||  1243 CURRENT-DOC          docs/VOICE-OS-ARCHITECTURE.md
+  586 CURRENT-DOC          docs/specs/testing-strategy.md ||  1248 CURRENT-DOC          docs/VOICE-OS-ARCHITECTURE.md
   696 INFRA                infra/yap-server-node/owned-process-group.sh ||   989 INFRA                infra/yap-server-node/owned-process-supervisor.py
   601 INFRA                infra/yap-server-node/private-container-loopback-proxy.sh ||  1113 INFRA                infra/yap-server-node/resident-provider-lifecycle-gate.sh
   504 INFRA                infra/yap-server-node/setup-server.sh ||   364 SERVER-CONTRACT      server/orchestrator/src/agent_admission.rs
   463 SERVER-CONTRACT      server/orchestrator/src/supervisor.rs ||   453 SERVER-CONTRACT      server/orchestrator/tests/supervised_service.rs
-  930 SERVER-RUNBOOK       server/README.md ||   426 SERVER-CONTRACT      server/src/yap_server/agents/archivist_service.py
+  946 SERVER-RUNBOOK       server/README.md ||   426 SERVER-CONTRACT      server/src/yap_server/agents/archivist_service.py
   379 SERVER-CONTRACT      server/src/yap_server/agents/curator_result_audit.py ||   899 SERVER-CONTRACT      server/src/yap_server/agents/curator_service.py
   724 SERVER-CONTRACT      server/src/yap_server/agents/curator.py ||   513 SERVER-CONTRACT      server/src/yap_server/agents/student_model.py
   680 SERVER-CONTRACT      server/src/yap_server/agents/student_service.py ||   430 SERVER-CONTRACT      server/src/yap_server/agents/student.py
@@ -142,7 +142,7 @@ Each line contains up to two independent entries in the form
   407 TEST-AUTH-CONTRACT   server/tests/auth/test_oidc_metadata.py ||   453 TEST-AUTH-CONTRACT   server/tests/capabilities/test_asr_catalog.py
   350 TEST-AUTH-CONTRACT   server/tests/contract/contract_http_values.py ||   549 TEST-AUTH-CONTRACT   server/tests/contract/test_contract.py
   358 TEST-AUTH-CONTRACT   server/tests/contract/test_examples_contract.py ||   395 TEST-EVALUATION      server/tests/evaluation/promotion_registry_fixture.py
-  791 TEST-EVALUATION      server/tests/evaluation/test_agent_model_fixture_runner.py ||   880 TEST-EVALUATION      server/tests/evaluation/test_agent_model_qualification.py
+  854 TEST-EVALUATION      server/tests/evaluation/test_agent_model_fixture_runner.py ||   880 TEST-EVALUATION      server/tests/evaluation/test_agent_model_qualification.py
   354 TEST-EVALUATION      server/tests/evaluation/test_agent_model_scoring.py ||   647 TEST-EVALUATION      server/tests/evaluation/test_agent_vllm_runtime.py
  1433 TEST-EVALUATION      server/tests/evaluation/test_corpus_manifest.py ||   382 TEST-EVALUATION      server/tests/evaluation/test_curator_qualification_gate.py
   364 TEST-EVALUATION      server/tests/evaluation/test_curator_qualification.py ||   359 TEST-EVALUATION      server/tests/evaluation/test_governed_knowledge_gate.py

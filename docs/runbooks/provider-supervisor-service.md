@@ -190,9 +190,9 @@ boolean lifecycle/teardown facts, and explicit `false` capacity and
 simultaneous-residency claims. Logs, process identities, owner tokens, model
 paths, and private measurements stay under the private evidence root.
 
-The gated admission layer at exact protected head `7bd93dc6...` keeps both exact services
-warm behind bounded owner-fair admission. A request never starts or swaps a
-model. It is documented separately in the
+The gated admission layer at exact protected head `7bd93dc6...` admits only
+against an exact service that is already warm; it does not make both services
+resident. A request never starts or swaps a model. It is documented separately in the
 [agent admission runbook](agent-admission-service.md). If a single node cannot
 pass simultaneous-residency and sustained-capacity evidence, deploy the two
 services to separate owned nodes rather than introduce fallback or swapping.

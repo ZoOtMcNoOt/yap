@@ -1,9 +1,10 @@
 # Governed Knowledge Maintainability Verification
 
 This record separates inherited merged evidence, focused repair checks, the
-completed and hosted-merged Phase 9 checkpoint gate, and the current staged
-Phase 10 public read-back. The Curator/profile-capacity successor is not yet a
-reviewed, privately qualified, hosted-green, or merged checkpoint.
+completed and hosted-merged Phase 9 checkpoint gate, and the current Phase 10
+public read-back. The Curator/profile-capacity successor is privately qualified
+at exact protected heads and has a public-lock/aggregate result, but PR #168
+remains draft: hosted review/merge and product exposure are not complete.
 
 ## Inherited Phase 9 evidence
 
@@ -498,29 +499,43 @@ networking, and deployment remain Phase 10 or explicit IT/security handoffs.
 
 ## Current Phase 10 Curator/profile-capacity candidate public read-back
 
-The current staged successor has the following public test read-back.
-It is not an exact committed head and no private Curator, Scribe, Student, route,
-or aggregate-checkpoint evidence is attributed to it.
+The current candidate has the following bounded exact-head evidence:
 
-- `./verification/test-portable-python-server.ps1` ran 1,281 tests: 1,244
+- Route head `dab19fe7563a9d596cbe7d861460a5c6fed7025c` returned
+  `required-workload-routes-qualified` with public-safe evidence SHA-256
+  `962289148143174073b99fcc62ddd240ea0dae9f36fef09a9449a8022a4a3d13`.
+  Qwen and Gemma were admitted sequentially on their unchanged full profiles,
+  and exact teardown held.
+- Workflow head `7cd24deb1131ecf89258ddb821c6bffae8e0cd25` returned
+  `curator-knowledge-proposals-qualified` with public-safe evidence SHA-256
+  `b60df1e2c044b0f4771038830fb086413239555345893f6e863697d7e4b3cf03`:
+  eight cases/eight owners, four proposals, four rejections, zero terminal
+  failures, complex capacity eight/ninth queued, exact PostgreSQL lifecycle/
+  read-back, and teardown. The same exact head requalified Scribe and Student;
+  their functional records retain the separate public-safe evidence hashes.
+- Public-lock/aggregate head `7f896b341c31fcabb3f894a8d693764c8bc30600`
+  returned `governed-knowledge-gate-passed` with public-safe evidence SHA-256
+  `fd197b9883d8e3b96e7abd9c8e994b416ac20ed2dafc0bca20c114c54258a3bb`.
+- `./verification/test-portable-python-server.ps1` ran 1,282 tests: 1,245
   passed and 37 declared platform/capability skips, with no failure.
 - From `server`, with `PYTHONPATH=src`,
   `uv run --locked python ../verification/run-governed-knowledge-portable-suite.py`
-  ran its fixed 171-test membership: 167 passed and four declared skips, with
-  no failure. This public child set does not run or imply the private Curator
-  qualification, required-real-PostgreSQL lane, provider lifecycle, or route
-  model evidence.
+  ran its fixed 172-test membership with no failure. This public child set does
+  not itself run the private qualification, required-real-PostgreSQL lane,
+  provider lifecycle, or route-model evidence; those claims come only from the
+  exact private receipts above.
 - From the repository root,
   `pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ./verification/list-maintainability-threshold-surfaces.ps1 -MinimumLines 250 -Json`
   enumerated 541 tracked regular surfaces: 297 at or above 350 lines and 244
   from 250 through 349. The separately generated 350-line output is reproduced
   exactly in [THRESHOLD-DISPOSITION.md](THRESHOLD-DISPOSITION.md).
 
-The public contracts cover the Curator explicit-submission workflow,
+The public contracts and admitted exact-head receipts cover the Curator
+explicit-submission workflow,
 noncanonical proposal and durable-result boundaries, exact rapid-four and
 complex-eight profile-derived broker limits, one active request per owner, and
 the live qualification probes that hold the selected route at its limit, queue
 one additional owner, contain every probe lease, and require unchanged provider
 and broker identities. They do not demonstrate simultaneous Qwen/Gemma
 residency, sustained multi-user throughput, a production SLO, hosted review or
-merge, product exposure, deployment, or a qualifying private Curator outcome.
+merge, product exposure, or deployment. PR #168 remains draft.

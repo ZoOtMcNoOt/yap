@@ -6,9 +6,12 @@ transcript correction, and the no-LLM Archivist core merged through PRs #155,
 repair is privately qualified on the unchanged full Qwen profile with
 public-safe evidence SHA-256 `f597cca7...`; hosted-green head `b03c6e79...`
 passed all 12 checks and PR #166 merged the internal core as `2254605e...`.
-Exact `0970d74c...` remains terminal `deterministic-no-student`. Student product
-exposure, the unqualified Curator/profile-capacity successors, later workflows,
-simultaneous full-profile capacity, and production promotion remain open.
+Exact `0970d74c...` remains terminal `deterministic-no-student`. Exact route
+head `dab19fe...`, workflow head `7cd24deb...`, and aggregate/public-lock head
+`7f896b34...` privately qualify the Curator/profile-capacity successor under
+draft PR #168. Student/Curator product exposure, hosted merge, four later
+workflows, simultaneous full-profile capacity, and production promotion remain
+open.
 
 **Base:** merged post-Phase-9 maintainability closure
 `fc8a16510fa27514db244eb641dea582918a940b` from
@@ -127,24 +130,29 @@ Ruff, 17 Postgres tests, real restart/retrieval/stale/successor proof, unchanged
 desktop scope, and exact teardown. Hosted-green head `cf1e69a4...` then passed
 all 12 required checks and merged through PR #158 as `84d95842...`.
 
-The current development branch contains a profile-capacity admission successor
-that derives four rapid and eight complex active limits from the immutable full
-profiles while retaining Server IO at one and one active request per owner
-globally. It changes protected broker/profile/model-client inputs and has no
-exact-head route or affected-workflow qualification, replacement public lock,
-hosted review, or merge. The one-slot evidence above remains exact historical
-evidence for the merged scheduler; configured successor limits are not
-simultaneous-residency, sustained-capacity, or production-SLO evidence.
+The current profile-capacity admission successor derives four rapid and eight
+complex active limits from immutable full profiles while retaining Server IO at
+one and one active request per owner globally. Exact route head `dab19fe...`
+returned `required-workload-routes-qualified` with public-safe evidence SHA-256
+`96228914...`; Qwen and Gemma were admitted sequentially and exact teardown
+held. Exact workflow head `7cd24deb...` requalified Scribe/Student and qualified
+Curator with live rapid-four/fifth-queued and complex-eight/ninth-queued broker
+probes. Exact aggregate/public-lock head `7f896b34...` passed with public-safe
+evidence SHA-256 `fd197b98...`. PR #168 remains draft. The one-slot evidence
+above remains exact historical evidence for its merged head; current selected-
+route capacity is not simultaneous-residency, sustained-capacity, or production-
+SLO evidence.
 
 The merged exact-qualified Scribe workflow is the first consumer of that admission
 owner. Native code acquires one authenticated connector lease, submits bounded
 finalized source-hashed segments to a Python HTTP workflow, and keeps bearer
 material out of the renderer and domain payload. Python binds the request to the
 rapid Scribe role, one immutable terminology snapshot, and one already-warm
-provider generation. One route-active slot, a 64-request global pending bound,
-a four-active-plus-pending per-owner bound, owner round robin, and queue-
-inclusive deadlines provide the current multi-user behavior. This is bounded
-fair scheduling, not simultaneous GPU execution or sustained-capacity evidence.
+provider generation. The current candidate admits four distinct rapid-route
+owners, retains a 64-request global pending bound and one active request per
+owner, and includes owner round robin plus queue-inclusive deadlines. This is
+bounded selected-route scheduling, not simultaneous-model execution or
+sustained-capacity evidence.
 Exact source-lock head `e5858424...` passed its 24-case bilingual/eight-owner
 private qualification gate with public-safe semantic evidence SHA-256
 `5e187ed4...`, one unchanged warm rapid generation, frozen correction benefit,
