@@ -547,7 +547,9 @@ def read_coordinator_evidence_in_transaction(
     for row in selected:
         citations = _stored_proposal_citations(row[4])
         parsed.append((citations, row))
-        concept_ids.update(item.concept_id for item in citations)
+        candidate_concept_ids = {item.concept_id for item in citations}
+        if candidate_concept_ids <= authorized.visible_concept_ids:
+            concept_ids.update(candidate_concept_ids)
     concept_rows = ()
     if concept_ids:
         concept_rows = connection.execute(

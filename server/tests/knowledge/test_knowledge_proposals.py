@@ -309,8 +309,9 @@ class CoordinatorKnowledgeProposalTests(unittest.TestCase):
             "yap_server.knowledge.knowledge_proposals._authorize_knowledge_query",
             return_value=hidden,
         ):
+            hidden_connection = _Connection(proposals, concepts)
             hidden_only = read_coordinator_evidence_in_transaction(
-                _Connection(proposals, concepts),  # type: ignore[arg-type]
+                hidden_connection,  # type: ignore[arg-type]
                 _request(),
                 principal=_principal(),
             )
@@ -321,6 +322,12 @@ class CoordinatorKnowledgeProposalTests(unittest.TestCase):
             )
 
         self.assertEqual(hidden_only.to_wire(), absent.to_wire())
+        self.assertFalse(
+            any(
+                "FROM yap_knowledge_concepts c" in statement
+                for statement, _values in hidden_connection.executions
+            )
+        )
 
     def test_reader_ranks_all_owner_proposals_before_applying_the_eight_item_cap(
         self,
