@@ -10,6 +10,16 @@ native/server workflow merged through PR #164 as `ec3af506...`. Simultaneous
 full-profile residency, sustained capacity, later workflows, and production
 operations evidence remain open.
 
+The current development branch contains an unqualified successor that derives
+active route limits from the immutable service profiles (four rapid, eight
+complex) while retaining Server IO at one and one active request per owner
+globally. Because that work changes protected broker/profile inputs, it requires
+fresh exact-head route and affected-workflow qualification, a replacement
+public lock, hosted review, and merge. Until those close, the one-slot exact-head
+contract documented below remains the qualified merged runbook boundary. Do not
+use the candidate limits as sustained-capacity, simultaneous-residency, or
+production-SLO evidence.
+
 ## Ownership and safety boundary
 
 | Layer | Sole owner |

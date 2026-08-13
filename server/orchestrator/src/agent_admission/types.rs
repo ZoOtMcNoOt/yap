@@ -11,6 +11,7 @@ pub struct ProviderRouteIdentity {
     pub(super) service: ProviderService,
     pub(super) profile_sha256: String,
     pub(super) candidate_lock_sha256: String,
+    pub(super) active_capacity: usize,
 }
 
 impl ProviderRouteIdentity {
@@ -18,8 +19,12 @@ impl ProviderRouteIdentity {
         service: ProviderService,
         profile_sha256: String,
         candidate_lock_sha256: String,
+        active_capacity: usize,
     ) -> Result<Self, OrchestratorError> {
-        if !is_lower_sha256(&profile_sha256) || !is_lower_sha256(&candidate_lock_sha256) {
+        if !is_lower_sha256(&profile_sha256)
+            || !is_lower_sha256(&candidate_lock_sha256)
+            || !(1..=64).contains(&active_capacity)
+        {
             return Err(OrchestratorError::new(
                 "provider admission identity is invalid",
             ));
@@ -28,6 +33,7 @@ impl ProviderRouteIdentity {
             service,
             profile_sha256,
             candidate_lock_sha256,
+            active_capacity,
         })
     }
 }

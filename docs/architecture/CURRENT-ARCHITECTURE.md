@@ -11,14 +11,15 @@ private qualification gate with public-safe semantic evidence SHA-256
 `5e187ed4f33e7a84c53824afb5a2af4b5ad0afcb3b7b7b36cb0b01692c74b3cb`.
 Hosted-green head `bc9a88bc...` passed all 12 checks and PR #164 merged Scribe
 as `ec3af506...`. Hosted-green head `e1899db7...` passed all 12 checks and PR
-#165 merged the no-LLM Archivist ingestion core as `2a7ec819...`. The current
-Student topic-copy prompt repair is complete-portable-test green and privately
-qualified at exact head `428d6e48...` on the unchanged full Qwen rapid profile,
-with public-safe evidence SHA-256 `f597cca7...`. Hosted merge and product
-exposure remain open; exact predecessor `0970d74c...` remains terminal
-`deterministic-no-student` evidence.
-Later Phase 10 roles and capacity/operations layers are not part of the merged
-baseline. Phase 7
+#165 merged the no-LLM Archivist ingestion core as `2a7ec819...`. Exact Student
+head `428d6e48...` passed its private qualification on the unchanged full Qwen
+rapid profile with public-safe evidence SHA-256 `f597cca7...`; hosted-green
+head `b03c6e79...` passed all 12 checks and PR #166 merged the internal core as
+`2254605e...`. Student product exposure remains open; exact predecessor
+`0970d74c...` remains terminal `deterministic-no-student` evidence. The current
+Curator and profile-capacity successor are unqualified development candidates,
+not part of the merged baseline. Later Phase 10 roles and capacity/operations
+layers remain open. Phase 7
 implements provider-neutral
 OIDC verification with Entra policy, fail-closed authentication, tenant-scoped
 ownership, authenticated bounded private WebSocket admission, and the native
@@ -1023,7 +1024,7 @@ portable server suite plus real PostgreSQL retry/restart/cross-owner/cancel and
 zero-residue checks; hosted-green head `e1899db7...` passed all 12 checks and PR
 #165 merged the core as `2a7ec819...`. It has no HTTP/native/UI exposure.
 
-The unmerged Student core is a separate BACKGROUND_LLM workflow on the rapid
+The merged internal Student core is a separate BACKGROUND_LLM workflow on the rapid
 route. It reads one authenticated owner-scoped permission-safe conversation
 generation, accepts only bounded topic text, and requests bounded learning
 questions. The model sees ordered evidence indexes and text and returns exactly
@@ -1063,7 +1064,9 @@ swaps, substitutes, or reduces a model. Exact head `428d6e48...` returned
 `student-learning-questions-qualified` with public-safe evidence SHA-256
 `f597cca7...`: all eight owners completed, the unchanged warm profile and broker
 held, PostgreSQL restart/cross-owner/durable audits were exact, and six-part
-teardown completed. Hosted merge remains open. See the
+teardown completed. Hosted-green head `b03c6e79...` then passed all 12 checks
+and PR #166 merged the internal core as `2254605e...`. Product exposure remains
+open. See the
 [public verification record](../evidence/student-learning/VERIFICATION.md).
 
 The current multi-user contract is one warm Qwen rapid lane with owner-fair
@@ -1073,6 +1076,18 @@ queue-inclusive workflow deadlines. Private Scribe and exact `428d6e48...`
 Student qualification each synchronized eight distinct owners through that
 warm generation; neither proves eight parallel GPU executions or sustained
 capacity.
+
+The current development branch contains a profile-capacity admission successor
+that derives active limits from the immutable rapid and complex profiles (four
+and eight) while preserving one active request per owner. It also contains an
+explicit-submission-only Curator candidate that can publish only a noncanonical
+proposal and cannot activate knowledge or mutate source truth. These candidates
+have no exact-head route/workflow qualification, public lock, hosted review, or
+merge. Until fresh evidence closes, the one-active-slot-per-route contract above
+remains the qualified merged boundary. Configured profile limits and an
+owner-synchronized wave do not prove simultaneous Qwen/Gemma residency,
+sustained capacity, production p95/p99, or deployment readiness.
+
 Simultaneous route residency, sustained multi-owner capacity/fairness,
 production p95/p99,
 observability, and deployment remain later gates. If one node cannot satisfy

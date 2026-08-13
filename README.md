@@ -4,13 +4,15 @@ Yap is a private, desktop-first transcription system: a Tauri/React client with
 an explicit local live fallback and a durable batch path to a private GPU
 server.
 
-Phases 1–7 and the post-MVP Architecture Checkpoint A are merged. Phase 7 added
-provider-neutral OIDC token validation and tenant-scoped `(tid, oid)` ownership
-across jobs, results, REST, and WSS. Two things it carried are gated rather than
-live: the purpose-grant and revocation layer has no HTTP or operator entry point,
-and the desktop production token adapter fails closed, so only
-`YAP_AUTH_MODE=development_loopback` runs end to end. Diarization, knowledge, and
-enterprise deployment are not pulled forward.
+Phases 1–9 and the post-phase architecture checkpoints are merged. Phase 10 has
+also merged the Rust-owned supervised-provider lifecycle, immutable Qwen/Gemma
+profiles, bounded already-warm admission, Scribe transcript correction, the
+no-LLM Archivist core, and the internal Student learning-question core through
+PR #166. Student has no HTTP, native, or renderer surface. The current Curator
+and profile-capacity successor are unqualified development work, not part of
+the merged or promoted boundary. Production identity, simultaneous full-profile
+residency, sustained capacity, enterprise deployment, and the remaining role
+workflows stay explicitly gated.
 
 Start with [current status](docs/CURRENT-STATUS.md). It states what executes,
 what is verified, what is still absent, and what happens next.
@@ -36,23 +38,25 @@ what is verified, what is still absent, and what happens next.
   Python 3.12, the locked NVIDIA Torch/CUDA stack, and transient raw
   Transformers inference. It remains the correctness/rollback baseline rather
   than a persistent serving engine.
-- On the active branch, Cohere batch has a digest-pinned NVIDIA vLLM 26.06
-  candidate behind the same bounded worker contract. Nemotron retains its
-  Transformers correctness path and has a separate resident NeMo finalized-ASR
-  candidate. Their checked launchers keep each container on an exact-head
-  internal Docker bridge with no published port or external egress, then expose
-  it through one bounded launcher-owned proxy on numeric host loopback. A
-  sequential lifecycle-gate wrapper composes the exact-head provider checks;
-  admitted results and their limits are recorded in `docs/CURRENT-STATUS.md`.
-  Candidate-safety evidence does not itself promote either provider. SGLang
-  remains the later agent/LLM execution plane, not an ASR route.
+- Cohere batch has a digest-pinned NVIDIA vLLM candidate behind the bounded
+  worker contract. Nemotron retains its Transformers correctness path and a
+  separate resident NeMo finalized-ASR candidate. Their checked launchers keep
+  each container on an exact-head internal bridge with no published provider
+  port or external egress. Candidate-safety evidence does not itself promote
+  either ASR provider.
+- The merged team agent plane uses hash-locked Qwen rapid-automation and Gemma
+  complex-orchestration vLLM routes with no cross-route fallback. Scribe is the
+  only current desktop-facing LLM workflow. Archivist and Student are bounded
+  internal cores; Curator and the profile-capacity admission successor remain
+  unqualified current work.
 - Result identity, hashes, paths, sizes, authority, and transcript bytes are
   verified natively before History presents completion.
 
 WSS/live server transcription, general media conversion, production
 authentication, persistent multi-user service, enterprise DNS/certificates/
-firewall/ZPA, diarization, and knowledge/agent features are later gates—not
-hidden current capabilities.
+firewall/ZPA, promoted diarization, simultaneous full-profile residency,
+sustained capacity/SLOs, and the remaining agent product surfaces are later
+gates—not hidden current capabilities.
 
 ## Repository map
 

@@ -8,20 +8,21 @@ product
 
 Privacy-conscious people who need accurate text from audio or video files — journalists transcribing interviews, researchers working through field recordings, podcasters, students, and anyone who batch-processes media without sending it to a third-party cloud.
 
-They usually arrive with files already on disk (MP3, M4A, WAV, MP4, and similar formats). Live capture is explicit and secondary, used for local/offline fallback or saved sessions, not always-listening dictation. Context is focused work: drop files, wait for trusted transcription, review and export text, occasionally polish wording before sharing. They care that the current route is clear: local fallback stays on this device; team/server mode uses org-owned GB-class hardware, not third-party cloud.
+They usually arrive with files already on disk (MP3, M4A, WAV, MP4, and similar formats). Live capture is explicit and secondary, used for local/offline fallback or saved sessions, not always-listening dictation. Context is focused work: drop files, wait for trusted transcription, review and export text, and optionally review source-bound corrections before sharing. They care that the current route is clear: local fallback stays on this device; team/server mode uses org-owned GB-class hardware, not third-party cloud.
 
 ## Product Purpose
 
 Yap is a desktop transcription app (Tauri + React in `desktop/`). The current desktop implementation records and transcribes explicit live sessions locally with Nemotron 3.5 ASR Streaming 0.6B INT8 through in-process `sherpa-onnx`. The merged Phase 5 path also transcribes already-canonical mono PCM16/16 kHz WAV imports through the durable private-server contract and publishes only natively verified results. Disconnected imports remain queued or blocked instead of receiving official-looking fallback output. General audio/video decoding and conversion remain the target product experience but are not advertised as current executable support.
 
-The target product loop is files in, accurate transcripts out, with minimal friction between drop → durable queue → private server transcript → copy/export. Until that connected path lands, the implemented offline loop is explicit live capture → local transcript → history/playback/copy or reveal. The interface should make the current file and its transcript the center of attention; model names, auth paths, and runner details stay in secondary status unless something needs attention.
+The target product loop is files in, accurate transcripts out, with minimal friction between drop → durable queue → private server transcript → copy/export. The connected path currently accepts already-canonical mono PCM16/16 kHz WAV files; general audio/video decoding and conversion remain open. The supported offline loop is explicit live capture → local transcript → history/playback/copy or reveal. The interface should make the current file and its transcript the center of attention; model names, auth paths, and runner details stay in secondary status unless something needs attention.
 
 Current production navigation:
 
 - **Home** — hub with recent transcripts and a quick path back into work
 - **Transcribe** — the workbench: drop zone, queue, progress, and live transcript preview
+- **Correct** — manual source-bound transcript correction with original/corrected review and explicit revision publication
 
-Transcript history currently lives on Home; there is no separate Transcripts navigation item or dedicated export command yet. A development-only, opt-in Polish surface exists but is hidden from production builds. A later product slice may split history into its own destination and promote Polish only after a governed LLM route exists.
+Transcript history currently lives on Home; there is no separate Transcripts navigation item or dedicated export command yet. Correct uses the merged authenticated Scribe route on a connected organization server. It preserves raw ASR, shows the original and proposed correction together, and publishes only an explicitly accepted separate revision. Remote failure leaves the raw transcript unchanged. Student and Curator have no current desktop product surface.
 
 This is not live-only dictation or a Wispr Flow clone. Batch recordings remain the target core loop once the trusted server route exists; live capture is the implemented compact, explicit companion path.
 
@@ -50,7 +51,7 @@ Emotional goal: users trust the visible route — local fallback on this device,
 
 ## Design Principles
 
-1. **Drop audio, get text.** Every screen should reinforce the core loop; secondary capabilities (polish, history, setup) support it, they don't compete with it.
+1. **Drop audio, get text.** Every screen should reinforce the core loop; secondary capabilities (correction, history, setup) support it, they don't compete with it.
 2. **The transcript is the reward.** When transcription completes, the text surface becomes the hero; copy and reveal actions stay adjacent to the content, with dedicated export remaining a target capability.
 3. **Trusted route, stated simply.** Say "Private on this device" for local fallback and "Org server" for team/server work — not implementation details — unless an error requires technical context.
 4. **One primary action per state.** Empty → drop; queued → wait for the trusted route; running → progress + cancel; done → read, copy, or reveal. Avoid competing primary buttons.

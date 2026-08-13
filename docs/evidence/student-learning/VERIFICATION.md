@@ -1,8 +1,11 @@
 # Student learning-question verification
 
 **Status:** Exact head `428d6e48690621cc2242944c049e06ccfd2e45e2`
-is complete-portable-test green and privately qualified. Hosted review, merge,
-HTTP/native/UI exposure, Curator integration, and the aggregate Phase 10 gate
+is complete-portable-test green and privately qualified. Hosted-green head
+`b03c6e79f19bad451437c3f0c495daa67bb7171f` passed all 12 required checks and
+PR #166 merged the internal core as
+`2254605ed19a592d2db1747d576762ccf11a5cc0`. HTTP/native/UI exposure, Curator
+integration, the profile-capacity successor, and the aggregate Phase 10 gate
 remain pending.
 
 ## Current candidate contract
@@ -65,6 +68,11 @@ remain pending.
 - This qualifies only the internal bounded Student core. It does not prove
   HTTP/native/UI integration, sustained multi-user capacity, simultaneous
   Qwen/Gemma residency, production SLOs, or deployment readiness.
+- Exact hosted head `b03c6e79f19bad451437c3f0c495daa67bb7171f`
+  passed all 12 required checks and PR #166 merged the internal core as
+  `2254605ed19a592d2db1747d576762ccf11a5cc0`. The hosted closure does not add a
+  product surface or extend the exact `428d6e48...` private receipt to later
+  broker/model-client changes.
 
 ## Terminal private evidence
 
@@ -120,12 +128,15 @@ output cap, timeout, queue bound, or acceptance threshold.
 
 ## Deliberate limits
 
-Student remains an unmerged internal core. There is no Student HTTP endpoint,
-native adapter, renderer/UI workflow, user review surface, or production
-deployment. Current evidence does not prove sustained multi-owner throughput,
+Student is a merged internal core. There is no Student HTTP endpoint, native
+adapter, renderer/UI workflow, user review surface, or production deployment.
+The current development branch's profile-capacity admission successor changes
+protected broker/model-client inputs and requires fresh exact-head route and
+affected-workflow qualification; this historical receipt cannot be relabeled
+for that successor. Current evidence does not prove sustained multi-owner throughput,
 route p95/p99 SLOs, simultaneous full Qwen/Gemma residency, a two-node warm
-topology, the five remaining workflows (Curator, Auditor, Librarian, Analyst,
-and Coordinator), or aggregate Phase
+topology, the unqualified Curator candidate, the four later workflows (Auditor,
+Librarian, Analyst, and Coordinator), or aggregate Phase
 10 completion. The current single Spark keeps the unchanged full Qwen rapid
 route warm for this work; full-strength two-route promotion requires a second
 owned GPU node and private routing rather than throttling or model swapping.

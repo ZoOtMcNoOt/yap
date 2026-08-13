@@ -8,8 +8,6 @@ use super::{
 };
 use crate::agent_work::{AgentWorkRequest, ExecutionRoute, SchedulingClass, WorkOwner};
 
-const ACTIVE_CAPACITY_PER_ROUTE: usize = 1;
-
 impl AgentAdmissionScheduler {
     pub(super) fn expire(&mut self, observed_at: Duration) -> Vec<AdmissionEvent> {
         let expired_pending = self
@@ -46,7 +44,7 @@ impl AgentAdmissionScheduler {
         observed_at: Duration,
         events: &mut Vec<AdmissionEvent>,
     ) {
-        while self.active_on_route(route) < ACTIVE_CAPACITY_PER_ROUTE {
+        while self.active_on_route(route) < self.active_capacity(route) {
             let Some(request_id) = self.pop_weighted(route) else {
                 return;
             };
@@ -60,15 +58,17 @@ impl AgentAdmissionScheduler {
         events: &mut Vec<AdmissionEvent>,
     ) {
         let route = ExecutionRoute::ComplexOrchestration;
-        if self.active_on_route(route) >= ACTIVE_CAPACITY_PER_ROUTE {
-            return;
-        }
-        let active_owners = self.active_owners();
-        let request_id = self
-            .queues
-            .get_mut(&(route, SchedulingClass::IdleOnly))
-            .and_then(|queue| queue.pop_dispatchable(&active_owners));
-        if let Some(request_id) = request_id {
+        while self.non_idle_work_is_absent()
+            && self.active_on_route(route) < self.active_capacity(route)
+        {
+            let active_owners = self.active_owners();
+            let request_id = self
+                .queues
+                .get_mut(&(route, SchedulingClass::IdleOnly))
+                .and_then(|queue| queue.pop_dispatchable(&active_owners));
+            let Some(request_id) = request_id else {
+                return;
+            };
             self.admit_or_reject(request_id, observed_at, events);
         }
     }

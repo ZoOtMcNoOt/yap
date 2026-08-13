@@ -2,13 +2,13 @@
 
 **Status:** Active; Slices 10.1, 10.2, the bounded-admission foundation, Scribe
 transcript correction, and the no-LLM Archivist core merged through PRs #155,
-#157, #158, #164, and #165. Student's topic-copy prompt repair is
-complete-portable-test green and privately qualified at exact `428d6e48...` on
-the unchanged full Qwen profile, with public-safe evidence SHA-256
-`f597cca7...`. Exact `0970d74c...` remains terminal
-`deterministic-no-student`. Hosted
-merge/product exposure, later workflows, simultaneous full-profile capacity,
-and production promotion remain open.
+#157, #158, #164, and #165. Student's exact `428d6e48...` topic-copy prompt
+repair is privately qualified on the unchanged full Qwen profile with
+public-safe evidence SHA-256 `f597cca7...`; hosted-green head `b03c6e79...`
+passed all 12 checks and PR #166 merged the internal core as `2254605e...`.
+Exact `0970d74c...` remains terminal `deterministic-no-student`. Student product
+exposure, the unqualified Curator/profile-capacity successors, later workflows,
+simultaneous full-profile capacity, and production promotion remain open.
 
 **Base:** merged post-Phase-9 maintainability closure
 `fc8a16510fa27514db244eb641dea582918a940b` from
@@ -126,6 +126,15 @@ aggregate head `135cc2ba...` passed semantic admission, 169 portable tests,
 Ruff, 17 Postgres tests, real restart/retrieval/stale/successor proof, unchanged
 desktop scope, and exact teardown. Hosted-green head `cf1e69a4...` then passed
 all 12 required checks and merged through PR #158 as `84d95842...`.
+
+The current development branch contains a profile-capacity admission successor
+that derives four rapid and eight complex active limits from the immutable full
+profiles while retaining Server IO at one and one active request per owner
+globally. It changes protected broker/profile/model-client inputs and has no
+exact-head route or affected-workflow qualification, replacement public lock,
+hosted review, or merge. The one-slot evidence above remains exact historical
+evidence for the merged scheduler; configured successor limits are not
+simultaneous-residency, sustained-capacity, or production-SLO evidence.
 
 The merged exact-qualified Scribe workflow is the first consumer of that admission
 owner. Native code acquires one authenticated connector lease, submits bounded

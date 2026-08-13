@@ -1,6 +1,6 @@
 # ADR 0031: Eight-agent Voice OS roster and execution boundaries
 
-**Status:** Accepted target; service profiles, bounded admission, Scribe, and Archivist merged; Student privately qualified and awaiting hosted merge; remaining workflows and promotion pending
+**Status:** Accepted target; service profiles, bounded admission, Scribe, Archivist, and the internal Student core merged; Curator/profile-capacity successor and remaining workflows pending qualification and promotion
 **Date:** 2026-08-11
 **Deciders:** Yap product and engineering owner
 **Amends:** [ADR 0006](0006-silero-agents-state-machine.md),
@@ -37,9 +37,19 @@ complete-portable-test-green topic-copy prompt repair on the already-warm full Q
 rapid route. Exact `428d6e48...` returned
 `student-learning-questions-qualified` with public-safe evidence SHA-256
 `f597cca7...`; exact predecessor `0970d74c...` remains terminal
-`deterministic-no-student`. Hosted merge and product exposure remain open.
-The five remaining workflows—Curator, Auditor, Librarian, Analyst, and
-Coordinator—remain pending.
+`deterministic-no-student`. Hosted-green head `b03c6e79...` passed all 12 checks
+and PR #166 merged the internal core as `2254605e...`; product exposure remains
+open. Curator is current unqualified development work. The four later
+workflows—Auditor, Librarian, Analyst, and Coordinator—remain pending.
+
+The current development branch also contains a profile-capacity admission
+successor that derives four rapid and eight complex active limits from the
+immutable full profiles while retaining one active request per owner. It
+changes protected qualification inputs and has no exact-head route/workflow
+qualification, replacement public lock, hosted review, or merge. The merged
+one-slot evidence remains historical and authoritative for its exact head; the
+candidate limits are not sustained-capacity, simultaneous-residency, or
+production-SLO evidence.
 
 Calling the foundations "the agent team" would be incorrect. Conversely,
 implementing eight unrelated prompts would duplicate authority, bypass
@@ -99,8 +109,11 @@ product workflow, not an autonomous identity and not a generic chat agent.
 
 ### Scheduling classes
 
-- **HOT:** Scribe only. One admitted request. Its product deadline includes
-  queueing and inference; deadline failure yields raw ASR.
+- **HOT:** Scribe only. Its product deadline includes queueing and inference;
+  deadline failure yields raw ASR. Admission is bounded by the exact ready
+  rapid profile and one-active-per-owner rule. The merged qualified scheduler
+  used one active slot; the current four-slot profile-capacity successor remains
+  unqualified.
 - **INTERACTIVE:** Librarian reads and user-requested Analyst work. Interactive
   work may pause new background admission but does not cancel accepted durable
   work without an acknowledged transition.
@@ -222,9 +235,10 @@ does not prove product exposure or sustained capacity. Exact
 `476f7a9c...` returned terminal `deterministic-no-student` with public-safe
 evidence SHA-256 `9c2f68ff...`; six of eight cases completed while the warm
 provider/broker, queue wave, database boundaries, and teardown held. Hosted
-merge, product exposure, warm simultaneous two-route
-residency, the five remaining workflows (Curator, Auditor, Librarian, Analyst,
-and Coordinator), sustained multi-owner capacity,
+head `b03c6e79...` passed all 12 checks and PR #166 merged the internal core as
+`2254605e...`. Product exposure, the unqualified Curator and profile-capacity
+candidates, warm simultaneous two-route residency, the four later workflows
+(Auditor, Librarian, Analyst, and Coordinator), sustained multi-owner capacity,
 and production promotion remain open.
 
 ## Consequences

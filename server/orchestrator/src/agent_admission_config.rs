@@ -113,11 +113,13 @@ where
         ProviderService::RapidAutomation,
         rapid.profile_sha256().to_owned(),
         rapid.candidate_lock_sha256().to_owned(),
+        usize::from(rapid.maximum_sequences()),
     )?;
     let complex_identity = ProviderRouteIdentity::new(
         ProviderService::ComplexOrchestration,
         complex.profile_sha256().to_owned(),
         complex.candidate_lock_sha256().to_owned(),
+        usize::from(complex.maximum_sequences()),
     )?;
     AgentAdmissionScheduler::new(rapid_identity.clone(), complex_identity.clone())?;
 

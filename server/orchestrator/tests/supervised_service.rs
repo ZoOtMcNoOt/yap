@@ -318,6 +318,7 @@ impl TestFixture {
             "rapid-automation".to_owned(),
             "1".repeat(64),
             "2".repeat(64),
+            4,
         )
         .unwrap();
         SupervisedServiceConfig::new(

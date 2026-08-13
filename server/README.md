@@ -611,6 +611,16 @@ configuration, state, and verification details are in the
 [provider supervisor runbook](../docs/runbooks/provider-supervisor-service.md)
 and [agent admission runbook](../docs/runbooks/agent-admission-service.md).
 
+The current development branch contains a profile-capacity successor that
+derives active route limits from the immutable service profiles: four rapid and
+eight complex, with Server IO remaining one and one active request per owner
+remaining global. This changes protected broker, profile, model-client, and
+fixture inputs. It has no exact-head route/workflow qualification, replacement
+public lock, hosted review, or merge, so the exact one-slot evidence above
+remains the qualified merged boundary. The configured limits do not prove
+simultaneous Qwen/Gemma residency, sustained capacity/fairness, production
+p95/p99, or deployment.
+
 ## Scribe transcript correction
 
 The first merged product consumer of the broker is the authenticated
@@ -775,8 +785,10 @@ successor also passed the complete portable server suite at 1,241 total tests:
 All eight distinct owners completed with one grounded question each and zero
 terminal failures. The full warm profile, provider generation, broker,
 PostgreSQL restart/cross-owner/audit boundaries, and six-part teardown remained
-exact. This proves the bounded internal core, not product exposure or sustained
-capacity; hosted review and merge remain pending.
+exact. Hosted-green head `b03c6e79f19bad451437c3f0c495daa67bb7171f`
+then passed all 12 required checks and PR #166 merged the internal core as
+`2254605ed19a592d2db1747d576762ccf11a5cc0`. This proves the bounded
+internal core, not product exposure or sustained capacity.
 
 Exact head `0970d74c7961a63bd1b2366bc0ecef6b5fc55714` returned terminal
 `deterministic-no-student` evidence with public-safe SHA-256
@@ -814,11 +826,27 @@ behavior, queue bound, timeout, or acceptance threshold.
 
 The [public verification record](../docs/evidence/student-learning/VERIFICATION.md)
 contains the exact public-safe identities and limits. Student still has no HTTP
-endpoint, native adapter, renderer/UI workflow, hosted merge, or production
-promotion. A second owned GPU node/private route remains required before both
+endpoint, native adapter, renderer/UI workflow, or production promotion. A
+second owned GPU node/private route remains required before both
 unchanged full Qwen and Gemma services can be kept warm together. Student does
 not reduce the pinned full profile, and request-time model swapping remains
 prohibited.
+
+## Curator knowledge-proposal candidate
+
+The current development branch also contains an internal Curator candidate. It
+accepts only an explicit proposal or reviewed Student answer, re-reads every
+citation through the server's permission-safe generation owner, and asks the
+already-warm complex route for one bounded propose/reject decision. A proposed
+result may append only a noncanonical `KnowledgeProposal`; Curator cannot
+compile, stage, activate, or otherwise mutate source truth or active knowledge.
+
+This candidate has no exact-head private qualification, public verification
+record, hosted review, merge, HTTP/native/UI integration, or production
+promotion. Its frozen acceptance plan and synchronized owner wave are inputs to
+future evidence, not proof of active capacity or successful qualification.
+Invalid/stale evidence, model rejection, cancellation, timeout, provider loss,
+capacity, or audit/write failure publishes no successful proposal.
 
 ## Local checks
 

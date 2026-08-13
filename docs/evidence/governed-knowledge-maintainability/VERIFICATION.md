@@ -1,8 +1,9 @@
 # Governed Knowledge Maintainability Verification
 
-This record separates inherited merged evidence, focused repair checks, and the
-one complete checkpoint gate. It remains incomplete until the reviewed
-checkpoint candidate merges.
+This record separates inherited merged evidence, focused repair checks, the
+completed and hosted-merged Phase 9 checkpoint gate, and the current staged
+Phase 10 public read-back. The Curator/profile-capacity successor is not yet a
+reviewed, privately qualified, hosted-green, or merged checkpoint.
 
 ## Inherited Phase 9 evidence
 
@@ -170,7 +171,8 @@ environment and Python 3.12.
   durable-write curated authorization, strict nested MCP inputs, exact
   database-worker cancellation acknowledgement, and shared evaluator/product
   tool bounds.
-- From the repository root,
+- At the previously recorded Phase 10 Student candidate snapshot, from the
+  repository root,
   `pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ./verification/list-maintainability-threshold-surfaces.ps1 -MinimumLines 250 -Json`
   enumerated 527 tracked regular surfaces: 287 at or above 350 lines and 240
   from 250 through 349. A read-back comparison of the 350-line output against
@@ -493,3 +495,32 @@ CodeQL lane. PR #153 merged it as
 `ca151b1b45be3b98e4c56c6ea2b89446eeaa8814`. Production supervision,
 simultaneous model residency, sustained mixed-owner capacity/SLOs, enterprise
 networking, and deployment remain Phase 10 or explicit IT/security handoffs.
+
+## Current Phase 10 Curator/profile-capacity candidate public read-back
+
+The current staged successor has the following public test read-back.
+It is not an exact committed head and no private Curator, Scribe, Student, route,
+or aggregate-checkpoint evidence is attributed to it.
+
+- `./verification/test-portable-python-server.ps1` ran 1,281 tests: 1,244
+  passed and 37 declared platform/capability skips, with no failure.
+- From `server`, with `PYTHONPATH=src`,
+  `uv run --locked python ../verification/run-governed-knowledge-portable-suite.py`
+  ran its fixed 171-test membership: 167 passed and four declared skips, with
+  no failure. This public child set does not run or imply the private Curator
+  qualification, required-real-PostgreSQL lane, provider lifecycle, or route
+  model evidence.
+- From the repository root,
+  `pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ./verification/list-maintainability-threshold-surfaces.ps1 -MinimumLines 250 -Json`
+  enumerated 541 tracked regular surfaces: 297 at or above 350 lines and 244
+  from 250 through 349. The separately generated 350-line output is reproduced
+  exactly in [THRESHOLD-DISPOSITION.md](THRESHOLD-DISPOSITION.md).
+
+The public contracts cover the Curator explicit-submission workflow,
+noncanonical proposal and durable-result boundaries, exact rapid-four and
+complex-eight profile-derived broker limits, one active request per owner, and
+the live qualification probes that hold the selected route at its limit, queue
+one additional owner, contain every probe lease, and require unchanged provider
+and broker identities. They do not demonstrate simultaneous Qwen/Gemma
+residency, sustained multi-user throughput, a production SLO, hosted review or
+merge, product exposure, deployment, or a qualifying private Curator outcome.

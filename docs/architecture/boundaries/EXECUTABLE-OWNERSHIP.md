@@ -913,6 +913,15 @@ PR #158 as `84d95842...`. The merged Scribe workflow below is its first product
 consumer. Simultaneous residency, sustained capacity, and production promotion
 remain open.
 
+The current development branch changes protected admission inputs so active
+capacity is derived from the immutable service profiles: four for rapid
+automation and eight for complex orchestration, while Server IO remains one and
+one active request per owner remains global. That successor has no exact-head
+route/workflow qualification, public lock, hosted review, or merge. The exact
+one-slot evidence above remains the qualified merged boundary; configured
+profile capacity is not sustained-throughput, simultaneous-residency, or
+production-SLO evidence.
+
 ### 27. Scribe transcript correction
 
 - **Entry point:** native commands in `desktop/src-tauri/src/transcript_correction/`
@@ -1028,8 +1037,32 @@ subject was absent from its exact quote/evidence; the server rejected it. The
 current prompt/test repair changes protected inputs and is complete-portable-
 test green and privately qualified at exact head `428d6e48...` on the unchanged
 full Qwen rapid profile, with public-safe evidence SHA-256 `f597cca7...`.
-Hosted merge and an
-HTTP/native/UI surface remain open.
+Hosted-green head `b03c6e79...` passed all 12 required checks and PR #166 merged
+the internal core as `2254605e...`. An HTTP/native/UI surface remains open.
+
+### 30. Curator knowledge-proposal candidate
+
+- **Status:** current unqualified development candidate; no exact qualification,
+  public verification record, hosted review, merge, HTTP/native/UI surface, or
+  production promotion exists.
+- **Entry point:** `yap_server/agents/curator_service.py` owns an internal
+  complex-route workflow for only `explicit-proposal` and
+  `reviewed-student-answer` submissions.
+- **Authoritative owner:** the server re-reads each submitted citation from the
+  authenticated permission-safe generation. The model may return only a
+  bounded propose/reject decision; it cannot supply citation authority or
+  activate knowledge.
+- **Persisted state:** `curator_publisher.py` may atomically append one
+  noncanonical `KnowledgeProposal` plus its audit identity. Proposal state is
+  proposed or discarded and is not an active generation, compiled source, or
+  mutation of reviewed source truth.
+- **Failure/recovery:** invalid/stale evidence, cross-owner access, model
+  rejection, cancellation, deadline, provider loss, capacity, and audit/write
+  failure publish no successful proposal. Exact retries must replay the same
+  durable terminal outcome.
+- **Duplicate owner:** none. Permission-safe retrieval owns evidence;
+  `CuratorService` owns the workflow; the existing proposal ledger owns
+  noncanonical proposal state; activation remains outside Curator.
 
 ## Persistent-state owners
 

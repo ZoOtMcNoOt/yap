@@ -244,9 +244,13 @@ topic-copy prompt repair is complete-portable-test green on the unchanged full
 Qwen rapid profile at 1,241 tests (1,207 passed and 34 declared skips). Exact
 head `428d6e48...` then returned `student-learning-questions-qualified` with
 public-safe evidence SHA-256 `f597cca7...`; exact `0970d74c...` remains terminal
-`deterministic-no-student`. Student hosted
-review/product exposure and the five remaining workflows (Curator, Auditor,
-Librarian, Analyst, and Coordinator) remain open. One
+`deterministic-no-student`. Hosted-green head `b03c6e79...` passed all 12 checks
+and PR #166 merged the internal Student core as `2254605e...`; product exposure
+remains open. The current Curator and profile-capacity successors are
+unqualified development candidates, and the four later workflows (Auditor,
+Librarian, Analyst, and Coordinator) remain open. The successor changes
+protected route/workflow inputs and requires fresh exact-head qualification;
+its configured four/eight route limits are not capacity evidence. One
 Spark cannot retain both
 unchanged full profiles simultaneously, so warm two-route promotion requires a
 second owned GPU node/private routing rather than throttling or model swapping.

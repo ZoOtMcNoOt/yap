@@ -33,7 +33,11 @@ class TranscriptCorrectionQualificationGateTests(unittest.TestCase):
                 "server/src/yap_server/knowledge/terminology_ledger.py",
                 "server/orchestrator/src/agent_admission.rs",
                 "server/orchestrator/src/agent_admission/dispatch.rs",
+                "server/orchestrator/src/agent_admission_config.rs",
                 "server/orchestrator/src/bin/yap-agent-admission-broker.rs",
+                "server/orchestrator/src/service_profile.rs",
+                "server/orchestrator/tests/supervised_service.rs",
+                "server/orchestrator/tests/support/mod.rs",
                 "server/tests/evaluation/test_transcript_correction_qualification.py",
                 "server/tests/evaluation/test_transcript_correction_qualification_gate.py",
             }.issubset(relative)

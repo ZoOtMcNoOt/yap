@@ -901,9 +901,13 @@ unconfigured.
   topic-copy prompt repair is complete-portable-test green and privately
   qualified at exact `428d6e48...` on the unchanged full Qwen rapid profile,
   with public-safe evidence SHA-256 `f597cca7...`. Exact `0970d74c...` remains
-  terminal `deterministic-no-student`. Student hosted merge/product exposure and the five
-  remaining workflows (Curator, Auditor, Librarian, Analyst, and Coordinator)
-  remain open.
+  terminal `deterministic-no-student`. Hosted-green head `b03c6e79...` passed
+  all 12 checks and PR #166 merged the internal Student core as `2254605e...`;
+  product exposure remains open. The current Curator and profile-capacity
+  successors are unqualified development candidates. The four later workflows
+  (Auditor, Librarian, Analyst, and Coordinator) remain open. Their configured
+  route limits and acceptance plans are not current qualification or capacity
+  evidence.
 - Integrate the remaining provider-specific ASR and vLLM agent/LLM workflows
   with Yap-owned Rust orchestration, health, backpressure, cancellation,
   restart, and metrics.

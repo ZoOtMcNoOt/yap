@@ -172,6 +172,7 @@ class TranscriptCorrectionModel:
                 },
             ],
             "temperature": 0.0,
+            "n": 1,
             "max_tokens": self._maximum_output_tokens,
             "chat_template_kwargs": {"enable_thinking": False},
             "response_format": {

@@ -109,9 +109,9 @@ than adding a second container owner. This option is selected.
   provider or auto-restart after losing lease state. Replacement qualification
   admitted both routes; public-lock/aggregate head `135cc2ba...` passed the
   complete admission-slice gate, and PR #158 merged it. Scribe is the first
-  candidate consumer; exact head `e5858424...` passed its private gate with
-  public-safe semantic evidence SHA-256 `5e187ed4...`. Its hosted merge remains
-  pending.
+  product consumer; exact head `e5858424...` passed its private gate with
+  public-safe semantic evidence SHA-256 `5e187ed4...`, and hosted-green head
+  `bc9a88bc...` merged through PR #164 as `ec3af506...`.
 
 ## Action items
 

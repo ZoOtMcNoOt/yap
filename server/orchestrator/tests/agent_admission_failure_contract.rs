@@ -12,7 +12,7 @@ use yap_server_orchestrator::{
 fn invalid_provider_identity_is_contained_and_reported_on_the_next_dispatch() {
     let mut scheduler = ready_scheduler();
     let active = work(0, "alice", AgentRole::Scribe, Duration::from_secs(60));
-    let queued = work(1, "bob", AgentRole::Scribe, Duration::from_secs(60));
+    let queued = work(1, "alice", AgentRole::Scribe, Duration::from_secs(60));
     scheduler.submit(active.clone(), Duration::ZERO);
     scheduler.submit(queued.clone(), Duration::ZERO);
     scheduler.dispatch(Duration::ZERO);

@@ -72,6 +72,7 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
 
         self.assertEqual(len(requests), 2)
         self.assertEqual([item["max_tokens"] for item in requests], [64, 64])
+        self.assertEqual([item["n"] for item in requests], [1, 1])
         self.assertIn("tools", requests[0])
         self.assertIs(requests[0]["parallel_tool_calls"], False)
         self.assertIn("tools", requests[1])

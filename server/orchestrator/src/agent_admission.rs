@@ -55,6 +55,8 @@ impl AgentAdmissionScheduler {
     ) -> Result<Self, OrchestratorError> {
         if rapid.service != ProviderService::RapidAutomation
             || complex.service != ProviderService::ComplexOrchestration
+            || rapid.active_capacity != 4
+            || complex.active_capacity != 8
             || rapid.profile_sha256 == complex.profile_sha256
             || rapid.candidate_lock_sha256 != complex.candidate_lock_sha256
         {
@@ -215,6 +217,18 @@ impl AgentAdmissionScheduler {
             self.dispatch_idle(observed_at, &mut events);
         }
         events
+    }
+
+    pub(super) fn active_capacity(&self, route: ExecutionRoute) -> usize {
+        match route {
+            ExecutionRoute::ServerIo => 1,
+            ExecutionRoute::RapidAutomation | ExecutionRoute::ComplexOrchestration => {
+                self.expected_routes
+                    .get(&route)
+                    .expect("both model routes are initialized")
+                    .active_capacity
+            }
+        }
     }
 
     pub fn cancel(&mut self, request_id: &str, token: &str) -> CancellationDecision {
