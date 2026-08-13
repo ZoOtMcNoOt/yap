@@ -178,7 +178,7 @@ def _fixture(
         "2" * 64,
         "3" * 64,
         permission_hash,
-        _authorization(permission_hash, "knowledge.read"),
+        _authorization(permission_hash, "knowledge.search.lexical"),
         permission_hash,
         _authorization(permission_hash, "knowledge.propose"),
         11,
@@ -220,6 +220,10 @@ class CoordinatorKnowledgeProposalTests(unittest.TestCase):
         self.assertEqual(candidate.curator_request_id, "curator-request-1")
         self.assertEqual(candidate.curator_submission_id, "curator-submission-1")
         self.assertEqual(candidate.citations[0].text, concepts[0][3])
+        self.assertNotEqual(
+            proposals[0][13],
+            evidence.authorization_hash,
+        )
         self.assertFalse(evidence.output_budget_exhausted)
         authorize.assert_called_once_with(
             connection,

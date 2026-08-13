@@ -574,6 +574,10 @@ def read_coordinator_evidence_in_transaction(
         authorized.permission_hash,
         "knowledge.propose",
     )
+    curator_evidence_authorization = _authorization_hash(
+        authorized.permission_hash,
+        "knowledge.search.lexical",
+    )
     candidates = []
     for citations, raw_row in parsed:
         row = tuple(raw_row)  # type: ignore[arg-type]
@@ -639,7 +643,7 @@ def read_coordinator_evidence_in_transaction(
             or not _valid_curator_lineage(
                 row[7:],
                 permission_hash=authorized.permission_hash,
-                authorization_hash=authorized.authorization_hash,
+                curator_evidence_authorization_hash=curator_evidence_authorization,
                 proposal_authorization_hash=current_propose_authorization,
             )
         ):
@@ -768,7 +772,7 @@ def _valid_curator_lineage(
     value: tuple[object, ...],
     *,
     permission_hash: str,
-    authorization_hash: str,
+    curator_evidence_authorization_hash: str,
     proposal_authorization_hash: str,
 ) -> bool:
     return (
@@ -781,7 +785,7 @@ def _valid_curator_lineage(
             isinstance(item, str) and _SHA256.fullmatch(item) for item in value[2:9]
         )
         and value[5] == permission_hash
-        and value[6] == authorization_hash
+        and value[6] == curator_evidence_authorization_hash
         and value[7] == permission_hash
         and value[8] == proposal_authorization_hash
         and isinstance(value[9], int)
