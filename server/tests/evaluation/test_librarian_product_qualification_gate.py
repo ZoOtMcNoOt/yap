@@ -76,6 +76,12 @@ class LibrarianProductQualificationGateTests(unittest.TestCase):
         self.assertEqual(
             len(relative), len(gate._candidate_input_paths(REPOSITORY_ROOT))
         )
+        self.assertTrue(
+            all(
+                0 < path.stat().st_size <= 16 * 1024 * 1024
+                for path in gate._candidate_input_paths(REPOSITORY_ROOT)
+            )
+        )
 
     def test_product_view_parser_requires_the_exact_hash_bound_wire(self) -> None:
         pack = _pack()
