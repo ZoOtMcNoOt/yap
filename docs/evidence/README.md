@@ -13,6 +13,7 @@ Current architecture-review evidence:
 - [Coordinator proposal-bundle verification](coordinator-proposal-bundles/VERIFICATION.md)
 - [Curator knowledge-proposal verification](curator-knowledge-proposals/VERIFICATION.md)
 - [Librarian permission-safe evidence verification](librarian-permission-safe-evidence/VERIFICATION.md)
+- [Librarian product-vertical verification](librarian-product-vertical/VERIFICATION.md)
 - [Student learning-question verification](student-learning/VERIFICATION.md)
 - [Scribe transcript-correction verification](scribe-transcript-correction/VERIFICATION.md)
 - [Governed-knowledge maintainability coverage](governed-knowledge-maintainability/COVERAGE.md)

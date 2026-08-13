@@ -21,9 +21,12 @@ Auditor's idle-only, source-cited review-findings internal core. Hosted head
 `937a4129...` passed all 12 required checks, and PR #172 merged Auditor as
 `1b255e9a...`. All eight bounded internal role cores are now merged.
 
-Only Scribe has a current product surface. Production identity, simultaneous
-full-profile residency, sustained capacity, enterprise deployment, and every
-remaining non-Scribe product surface stay explicitly gated.
+Scribe is the only merged product surface. Exact unmerged candidate
+`8565145b...` adds a public-portable-green Librarian HTTP/native/Knowledge
+vertical; its private product gate, hosted review, and merge remain pending.
+Production identity, simultaneous full-profile residency, sustained capacity,
+enterprise deployment, and the remaining role product surfaces stay explicitly
+gated.
 
 Start with [current status](docs/CURRENT-STATUS.md). It states what executes,
 what is verified, what is still absent, and what happens next.

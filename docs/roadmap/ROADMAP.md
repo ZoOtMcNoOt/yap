@@ -264,8 +264,11 @@ core. Hosted head `53ee0152...` passed all 12 checks, and PR #171 merged
 Coordinator as `67d836da...`. Exact `08b06f6d...` then privately qualified
 Auditor's idle-only source-cited review-findings internal core. Hosted head
 `937a4129...` passed all 12 checks, and PR #172 merged Auditor as
-`1b255e9a...`, completing the eight bounded internal role cores. Non-Scribe
-product exposure remains open. Proven selected-route
+`1b255e9a...`, completing the eight bounded internal role cores. Exact unmerged
+candidate `8565145b...` adds the first Librarian HTTP/native/Knowledge product
+vertical and is public-portable green; its private product gate, hosted review,
+and merge remain open. Archivist, Student, Curator, Analyst, Coordinator, and
+Auditor product exposure remains open. Proven selected-route
 limits of four rapid/eight complex are not simultaneous-model,
 sustained-capacity, or production-SLO evidence. One Spark cannot retain both
 unchanged full profiles simultaneously, so warm two-route promotion requires a

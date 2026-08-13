@@ -1,16 +1,15 @@
 # Maintainability Threshold Disposition
 
-This appendix is the exact-path read-back for the current post-Auditor-merge
-documentation-successor tree's 350-line cohesion threshold. It is generated from
+This appendix is the exact-path read-back for the current Librarian product-
+candidate documentation-successor tree's 350-line cohesion threshold. It is generated from
 tracked regular files by `verification/list-maintainability-threshold-surfaces.ps1`; grouped
 justifications and disposition meanings live in [COVERAGE.md](COVERAGE.md).
 
 The inventory includes tracked source, text, policy, and provenance contract
 extensions and applies the script's frozen generated-product exclusions. Against
-qualified executable candidate `08b06f6db45e233d92035788dabdee7157a83d2f`,
-with this public documentation reconciliation applied after PR #172 merged the
-internal core, the
-complete 250-line inventory is 593 files: 339 listed below at 350 or more lines
+executable candidate `8565145b5279ed009f4c0da4339de1d35e478b93`,
+with this public documentation reconciliation applied, the
+complete 250-line inventory is 596 files: 342 listed below at 350 or more lines
 and 254 from 250 through 349.
 
 Each line contains up to two independent entries in the form
@@ -37,31 +36,32 @@ Each line contains up to two independent entries in the form
   381 NATIVE-SOURCE        desktop/src-tauri/src/jobs/ledger/tests/remote_state.rs ||   840 NATIVE-SOURCE        desktop/src-tauri/src/jobs/remote/language_label_corrections.rs
  1043 NATIVE-SOURCE        desktop/src-tauri/src/jobs/remote/preparation.rs ||   449 NATIVE-SOURCE        desktop/src-tauri/src/jobs/remote/result.rs
  1064 NATIVE-SOURCE        desktop/src-tauri/src/jobs/remote/tests.rs ||   421 NATIVE-SOURCE        desktop/src-tauri/src/language_preferences/desktop.rs
- 1393 NATIVE-SOURCE        desktop/src-tauri/src/language/live_diarization.rs ||   434 NATIVE-SOURCE        desktop/src-tauri/src/live/actions/quit.rs
-  846 NATIVE-SOURCE        desktop/src-tauri/src/live/automatic_language_route_qualification.rs ||   425 NATIVE-SOURCE        desktop/src-tauri/src/live/devices.rs
-  923 NATIVE-SOURCE        desktop/src-tauri/src/live/language_pipeline.rs ||   388 NATIVE-SOURCE        desktop/src-tauri/src/live/language_router.rs
-  764 NATIVE-SOURCE        desktop/src-tauri/src/live/overlay_window.rs ||   408 NATIVE-SOURCE        desktop/src-tauri/src/live/recordings/tests/catalog.rs
-  391 NATIVE-SOURCE        desktop/src-tauri/src/live/recordings/tests/deletion_maintenance.rs ||   455 NATIVE-SOURCE        desktop/src-tauri/src/live/recordings/tests/recovery.rs
-  611 NATIVE-SOURCE        desktop/src-tauri/src/live/recordings/tests/transcripts.rs ||   352 NATIVE-SOURCE        desktop/src-tauri/src/live/recordings/transcripts/revision.rs
-  664 NATIVE-SOURCE        desktop/src-tauri/src/live/representative_language_route_evidence.rs ||   362 NATIVE-SOURCE        desktop/src-tauri/src/live/runtime/asr_adapter.rs
-  370 NATIVE-SOURCE        desktop/src-tauri/src/live/runtime/resources.rs ||   763 NATIVE-SOURCE        desktop/src-tauri/src/live/runtime/stream_session.rs
-  414 NATIVE-SOURCE        desktop/src-tauri/src/live/runtime/tests/lifecycle.rs ||   451 NATIVE-SOURCE        desktop/src-tauri/src/live/runtime/tests/local_stream_duration_evidence.rs
-  985 NATIVE-SOURCE        desktop/src-tauri/src/live/runtime/tests/resident_language_routing_resources.rs ||   997 NATIVE-SOURCE        desktop/src-tauri/src/live/runtime/tests/warmup_finalization.rs
-  532 NATIVE-SOURCE        desktop/src-tauri/src/live/runtime/warmup.rs ||   427 NATIVE-SOURCE        desktop/src-tauri/src/live/source_audio.rs
-  367 NATIVE-SOURCE        desktop/src-tauri/src/live/state/owner.rs ||   351 NATIVE-SOURCE        desktop/src-tauri/src/live/stream.rs
- 1024 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/authorization.rs ||   454 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/authorization/live_websocket.rs
-  572 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/authorization/live_websocket/tests.rs ||   368 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/batch/client.rs
-  412 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/batch/preprocessing.rs ||   835 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/batch/response.rs
-  564 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/batch/tests.rs ||   652 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/capabilities.rs
-  356 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/client/tests.rs ||   422 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/config.rs
-  398 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/config/persistence.rs ||   830 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/core.rs
-  550 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/desktop.rs ||   664 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/native_access_token_provider.rs
- 1073 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/native_access_token_provider/tests.rs ||   786 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/state.rs
-  648 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/tests/core.rs ||   498 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/transcript_correction.rs
+ 1393 NATIVE-SOURCE        desktop/src-tauri/src/language/live_diarization.rs ||   393 NATIVE-SOURCE        desktop/src-tauri/src/librarian_query.rs
+  452 NATIVE-SOURCE        desktop/src-tauri/src/live/actions/quit.rs ||   846 NATIVE-SOURCE        desktop/src-tauri/src/live/automatic_language_route_qualification.rs
+  425 NATIVE-SOURCE        desktop/src-tauri/src/live/devices.rs ||   923 NATIVE-SOURCE        desktop/src-tauri/src/live/language_pipeline.rs
+  388 NATIVE-SOURCE        desktop/src-tauri/src/live/language_router.rs ||   764 NATIVE-SOURCE        desktop/src-tauri/src/live/overlay_window.rs
+  408 NATIVE-SOURCE        desktop/src-tauri/src/live/recordings/tests/catalog.rs ||   391 NATIVE-SOURCE        desktop/src-tauri/src/live/recordings/tests/deletion_maintenance.rs
+  455 NATIVE-SOURCE        desktop/src-tauri/src/live/recordings/tests/recovery.rs ||   611 NATIVE-SOURCE        desktop/src-tauri/src/live/recordings/tests/transcripts.rs
+  352 NATIVE-SOURCE        desktop/src-tauri/src/live/recordings/transcripts/revision.rs ||   664 NATIVE-SOURCE        desktop/src-tauri/src/live/representative_language_route_evidence.rs
+  362 NATIVE-SOURCE        desktop/src-tauri/src/live/runtime/asr_adapter.rs ||   370 NATIVE-SOURCE        desktop/src-tauri/src/live/runtime/resources.rs
+  763 NATIVE-SOURCE        desktop/src-tauri/src/live/runtime/stream_session.rs ||   414 NATIVE-SOURCE        desktop/src-tauri/src/live/runtime/tests/lifecycle.rs
+  451 NATIVE-SOURCE        desktop/src-tauri/src/live/runtime/tests/local_stream_duration_evidence.rs ||   985 NATIVE-SOURCE        desktop/src-tauri/src/live/runtime/tests/resident_language_routing_resources.rs
+  997 NATIVE-SOURCE        desktop/src-tauri/src/live/runtime/tests/warmup_finalization.rs ||   532 NATIVE-SOURCE        desktop/src-tauri/src/live/runtime/warmup.rs
+  427 NATIVE-SOURCE        desktop/src-tauri/src/live/source_audio.rs ||   367 NATIVE-SOURCE        desktop/src-tauri/src/live/state/owner.rs
+  351 NATIVE-SOURCE        desktop/src-tauri/src/live/stream.rs ||  1024 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/authorization.rs
+  454 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/authorization/live_websocket.rs ||   572 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/authorization/live_websocket/tests.rs
+  368 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/batch/client.rs ||   412 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/batch/preprocessing.rs
+  835 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/batch/response.rs ||   564 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/batch/tests.rs
+  652 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/capabilities.rs ||   358 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/client/tests.rs
+  422 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/config.rs ||   398 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/config/persistence.rs
+  916 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/core.rs ||   551 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/desktop.rs
+  516 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/librarian.rs ||   664 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/native_access_token_provider.rs
+ 1073 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/native_access_token_provider/tests.rs ||   790 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/state.rs
+  722 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/tests/core.rs ||   498 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/transcript_correction.rs
   460 NATIVE-SOURCE        desktop/src-tauri/src/stt/ambernet_language_detector.rs ||   358 NATIVE-SOURCE        desktop/src-tauri/src/stt/ambernet_language_detector/evaluation.rs
   446 NATIVE-SOURCE        desktop/src-tauri/src/transcript_correction/mod.rs ||   828 NATIVE-SOURCE        desktop/src-tauri/src/transcript_correction/revision.rs
   480 NATIVE-TEST          desktop/src-tauri/tests/audio_foundation.rs ||   409 NATIVE-TEST          desktop/src-tauri/tests/model_download.rs
-  394 UI-SOURCE            desktop/src/App.tsx ||   474 UI-SOURCE            desktop/src/components/live/live-overlay-views.tsx
+  403 UI-SOURCE            desktop/src/App.tsx ||   474 UI-SOURCE            desktop/src/components/live/live-overlay-views.tsx
   407 UI-SOURCE            desktop/src/components/ui/sidebar.tsx ||   387 UI-SOURCE            desktop/src/hooks/use-settings-control.ts
   518 DESKTOP-TEST         desktop/tests/e2e/live-overlay.spec.ts ||   391 DESKTOP-TEST         desktop/tests/scripts/release-contract/bounded-command-windows-job.contract.mjs
  1052 DESKTOP-TEST         desktop/tests/scripts/release-contract/github-hosted-checkout.contract.mjs ||   352 DESKTOP-TEST         desktop/tests/scripts/release-contract/hosted-windows-runtime-check.contract.mjs
@@ -74,24 +74,24 @@ Each line contains up to two independent entries in the form
   466 CURRENT-DOC          docs/adr/0014-server-tier-compute-topology.md ||   390 CURRENT-DOC          docs/adr/0016-auth-identity-bridge.md
   373 CURRENT-DOC          docs/adr/0017-knowledge-base-compiler.md ||   805 CURRENT-DOC          docs/adr/0024-global-language-routing.md
   643 CURRENT-DOC          docs/adr/0025-provider-specific-asr-serving.md ||   438 CURRENT-DOC          docs/adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md
-  370 CURRENT-DOC          docs/adr/0031-eight-agent-voice-os-roster.md ||  1253 CURRENT-DOC          docs/architecture/boundaries/EXECUTABLE-OWNERSHIP.md
- 1280 CURRENT-DOC          docs/architecture/CURRENT-ARCHITECTURE.md ||  1317 CURRENT-DOC          docs/CURRENT-STATUS.md
-  711 CURRENT-DOC          docs/evidence/governed-knowledge-maintainability/VERIFICATION.md ||  1024 CURRENT-DOC          docs/plans/active/2026-07-17-voiceos-decision-evidence-queue.md
-  444 CURRENT-DOC          docs/plans/active/2026-08-11-eight-agent-voice-os-delivery.md ||   627 HISTORICAL-DOC       docs/plans/archived/2026-07-05-client-state-machine-implementation.md
+  373 CURRENT-DOC          docs/adr/0031-eight-agent-voice-os-roster.md ||  1260 CURRENT-DOC          docs/architecture/boundaries/EXECUTABLE-OWNERSHIP.md
+ 1289 CURRENT-DOC          docs/architecture/CURRENT-ARCHITECTURE.md ||  1331 CURRENT-DOC          docs/CURRENT-STATUS.md
+  711 CURRENT-DOC          docs/evidence/governed-knowledge-maintainability/VERIFICATION.md ||  1026 CURRENT-DOC          docs/plans/active/2026-07-17-voiceos-decision-evidence-queue.md
+  448 CURRENT-DOC          docs/plans/active/2026-08-11-eight-agent-voice-os-delivery.md ||   627 HISTORICAL-DOC       docs/plans/archived/2026-07-05-client-state-machine-implementation.md
   561 HISTORICAL-DOC       docs/plans/archived/2026-07-08-local-audio-preprocessing-stack.md ||   525 HISTORICAL-DOC       docs/plans/archived/2026-07-09-client-hardening-storage.md
   988 HISTORICAL-DOC       docs/plans/archived/2026-07-10-client-audio-foundation.md ||   450 HISTORICAL-DOC       docs/plans/completed/2026-07-08-model-download-ux.md
   855 HISTORICAL-DOC       docs/plans/completed/2026-07-10-server-contract-durable-connector.md ||  1953 HISTORICAL-DOC       docs/plans/completed/2026-07-16-audio-preprocessing-and-language-routing.md
   391 HISTORICAL-DOC       docs/plans/completed/2026-07-18-codebase-ownership-and-maintainability-review.md ||   646 HISTORICAL-DOC       docs/plans/completed/2026-07-25-tenant-scoped-identity-and-job-authorization.md
   923 HISTORICAL-DOC       docs/research/2026-07-16-dynamic-language-detection-evaluation.md ||   913 HISTORICAL-DOC       docs/research/2026-07-17-asr-evaluation-corpus-and-runtime-matrix.md
-  385 CURRENT-DOC          docs/roadmap/ROADMAP.md ||   886 CURRENT-DOC          docs/runbooks/integrated-identity-access-gate.md
+  388 CURRENT-DOC          docs/roadmap/ROADMAP.md ||   886 CURRENT-DOC          docs/runbooks/integrated-identity-access-gate.md
   506 CURRENT-DOC          docs/runbooks/integrated-preprocessing-language-routing-gate.md ||  1154 CURRENT-DOC          docs/runbooks/yap-server-node-setup.md
   554 CURRENT-DOC          docs/specs/source-aware-diarization.md ||   586 CURRENT-DOC          docs/specs/testing-strategy.md
- 1260 CURRENT-DOC          docs/VOICE-OS-ARCHITECTURE.md ||   696 INFRA                infra/yap-server-node/owned-process-group.sh
+ 1264 CURRENT-DOC          docs/VOICE-OS-ARCHITECTURE.md ||   696 INFRA                infra/yap-server-node/owned-process-group.sh
   989 INFRA                infra/yap-server-node/owned-process-supervisor.py ||   601 INFRA                infra/yap-server-node/private-container-loopback-proxy.sh
  1113 INFRA                infra/yap-server-node/resident-provider-lifecycle-gate.sh ||   504 INFRA                infra/yap-server-node/setup-server.sh
   350 SERVER-CONTRACT      server/librarian-workload-fixtures.json ||   364 SERVER-CONTRACT      server/orchestrator/src/agent_admission.rs
   463 SERVER-CONTRACT      server/orchestrator/src/supervisor.rs ||   453 SERVER-CONTRACT      server/orchestrator/tests/supervised_service.rs
- 1064 SERVER-RUNBOOK       server/README.md ||   754 SERVER-CONTRACT      server/src/yap_server/agents/analyst_result_audit.py
+ 1086 SERVER-RUNBOOK       server/README.md ||   754 SERVER-CONTRACT      server/src/yap_server/agents/analyst_result_audit.py
   905 SERVER-CONTRACT      server/src/yap_server/agents/analyst_service.py ||   398 SERVER-CONTRACT      server/src/yap_server/agents/analyst.py
   426 SERVER-CONTRACT      server/src/yap_server/agents/archivist_service.py ||   694 SERVER-CONTRACT      server/src/yap_server/agents/auditor_result_audit.py
   871 SERVER-CONTRACT      server/src/yap_server/agents/auditor_service.py ||   833 SERVER-CONTRACT      server/src/yap_server/agents/auditor.py
@@ -102,17 +102,18 @@ Each line contains up to two independent entries in the form
   428 SERVER-CONTRACT      server/src/yap_server/agents/librarian.py ||   513 SERVER-CONTRACT      server/src/yap_server/agents/student_model.py
   680 SERVER-CONTRACT      server/src/yap_server/agents/student_service.py ||   430 SERVER-CONTRACT      server/src/yap_server/agents/student.py
   440 SERVER-CONTRACT      server/src/yap_server/agents/transcript_correction_model.py ||   754 SERVER-CONTRACT      server/src/yap_server/agents/transcript_correction_service.py
- 1136 SERVER-CONTRACT      server/src/yap_server/agents/transcript_correction.py ||   623 AUTH                 server/src/yap_server/auth/identity_repository.py
-  542 AUTH                 server/src/yap_server/auth/oidc_access_tokens.py ||   414 AUTH                 server/src/yap_server/auth/oidc_metadata.py
-  405 EVALUATION           server/src/yap_server/evaluation/agent_admission_broker_observation.py ||   586 EVALUATION           server/src/yap_server/evaluation/agent_model_acceptance.py
-  368 EVALUATION           server/src/yap_server/evaluation/agent_model_candidate_runner.py ||   539 EVALUATION           server/src/yap_server/evaluation/agent_model_fixture_runner.py
-  810 EVALUATION           server/src/yap_server/evaluation/agent_model_qualification.py ||   517 EVALUATION           server/src/yap_server/evaluation/agent_route_qualification_evidence.py
-  409 EVALUATION           server/src/yap_server/evaluation/agent_service_lifecycle_observation.py ||   582 EVALUATION           server/src/yap_server/evaluation/agent_service_lifecycle_runtime.py
-  643 EVALUATION           server/src/yap_server/evaluation/agent_vllm_runtime.py ||   506 EVALUATION           server/src/yap_server/evaluation/ami_meeting_lock.py
- 1522 EVALUATION           server/src/yap_server/evaluation/analyst_qualification_gate.py ||  1397 EVALUATION           server/src/yap_server/evaluation/analyst_qualification.py
- 1832 EVALUATION           server/src/yap_server/evaluation/auditor_qualification_gate.py ||  1535 EVALUATION           server/src/yap_server/evaluation/auditor_qualification.py
- 1926 EVALUATION           server/src/yap_server/evaluation/coordinator_qualification_gate.py ||  1726 EVALUATION           server/src/yap_server/evaluation/coordinator_qualification.py
- 1396 EVALUATION           server/src/yap_server/evaluation/corpus_manifest.py ||  1422 EVALUATION           server/src/yap_server/evaluation/curator_qualification_gate.py
+ 1136 SERVER-CONTRACT      server/src/yap_server/agents/transcript_correction.py ||   361 SERVER-CONTRACT      server/src/yap_server/api/app.py
+  623 AUTH                 server/src/yap_server/auth/identity_repository.py ||   542 AUTH                 server/src/yap_server/auth/oidc_access_tokens.py
+  414 AUTH                 server/src/yap_server/auth/oidc_metadata.py ||   405 EVALUATION           server/src/yap_server/evaluation/agent_admission_broker_observation.py
+  586 EVALUATION           server/src/yap_server/evaluation/agent_model_acceptance.py ||   368 EVALUATION           server/src/yap_server/evaluation/agent_model_candidate_runner.py
+  539 EVALUATION           server/src/yap_server/evaluation/agent_model_fixture_runner.py ||   810 EVALUATION           server/src/yap_server/evaluation/agent_model_qualification.py
+  517 EVALUATION           server/src/yap_server/evaluation/agent_route_qualification_evidence.py ||   409 EVALUATION           server/src/yap_server/evaluation/agent_service_lifecycle_observation.py
+  582 EVALUATION           server/src/yap_server/evaluation/agent_service_lifecycle_runtime.py ||   643 EVALUATION           server/src/yap_server/evaluation/agent_vllm_runtime.py
+  506 EVALUATION           server/src/yap_server/evaluation/ami_meeting_lock.py ||  1522 EVALUATION           server/src/yap_server/evaluation/analyst_qualification_gate.py
+ 1397 EVALUATION           server/src/yap_server/evaluation/analyst_qualification.py ||  1832 EVALUATION           server/src/yap_server/evaluation/auditor_qualification_gate.py
+ 1535 EVALUATION           server/src/yap_server/evaluation/auditor_qualification.py ||  1926 EVALUATION           server/src/yap_server/evaluation/coordinator_qualification_gate.py
+ 1726 EVALUATION           server/src/yap_server/evaluation/coordinator_qualification.py ||  1396 EVALUATION           server/src/yap_server/evaluation/corpus_manifest.py
+ 1422 EVALUATION           server/src/yap_server/evaluation/curator_qualification_gate.py ||   740 EVALUATION           server/src/yap_server/evaluation/curator_qualification.py
   740 EVALUATION           server/src/yap_server/evaluation/curator_qualification.py ||   612 EVALUATION           server/src/yap_server/evaluation/duration_tracks.py
   399 EVALUATION           server/src/yap_server/evaluation/european_parliament_speech_source.py ||   350 EVALUATION           server/src/yap_server/evaluation/fleurs_cohere_comparator.py
   804 EVALUATION           server/src/yap_server/evaluation/fleurs_corpus.py ||   570 EVALUATION           server/src/yap_server/evaluation/governed_knowledge_gate.py
@@ -156,8 +157,8 @@ Each line contains up to two independent entries in the form
   842 SERVER-CONTRACT      server/tests/agents/test_student.py ||   563 SERVER-CONTRACT      server/tests/agents/test_transcript_correction_model.py
   778 SERVER-CONTRACT      server/tests/agents/test_transcript_correction_service.py ||   605 SERVER-CONTRACT      server/tests/agents/test_transcript_correction.py
   426 TEST-AUTH-CONTRACT   server/tests/auth/test_oidc_access_tokens.py ||   407 TEST-AUTH-CONTRACT   server/tests/auth/test_oidc_metadata.py
-  453 TEST-AUTH-CONTRACT   server/tests/capabilities/test_asr_catalog.py ||   350 TEST-AUTH-CONTRACT   server/tests/contract/contract_http_values.py
-  549 TEST-AUTH-CONTRACT   server/tests/contract/test_contract.py ||   358 TEST-AUTH-CONTRACT   server/tests/contract/test_examples_contract.py
+  453 TEST-AUTH-CONTRACT   server/tests/capabilities/test_asr_catalog.py ||   393 TEST-AUTH-CONTRACT   server/tests/contract/contract_http_values.py
+  553 TEST-AUTH-CONTRACT   server/tests/contract/test_contract.py ||   360 TEST-AUTH-CONTRACT   server/tests/contract/test_examples_contract.py
   395 TEST-EVALUATION      server/tests/evaluation/promotion_registry_fixture.py ||   843 TEST-EVALUATION      server/tests/evaluation/test_agent_model_fixture_runner.py
   880 TEST-EVALUATION      server/tests/evaluation/test_agent_model_qualification.py ||   354 TEST-EVALUATION      server/tests/evaluation/test_agent_model_scoring.py
   717 TEST-EVALUATION      server/tests/evaluation/test_agent_vllm_runtime.py ||   486 TEST-EVALUATION      server/tests/evaluation/test_analyst_qualification_gate.py
@@ -172,7 +173,7 @@ Each line contains up to two independent entries in the form
  1137 TEST-EVALUATION      server/tests/evaluation/test_transcript_correction_qualification.py ||   580 TEST-EVALUATION      server/tests/evaluation/test_transcript_scoring.py
   966 TEST-INFRA           server/tests/infra/test_mock_oidc_harness.py ||   898 TEST-INFRA           server/tests/infra/test_owned_process_supervisor.py
  1458 TEST-INFRA           server/tests/infra/test_private_container_loopback_proxy_behavior.py ||   801 TEST-INFRA           server/tests/infra/test_resident_provider_lifecycle_gate.py
- 1049 TEST-JOBS            server/tests/jobs/test_runtime.py ||   646 TEST-JOBS            server/tests/jobs/test_service_commit_admission.py
+ 1050 TEST-JOBS            server/tests/jobs/test_runtime.py ||   646 TEST-JOBS            server/tests/jobs/test_service_commit_admission.py
   681 TEST-JOBS            server/tests/jobs/test_service_contract.py ||   462 TEST-JOBS            server/tests/jobs/test_service_meeting_result.py
   681 TEST-JOBS            server/tests/jobs/test_service_processing.py ||   399 TEST-JOBS            server/tests/jobs/test_service_restart_admission.py
   390 TEST-JOBS            server/tests/jobs/test_service_result_recovery.py ||   705 TEST-JOBS            server/tests/jobs/test_service_retention.py

@@ -18,15 +18,17 @@ only `8fee7a5c...` publishes the matching batch-invariant route lock. Hosted hea
 all 12 checks and PR #171 merged it as `67d836da...`. Exact `08b06f6d...`
 privately qualified Auditor; hosted head `937a4129...` passed all 12 checks and
 PR #172 merged it as `1b255e9a...`. All eight bounded internal role cores are
-merged; non-Scribe product exposure remains open.
+merged. Exact unmerged candidate `8565145b...` adds Librarian product exposure;
+its private product gate and merge plus every other non-Scribe product surface
+remain open.
 
-**Current branch:** `docs/phase10-eight-agent-closure` contains only the public
-documentation reconciliation after Auditor merged. It adds no role behavior or
-product exposure and merges only after its exact head is reviewed and hosted-
-green.
+**Current branch:** `agent/phase10-librarian-product` contains exact candidate
+`8565145b...`, the first post-Scribe product vertical. It adds authenticated
+Librarian HTTP/native/Knowledge behavior but has not run its owner-private
+product gate, hosted review, or merge.
 
-**Base:** merged Auditor internal core at `1b255e9a...` from hosted head
-`937a4129...` and PR #172.
+**Base:** documentation-only PR #173 merge `c77bed52...`, descended from the
+merged Auditor internal core at `1b255e9a...`.
 
 **Applied decisions:** [ADR 0031](../../adr/0031-eight-agent-voice-os-roster.md),
 [ADR 0030](../../adr/0030-rust-supervised-provider-service-lifecycle.md),
@@ -423,7 +425,9 @@ Auditor as `1b255e9a...`, completing the bounded internal roster.
 
 - [ ] Expose the roster through authenticated server endpoints and native Tauri
   commands with role-specific UI states, retry/cancel controls, and graceful
-  degradation.
+  degradation. Exact `8565145b...` implements this for Librarian only and is
+  public-portable green; private product qualification, hosted review, and
+  merge remain open.
 - [ ] Run portable, database, lifecycle, private-model, mixed-route,
   simultaneous-residency, sustained-capacity, security, accessibility, and
   aggregate exact-head gates.

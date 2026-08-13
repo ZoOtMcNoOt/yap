@@ -1091,8 +1091,9 @@ attributed to it. See the
 ### 31. Librarian permission-safe evidence core
 
 - **Status:** privately qualified at exact head `56b7f5d0...`; hosted head
-  `7505247e...` merged through PR #169 as `d7a7e003...`. All product surfaces
-  remain pending.
+  `7505247e...` merged the internal core through PR #169 as `d7a7e003...`.
+  Exact unmerged `8565145b...` adds a public-portable-green product candidate;
+  its owner-private product gate, hosted review, and merge remain pending.
 - **Entry point:** `yap_server/agents/librarian_service.py` owns one bounded
   authenticated Server-IO read. It acquires no model-route lease.
 - **Authoritative owner:** the Postgres permission-safe retrieval owner pins the
@@ -1108,6 +1109,12 @@ attributed to it. See the
 - **Duplicate owner:** none. The broker owns the Server-IO lease; permission-safe
   retrieval owns evidence; `LibrarianService` owns workflow termination; the
   result-audit ledger owns durable outcome identity.
+- **Product composition:** `librarian_runtime.py` composes the existing core;
+  `api/librarian_query_requests.py` and `librarian_query_service.py` own bounded
+  authenticated HTTP jobs. Native `librarian_query.rs` and
+  `server_connector/librarian.rs` own credentials, request lifecycle, wire and
+  evidence validation, cancellation, and shutdown containment. React receives
+  only validated query state and never a bearer token.
 
 See the [Librarian verification record](../../evidence/librarian-permission-safe-evidence/VERIFICATION.md).
 

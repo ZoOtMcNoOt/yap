@@ -16,13 +16,26 @@ Yap is a desktop transcription app (Tauri + React in `desktop/`). The current de
 
 The target product loop is files in, accurate transcripts out, with minimal friction between drop → durable queue → private server transcript → copy/export. The connected path currently accepts already-canonical mono PCM16/16 kHz WAV files; general audio/video decoding and conversion remain open. The supported offline loop is explicit live capture → local transcript → history/playback/copy or reveal. The interface should make the current file and its transcript the center of attention; model names, auth paths, and runner details stay in secondary status unless something needs attention.
 
-Current production navigation:
+Merged production navigation:
 
 - **Home** — hub with recent transcripts and a quick path back into work
 - **Transcribe** — the workbench: drop zone, queue, progress, and live transcript preview
 - **Correct** — manual source-bound transcript correction with original/corrected review and explicit revision publication
 
-Transcript history currently lives on Home; there is no separate Transcripts navigation item or dedicated export command yet. Correct uses the merged authenticated Scribe route on a connected organization server. It preserves raw ASR, shows the original and proposed correction together, and publishes only an explicitly accepted separate revision. Remote failure leaves the raw transcript unchanged. The internal Archivist, Student, Curator, no-LLM Librarian, Analyst, Coordinator, and Auditor cores are merged. None has a current HTTP, native, renderer, or desktop product surface.
+Transcript history currently lives on Home; there is no separate Transcripts navigation item or dedicated export command yet. Correct uses the merged authenticated Scribe route on a connected organization server. It preserves raw ASR, shows the original and proposed correction together, and publishes only an explicitly accepted separate revision. Remote failure leaves the raw transcript unchanged.
+
+Exact candidate `8565145b...` adds a dedicated **Knowledge** workspace backed by
+authenticated Librarian HTTP endpoints and native Tauri commands. It exposes
+only bounded permission-safe excerpts with source citations, one active query,
+cancel/retry controls, and an explicit unavailable state. The bearer and server
+exchange remain native-owned; remote failure does not disable local controls.
+This candidate is public-portable green but has no new owner-private product
+gate, hosted review, or merge, so Knowledge is not part of the merged product
+navigation yet.
+
+The internal Archivist, Student, Curator, Analyst, Coordinator, and Auditor
+cores are merged. None has a current HTTP, native, renderer, or desktop product
+surface.
 
 This is not live-only dictation or a Wispr Flow clone. Batch recordings remain the target core loop once the trusted server route exists; live capture is the implemented compact, explicit companion path.
 

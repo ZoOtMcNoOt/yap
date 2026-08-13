@@ -3,6 +3,20 @@
 This changelog records product/architecture milestones. Exact test counts and
 immutable evidence belong in phase/checkpoint evidence records.
 
+## Unreleased — Librarian Knowledge product candidate
+
+- Exact candidate `8565145b...` adds authenticated asynchronous Librarian query
+  endpoints, native Tauri query ownership and evidence validation, and a
+  dedicated Knowledge workspace with bounded citations, cancel/retry, and
+  graceful remote unavailability.
+- Public portable server, desktop, production build, Rust, lint, format, and
+  focused boundary checks are green. The existing qualified Librarian core
+  receipt remains historical and is not reused as product evidence.
+- A new owner-private end-to-end product gate, accessibility/native WDIO,
+  hosted exact-head checks, review, and merge remain pending. The candidate
+  makes no deployment, production-SLO, simultaneous-residency, or other-role
+  product claim.
+
 ## 2026-08-13 — Phase 10 Auditor merged internal core
 
 - Exact executable candidate `08b06f6d...` privately qualified the internal
