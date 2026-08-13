@@ -92,6 +92,7 @@ class BatchJobApiTests(BatchJobApiTestCase):
                 "liveStreaming": False,
                 "jobStatus": True,
                 "transcriptCorrection": False,
+                "librarianQueries": False,
             },
         )
 

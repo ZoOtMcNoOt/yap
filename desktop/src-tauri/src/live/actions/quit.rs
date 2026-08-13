@@ -332,7 +332,25 @@ fn finalize_owned_work_before_quit(app: &tauri::AppHandle) -> Result<(), String>
             "transcript correction shutdown cancellation was incomplete: {error}"
         ));
     }
+    let librarian_owner = app.state::<crate::librarian_query::LibrarianQueryOwner>();
+    if let Err(error) = cancel_librarian_queries_before_quit(&librarian_owner) {
+        crate::diagnostics::log(&format!(
+            "knowledge query shutdown cancellation was incomplete: {error}"
+        ));
+    }
     Ok(())
+}
+
+pub(super) fn cancel_librarian_queries_before_quit(
+    owner: &crate::librarian_query::LibrarianQueryOwner,
+) -> Result<usize, String> {
+    tauri::async_runtime::block_on(async {
+        tokio::time::timeout(Duration::from_secs(5), owner.cancel_active_requests())
+            .await
+            .map_err(|_| {
+                "knowledge query shutdown cancellation exceeded its bounded wait".to_string()
+            })?
+    })
 }
 
 pub(super) fn cancel_transcript_corrections_before_quit(

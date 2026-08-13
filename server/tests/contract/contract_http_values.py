@@ -17,6 +17,9 @@ HTTP_OPERATIONS = {
     ("/v1/transcript-corrections", "post"): "submitTranscriptCorrection",
     ("/v1/transcript-corrections/{requestId}", "get"): "getTranscriptCorrection",
     ("/v1/transcript-corrections/{requestId}", "delete"): "cancelTranscriptCorrection",
+    ("/v1/librarian-queries", "post"): "submitLibrarianQuery",
+    ("/v1/librarian-queries/{requestId}", "get"): "getLibrarianQuery",
+    ("/v1/librarian-queries/{requestId}", "delete"): "cancelLibrarianQuery",
     ("/v1/jobs", "post"): "createJob",
     ("/v1/jobs/{jobId}", "get"): "getJob",
     ("/v1/jobs/{jobId}/result", "get"): "getJobResult",
@@ -57,6 +60,18 @@ OPERATION_RUNTIME = {
     ("/v1/transcript-corrections/{requestId}", "delete"): (
         "Implemented only when the authenticated warm Scribe runtime verifies",
         "Scribe transcript correction",
+    ),
+    ("/v1/librarian-queries", "post"): (
+        "Implemented only when the authenticated Librarian runtime verifies",
+        "Librarian permission-safe evidence",
+    ),
+    ("/v1/librarian-queries/{requestId}", "get"): (
+        "Implemented only when the authenticated Librarian runtime verifies",
+        "Librarian permission-safe evidence",
+    ),
+    ("/v1/librarian-queries/{requestId}", "delete"): (
+        "Implemented only when the authenticated Librarian runtime verifies",
+        "Librarian permission-safe evidence",
     ),
     ("/v1/jobs", "post"): (
         "Implemented in the loopback batch runtime",
@@ -110,6 +125,10 @@ RUNTIME_PATH_EXAMPLES = {
     "/v1/transcript-corrections": "/v1/transcript-corrections",
     "/v1/transcript-corrections/{requestId}": (
         "/v1/transcript-corrections/scribe-request-01"
+    ),
+    "/v1/librarian-queries": "/v1/librarian-queries",
+    "/v1/librarian-queries/{requestId}": (
+        "/v1/librarian-queries/librarian-query-11111111111111111111111111111111"
     ),
     "/v1/jobs": "/v1/jobs",
     "/v1/jobs/{jobId}": "/v1/jobs/job-01",
@@ -190,6 +209,30 @@ HTTP_SCHEMA_CONTRACTS: list[dict[str, Any]] = [
         "method": "get",
         "request": None,
         "success": {"200": "#/components/schemas/TranscriptCorrectionJobView"},
+        "errors": ["401", "403", "404", "501", "503"],
+    },
+    {
+        "path": "/v1/librarian-queries",
+        "method": "post",
+        "request": (
+            "application/json",
+            "#/components/schemas/LibrarianRequest",
+        ),
+        "success": {"202": "#/components/schemas/LibrarianQueryJobView"},
+        "errors": ["400", "401", "403", "429", "501", "503"],
+    },
+    {
+        "path": "/v1/librarian-queries/{requestId}",
+        "method": "get",
+        "request": None,
+        "success": {"200": "#/components/schemas/LibrarianQueryJobView"},
+        "errors": ["401", "403", "404", "501", "503"],
+    },
+    {
+        "path": "/v1/librarian-queries/{requestId}",
+        "method": "delete",
+        "request": None,
+        "success": {"202": "#/components/schemas/LibrarianQueryJobView"},
         "errors": ["401", "403", "404", "501", "503"],
     },
     {

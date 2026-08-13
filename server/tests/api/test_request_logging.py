@@ -33,6 +33,7 @@ class RequestLoggingTests(HealthServerTestCase):
                 "liveStreaming": False,
                 "jobStatus": False,
                 "transcriptCorrection": False,
+                "librarianQueries": False,
             },
         }
         self.assertEqual(status, 200)

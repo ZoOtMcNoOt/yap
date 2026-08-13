@@ -8,6 +8,7 @@ mod client;
 pub mod config;
 mod core;
 mod desktop;
+pub(crate) mod librarian;
 pub(crate) mod lid;
 // Never in a shipped binary: it trusts a synthetic issuer and carries a
 // published client secret.
@@ -27,12 +28,14 @@ pub use boundary::ServerConnectorBoundary;
 pub use capabilities::AsrCapabilityCatalog;
 pub(crate) use capabilities::LidPreflightCapability;
 pub(crate) use capability_snapshot::LastKnownAsrCapabilities;
-#[cfg(test)]
-pub(crate) use core::transcript_correction_connection_lease_for_test;
 pub use core::ServerConnector;
+#[cfg(test)]
 pub(crate) use core::{
-    AsrCatalogDispatchProof, BatchConnectionLease, CurrentAsrCatalog, LidPreflightDispatchProof,
-    TranscriptCorrectionConnectionLease,
+    librarian_connection_lease_for_test, transcript_correction_connection_lease_for_test,
+};
+pub(crate) use core::{
+    AsrCatalogDispatchProof, BatchConnectionLease, CurrentAsrCatalog, LibrarianConnectionLease,
+    LidPreflightDispatchProof, TranscriptCorrectionConnectionLease,
 };
 pub(crate) use desktop::{
     current_asr_capabilities, last_known_asr_capabilities, with_current_asr_capabilities,

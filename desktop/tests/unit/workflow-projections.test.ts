@@ -87,6 +87,7 @@ describe("client workflow projections", () => {
         liveStreaming: false,
         jobStatus: false,
         transcriptCorrection: false,
+        librarianQueries: false,
       },
       errorCode: null,
     };
@@ -141,6 +142,7 @@ describe("client workflow projections", () => {
   it("guards workspace event payloads at runtime", () => {
     expect(isWorkspaceView("home")).toBe(true);
     expect(isWorkspaceView("correct")).toBe(true);
+    expect(isWorkspaceView("knowledge")).toBe(true);
     expect(isWorkspaceView("details")).toBe(false);
     expect(isWorkspaceView(undefined)).toBe(false);
   });

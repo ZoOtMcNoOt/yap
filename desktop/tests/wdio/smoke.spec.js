@@ -295,6 +295,28 @@ describe("Yap desktop shell", () => {
     expect(Array.isArray(commands.history.maintenanceWarnings)).toBe(true);
   });
 
+  it("keeps the Librarian Knowledge workspace usable when the server capability is offline", async () => {
+    await browser.tauri.switchWindow("main");
+
+    const knowledgeButton = await $("button=Knowledge");
+    await knowledgeButton.waitForDisplayed();
+    await knowledgeButton.click();
+
+    const search = await $("#librarian-search-text");
+    await search.waitForDisplayed();
+    expect(await search.getAttribute("aria-describedby")).toBe("librarian-search-help");
+    expect(await $("label=What reviewed information are you looking for?").isDisplayed()).toBe(true);
+    expect(await $("button=Search knowledge").isEnabled()).toBe(false);
+
+    const bodyText = await $("body").getText();
+    expect(bodyText).toContain("Find reviewed evidence");
+    expect(bodyText).toContain(
+      "Knowledge search needs your connected organization server with Librarian enabled.",
+    );
+    expect(bodyText).toContain("Local recording, playback, transcripts, export, and deletion remain available.");
+    expect(await $("button=Transcribe").isDisplayed()).toBe(true);
+  });
+
   it("reports an enforced CSP violation for a disallowed remote script", async () => {
     await browser.tauri.switchWindow("main");
     const violation = await browser.executeAsync((done) => {
@@ -336,7 +358,6 @@ describe("Yap desktop shell", () => {
   });
 
   it("restores a Rust-owned preflight job after a genuine native process restart", async function () {
-    this.timeout(180_000);
     const runRoot = requiredIsolationPath("YAP_WDIO_RUN_ROOT");
     const proofRoot = path.join(runRoot, "native-restart-proof");
     const appDataRoot = path.join(proofRoot, "app-data");
@@ -410,6 +431,7 @@ describe("Yap desktop shell", () => {
       expect(connection.state).toBe("ready");
       expect(connection.capabilities).toEqual({
         batchJobs: false,
+        librarianQueries: false,
         liveStreaming: false,
         jobStatus: false,
         transcriptCorrection: false,
@@ -485,5 +507,5 @@ describe("Yap desktop shell", () => {
         await stopRestartRecoveryCapabilityServer(capabilityServer);
       }
     }
-  });
+  }).timeout(180_000);
 });

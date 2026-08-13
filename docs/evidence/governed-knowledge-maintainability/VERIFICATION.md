@@ -709,3 +709,38 @@ fairness, production p50/p95/p99 or an SLO, enterprise networking, and
 deployment remain open. Owner-private tenant/run identities, focus text,
 prompts, model output, evidence/finding/citation bytes, database rows, paths,
 DSN, and individual measurements remain outside Git.
+
+## Phase 10 Librarian product-boundary successor public read-back
+
+Exact executable candidate `e2ba1864ec989a2bb693e000d0b4c30910d2720f`
+returned `librarian-authenticated-product-server-boundary-qualified` with
+public-safe evidence SHA-256
+`45eac22913c807c0390ae2410e5a486d4bd03fd849e00c8a39e927f973635a92`.
+The acceptance-plan and corpus SHA-256 values are
+`eda3e4d6c674ad5d737d95309f689b3421ce8b93e14aea883095426d403125fc`
+and `928c4053d2237e1ca64e990402520e296b27ef1d8378747083fb622f6d031ffe`.
+Eight synchronized authenticated owner calls and both controlled queued calls
+matched all 10 expected terminals. The gate proved strict bearer rejection,
+cross-owner read/cancel denial, Server-IO c1/second-queued behavior, queued
+cancellation and deadline containment, exact evidence and audit identities,
+two PostgreSQL restarts, no model-route lease or proposal mutation, worker
+containment, and six-part database teardown.
+
+At exact clean `e2ba1864...`, the portable server suite ran 1,521 tests: 1,474
+passed and 47 were declared skips. The governed fixed membership ran 173 tests:
+169 passed and four were declared skips. Whole-server Ruff, desktop 59-file/
+373-test unit coverage, production build, strict Rust checks, focused gate 8/8,
+combined native WDIO 4/4 specs with 15 passes and two declared hardware skips,
+and `git diff --check` were green. Against that executable candidate, with this
+public documentation reconciliation applied, the current 250-line inventory
+enumerates 598 surfaces: 344 at or above 350 lines and 254 from 250 through 349.
+The exact 344 high-band path/line/disposition tuples are reproduced in
+[THRESHOLD-DISPOSITION.md](THRESHOLD-DISPOSITION.md).
+
+This record qualifies only the authenticated Librarian HTTP server boundary.
+The native/renderer path is exact-head public-test green but was not part of the
+private gate. Hosted review and merge, a live enterprise identity-provider
+exchange, sustained capacity/fairness, production p50/p95/p99 or an SLO,
+simultaneous Qwen/Gemma residency, enterprise networking, and deployment remain
+open. Owner-private tenants, subjects, queries, evidence, database rows, paths,
+credentials, and individual measurements remain outside Git.

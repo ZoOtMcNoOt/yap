@@ -22,6 +22,7 @@ class HealthRoutingTests(HealthServerTestCase):
                     "liveStreaming": False,
                     "jobStatus": False,
                     "transcriptCorrection": False,
+                    "librarianQueries": False,
                 },
             },
         )

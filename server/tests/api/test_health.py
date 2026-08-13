@@ -17,6 +17,7 @@ class HealthTests(unittest.TestCase):
                     "liveStreaming": False,
                     "jobStatus": False,
                     "transcriptCorrection": False,
+                    "librarianQueries": False,
                 },
             },
         )
@@ -34,6 +35,7 @@ class HealthTests(unittest.TestCase):
                     "liveStreaming": False,
                     "jobStatus": False,
                     "transcriptCorrection": False,
+                    "librarianQueries": False,
                 },
             },
         )

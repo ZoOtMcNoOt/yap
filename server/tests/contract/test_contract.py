@@ -115,6 +115,10 @@ class ContractTests(unittest.TestCase):
             "LidPreflightNotFoundError",
             "RecordingJob",
             "ApiError",
+            "LibrarianRequest",
+            "LibrarianEvidenceItem",
+            "LibrarianEvidencePack",
+            "LibrarianQueryJobView",
         }
         self.assertTrue(expected_components.issubset(schemas))
         provider_capabilities = schemas["AsrProviderCapabilities"]["properties"]

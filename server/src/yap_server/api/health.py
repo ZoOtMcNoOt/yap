@@ -11,6 +11,7 @@ _HEALTH_VIEW = HealthView(
         live_streaming=False,
         job_status=False,
         transcript_correction=False,
+        librarian_queries=False,
     ),
 )
 
@@ -20,8 +21,14 @@ def health(
     batch_jobs: bool = False,
     authentication_required: bool = False,
     transcript_correction: bool = False,
+    librarian_queries: bool = False,
 ) -> dict[str, object]:
-    if not batch_jobs and not authentication_required and not transcript_correction:
+    if (
+        not batch_jobs
+        and not authentication_required
+        and not transcript_correction
+        and not librarian_queries
+    ):
         return _HEALTH_VIEW.to_wire()
     return HealthView(
         service="yap-server",
@@ -33,5 +40,6 @@ def health(
             live_streaming=False,
             job_status=batch_jobs,
             transcript_correction=transcript_correction,
+            librarian_queries=librarian_queries,
         ),
     ).to_wire()

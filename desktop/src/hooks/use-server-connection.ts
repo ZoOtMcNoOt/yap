@@ -21,6 +21,7 @@ const initialServerSnapshot: ServerConnectionSnapshot = {
     liveStreaming: false,
     jobStatus: false,
     transcriptCorrection: false,
+    librarianQueries: false,
   },
   errorCode: null,
 };

@@ -6,6 +6,7 @@ import { Question as HelpCircle } from "@phosphor-icons/react/Question";
 import { Microphone as Mic } from "@phosphor-icons/react/Microphone";
 import { GearSix as Settings2 } from "@phosphor-icons/react/GearSix";
 import { Sparkle as Sparkles } from "@phosphor-icons/react/Sparkle";
+import { Books } from "@phosphor-icons/react/Books";
 
 import { AppIcon } from "@/components/app/app-icon";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ const mainNav: { action: RailAction; icon: ElementType; label: string }[] = [
   { action: "home", icon: Grid2X2, label: "Home" },
   { action: "transcribe", icon: Mic, label: "Transcribe" },
   { action: "correct", icon: Sparkles, label: "Correct" },
+  { action: "knowledge", icon: Books, label: "Knowledge" },
 ];
 
 const footerNav: { action: RailAction; icon: ElementType; label: string }[] = [

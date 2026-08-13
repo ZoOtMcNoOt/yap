@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "qualificationScope": "librarian-authenticated-product-server-boundary",
+  "qualified": true,
+  "caseCount": 8,
+  "ownerCount": 8,
+  "queryCount": 10,
+  "synchronizedOwnerCount": 8,
+  "completeCount": 4,
+  "unavailableCount": 3,
+  "failedCount": 1,
+  "cancelledCount": 2,
+  "exactTerminalCount": 10,
+  "uniqueProductRequestIdCount": 10,
+  "maximumNormalP95Milliseconds": 16000,
+  "normalP95WithinBound": true,
+  "authenticatedHttpExact": true,
+  "ownerIsolationExact": true,
+  "hiddenOnlyIndistinguishable": true,
+  "serverDerivedEvidenceExact": true,
+  "httpCancellationFailedClosed": true,
+  "workerContainmentMet": true
+}

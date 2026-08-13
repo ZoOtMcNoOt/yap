@@ -891,8 +891,33 @@ PostgreSQL restart/read-backs, exact tool/result audits, zero proposals, and
 six-part teardown passed. Exact predecessor `ecdcb8ee...` is terminal and
 inadmissible because adversarial review found only seven broker submissions.
 See the [Librarian verification record](../docs/evidence/librarian-permission-safe-evidence/VERIFICATION.md).
-Hosted head `7505247e...` merged through PR #169 as `d7a7e003...`. HTTP/native/
-renderer exposure, sustained capacity, and production operation remain pending.
+Hosted head `7505247e...` merged through PR #169 as `d7a7e003...`.
+
+Exact unmerged candidate `e2ba1864...` composes this core into one product
+vertical. In authenticated team mode it exposes:
+
+- `POST /v1/librarian-queries` to create one bounded query;
+- `GET /v1/librarian-queries/{requestId}` to read only the authenticated
+  owner's state; and
+- `DELETE /v1/librarian-queries/{requestId}` to request cancellation.
+
+Enable it explicitly with
+`YAP_LIBRARIAN_RUNTIME=permission_safe_postgres`, an absolute
+`YAP_LIBRARIAN_ADMISSION_SOCKET`, and an absolute
+`YAP_LIBRARIAN_KNOWLEDGE_DSN_FILE`. Incomplete, disabled-with-paths, or
+non-authenticated configuration fails closed. The server retains at most 64
+in-flight jobs and publishes evidence bytes only for a complete result. Tauri
+owns the bearer-bearing exchange and validates the complete evidence pack before
+React renders it; the renderer never receives credentials.
+
+The candidate's owner-private database/broker/HTTP gate qualified the
+authenticated server boundary with eight synchronized owners, 10/10 exact
+terminals, strict bearer and cross-owner denial, two PostgreSQL restarts, exact
+audits, and complete teardown. Native/renderer behavior is exact-head
+public-test green, but the private gate does not include a client round trip or
+live enterprise identity provider. Hosted review and merge remain open. See the
+[product-vertical verification record](../docs/evidence/librarian-product-vertical/VERIFICATION.md).
+Sustained capacity and production operation remain pending.
 
 ## Analyst grounded cited-answer core
 
