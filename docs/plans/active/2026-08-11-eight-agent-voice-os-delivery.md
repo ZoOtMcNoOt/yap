@@ -28,8 +28,9 @@ exact hosted merge before the next product slice. The executable qualification
 remains attributed to `e2ba1864...`; hosted head `67a79ce2...` merged as
 `98af78c9...`.
 
-**Base:** documentation-only PR #173 merge `c77bed52...`, descended from the
-merged Auditor internal core at `1b255e9a...`.
+**Base:** Librarian product merge `98af78c940ea801a37103f615002658f90626fb3`
+from PR #174, descended from the merged Auditor internal core at
+`1b255e9a...`.
 
 **Applied decisions:** [ADR 0031](../../adr/0031-eight-agent-voice-os-roster.md),
 [ADR 0030](../../adr/0030-rust-supervised-provider-service-lifecycle.md),

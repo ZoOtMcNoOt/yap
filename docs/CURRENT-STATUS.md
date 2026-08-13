@@ -1321,10 +1321,10 @@ provider optimization or non-blocking architecture work.
 1. Preserve the eight merged internal role boundaries without claiming
    knowledge activation, sustained capacity, simultaneous residency, or
    production promotion.
-2. Qualify and review the exact Librarian HTTP/native/Knowledge candidate before
-   merge. Keep Archivist, Student, Curator, Analyst, Coordinator, and Auditor
-   internal until each has its own reviewed product trigger, endpoint, and client surface.
-   Auditor has no scheduled autonomy or mutation authority.
+2. Preserve the merged Librarian HTTP/native/Knowledge boundary and deliver the
+   remaining Archivist, Student, Curator, Analyst, Coordinator, and Auditor
+   product surfaces only after each has its own reviewed trigger, endpoint, and
+   client surface. Auditor has no scheduled autonomy or mutation authority.
 3. Provision a second full-strength owned GPU node and IT-controlled private
    routing if the single Spark cannot keep the unchanged Qwen and Gemma profiles
    warm together. Do not reduce either qualified profile or swap models per
