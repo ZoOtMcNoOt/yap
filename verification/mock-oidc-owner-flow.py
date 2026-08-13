@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import threading
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from http import HTTPStatus
 from http.client import HTTPConnection
 from pathlib import Path
@@ -36,6 +36,28 @@ ADMIN_ROLE = "Yap.IdentityAdministrator"
 ISSUER_ID = "yap-phase7"
 REDIRECT_URI = "http://127.0.0.1/yap-phase7-synthetic-callback"
 _MAX_RESPONSE_BYTES = 64 * 1024
+_FLOW_STAGE = "bootstrap"
+
+
+def _set_flow_stage(stage: str) -> None:
+    global _FLOW_STAGE
+    _FLOW_STAGE = stage
+
+
+def _failure_category(error: Exception) -> str:
+    if isinstance(error, TimeoutError):
+        return "timeout"
+    if isinstance(error, HTTPError):
+        return "http"
+    if isinstance(error, AssertionError):
+        return "assertion"
+    if isinstance(error, (ConnectionError, OSError)):
+        return "transport"
+    if isinstance(error, (TypeError, ValueError, json.JSONDecodeError)):
+        return "invalid-data"
+    if isinstance(error, RuntimeError):
+        return "runtime"
+    return "internal"
 
 
 def _arguments() -> argparse.Namespace:
@@ -43,6 +65,23 @@ def _arguments() -> argparse.Namespace:
     parser.add_argument("--provider-base-url", required=True)
     parser.add_argument("--state-root", required=True, type=Path)
     return parser.parse_args()
+
+
+def _live_recording_job_request() -> dict[str, object]:
+    request = batch_api_recording_job_request()
+    metadata = request.get("metadata")
+    if not isinstance(metadata, dict):
+        raise TypeError("Synthetic recording metadata was unavailable.")
+    now = datetime.now(UTC)
+    metadata["startedAtUtc"] = (
+        (now - timedelta(minutes=1))
+        .isoformat(timespec="seconds")
+        .replace("+00:00", "Z")
+    )
+    metadata["retentionExpiresAtUtc"] = (
+        (now + timedelta(days=1)).isoformat(timespec="seconds").replace("+00:00", "Z")
+    )
+    return request
 
 
 def _bounded_json(response: object) -> dict[str, object]:
@@ -161,7 +200,9 @@ def _assert_status(
 
 
 def main() -> None:
+    _set_flow_stage("arguments")
     arguments = _arguments()
+    _set_flow_stage("authority-validation")
     provider_base_url = arguments.provider_base_url.rstrip("/")
     parsed_provider = urlsplit(provider_base_url)
     if (
@@ -178,6 +219,7 @@ def main() -> None:
         raise RuntimeError("Synthetic verification state root is invalid.")
 
     issuer = f"{provider_base_url}/{ISSUER_ID}"
+    _set_flow_stage("discovery")
     policy = OidcAccessTokenPolicy(
         issuer=issuer,
         audience=AUDIENCE,
@@ -200,11 +242,13 @@ def main() -> None:
     signing_keys.refresh()
     token_authenticator = OidcAccessTokenAuthenticator(policy, signing_keys)
 
+    _set_flow_stage("token-issuance")
     alice_token = _token(provider_base_url, "alice")
     bob_token = _token(provider_base_url, "bob")
     wrong_audience_token = _token(provider_base_url, "wrong-audience")
     insufficient_scope_token = _token(provider_base_url, "insufficient-scope")
 
+    _set_flow_stage("principal-validation")
     alice_principal = token_authenticator.authenticate(f"Bearer {alice_token}")
     if (
         alice_principal.key.tenant_id != TENANT_ID
@@ -214,6 +258,7 @@ def main() -> None:
     ):
         raise AssertionError("Synthetic validated principal authority was incorrect.")
 
+    _set_flow_stage("service-startup")
     identity_root = state_root / "identity"
     identity_root.mkdir(mode=0o700)
     repository = SqliteIdentityRepository(identity_root / "identity.sqlite3")
@@ -246,6 +291,7 @@ def main() -> None:
         request_authenticator=authenticator,
         job_service=jobs,
     )
+    live_job_request = _live_recording_job_request()
     host, port = server.server_address[:2]
     base_url = f"http://{host}:{port}"
     thread = threading.Thread(
@@ -255,13 +301,14 @@ def main() -> None:
     )
     thread.start()
     try:
+        _set_flow_stage("owner-create")
         created = _assert_status(
             _api_request(
                 base_url,
                 "/v1/jobs",
                 alice_token,
                 method="POST",
-                payload=batch_api_recording_job_request(),
+                payload=live_job_request,
                 idempotency_key="synthetic-owner-flow",
             ),
             HTTPStatus.ACCEPTED,
@@ -269,48 +316,63 @@ def main() -> None:
         job_id = created.get("jobId")
         if not isinstance(job_id, str):
             raise TypeError("Synthetic owner flow did not create a job.")
+        _set_flow_stage("owner-read")
         _assert_status(
             _api_request(base_url, f"/v1/jobs/{job_id}", alice_token),
             HTTPStatus.OK,
         )
+        _set_flow_stage("owner-isolation")
         _assert_status(
             _api_request(base_url, f"/v1/jobs/{job_id}", bob_token),
             HTTPStatus.NOT_FOUND,
             code="JOB_NOT_FOUND",
         )
+        _set_flow_stage("wrong-audience")
         _assert_status(
             _api_request(
                 base_url,
                 "/v1/jobs",
                 wrong_audience_token,
                 method="POST",
-                payload=batch_api_recording_job_request(),
+                payload=live_job_request,
                 idempotency_key="synthetic-wrong-audience",
             ),
             HTTPStatus.UNAUTHORIZED,
             code="INVALID_ACCESS_TOKEN",
         )
+        _set_flow_stage("insufficient-scope")
         _assert_status(
             _api_request(
                 base_url,
                 "/v1/jobs",
                 insufficient_scope_token,
                 method="POST",
-                payload=batch_api_recording_job_request(),
+                payload=live_job_request,
                 idempotency_key="synthetic-insufficient-scope",
             ),
             HTTPStatus.FORBIDDEN,
             code="INSUFFICIENT_SCOPE",
         )
     finally:
+        active_stage = _FLOW_STAGE
+        _set_flow_stage("service-shutdown")
         server.shutdown()
         server.server_close()
         thread.join(timeout=2)
         repository.close()
         if thread.is_alive():
             raise RuntimeError("Synthetic REST server did not stop.")
+        _set_flow_stage(active_stage)
+    _set_flow_stage("complete")
     print("MOCK_OIDC_OWNER_FLOW=PASS")
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as error:
+        print(
+            f"MOCK_OIDC_OWNER_FLOW=FAIL:{_FLOW_STAGE}:{_failure_category(error)}",
+            flush=True,
+        )
+        raise
