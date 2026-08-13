@@ -173,17 +173,27 @@ qualification, not sustained-capacity or production evidence. Hosted head
 Exact executable `0665c486...` privately qualified Analyst on the complex route;
 lock-only `8fee7a5c...` publishes the matching route lock. Three synchronized
 repeat waves matched 24 of 24 normal invocations and all 29 terminal outcomes.
-This qualifies an unmerged internal workflow, not a product endpoint or
-production service. See the
+Hosted head `da1127f8...` merged the internal core through PR #170 as
+`52c45d22...`. This qualifies a merged internal workflow, not a product endpoint
+or production service. See the
 [Analyst evidence](../evidence/analyst-grounded-cited-answers/VERIFICATION.md).
+
+Exact executable `fed729b3...` privately qualified Coordinator on the complex
+route. Three synchronized repeat waves matched 24 of 24 normal service calls
+and all 29 terminal outcomes. The gate independently proved exactly one ticket
+per invocation, 28 submitted leases, 26 completions, one client cancellation,
+one deadline expiry, and one pre-cancelled unsubmitted ticket. This qualifies
+an unmerged internal workflow, not a product endpoint, autonomous action, or
+production service. See the
+[Coordinator evidence](../evidence/coordinator-proposal-bundles/VERIFICATION.md).
 
 ## Later enablement and recovery
 
 Do not enable or start the admission unit until all of these are true:
 
-1. PRs #158, #168, and #169 have passed hosted exact-head review and merged
-   (complete); Analyst hosted review/merge remains separate from service
-   enablement;
+1. PRs #158, #168, #169, and #170 have passed hosted exact-head review and
+   merged (complete); Coordinator hosted review/merge remains separate from
+   service enablement;
 2. the selected provider topology has passed simultaneous-residency evidence;
 3. the authenticated Python workflow owns cancellation through final worker
    termination and can prove no work survives a released lease; and

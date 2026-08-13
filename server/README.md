@@ -896,8 +896,8 @@ renderer exposure, sustained capacity, and production operation remain pending.
 
 ## Analyst grounded cited-answer core
 
-The server also contains a privately qualified, unmerged internal Analyst
-candidate. `AnalystService` asks Librarian for one permission-safe evidence pack,
+The server contains a privately qualified, merged internal Analyst core.
+`AnalystService` asks Librarian for one permission-safe evidence pack,
 reauthorizes the exact succeeded pack and current generation in PostgreSQL, and
 uses the already-warm complex route only to select whole evidence-item indexes.
 Server-owned code derives the bounded answer and citation identities. Empty or
@@ -918,8 +918,38 @@ under the earlier concurrent online runtime made both attempts terminal and
 nonreusable. The replacement's three repeats prove only same-warm-process
 repeatability, not cross-start/global determinism. See the
 [Analyst verification record](../docs/evidence/analyst-grounded-cited-answers/VERIFICATION.md).
-Hosted review/merge, HTTP/native/renderer/UI exposure, simultaneous residency,
+Hosted head `da1127f8...` passed all 12 checks, and PR #170 merged the core as
+`52c45d22...`. HTTP/native/renderer/UI exposure, simultaneous residency,
 sustained capacity, a production SLO, and deployment remain pending.
+
+## Coordinator source-cited proposal-bundle core
+
+The server also contains a privately qualified, unmerged internal Coordinator
+candidate. `CoordinatorService` submits exactly one background complex-route
+lease for an explicit authenticated request, reads only the caller's current
+open Curator proposals, reauthorizes exact Curator lineage/current citations,
+and lets Gemma select ordered proposal indexes only. Server-owned code derives
+all selected content and citations into a noncanonical, review-required bundle.
+Coordinator writes no proposal, plan, task, source, or active knowledge and
+performs no autonomous action.
+
+Exact executable `fed729b3...` returned
+`coordinator-proposal-bundle-selection-qualified` with public-safe evidence
+SHA-256 `1bce03b6...`. Three synchronized repeat waves matched all 24 normal
+service calls; all 29 terminals matched, and 15 bundles contained 18 selected
+items with 18 server-owned citations. One ticket per invocation, 28 submitted
+leases, exact client/deadline cancellation identities, current Curator
+lineage, database/audit read-back, two PostgreSQL restarts, complex c8/ninth-
+queued containment, unchanged warm provider/broker identity, and teardown held.
+
+Exact `11f325bb...` completed the workload but failed closed before receipt
+publication because its verifier conflated the deadline-expired lease with an
+ordinary client cancellation. It emitted no receipt, is terminal, and is not
+reused; its owner-private harness teardown passed. See the
+[Coordinator verification record](../docs/evidence/coordinator-proposal-bundles/VERIFICATION.md).
+Hosted review/merge, HTTP/native/renderer/UI exposure, autonomous action,
+simultaneous residency, sustained capacity, a production SLO, and deployment
+remain pending.
 
 ## Local checks
 

@@ -1,11 +1,14 @@
 # Analyst grounded cited-answer verification
 
-**Status:** Exact executable candidate
+**Status:** Merged internal core. Exact executable candidate
 `0665c486398d2803ba33ebbb6e6dedddcd844dbd` privately qualified the
 internal Analyst core. Lock-only successor
 `8fee7a5c4969d482e5248b72013935e3f6f83b3c` publishes the matching route
-qualification lock. Hosted review, merge, HTTP/native/renderer/UI exposure,
-production operation, and deployment remain pending.
+qualification lock. Hosted head
+`da1127f82bf3a5e3ea05c0752a2a7e6d1a72328a` passed all 12 required checks,
+and PR #170 merged the core as
+`52c45d2284176f60905f5c3934a0fb878c3a1dd3`. HTTP/native/renderer/UI
+exposure, production operation, and deployment remain pending.
 
 ## Exact qualified candidate
 
@@ -87,9 +90,10 @@ evidence above plus three exact warm-provider repeats.
 
 ## Deliberate limits
 
-Analyst is a qualified internal candidate, not a merged or product-exposed
-workflow. The merged roster contains Scribe, Archivist, Student, Curator, and
-Librarian; Coordinator and Auditor remain later slices. No evidence here proves
+Analyst is a qualified merged internal core, not a product-exposed workflow.
+The merged roster contains Scribe, Archivist, Student, Curator, Librarian, and
+Analyst. Coordinator is a privately qualified unmerged candidate; Auditor
+remains the final later slice. No evidence here proves
 simultaneous Qwen/Gemma residency, sustained multi-user capacity or fairness,
 production p50/p95/p99 or an SLO, availability, enterprise networking, or
 deployment. One Spark can run the unchanged full Qwen and Gemma profiles only

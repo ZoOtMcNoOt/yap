@@ -3,7 +3,22 @@
 This changelog records product/architecture milestones. Exact test counts and
 immutable evidence belong in phase/checkpoint evidence records.
 
-## 2026-08-13 — Phase 10 Analyst qualified candidate
+## 2026-08-13 — Phase 10 Coordinator qualified candidate
+
+- Exact executable candidate `fed729b3...` privately qualified the internal
+  Coordinator selection-only proposal-bundle core. Three synchronized eight-
+  owner waves matched all 24 normal calls; all 29 terminals matched, including
+  15 server-derived bundles with 18 selected items and 18 citations.
+- The live complex probe held eight owners and queued the ninth. Exact Curator
+  lineage, current authorization, audit cardinality, two PostgreSQL restart/
+  read-backs, one lease per invocation, deadline/client cancellation, and exact
+  teardown passed.
+- Coordinator remains unmerged and has no HTTP, native, renderer, UI, product,
+  autonomous-action, or knowledge-mutation surface. Same-warm-process evidence
+  is not simultaneous residency, sustained capacity, a production SLO, or
+  deployment evidence.
+
+## 2026-08-13 — Phase 10 Analyst merged internal core
 
 - Exact executable candidate `0665c486...` privately qualified the internal
   Analyst grounded cited-answer core. Three synchronized eight-owner waves
@@ -12,8 +27,9 @@ immutable evidence belong in phase/checkpoint evidence records.
 - The replacement complex profile is batch invariant with request seed `0` and
   prefix caching disabled. The live complex admission probe held eight owners
   and queued the ninth without changing the warm provider or broker identity.
-- Lock-only successor `8fee7a5c...` publishes the matching route lock. Analyst
-  remains unmerged and has no HTTP, native, renderer, UI, or product surface.
+- Lock-only successor `8fee7a5c...` publishes the matching route lock. Hosted
+  head `da1127f8...` passed all 12 checks, and PR #170 merged Analyst as
+  `52c45d22...`. Analyst has no HTTP, native, renderer, UI, or product surface.
   Same-warm-process repeatability is not cross-start/global determinism,
   simultaneous residency, sustained capacity, a production SLO, or deployment.
 

@@ -5,7 +5,8 @@
 batch-invariant route qualification.
 Lock-only successor `8fee7a5c4969d482e5248b72013935e3f6f83b3c`
 publishes the matching route lock and passed the aggregate governed-knowledge
-gate. Hosted review/merge, simultaneous two-route
+gate. Hosted head `da1127f8...` passed all 12 checks, and PR #170 merged that
+lock/documentation successor as `52c45d22...`. Simultaneous two-route
 residency, sustained capacity/SLO evidence, product promotion, and deployment
 remain open. The prior profile-capacity successor remains merged through PR
 #168; its historical receipt is not relabeled.
@@ -30,8 +31,10 @@ and `0.70` GPU-memory utilization while adding batch-invariant execution,
 request seed `0`, and disabled prefix caching. The live complex probe held eight
 owners, queued the ninth, contained every lease, and preserved provider/broker
 identity. Analyst then matched three synchronized eight-owner repeat waves
-inside the same warm provider process. This is not cross-start/global
-determinism, sustained capacity, or a production SLO.
+inside the same warm provider process. Exact `fed729b3...` later qualified
+Coordinator with three more exact synchronized eight-owner service waves and a
+fresh c8/ninth-queued probe on one unchanged warm process. This is not cross-
+start/global determinism, sustained capacity, or a production SLO.
 
 ## Prior merged profile-capacity evidence
 
@@ -70,10 +73,12 @@ broker identities.
   `ca7ead2a0b8ac282e3c832350421ce4c534b36b00202fba2c46b453518f62ff4`.
 - Analyst public-safe evidence SHA-256:
   `940fd7c6c275018c721c54dd2cf8a832e64007907248b2a88a39d928ce891305`.
+- Coordinator public-safe evidence SHA-256:
+  `1bce03b6844d633b09504d9c27ddeac8c96521c569d1eedeecf4f0de2cef5334`.
 - Aggregate public-safe evidence SHA-256:
   `5d4b6e107f8e1f833c3ba007521e233c504feca1f4f83ef8e6889bb7a64cc5d2`.
 
-The current portable server read-back is 1,384 tests: 1,342 passed and 42
+The current portable server read-back is 1,449 tests: 1,404 passed and 45
 declared platform/capability skips. The governed fixed membership is 173 tests:
 169 passed and four were declared skips.
 

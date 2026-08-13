@@ -910,9 +910,10 @@ unconfigured.
   qualified Librarian; hosted head `7505247e...` merged it through PR #169 as
   `d7a7e003...`. Exact executable `0665c486...` privately qualified Analyst, and
   lock-only `8fee7a5c...` publishes the matching batch-invariant route lock.
-  Analyst hosted review/merge, Coordinator, Auditor, and non-Scribe product
-  exposure remain open. Proven selected-
-  route capacity four/eight is
+  Hosted head `da1127f8...` merged Analyst through PR #170 as `52c45d22...`.
+  Exact `fed729b3...` privately qualified Coordinator. Coordinator hosted
+  review/merge, Auditor, and non-Scribe product exposure remain open. Proven
+  selected-route capacity four/eight is
   not simultaneous-model residency, sustained capacity/SLO, or production
   evidence.
 - Integrate the remaining provider-specific ASR and vLLM agent/LLM workflows

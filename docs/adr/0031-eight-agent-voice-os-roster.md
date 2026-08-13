@@ -1,6 +1,6 @@
 # ADR 0031: Eight-agent Voice OS roster and execution boundaries
 
-**Status:** Accepted target; five role cores merged through PR #169; Analyst privately qualified as an unmerged internal candidate; Coordinator and Auditor plus product exposure and promotion remain open
+**Status:** Accepted target; six role cores merged through PR #170; Coordinator privately qualified as an unmerged internal candidate; Auditor plus product exposure and promotion remain open
 **Date:** 2026-08-11
 **Deciders:** Yap product and engineering owner
 **Amends:** [ADR 0006](0006-silero-agents-state-machine.md),
@@ -58,8 +58,14 @@ terminal/inadmissible because only seven owners entered broker submission.
 Exact executable `0665c486...` then privately qualified Analyst as an internal
 candidate with public-safe evidence SHA-256 `940fd7c6...`: three synchronized
 eight-owner waves matched 24 of 24 normal results, all 29 terminals matched,
-and the 12 answers contained 15 server-owned citations. Coordinator and Auditor
-remain pending.
+and the 12 answers contained 15 server-owned citations. Hosted head
+`da1127f8...` passed all 12 checks, and PR #170 merged Analyst as
+`52c45d22...`. Exact executable `fed729b3...` then privately qualified
+Coordinator's selection-only proposal-bundle core with public-safe evidence
+SHA-256 `1bce03b6...`: three synchronized eight-owner waves matched all 24
+normal calls, all 29 terminals matched, and 15 noncanonical review-required
+bundles contained 18 selected proposals and 18 server-owned citations. Auditor
+remains pending.
 
 The current protected successor still derives four rapid and eight complex
 active limits from the immutable full profiles while retaining one active
@@ -97,8 +103,8 @@ product workflow, not an autonomous identity and not a generic chat agent.
 | **Curator** | User submits a reviewed answer to a Student prompt or explicitly proposes knowledge | Reviewed answer plus source citations and authority | Complex orchestration | Governed proposal only; no direct knowledge mutation | Reject proposal and publish no success audit |
 | **Auditor** | Authorized manual run or bounded scheduled review | Immutable audit/review records and current authority | Complex orchestration, idle-only | Source-cited review findings | Defer while hot work is active; never mutate source truth |
 | **Librarian** | Authenticated knowledge query | Tenant/subject authorization and active-generation snapshot | No LLM | Permission-safe evidence pack | Typed unavailable/unauthorized result; no hidden-node leakage |
-| **Analyst** | User requests an explanation from a Librarian evidence pack | Frozen evidence pack and question | Complex orchestration for complex work; rapid route only for its accepted class | Governed cited answer | Evidence-unavailable response; no uncited answer |
-| **Coordinator** | User requests cross-conversation planning or an admitted conversation event enables it | Permission-safe conversation summaries, open proposals, and explicit purpose | Complex orchestration | Source-cited plan/proposal, never an autonomous mutation | No plan/proposal; local product remains usable |
+| **Analyst** | Authenticated user requests a grounded answer; the server obtains the current Librarian evidence pack | Server-owned evidence pack and question | Complex orchestration for complex work; rapid route only for its accepted class | Governed cited answer | Evidence-unavailable response; no uncited answer |
+| **Coordinator** | Authenticated user explicitly requests a coordination bundle | Caller-owned current open Curator proposals, exact Curator lineage, current source citations, and fixed purpose | Complex orchestration | Server-derived source-cited noncanonical review-required proposal bundle; no autonomous mutation | Evidence unavailable or no bundle; local product remains usable |
 
 ### Shared execution rules
 
@@ -250,6 +256,14 @@ Analyst qualified at the executable candidate with `940fd7c6...`, three exact
 synchronized repeat waves, 24 of 24 normal matches, 29 exact terminals, 12
 answers, and 15 server-owned citations. Exact `63c3d9fd...` remains terminal
 no-receipt evidence from the prior schedule-sensitive runtime and is not reused.
+Hosted head `da1127f8...` passed all 12 checks and PR #170 merged Analyst as
+`52c45d22...`. Exact `fed729b3...` privately qualified Coordinator with
+public-safe evidence SHA-256 `1bce03b6...`: three exact synchronized repeat
+waves, 24 of 24 normal matches, 29 exact terminals, 15 server-derived bundles,
+18 selected proposals, 18 citations, exact Curator/current-authority lineage,
+one lease per invocation, two PostgreSQL restart/read-backs, and teardown. Exact
+`11f325bb...` failed closed before receipt publication on the superseded
+deadline-lifecycle verifier and is not reused.
 
 Exact Student candidate `452c8b76...` originally returned
 `student-learning-questions-qualified` with public-safe semantic evidence
@@ -288,10 +302,11 @@ head `b03c6e79...` passed all 12 checks and PR #166 merged the internal core as
 `2254605e...`. The Curator/profile-capacity successor retained exact
 qualification at `7cd24deb...`/`7f896b34...`; hosted-green head `593e627b...`
 passed all 12 checks, and PR #168 merged it as `284ab96b...`. Hosted head
-`7505247e...` then merged Librarian through PR #169 as `d7a7e003...`. Student,
-Curator, and Librarian product exposure, warm simultaneous two-route residency,
-Analyst hosted review/merge, the two remaining workflows (Coordinator and
-Auditor), sustained multi-owner capacity, and production promotion remain open.
+`7505247e...` then merged Librarian through PR #169 as `d7a7e003...`; hosted
+head `da1127f8...` merged Analyst through PR #170 as `52c45d22...`. Student,
+Curator, Librarian, and Analyst product exposure, warm simultaneous two-route
+residency, Coordinator hosted review/merge, the final Auditor workflow,
+sustained multi-owner capacity, and production promotion remain open.
 One Spark cannot retain the
 unchanged `0.40` Qwen and `0.70` Gemma
 profiles simultaneously; a second owned GPU node/private route remains

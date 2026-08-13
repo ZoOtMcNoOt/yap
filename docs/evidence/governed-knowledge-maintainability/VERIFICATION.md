@@ -2,13 +2,14 @@
 
 This record separates inherited merged evidence, focused repair checks, the
 completed and hosted-merged Phase 9 checkpoint gate, historical Phase 10 public
-read-backs, the frozen Librarian successor, and the current Analyst successor. The Curator/profile-capacity
-successor is privately qualified
-at exact protected heads and has a public-lock/aggregate result. Hosted-green
-head `593e627b...` passed all 12 checks, and PR #168 merged it as `284ab96b...`.
-Product exposure remains open. Historical inventories remain labeled at their
-exact heads. The final section records the exact current Analyst successor
-threshold read-back.
+read-backs, the frozen Librarian and Analyst successors, and the current
+Coordinator successor. The Curator/profile-capacity successor is privately
+qualified at exact protected heads and has a public-lock/aggregate result.
+Hosted-green head `593e627b...` passed all 12 checks, and PR #168 merged it as
+`284ab96b...`; hosted head `da1127f8...` later merged Analyst through PR #170 as
+`52c45d22...`. Product exposure remains open. Historical inventories remain
+labeled at their exact heads. The final section records the exact current
+Coordinator threshold read-back.
 
 ## Inherited Phase 9 evidence
 
@@ -569,7 +570,7 @@ entered broker submission; its receipt is not reused.
   skips. Ruff and diff checks were clean.
 - The 250-line inventory enumerated 552 surfaces: 308 at or above 350 lines and
   244 from 250 through 349. Those counts remain the frozen snapshot; the
-  appendix now records the current Analyst successor instead.
+  appendix now records the current Coordinator successor instead.
 
 These checks did not product-promote Librarian and do not prove sustained
 capacity, production SLOs, simultaneous model residency, availability,
@@ -603,12 +604,56 @@ Librarian, and aggregate public-safe evidence SHA-256 values are respectively
 and `5d4b6e107f8e1f833c3ba007521e233c504feca1f4f83ef8e6889bb7a64cc5d2`.
 The public portable server suite ran 1,384
 tests: 1,342 passed and 42 were declared skips. The governed fixed membership
-ran 173 tests: 169 passed and four were declared skips. The current 250-line
-inventory enumerates 565 surfaces: 318 at or above 350 lines and 247 from 250
-through 349. The exact 318 path/line/disposition tuples are reproduced in
+ran 173 tests: 169 passed and four were declared skips. The Analyst successor's
+250-line inventory enumerated 565 surfaces: 318 at or above 350 lines and 247
+from 250 through 349. The exact current Coordinator successor tuples supersede
+that historical read-back in
 [THRESHOLD-DISPOSITION.md](THRESHOLD-DISPOSITION.md).
 
 This is internal qualification, not hosted merge or product exposure. It does
 not prove simultaneous Qwen/Gemma residency, sustained capacity/fairness,
 production p50/p95/p99 or an SLO, cross-start/global determinism, enterprise
 networking, or deployment.
+
+## Phase 10 Coordinator successor public read-back
+
+Exact executable candidate `fed729b3dcbb7bba4c89daaa9d857bf57976ab8e`
+returned `coordinator-proposal-bundle-selection-qualified` with public-safe
+evidence SHA-256
+`1bce03b6844d633b09504d9c27ddeac8c96521c569d1eedeecf4f0de2cef5334`.
+The acceptance-plan and corpus-v2 SHA-256 values are
+`34f7152da6eeeb7c21018bcfb4581cfea89d794414ffe15e7a690e43d64d5b04`
+and `e427bb41a7cd351e0b092333a6ce800a4abd931fa7593e3b9d6f127f9b95895f`.
+Three synchronized repeat waves exactly matched 24 of 24 normal service calls;
+all 29 terminals matched, including 15 server-derived noncanonical,
+review-required bundles with 18 selected proposals and 18 server-owned
+citations. Exact ticket evidence recorded 29 created, 28 submitted, 26
+completed, two cancelled controls, and one pre-cancelled unsubmitted ticket,
+with every submitted lease terminal and no nested role-service lease.
+
+The gate used the unchanged batch-invariant full Gemma complex profile at c8,
+fixed seed `0`, and disabled prefix caching. It independently compiled current
+knowledge, published the synthetic inputs through the production Curator
+runtime, reauthorized current citations and exact Curator lineage, read back
+the expected Coordinator/Curator/tool audit cardinality through two owned
+PostgreSQL restarts, and passed all six database teardown assertions. The live
+capacity probe held eight owners while a ninth queued; the provider and broker
+identities remained unchanged. This is same-warm-process repeatability, not
+simultaneous inference or cross-start/global determinism.
+
+At exact clean `fed729b3...`, the portable server suite ran 1,449 tests: 1,404
+passed and 45 were declared skips. The governed fixed membership ran 173 tests:
+169 passed and four were declared skips. Whole-tree Ruff check, changed-file
+format check, exact 336-input candidate admission, focused Coordinator/Rust
+checks, and `git diff --check` were green. Against that executable candidate,
+with this public documentation reconciliation applied, the current 250-line
+inventory enumerates 580 surfaces: 330 at or above 350 lines and 250 from 250
+through 349. The exact 330 path/line/disposition tuples are reproduced in
+[THRESHOLD-DISPOSITION.md](THRESHOLD-DISPOSITION.md).
+
+This record does not product-promote Coordinator. Hosted merge, Auditor,
+HTTP/native/renderer/UI exposure, autonomous action, simultaneous Qwen/Gemma
+residency, sustained capacity/fairness, production p50/p95/p99 or an SLO,
+enterprise networking, and deployment remain open. Owner-private tenant/run
+identities, prompts, model output, proposal and citation bytes, database rows,
+paths, DSN, and individual measurements remain outside Git.
