@@ -3,6 +3,16 @@
 This changelog records product/architecture milestones. Exact test counts and
 immutable evidence belong in phase/checkpoint evidence records.
 
+## 2026-08-13 — Phase 10 Librarian qualified candidate
+
+- Exact head `56b7f5d0...` privately qualified a no-LLM, permission-safe
+  Librarian read core across eight authenticated owners with exact hidden-data,
+  revocation, stale-generation, cancellation, audit, restart, admission, and
+  teardown boundaries.
+- Librarian remains an unmerged internal candidate. Hosted review/merge and all
+  HTTP, native, renderer, user-facing, capacity, and production claims remain
+  pending. The merged role count remains four.
+
 ## 2026-08-13 — Phase 10 Curator and admission-capacity successor
 
 - Adds an explicit-submission-only Curator workflow that may publish a

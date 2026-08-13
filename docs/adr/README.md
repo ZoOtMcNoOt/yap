@@ -85,8 +85,10 @@ SHA-256 `f597cca7...`; hosted-green head `b03c6e79...` passed all 12 checks and
   `dab19fe...` qualified four-rapid/eight-complex selected-route admission, and
   exact aggregate head `7f896b34...` passed. Hosted-green head `593e627b...`
   passed all 12 checks, and PR #168 merged the slice as `284ab96b...`. Curator
-  product exposure, warm simultaneous residency, Librarian, Analyst,
-  Coordinator, and Auditor, sustained capacity, and promotion remain open.
+  product exposure and warm simultaneous residency remain open. Exact
+  `56b7f5d0...` privately qualified Librarian as an unmerged internal candidate;
+  hosted review/merge, Analyst, Coordinator, Auditor, sustained capacity, and
+  promotion remain open.
 
 ## Applicability and precedence
 
@@ -137,7 +139,7 @@ Every implementation plan must list its applied ADRs, superseded details it inte
 | [0028](0028-model-independent-terminology-authority.md) | Model-independent terminology authority and frozen projections | Accepted; merged Phase 9 has server-derived ownership, immutable job snapshots, bounded projections, revocation, governed-agent consumption, and a passed complete gate; production UI and operations remain open |
 | [0029](0029-vllm-agent-reasoning-runtime.md) | vLLM agent reasoning runtime on DGX Spark | Accepted; exact-head private Qwen rapid/Gemma complex route qualification and aggregate Phase 9 admission passed and merged through PR #152; the post-Phase-9 checkpoint gate passed at `22c3f369...` and hosted head `84c22ec9...` merged through PR #153; production serving, simultaneous residency, and sustained capacity remain Phase 10 |
 | [0030](0030-rust-supervised-provider-service-lifecycle.md) | Rust-supervised provider service lifecycle | Accepted Phase 10 target; Slices 10.1 and 10.2 merged the hardware-independent systemd/Rust/foreground-launcher boundary and immutable Qwen/Gemma profiles through PRs #155 and #157. Slice 10.3 bounded admission merged under ADR 0031 through PR #158; simultaneous residency, sustained capacity, and production operation remain open. |
-| [0031](0031-eight-agent-voice-os-roster.md) | Eight-agent Voice OS roster and execution boundaries | Accepted Phase 10 target; bounded already-warm admission merged through PR #158, Scribe through PR #164, Archivist through PR #165, and Student through PR #166. Exact workflow head `7cd24deb...` privately requalified Scribe and Student and qualified the nonmutating Curator core; exact route head `dab19fe...` qualified selected-route capacity four/eight, and exact aggregate head `7f896b34...` passed. Hosted-green head `593e627b...` passed all 12 checks, and PR #168 merged the Curator/profile-capacity slice as `284ab96b...`. Four role cores are merged; Librarian, Analyst, Coordinator, and Auditor, product exposure, simultaneous full-profile residency, sustained capacity, and production promotion remain pending. |
+| [0031](0031-eight-agent-voice-os-roster.md) | Eight-agent Voice OS roster and execution boundaries | Accepted Phase 10 target; bounded admission, Scribe, Archivist, Student, and Curator/profile-capacity are merged through PR #168. Four role cores are merged. Exact `56b7f5d0...` privately qualified the no-LLM Librarian core as an unmerged internal candidate. Librarian hosted review/merge, Analyst, Coordinator, Auditor, product exposure, simultaneous full-profile residency, sustained capacity, and production promotion remain pending. |
 
 **Build specs** (how, not why): [docs/specs/](../specs/) — STT sidecar, LLM sidecar, live UX, testing.
 

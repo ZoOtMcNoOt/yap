@@ -151,6 +151,15 @@ Exact aggregate/public-lock head `7f896b34...` returned
 PR #168 merged as `284ab96b...`; none of these facts is a sustained-load or
 production-availability claim.
 
+Exact `56b7f5d0...` separately qualified the no-LLM Librarian candidate on the
+Server-IO route: one owner was active, the second queued, cancellation and
+acknowledgement completed, every probe lease was contained, and broker identity
+remained unchanged. The actual synchronized normal-owner wave submitted all
+eight owners. Librarian acquired no model-route lease. This is workflow
+qualification, not sustained-capacity or production evidence; hosted review and
+merge remain pending. See the
+[Librarian evidence](../evidence/librarian-permission-safe-evidence/VERIFICATION.md).
+
 ## Later enablement and recovery
 
 Do not enable or start the admission unit until all of these are true:

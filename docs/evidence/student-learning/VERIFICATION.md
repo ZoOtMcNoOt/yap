@@ -155,8 +155,9 @@ protected broker/model-client inputs and therefore received its own exact-head
 route and affected-workflow qualifications; the historical PR #166 receipt is
 not relabeled. Current evidence does not prove sustained multi-owner throughput,
 route p95/p99 SLOs, simultaneous full Qwen/Gemma residency, or a two-node warm
-topology. Curator is a merged internal core without product exposure; the four
-remaining workflows (Librarian, Analyst, Coordinator, and Auditor), and
+topology. Curator is a merged internal core without product exposure; Librarian
+is a privately qualified unmerged candidate; the remaining workflows (Analyst,
+Coordinator, and Auditor), and
 aggregate Phase 10 completion remain open. A fresh post-aggregate observation
 on 2026-08-12 found the unchanged full Qwen rapid route warm on the current
 single Spark. Full-strength two-route promotion requires a second owned GPU

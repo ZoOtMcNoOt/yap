@@ -56,8 +56,9 @@ broker identities.
 The aggregate admitted the matching route lock, ran the fixed public suite and
 lint, exercised the required real-PostgreSQL tests and process restart,
 preserved the local/offline product boundary, and completed exact teardown.
-The current complete portable server read-back is 1,282 tests: 1,245 passed and
-37 declared platform/capability skips. The governed fixed set is 172 tests.
+The current complete portable server read-back is 1,330 tests: 1,290 passed and
+40 declared platform/capability skips. The governed fixed set is 172 tests:
+168 passed and four were declared skips.
 
 ## Terminal route evidence
 

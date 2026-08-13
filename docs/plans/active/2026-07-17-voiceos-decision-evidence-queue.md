@@ -906,8 +906,10 @@ unconfigured.
   product exposure remains open. Exact route head `dab19fe...`, workflow head
   `7cd24deb...`, and aggregate/public-lock head `7f896b34...` privately qualified
   the Curator/profile-capacity successor. Hosted-green head `593e627b...` passed
-  all 12 checks, and PR #168 merged it as `284ab96b...`. Librarian, Analyst,
-  Coordinator, and Auditor plus product exposure remain open. Proven selected-
+  all 12 checks, and PR #168 merged it as `284ab96b...`. Exact `56b7f5d0...`
+  privately qualified Librarian as an unmerged internal candidate. Librarian
+  hosted review/merge, Analyst, Coordinator, Auditor, and product exposure
+  remain open. Proven selected-
   route capacity four/eight is
   not simultaneous-model residency, sustained capacity/SLO, or production
   evidence.

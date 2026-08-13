@@ -22,8 +22,10 @@ profiles sequentially, exact workflow head `7cd24deb...` qualified Scribe,
 Student, and Curator, and public-lock/aggregate head `7f896b34...` passed the
 governed gate. Hosted-green head `593e627b...` passed all 12 checks, and PR #168
 merged the profile-capacity successor and Curator internal core as
-`284ab96b...`. Curator has no HTTP/native/UI product surface. Librarian, Analyst,
-Coordinator, and Auditor plus capacity/operations layers remain open.
+`284ab96b...`. Curator has no HTTP/native/UI product surface. Exact
+`56b7f5d0...` privately qualified the no-LLM Librarian core as an unmerged
+internal candidate. Librarian product/merge promotion, Analyst, Coordinator,
+Auditor, and capacity/operations layers remain open.
 Phase 7
 implements provider-neutral
 OIDC verification with Entra policy, fail-closed authentication, tenant-scoped
@@ -1095,6 +1097,19 @@ See the [profile-capacity evidence](../evidence/agent-admission-profile-capacity
 and [Curator evidence](../evidence/curator-knowledge-proposals/VERIFICATION.md).
 Hosted-green head `593e627b...` passed all 12 checks, and PR #168 merged the
 slice as `284ab96b...`. Every Curator product surface remains open.
+
+Exact candidate `56b7f5d0...` qualifies Librarian as a no-LLM Server-IO read
+workflow, not as a merged or exposed product. The server pins retrieval to the
+authenticated permission view and active generation, suppresses hidden nodes
+and links before limiting, and records content-free terminal audits. Its actual
+eight-normal-owner wave entered the broker; the Server-IO capacity probe held
+one and queued the second, then cancelled/acknowledged and contained both with
+no model-route lease. Ten exact invocations, two PostgreSQL restart read-backs,
+zero proposal writes, exact audits, and six-part teardown passed. Exact
+predecessor `ecdcb8ee...` is terminal/inadmissible because only seven owners
+entered broker submission. See the
+[Librarian evidence](../evidence/librarian-permission-safe-evidence/VERIFICATION.md).
+Hosted review, merge, endpoints, UI, and production operation remain pending.
 
 A fresh post-aggregate observation on 2026-08-12 found Qwen rapid warm and the
 broker active against exact rapid profile hash `14712e69...`; the observed

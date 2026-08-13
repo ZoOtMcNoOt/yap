@@ -10,9 +10,10 @@ Exact `0970d74c...` remains terminal `deterministic-no-student`. Exact route
 head `dab19fe...`, workflow head `7cd24deb...`, and aggregate/public-lock head
 `7f896b34...` privately qualified the Curator/profile-capacity successor.
 Hosted-green head `593e627b...` passed all 12 checks, and PR #168 merged it as
-`284ab96b...`. Student/Curator product exposure, Librarian, Analyst, Coordinator,
-and Auditor, simultaneous full-profile capacity, and production promotion
-remain open.
+`284ab96b...`. Exact `56b7f5d0...` privately qualified Librarian as an unmerged
+no-LLM internal candidate. Student/Curator/Librarian product exposure,
+Librarian hosted review/merge, Analyst, Coordinator, Auditor, simultaneous
+full-profile capacity, and production promotion remain open.
 
 **Base:** merged post-Phase-9 maintainability closure
 `fc8a16510fa27514db244eb641dea582918a940b` from

@@ -9,12 +9,13 @@ merged the internal core as `2254605e...`. Exact route head `dab19fe...`,
 workflow head `7cd24deb...`, and aggregate/public-lock head `7f896b34...`
 privately qualified the Curator/profile-capacity successor. Hosted-green head
 `593e627b...` passed all 12 checks, and PR #168 merged it as `284ab96b...`.
-Student/Curator product integration, simultaneous-capacity evidence, and four
-remaining role slices remain open.
+Student/Curator product integration and simultaneous-capacity evidence remain
+open. Librarian is privately qualified as an unmerged internal candidate;
+Analyst, Coordinator, and Auditor remain later role slices.
 
-**Current branch:** `agent/phase10-librarian` starts the Librarian Slice E work.
-The branch name authorizes planning and implementation only; no Librarian code,
-qualification, product surface, or delivery is claimed yet. Later slices use
+**Current branch:** `agent/phase10-librarian` contains exact privately qualified
+Librarian candidate `56b7f5d0...`. Hosted review/merge and product exposure are
+not claimed. Later slices use
 focused branches and merge only after their exact heads are reviewed and
 hosted-green.
 
@@ -359,11 +360,13 @@ were not reused for these protected changes. Hosted-green head `593e627b...`
 passed all 12 checks, and PR #168 merged the slice as `284ab96b...`. Curator
 product exposure remains open. This evidence does not prove sustained capacity,
 simultaneous Qwen/Gemma residency, production SLOs, or deployment. The current
-Librarian branch starts the next slice but has no claimed implementation yet.
+Exact `56b7f5d0...` privately qualified Librarian across the corrected actual
+eight-owner broker wave. It remains an unmerged internal candidate; exact
+predecessor `ecdcb8ee...` is terminal/inadmissible and is not reused.
 
 ## Slice E — knowledge and coordination agents
 
-- [ ] Librarian returns a permission-safe evidence pack pinned to one active
+- [x] Librarian returns a permission-safe evidence pack pinned to one active
   generation for the transaction lifetime and never invokes an LLM.
 - [ ] Analyst produces a bounded cited answer from that frozen pack or an exact
   evidence-unavailable response.
@@ -371,8 +374,11 @@ Librarian branch starts the next slice but has no claimed implementation yet.
   cross-conversation inputs and never performs autonomous mutations.
 - [ ] Auditor runs only by authorized manual trigger or bounded schedule while
   idle, publishes source-cited findings, and never mutates authority.
-- [ ] Prove revocation, hidden-node/link rejection, stale generation,
-  cancellation, overload, idle admission, and audit/publication behavior.
+- [x] Prove Librarian revocation, hidden-before-limit/link suppression, hidden-
+  only equivalence, stale generation, cancellation/deadline, Server-IO queue
+  containment, exact audits, restart/read-back, and teardown behavior.
+- [ ] Prove Analyst/Coordinator/Auditor role-specific failure and publication
+  behavior in their later slices.
 
 ## Slice F — product integration and promotion evidence
 

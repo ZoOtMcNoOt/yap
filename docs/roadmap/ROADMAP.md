@@ -253,8 +253,9 @@ and qualified the nonmutating Curator core with public-safe evidence
 SHA-256 `b60df1e2...`; exact aggregate/public-lock head `7f896b34...` passed with
 public-safe evidence SHA-256 `fd197b98...`. Hosted-green head `593e627b...`
 passed all 12 checks, and PR #168 merged the slice as `284ab96b...`. Student and
-Curator product exposure remain open. Librarian, Analyst, Coordinator, and
-Auditor remain unimplemented. Proven
+Curator product exposure remain open. Exact `56b7f5d0...` privately qualified
+Librarian as an unmerged internal candidate; its hosted review/merge and product
+surface remain open. Analyst, Coordinator, and Auditor remain unimplemented. Proven
 selected-route limits of four rapid/eight complex are not simultaneous-model,
 sustained-capacity, or production-SLO evidence. One Spark cannot retain both
 unchanged full profiles simultaneously, so warm two-route promotion requires a

@@ -865,6 +865,25 @@ passed all 12 checks, and PR #168 merged the core as `284ab96b...`. HTTP,
 native, renderer/UI, active-knowledge promotion, and production operation remain
 open.
 
+## Librarian permission-safe evidence core
+
+The server now contains a privately qualified, unmerged no-LLM Librarian
+candidate. `LibrarianService` admits one authenticated interactive Server-IO
+read, pins the permission-safe active generation, filters hidden nodes and links
+before limiting, and returns a bounded evidence pack or typed terminal result.
+It writes no proposal, activates no generation, and acquires no model lease.
+
+Exact head `56b7f5d0...` returned
+`librarian-permission-safe-evidence-qualified` with public-safe evidence
+SHA-256 `def8e648...`. The actual eight-normal-owner broker wave, ten exact
+invocations, Server-IO one-active/second-queued cancellation containment, two
+PostgreSQL restart/read-backs, exact tool/result audits, zero proposals, and
+six-part teardown passed. Exact predecessor `ecdcb8ee...` is terminal and
+inadmissible because adversarial review found only seven broker submissions.
+See the [Librarian verification record](../docs/evidence/librarian-permission-safe-evidence/VERIFICATION.md).
+Hosted review/merge, HTTP/native/renderer exposure, sustained capacity, and
+production operation remain pending.
+
 ## Local checks
 
 ```powershell

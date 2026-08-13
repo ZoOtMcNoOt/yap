@@ -1078,6 +1078,28 @@ admissible Curator success evidence, and remains terminal; no teardown result is
 attributed to it. See the
 [Curator verification record](../../evidence/curator-knowledge-proposals/VERIFICATION.md).
 
+### 31. Librarian permission-safe evidence core
+
+- **Status:** privately qualified unmerged internal candidate at exact head
+  `56b7f5d0...`; hosted review/merge and all product surfaces remain pending.
+- **Entry point:** `yap_server/agents/librarian_service.py` owns one bounded
+  authenticated Server-IO read. It acquires no model-route lease.
+- **Authoritative owner:** the Postgres permission-safe retrieval owner pins the
+  active generation and derives citations; Librarian cannot accept caller-owned
+  evidence authority or expose hidden nodes or links.
+- **Persisted state:** the immutable Librarian result-audit ledger records only
+  bounded identities and terminal outcomes. Librarian writes no knowledge
+  proposal and activates no generation.
+- **Failure/recovery:** stale generation, revocation, unavailable evidence,
+  deadline, cancellation, audit failure, and admission failure return typed
+  fail-closed outcomes. Exact predecessor `ecdcb8ee...` is terminal and not
+  reused because its nominal eight-owner wave produced seven broker submissions.
+- **Duplicate owner:** none. The broker owns the Server-IO lease; permission-safe
+  retrieval owns evidence; `LibrarianService` owns workflow termination; the
+  result-audit ledger owns durable outcome identity.
+
+See the [Librarian verification record](../../evidence/librarian-permission-safe-evidence/VERIFICATION.md).
+
 ## Persistent-state owners
 
 | State | Owner | Projection/consumer |
@@ -1103,6 +1125,7 @@ attributed to it. See the
 | Accepted transcript-correction revisions | native Scribe revision owner | React diff/history projection; raw transcript remains authoritative |
 | Archivist ingestion outcomes | reviewed-capture, source-admission, and generation ledgers | typed staged-generation result; no activation |
 | Student workflow outcomes | immutable Student result-audit ledger | typed source-supported question result; question text is not durable audit state |
+| Librarian workflow outcomes | immutable Librarian result-audit ledger | typed permission-safe evidence result; evidence text is not durable audit state |
 | Presentation preferences/drafts | feature-specific frontend storage/state | React only |
 
 ## No-multiple-owner invariant

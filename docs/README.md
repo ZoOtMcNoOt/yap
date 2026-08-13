@@ -64,6 +64,7 @@ availability.
 - [CI actions and cache hardening](plans/active/2026-07-13-ci-actions-cache-hardening.md)
 - [VoiceOS/Yap decision, evidence, and future-work queue](plans/active/2026-07-17-voiceos-decision-evidence-queue.md)
 - [Integrated MVP validation and delivery control](plans/active/2026-07-23-integrated-mvp-validation-and-delivery-control.md)
+- [Complete eight-agent Voice OS delivery](plans/active/2026-08-11-eight-agent-voice-os-delivery.md)
 - [Phase 10 supervised provider services](plans/active/2026-08-11-phase-10-supervised-provider-services.md)
 
 ### Queued
