@@ -33,8 +33,11 @@ owners, queued the ninth, contained every lease, and preserved provider/broker
 identity. Analyst then matched three synchronized eight-owner repeat waves
 inside the same warm provider process. Exact `fed729b3...` later qualified
 Coordinator with three more exact synchronized eight-owner service waves and a
-fresh c8/ninth-queued probe on one unchanged warm process. This is not cross-
-start/global determinism, sustained capacity, or a production SLO.
+fresh c8/ninth-queued probe on one unchanged warm process. Exact `08b06f6d...`
+later qualified Auditor with three exact synchronized idle-only service waves,
+a fresh c8/ninth-queued probe, and a separate observation that active or queued
+non-idle work blocks Auditor until terminal. This is not cross-start/global
+determinism, sustained capacity, or a production SLO.
 
 ## Prior merged profile-capacity evidence
 
@@ -75,10 +78,12 @@ broker identities.
   `940fd7c6c275018c721c54dd2cf8a832e64007907248b2a88a39d928ce891305`.
 - Coordinator public-safe evidence SHA-256:
   `1bce03b6844d633b09504d9c27ddeac8c96521c569d1eedeecf4f0de2cef5334`.
+- Auditor public-safe evidence SHA-256:
+  `2c1dbc0552233c377f0eff35bcfda3a5d761dbb548d06e638426cd232bddc376`.
 - Aggregate public-safe evidence SHA-256:
   `5d4b6e107f8e1f833c3ba007521e233c504feca1f4f83ef8e6889bb7a64cc5d2`.
 
-The current portable server read-back is 1,449 tests: 1,404 passed and 45
+The current portable server read-back is 1,501 tests: 1,454 passed and 47
 declared platform/capability skips. The governed fixed membership is 173 tests:
 169 passed and four were declared skips.
 

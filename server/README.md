@@ -924,8 +924,8 @@ sustained capacity, a production SLO, and deployment remain pending.
 
 ## Coordinator source-cited proposal-bundle core
 
-The server also contains a privately qualified, unmerged internal Coordinator
-candidate. `CoordinatorService` submits exactly one background complex-route
+The server also contains a privately qualified, merged internal Coordinator
+core. `CoordinatorService` submits exactly one background complex-route
 lease for an explicit authenticated request, reads only the caller's current
 open Curator proposals, reauthorizes exact Curator lineage/current citations,
 and lets Gemma select ordered proposal indexes only. Server-owned code derives
@@ -947,9 +947,39 @@ publication because its verifier conflated the deadline-expired lease with an
 ordinary client cancellation. It emitted no receipt, is terminal, and is not
 reused; its owner-private harness teardown passed. See the
 [Coordinator verification record](../docs/evidence/coordinator-proposal-bundles/VERIFICATION.md).
-Hosted review/merge, HTTP/native/renderer/UI exposure, autonomous action,
+Hosted head `53ee0152...` passed all 12 checks, and PR #171 merged the core as
+`67d836da...`. HTTP/native/renderer/UI exposure, autonomous action,
 simultaneous residency, sustained capacity, a production SLO, and deployment
 remain pending.
+
+## Auditor source-cited review-findings core
+
+The server also contains a privately qualified, unmerged internal Auditor
+candidate. `AuditorService` submits exactly one idle-only complex-route lease
+for an explicit authenticated request, reads only current owner-visible source
+evidence, and lets Gemma select bounded evidence-index pairs only. Server-owned
+code canonicalizes those pairs and derives potential-contradiction finding text
+and exact citations into a noncanonical, review-required report. Auditor writes
+no proposal, source, task, action, or active knowledge and performs no
+autonomous mutation.
+
+Exact executable `08b06f6d...` returned
+`auditor-source-cited-review-findings-qualified` with public-safe evidence
+SHA-256 `2c1dbc05...`. Three synchronized repeat waves matched all 24 normal
+service calls; all 29 terminals matched, and 12 reports contained 15 findings
+with 30 server-owned citations. One ticket per invocation, 28 submitted leases,
+exact client/deadline cancellation identities, current source authority,
+database/audit read-back, two PostgreSQL restarts, zero proposal writes,
+complex c8/ninth-queued containment, unchanged warm provider/broker identity,
+and teardown held.
+
+The live idle-only probe observed both active and queued non-idle work blocking
+Auditor admission, then observed admission resume after that work became
+terminal. It did not cancel or preempt accepted non-idle work. See the
+[Auditor verification record](../docs/evidence/auditor-source-cited-review-findings/VERIFICATION.md).
+Hosted review/merge, scheduled autonomous execution, HTTP/native/renderer/UI
+exposure, simultaneous residency, sustained capacity, a production SLO, and
+deployment remain pending.
 
 ## Local checks
 

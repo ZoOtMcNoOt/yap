@@ -159,10 +159,10 @@ topology. At lock-only successor `8fee7a5c...`, the unchanged executable inputs
 freshly returned
 `student-learning-questions-qualified` with public-safe evidence SHA-256
 `5c2525b306aa6660936a288a69d7d02c8a571643fa36ed01d2092e071bff5dab`;
-this does not relabel the merged receipt. Curator, Librarian, and Analyst are
-merged internal cores without product exposure; Coordinator is a privately
-qualified internal candidate. Coordinator hosted merge, Auditor, and aggregate
-Phase 10 completion remain open. A fresh post-aggregate observation
+this does not relabel the merged receipt. Curator, Librarian, Analyst, and
+Coordinator are merged internal cores without product exposure. Auditor is a
+privately qualified unmerged internal candidate. Auditor hosted merge and
+aggregate Phase 10 completion remain open. A fresh post-aggregate observation
 on 2026-08-12 found the unchanged full Qwen rapid route warm on the current
 single Spark. Full-strength two-route promotion requires a second owned GPU
 node and private routing rather than throttling or model swapping.

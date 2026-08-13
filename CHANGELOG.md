@@ -3,7 +3,24 @@
 This changelog records product/architecture milestones. Exact test counts and
 immutable evidence belong in phase/checkpoint evidence records.
 
-## 2026-08-13 — Phase 10 Coordinator qualified candidate
+## 2026-08-13 — Phase 10 Auditor qualified candidate
+
+- Exact executable candidate `08b06f6d...` privately qualified the internal
+  Auditor idle-only, source-cited review-findings core. Three synchronized
+  eight-owner waves matched all 24 normal calls; all 29 terminals matched,
+  including 12 server-derived reports with 15 potential-contradiction findings
+  and 30 citations.
+- Active and queued non-idle work each blocked Auditor admission, which resumed
+  only after the non-idle work became terminal. The live complex probe held
+  eight owners and queued the ninth. Exact authority, audit cardinality, two
+  PostgreSQL restart/read-backs, one lease per invocation, cancellation, and
+  teardown passed.
+- Auditor remains unmerged and has no HTTP, native, renderer, UI, product,
+  scheduled-autonomy, action, proposal, or knowledge-mutation surface. Same-
+  warm-process evidence is not simultaneous residency, sustained capacity, a
+  production SLO, or deployment evidence.
+
+## 2026-08-13 — Phase 10 Coordinator merged internal core
 
 - Exact executable candidate `fed729b3...` privately qualified the internal
   Coordinator selection-only proposal-bundle core. Three synchronized eight-
@@ -13,10 +30,11 @@ immutable evidence belong in phase/checkpoint evidence records.
   lineage, current authorization, audit cardinality, two PostgreSQL restart/
   read-backs, one lease per invocation, deadline/client cancellation, and exact
   teardown passed.
-- Coordinator remains unmerged and has no HTTP, native, renderer, UI, product,
-  autonomous-action, or knowledge-mutation surface. Same-warm-process evidence
-  is not simultaneous residency, sustained capacity, a production SLO, or
-  deployment evidence.
+- Hosted head `53ee0152...` passed all 12 required checks, and PR #171 merged
+  Coordinator as `67d836da...`. Coordinator has no HTTP, native, renderer, UI,
+  product, autonomous-action, or knowledge-mutation surface. Same-warm-process
+  evidence is not simultaneous residency, sustained capacity, a production
+  SLO, or deployment evidence.
 
 ## 2026-08-13 — Phase 10 Analyst merged internal core
 

@@ -70,5 +70,5 @@ This is a merged internal permission-safe read workflow, not a user-facing
 product capability. It is not sustained capacity,
 production p95/p99, availability, enterprise-networking, or deployment
 evidence. The merged baseline is Scribe, Archivist, Student, Curator, Librarian,
-and Analyst. Coordinator is a privately qualified internal candidate; Auditor
-remains the final later bounded workflow.
+Analyst, and Coordinator. Auditor is a privately qualified unmerged internal
+candidate.

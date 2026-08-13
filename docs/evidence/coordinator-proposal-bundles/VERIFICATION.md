@@ -1,8 +1,11 @@
 # Coordinator proposal-bundle verification
 
-**Status:** Exact executable candidate
+**Status:** Merged internal core. Exact executable candidate
 `fed729b3dcbb7bba4c89daaa9d857bf57976ab8e` privately qualified the
-internal Coordinator core. Hosted review, merge, HTTP/native/renderer/UI
+internal Coordinator core. Hosted head
+`53ee0152a7244c7706f26b89c86d1fe2843dd5df` passed all 12 required checks,
+and PR #171 merged the core as
+`67d836daef9f1c64b840185f82a1fd777aad0523`. HTTP/native/renderer/UI
 exposure, production operation, and deployment remain pending.
 
 ## Exact qualified candidate
@@ -88,9 +91,10 @@ terminal acknowledgement.
 
 ## Deliberate limits
 
-Coordinator is a qualified internal candidate, not a merged or product-exposed
+Coordinator is a qualified merged internal core, not a product-exposed
 workflow. The merged roster contains Scribe, Archivist, Student, Curator,
-Librarian, and Analyst; Auditor remains the final unimplemented role.
+Librarian, Analyst, and Coordinator. Auditor is a privately qualified unmerged
+internal candidate.
 Coordinator accepts an explicit authenticated request, considers only the
 caller's current open Curator proposals, and returns a source-cited selection
 bundle. It writes no plan, task, proposal, source, or active knowledge and

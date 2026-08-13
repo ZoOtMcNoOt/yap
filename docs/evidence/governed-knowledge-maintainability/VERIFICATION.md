@@ -2,14 +2,15 @@
 
 This record separates inherited merged evidence, focused repair checks, the
 completed and hosted-merged Phase 9 checkpoint gate, historical Phase 10 public
-read-backs, the frozen Librarian and Analyst successors, and the current
-Coordinator successor. The Curator/profile-capacity successor is privately
+read-backs, the frozen Librarian, Analyst, and Coordinator successors, and the
+current Auditor successor. The Curator/profile-capacity successor is privately
 qualified at exact protected heads and has a public-lock/aggregate result.
 Hosted-green head `593e627b...` passed all 12 checks, and PR #168 merged it as
 `284ab96b...`; hosted head `da1127f8...` later merged Analyst through PR #170 as
-`52c45d22...`. Product exposure remains open. Historical inventories remain
+`52c45d22...`, and hosted head `53ee0152...` merged Coordinator through PR #171
+as `67d836da...`. Product exposure remains open. Historical inventories remain
 labeled at their exact heads. The final section records the exact current
-Coordinator threshold read-back.
+Auditor threshold read-back.
 
 ## Inherited Phase 9 evidence
 
@@ -570,7 +571,7 @@ entered broker submission; its receipt is not reused.
   skips. Ruff and diff checks were clean.
 - The 250-line inventory enumerated 552 surfaces: 308 at or above 350 lines and
   244 from 250 through 349. Those counts remain the frozen snapshot; the
-  appendix now records the current Coordinator successor instead.
+  appendix now records the current Auditor successor instead.
 
 These checks did not product-promote Librarian and do not prove sustained
 capacity, production SLOs, simultaneous model residency, availability,
@@ -606,7 +607,7 @@ The public portable server suite ran 1,384
 tests: 1,342 passed and 42 were declared skips. The governed fixed membership
 ran 173 tests: 169 passed and four were declared skips. The Analyst successor's
 250-line inventory enumerated 565 surfaces: 318 at or above 350 lines and 247
-from 250 through 349. The exact current Coordinator successor tuples supersede
+from 250 through 349. The exact current Auditor successor tuples supersede
 that historical read-back in
 [THRESHOLD-DISPOSITION.md](THRESHOLD-DISPOSITION.md).
 
@@ -651,9 +652,58 @@ inventory enumerates 580 surfaces: 330 at or above 350 lines and 250 from 250
 through 349. The exact 330 path/line/disposition tuples are reproduced in
 [THRESHOLD-DISPOSITION.md](THRESHOLD-DISPOSITION.md).
 
-This record does not product-promote Coordinator. Hosted merge, Auditor,
-HTTP/native/renderer/UI exposure, autonomous action, simultaneous Qwen/Gemma
+This record does not product-promote Coordinator. PR #171 merged the internal
+core, while HTTP/native/renderer/UI exposure, autonomous action, simultaneous Qwen/Gemma
 residency, sustained capacity/fairness, production p50/p95/p99 or an SLO,
 enterprise networking, and deployment remain open. Owner-private tenant/run
 identities, prompts, model output, proposal and citation bytes, database rows,
 paths, DSN, and individual measurements remain outside Git.
+
+## Phase 10 Auditor successor public read-back
+
+Exact executable candidate `08b06f6db45e233d92035788dabdee7157a83d2f`
+returned `auditor-source-cited-review-findings-qualified` with public-safe
+evidence SHA-256
+`2c1dbc0552233c377f0eff35bcfda3a5d761dbb548d06e638426cd232bddc376`.
+The acceptance-plan and corpus SHA-256 values are
+`0f8d01369da66b7d5d177e718ce736e950d690c08fe1d97e8c67dfdf28de1ee2`
+and `30860909f44232f3227f63e77491efc0e55b6ea91048690f4dc23e55b57dca5a`.
+Three synchronized repeat waves exactly matched 24 of 24 normal idle-only
+service calls; all 29 terminals matched, including 12 server-derived
+noncanonical review-required reports with 15 potential-contradiction findings
+and 30 server-owned citations. Exact ticket evidence recorded 29 created, 28
+submitted, 26 completed, two cancelled controls, and one pre-cancelled
+unsubmitted ticket, with every submitted lease terminal and no nested role-
+service lease.
+
+The gate used the unchanged batch-invariant full Gemma complex profile at c8,
+fixed seed `0`, and disabled prefix caching. It independently compiled current
+knowledge, reauthorized exact current source evidence, read back the expected
+Auditor and knowledge-tool audit cardinality through two owned PostgreSQL
+restarts, observed zero proposal writes, and passed all six database teardown
+assertions. The live idle-only probe observed active and queued non-idle work
+blocking Auditor admission, then observed admission resume only after the non-
+idle work became terminal. The capacity probe held eight owners while a ninth
+queued; provider and broker identities remained unchanged. This is same-warm-
+process repeatability and admission-policy evidence, not simultaneous inference,
+cross-start/global determinism, sustained capacity, or a production SLO.
+
+At exact clean `08b06f6d...`, the portable server suite ran 1,501 tests: 1,454
+passed and 47 were declared skips. The governed fixed membership ran 173 tests:
+169 passed and four were declared skips. The focused Auditor matrix ran 52
+tests: 50 passed and two real-PostgreSQL tests were declared skips. Whole-server
+Ruff check, Auditor changed-file format check, exact 333-input candidate
+admission, Cargo format/Clippy/tests, and `git diff --check` were green. Against
+that executable candidate, with this public documentation reconciliation
+applied in the current docs successor, the current 250-line inventory enumerates
+593 surfaces: 339 at or above 350 lines and 254 from 250 through 349. The exact
+339 path/line/disposition tuples are reproduced in
+[THRESHOLD-DISPOSITION.md](THRESHOLD-DISPOSITION.md).
+
+This record does not product-promote Auditor. Hosted merge,
+HTTP/native/renderer/UI exposure, scheduled autonomous execution, action or
+knowledge mutation, simultaneous Qwen/Gemma residency, sustained capacity/
+fairness, production p50/p95/p99 or an SLO, enterprise networking, and
+deployment remain open. Owner-private tenant/run identities, focus text,
+prompts, model output, evidence/finding/citation bytes, database rows, paths,
+DSN, and individual measurements remain outside Git.

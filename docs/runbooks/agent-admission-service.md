@@ -182,17 +182,29 @@ Exact executable `fed729b3...` privately qualified Coordinator on the complex
 route. Three synchronized repeat waves matched 24 of 24 normal service calls
 and all 29 terminal outcomes. The gate independently proved exactly one ticket
 per invocation, 28 submitted leases, 26 completions, one client cancellation,
-one deadline expiry, and one pre-cancelled unsubmitted ticket. This qualifies
-an unmerged internal workflow, not a product endpoint, autonomous action, or
-production service. See the
+one deadline expiry, and one pre-cancelled unsubmitted ticket. Hosted head
+`53ee0152...` passed all 12 checks, and PR #171 merged Coordinator as
+`67d836da...`. This qualifies a merged internal workflow, not a product
+endpoint, autonomous action, or production service. See the
 [Coordinator evidence](../evidence/coordinator-proposal-bundles/VERIFICATION.md).
+
+Exact executable `08b06f6d...` privately qualified Auditor on the idle-only
+complex route. Three synchronized repeat waves matched 24 of 24 normal service
+calls and all 29 terminal outcomes. The gate independently proved exactly one
+ticket per invocation, 28 submitted leases, 26 completions, one client
+cancellation, one deadline expiry, and one pre-cancelled unsubmitted ticket.
+Active and queued non-idle work each blocked Auditor admission; admission
+resumed only after non-idle work became terminal. This qualifies an unmerged
+internal workflow, not a product endpoint, scheduled autonomous review, or
+production service. See the
+[Auditor evidence](../evidence/auditor-source-cited-review-findings/VERIFICATION.md).
 
 ## Later enablement and recovery
 
 Do not enable or start the admission unit until all of these are true:
 
-1. PRs #158, #168, #169, and #170 have passed hosted exact-head review and
-   merged (complete); Coordinator hosted review/merge remains separate from
+1. PRs #158, #168, #169, #170, and #171 have passed hosted exact-head review
+   and merged (complete); Auditor hosted review/merge remains separate from
    service enablement;
 2. the selected provider topology has passed simultaneous-residency evidence;
 3. the authenticated Python workflow owns cancellation through final worker

@@ -83,8 +83,8 @@ local/offline boundary, and completed exact teardown.
 Curator is a merged internal core, not a user-facing product workflow. The
 result does not prove simultaneous Qwen/Gemma residency,
 sustained multi-user capacity, p50/p95/p99 or production SLOs, active-knowledge
-publication, enterprise networking, or deployment. Librarian and Analyst are
-privately qualified merged internal cores; Coordinator is a privately qualified
-unmerged candidate, and Auditor remains the final later role. Raw model output,
+publication, enterprise networking, or deployment. Librarian, Analyst, and
+Coordinator are privately qualified merged internal cores; Auditor is a
+privately qualified unmerged candidate. Raw model output,
 private case content, measurements, database content, credentials, and private
 locations remain outside Git.

@@ -14,13 +14,15 @@ profile-capacity successor and explicit-submission-only Curator internal core as
 `284ab96b...`. PR #169 then merged the privately qualified no-LLM Librarian
 core as `d7a7e003...` from hosted head `7505247e...`. Hosted head
 `da1127f8...` passed all 12 required checks, and PR #170 merged the qualified
-Analyst internal core as `52c45d22...`.
+Analyst internal core as `52c45d22...`. Hosted head `53ee0152...` passed all
+12 required checks, and PR #171 merged the qualified Coordinator internal core
+as `67d836da...`.
 
-Exact executable candidate `fed729b3...` now privately qualifies Coordinator's
-selection-only source-cited proposal-bundle internal core. Coordinator is not
-merged or product-exposed; hosted review and merge remain pending. Production identity,
+Exact executable candidate `08b06f6d...` now privately qualifies Auditor's
+idle-only, source-cited review-findings internal core. Auditor is not merged or
+product-exposed; hosted review and merge remain pending. Production identity,
 simultaneous full-profile residency, sustained capacity, enterprise deployment,
-and the final Auditor workflow stay explicitly gated.
+and every remaining non-Scribe product surface stay explicitly gated.
 
 Start with [current status](docs/CURRENT-STATUS.md). It states what executes,
 what is verified, what is still absent, and what happens next.
@@ -54,10 +56,10 @@ what is verified, what is still absent, and what happens next.
   either ASR provider.
 - The merged team agent plane uses hash-locked Qwen rapid-automation and Gemma
   complex-orchestration vLLM routes with no cross-route fallback. Scribe is the
-  only current desktop-facing LLM workflow. Archivist, Student, Curator, and
-  Librarian, and Analyst are bounded merged internal cores. Six roles are
-  merged; Coordinator is a seventh privately qualified internal candidate,
-  while Auditor remains the final later workflow. The qualified
+  only current desktop-facing LLM workflow. Archivist, Student, Curator,
+  Librarian, Analyst, and Coordinator are bounded merged internal cores. Seven
+  roles are merged; Auditor is the eighth privately qualified internal
+  candidate. The qualified
   profile-capacity successor admits four rapid or eight complex active distinct
   owners on the selected already-warm route, while preserving one active request
   per owner. Analyst's three exact synchronized repeats establish same-warm-
@@ -65,6 +67,10 @@ what is verified, what is still absent, and what happens next.
   residency, sustained capacity, or a production SLO. Coordinator separately
   matched three synchronized eight-owner service waves and returned only
   server-derived, noncanonical, review-required proposal bundles.
+  Auditor matched three synchronized eight-owner idle-only service waves,
+  returned only server-derived noncanonical review-required findings, and
+  proved that active or queued non-idle work blocks it until that work is
+  terminal.
 - Result identity, hashes, paths, sizes, authority, and transcript bytes are
   verified natively before History presents completion.
 

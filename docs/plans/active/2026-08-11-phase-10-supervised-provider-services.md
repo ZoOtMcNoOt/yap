@@ -15,8 +15,10 @@ Hosted-green head `593e627b...` passed all 12 checks, and PR #168 merged it as
 `0665c486...` privately qualified Analyst; lock-only `8fee7a5c...` publishes the
 matching batch-invariant route lock. Hosted head `da1127f8...` merged Analyst
 through PR #170 as `52c45d22...`. Exact `fed729b3...` privately qualified
-Coordinator. Student/Curator/Librarian/Analyst product exposure, Coordinator
-hosted review/merge and product exposure, Auditor,
+Coordinator; hosted head `53ee0152...` passed all 12 checks and PR #171 merged
+it as `67d836da...`. Exact `08b06f6d...` privately qualified Auditor.
+Student/Curator/Librarian/Analyst/Coordinator product exposure, Auditor hosted
+review/merge and product exposure,
 simultaneous full-profile capacity, and production promotion remain open.
 
 **Base:** merged post-Phase-9 maintainability closure
@@ -155,11 +157,13 @@ The batch-invariant successor has a separate evidence chain. Exact executable
 evidence `06277bd9...`; lock-only `8fee7a5c...` publishes the matching lock. The
 complex profile uses seed `0`, disables prefix caching, and retains its full c8/
 8,192-token/`0.70` boundary. At the lock-only successor, affected workflow and
-aggregate gates freshly passed. Analyst's and Coordinator's separate three-wave
+aggregate gates freshly passed. Analyst's, Coordinator's, and Auditor's separate three-wave
 exact repeats establish same-warm-process repeatability only, not cross-start/
 global determinism or a production SLO. Coordinator additionally proves one
 lease per invocation and selected-source authority, not sustained capacity or
-autonomous execution.
+autonomous execution. Auditor additionally proves active/pending non-idle
+blocking with post-terminal resumption and one lease per invocation, not
+scheduled autonomy or sustained capacity.
 
 The merged exact-qualified Scribe workflow is the first consumer of that admission
 owner. Native code acquires one authenticated connector lease, submits bounded
