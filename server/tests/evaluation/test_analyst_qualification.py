@@ -88,7 +88,7 @@ class AnalystQualificationTests(unittest.TestCase):
         controlled = tuple(item for item in invocations if item.mode != "normal")
 
         self.assertEqual(len(self.corpus.cases), 8)
-        self.assertEqual(self.corpus.corpus_id, "analyst-public-synthetic-v2")
+        self.assertEqual(self.corpus.corpus_id, "analyst-public-synthetic-v3")
         self.assertEqual(len(invocations), 13)
         self.assertEqual(len(primary), 8)
         self.assertEqual(len({item.owner_id for item in primary}), 8)
@@ -151,7 +151,7 @@ class AnalystQualificationTests(unittest.TestCase):
         )
         self.assertEqual(
             tuple(item.concept_id for item in multi.citations),
-            ("release/nimbus-security", "release/nimbus-approvers"),
+            ("release/nimbus-1-security", "release/nimbus-2-approvers"),
         )
         self.assertEqual(
             multi.answer, "\n\n".join(item.text for item in multi.citations)

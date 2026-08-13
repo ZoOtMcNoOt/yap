@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "qualificationScope": "analyst-grounded-cited-answers",
-  "corpusId": "analyst-public-synthetic-v2",
+  "corpusId": "analyst-public-synthetic-v3",
   "tenantId": "analyst-qualification",
   "generations": [
     {
@@ -42,7 +42,7 @@
           "retrievalRank": 1
         },
         {
-          "conceptId": "release/nimbus-security",
+          "conceptId": "release/nimbus-1-security",
           "sourceRevision": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
           "body": "Nimbus publication checks require a security review.",
           "evidenceQuote": "Nimbus publication checks require a security review.",
@@ -51,7 +51,7 @@
           "retrievalRank": 1
         },
         {
-          "conceptId": "release/nimbus-approvers",
+          "conceptId": "release/nimbus-2-approvers",
           "sourceRevision": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
           "body": "Nimbus publication checks also require two approvers.",
           "evidenceQuote": "Nimbus publication checks also require two approvers.",
@@ -89,8 +89,8 @@
         {
           "conceptId": "decisions/cedar-rationale",
           "sourceRevision": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
-          "body": "Cedar rationale remains under review and is not stated here.",
-          "evidenceQuote": "Cedar rationale remains under review and is not stated here.",
+          "body": "Why was Cedar approved? The Cedar record follows the standard decision template.",
+          "evidenceQuote": "Why was Cedar approved? The Cedar record follows the standard decision template.",
           "visibleToOwnerIds": ["owner-cedar"],
           "linkedConceptIds": [],
           "retrievalRank": 1
@@ -134,8 +134,8 @@
       "activeGenerationId": "successor",
       "request": {"question": "Nimbus publication checks", "maximumResults": 3, "expectedGenerationId": "successor"},
       "runs": [
-        {"runId": "normal", "mode": "normal", "expectedStatus": "complete", "expectedReason": null, "expectedEvidence": [{"conceptId": "release/nimbus-security", "quote": "Nimbus publication checks require a security review."}, {"conceptId": "release/nimbus-approvers", "quote": "Nimbus publication checks also require two approvers."}], "expectedAnswerEvidenceIndexes": [0, 1]},
-        {"runId": "invalid-output", "mode": "invalid-output", "expectedStatus": "failed", "expectedReason": "invalid-output", "expectedEvidence": [{"conceptId": "release/nimbus-security", "quote": "Nimbus publication checks require a security review."}, {"conceptId": "release/nimbus-approvers", "quote": "Nimbus publication checks also require two approvers."}], "expectedAnswerEvidenceIndexes": []}
+        {"runId": "normal", "mode": "normal", "expectedStatus": "complete", "expectedReason": null, "expectedEvidence": [{"conceptId": "release/nimbus-1-security", "quote": "Nimbus publication checks require a security review."}, {"conceptId": "release/nimbus-2-approvers", "quote": "Nimbus publication checks also require two approvers."}], "expectedAnswerEvidenceIndexes": [0, 1]},
+        {"runId": "invalid-output", "mode": "invalid-output", "expectedStatus": "failed", "expectedReason": "invalid-output", "expectedEvidence": [{"conceptId": "release/nimbus-1-security", "quote": "Nimbus publication checks require a security review."}, {"conceptId": "release/nimbus-2-approvers", "quote": "Nimbus publication checks also require two approvers."}], "expectedAnswerEvidenceIndexes": []}
       ]
     },
     {
@@ -171,9 +171,9 @@
       "caseId": "unstated-rationale-unavailable",
       "ownerId": "owner-cedar",
       "activeGenerationId": "successor",
-      "request": {"question": "Cedar rationale", "maximumResults": 3, "expectedGenerationId": "successor"},
+      "request": {"question": "Why was Cedar approved?", "maximumResults": 3, "expectedGenerationId": "successor"},
       "runs": [
-        {"runId": "normal", "mode": "normal", "expectedStatus": "evidence-unavailable", "expectedReason": "model-evidence-unavailable", "expectedEvidence": [{"conceptId": "decisions/cedar-rationale", "quote": "Cedar rationale remains under review and is not stated here."}], "expectedAnswerEvidenceIndexes": []}
+        {"runId": "normal", "mode": "normal", "expectedStatus": "evidence-unavailable", "expectedReason": "model-evidence-unavailable", "expectedEvidence": [{"conceptId": "decisions/cedar-rationale", "quote": "Why was Cedar approved? The Cedar record follows the standard decision template."}], "expectedAnswerEvidenceIndexes": []}
       ]
     },
     {
