@@ -1178,9 +1178,9 @@ and is not reused. See the
 
 ### 34. Auditor source-cited review-findings core
 
-- **Status:** privately qualified unmerged internal candidate at exact
-  executable head `08b06f6d...`. Hosted review/merge and all product surfaces
-  remain pending.
+- **Status:** privately qualified merged internal core at exact executable head
+  `08b06f6d...`. Hosted head `937a4129...` passed all 12 checks and PR #172
+  merged it as `1b255e9a...`; all product surfaces remain pending.
 - **Entry point:** `yap_server/agents/auditor_service.py` owns one bounded
   authenticated idle-only complex-route request composed through
   `auditor_runtime.py`. It submits no nested role-service request.

@@ -160,9 +160,10 @@ freshly returned
 `student-learning-questions-qualified` with public-safe evidence SHA-256
 `5c2525b306aa6660936a288a69d7d02c8a571643fa36ed01d2092e071bff5dab`;
 this does not relabel the merged receipt. Curator, Librarian, Analyst, and
-Coordinator are merged internal cores without product exposure. Auditor is a
-privately qualified unmerged internal candidate. Auditor hosted merge and
-aggregate Phase 10 completion remain open. A fresh post-aggregate observation
+Coordinator are merged internal cores without product exposure. Auditor is also
+a privately qualified merged internal core without product exposure. Hosted
+head `937a4129...` passed all 12 checks and PR #172 merged it as `1b255e9a...`.
+A fresh post-aggregate observation
 on 2026-08-12 found the unchanged full Qwen rapid route warm on the current
 single Spark. Full-strength two-route promotion requires a second owned GPU
 node and private routing rather than throttling or model swapping.

@@ -766,7 +766,7 @@ model edits; protected facts remain immutable and uncertainty returns raw ASR.
 The [public verification record](../docs/evidence/scribe-transcript-correction/VERIFICATION.md)
 contains the exact hashes, counts, and limits. Hosted review and merge closed
 through PR #164. This result does not prove simultaneous Qwen/Gemma residency, sustained
-mixed-route capacity, production SLOs, or completion of the remaining role workflows.
+mixed-route capacity, production SLOs, or completion of the remaining non-Scribe product surfaces.
 
 ## Student learning questions
 
@@ -954,8 +954,8 @@ remain pending.
 
 ## Auditor source-cited review-findings core
 
-The server also contains a privately qualified, unmerged internal Auditor
-candidate. `AuditorService` submits exactly one idle-only complex-route lease
+The server also contains a privately qualified, merged internal Auditor core.
+`AuditorService` submits exactly one idle-only complex-route lease
 for an explicit authenticated request, reads only current owner-visible source
 evidence, and lets Gemma select bounded evidence-index pairs only. Server-owned
 code canonicalizes those pairs and derives potential-contradiction finding text
@@ -977,9 +977,10 @@ The live idle-only probe observed both active and queued non-idle work blocking
 Auditor admission, then observed admission resume after that work became
 terminal. It did not cancel or preempt accepted non-idle work. See the
 [Auditor verification record](../docs/evidence/auditor-source-cited-review-findings/VERIFICATION.md).
-Hosted review/merge, scheduled autonomous execution, HTTP/native/renderer/UI
-exposure, simultaneous residency, sustained capacity, a production SLO, and
-deployment remain pending.
+Hosted head `937a4129...` passed all 12 checks and PR #172 merged Auditor as
+`1b255e9a...`. Scheduled autonomous execution, HTTP/native/renderer/UI exposure,
+simultaneous residency, sustained capacity, a production SLO, and deployment
+remain pending.
 
 ## Local checks
 

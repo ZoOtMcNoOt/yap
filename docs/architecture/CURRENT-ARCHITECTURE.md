@@ -2,8 +2,7 @@
 
 This document describes the merged executable Phase 1–9 system plus the Phase
 10 supervised-provider lifecycle, immutable Qwen/Gemma profiles, bounded owner-
-fair admission, and seven merged role cores, together with the privately
-qualified Auditor internal candidate. The lifecycle/admission
+fair admission, and all eight merged role cores. The lifecycle/admission
 hosted closures merged through PRs #155, #157, and #158; the admission merge is
 `84d95842950860e3f8d5cc70895aaae9243abe9c`. Exact Scribe head
 `e585842485a7cd38b2935cc8f79314b19b37f7fd` is the first authenticated
@@ -30,9 +29,10 @@ privately qualified Analyst, and lock-only `8fee7a5c...` publishes its matching
 batch-invariant route lock. Hosted head `da1127f8...` passed all 12 checks, and
 PR #170 merged Analyst as `52c45d22...`. Exact `fed729b3...` privately
 qualified Coordinator; hosted head `53ee0152...` passed all 12 checks, and PR
-#171 merged it as `67d836da...`. Exact `08b06f6d...` now privately qualifies
-Auditor as an internal candidate. Auditor merge/product promotion and the
-capacity/operations layers remain open.
+#171 merged it as `67d836da...`. Exact `08b06f6d...` privately qualified
+Auditor; hosted head `937a4129...` passed all 12 checks, and PR #172 merged it
+as `1b255e9a...`. Auditor product promotion and the capacity/operations layers
+remain open.
 Phase 7
 implements provider-neutral
 OIDC verification with Entra policy, fail-closed authentication, tenant-scoped
@@ -1158,7 +1158,7 @@ Hosted head `53ee0152...` passed all 12 checks, and PR #171 merged the core as
 `67d836da...`. Every endpoint/UI surface, autonomous action, and production
 operation remain pending.
 
-Exact executable candidate `08b06f6d...` privately qualifies Auditor as an
+Exact executable candidate `08b06f6d...` privately qualified Auditor as an
 internal idle-only complex-route workflow. One explicit authenticated request
 admits one Auditor lease, retrieves only current owner-visible source evidence,
 and permits Gemma to select only bounded evidence-index pairs. Server-owned
@@ -1170,8 +1170,9 @@ contained 15 findings with 30 citations. Active and queued non-idle work each
 blocked Auditor admission; admission resumed only after non-idle work became
 terminal. See the
 [Auditor evidence](../evidence/auditor-source-cited-review-findings/VERIFICATION.md).
-Hosted review/merge, scheduled autonomous execution, every endpoint/UI surface,
-and production operation remain pending.
+Hosted head `937a4129...` passed all 12 checks, and PR #172 merged the core as
+`1b255e9a...`. Scheduled autonomous execution, every endpoint/UI surface, and
+production operation remain pending.
 
 A post-aggregate observation on 2026-08-12 found Qwen rapid warm and the
 broker active against exact rapid profile hash `14712e69...`; the observed

@@ -16,15 +16,17 @@ only `8fee7a5c...` publishes the matching batch-invariant route lock. Hosted hea
 `da1127f8...` merged Analyst through PR #170 as `52c45d22...`. Exact
 `fed729b3...` privately qualified Coordinator; hosted head `53ee0152...` passed
 all 12 checks and PR #171 merged it as `67d836da...`. Exact `08b06f6d...`
-privately qualified Auditor; hosted review/merge and product exposure remain
-open.
+privately qualified Auditor; hosted head `937a4129...` passed all 12 checks and
+PR #172 merged it as `1b255e9a...`. All eight bounded internal role cores are
+merged; non-Scribe product exposure remains open.
 
-**Current branch:** `agent/phase10-auditor` contains exact privately qualified
-Auditor candidate `08b06f6d...`. Hosted review/merge and product exposure are
-not claimed. It merges only after its exact head is reviewed and hosted-green.
+**Current branch:** `docs/phase10-eight-agent-closure` contains only the public
+documentation reconciliation after Auditor merged. It adds no role behavior or
+product exposure and merges only after its exact head is reviewed and hosted-
+green.
 
-**Base:** merged Coordinator internal core at `67d836da...` from hosted head
-`53ee0152...` and PR #171.
+**Base:** merged Auditor internal core at `1b255e9a...` from hosted head
+`937a4129...` and PR #172.
 
 **Applied decisions:** [ADR 0031](../../adr/0031-eight-agent-voice-os-roster.md),
 [ADR 0030](../../adr/0030-rust-supervised-provider-service-lifecycle.md),
@@ -391,6 +393,8 @@ synchronized eight-owner idle-only service waves, 24 of 24 normal matches, all
 15 potential-contradiction findings, 30 citations, one lease per invocation,
 active/pending non-idle blocking with post-terminal resumption, two PostgreSQL
 restart/read-backs, zero proposal writes, and teardown.
+Hosted head `937a4129...` passed all 12 required checks and PR #172 merged
+Auditor as `1b255e9a...`, completing the bounded internal roster.
 
 ## Slice E — knowledge and coordination agents
 

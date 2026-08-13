@@ -2,15 +2,16 @@
 
 This record separates inherited merged evidence, focused repair checks, the
 completed and hosted-merged Phase 9 checkpoint gate, historical Phase 10 public
-read-backs, the frozen Librarian, Analyst, and Coordinator successors, and the
-current Auditor successor. The Curator/profile-capacity successor is privately
+read-backs, the frozen Librarian, Analyst, Coordinator, and Auditor successors,
+and the current post-Auditor-merge documentation closure. The Curator/profile-capacity successor is privately
 qualified at exact protected heads and has a public-lock/aggregate result.
 Hosted-green head `593e627b...` passed all 12 checks, and PR #168 merged it as
 `284ab96b...`; hosted head `da1127f8...` later merged Analyst through PR #170 as
-`52c45d22...`, and hosted head `53ee0152...` merged Coordinator through PR #171
-as `67d836da...`. Product exposure remains open. Historical inventories remain
+`52c45d22...`, hosted head `53ee0152...` merged Coordinator through PR #171 as
+`67d836da...`, and hosted head `937a4129...` merged Auditor through PR #172 as
+`1b255e9a...`. Product exposure remains open. Historical inventories remain
 labeled at their exact heads. The final section records the exact current
-Auditor threshold read-back.
+post-Auditor-merge threshold read-back.
 
 ## Inherited Phase 9 evidence
 
@@ -700,7 +701,8 @@ applied in the current docs successor, the current 250-line inventory enumerates
 339 path/line/disposition tuples are reproduced in
 [THRESHOLD-DISPOSITION.md](THRESHOLD-DISPOSITION.md).
 
-This record does not product-promote Auditor. Hosted merge,
+This record does not product-promote Auditor. Hosted head `937a4129...` passed
+all 12 checks and PR #172 merged the internal core as `1b255e9a...`.
 HTTP/native/renderer/UI exposure, scheduled autonomous execution, action or
 knowledge mutation, simultaneous Qwen/Gemma residency, sustained capacity/
 fairness, production p50/p95/p99 or an SLO, enterprise networking, and

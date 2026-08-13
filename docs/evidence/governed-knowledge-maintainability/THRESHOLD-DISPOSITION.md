@@ -1,14 +1,15 @@
 # Maintainability Threshold Disposition
 
-This appendix is the exact-path read-back for the current Auditor
+This appendix is the exact-path read-back for the current post-Auditor-merge
 documentation-successor tree's 350-line cohesion threshold. It is generated from
 tracked regular files by `verification/list-maintainability-threshold-surfaces.ps1`; grouped
 justifications and disposition meanings live in [COVERAGE.md](COVERAGE.md).
 
 The inventory includes tracked source, text, policy, and provenance contract
 extensions and applies the script's frozen generated-product exclusions. Against
-executable candidate `08b06f6db45e233d92035788dabdee7157a83d2f`, with this
-public documentation reconciliation applied in the current docs successor, the
+qualified executable candidate `08b06f6db45e233d92035788dabdee7157a83d2f`,
+with this public documentation reconciliation applied after PR #172 merged the
+internal core, the
 complete 250-line inventory is 593 files: 339 listed below at 350 or more lines
 and 254 from 250 through 349.
 
@@ -73,24 +74,24 @@ Each line contains up to two independent entries in the form
   466 CURRENT-DOC          docs/adr/0014-server-tier-compute-topology.md ||   390 CURRENT-DOC          docs/adr/0016-auth-identity-bridge.md
   373 CURRENT-DOC          docs/adr/0017-knowledge-base-compiler.md ||   805 CURRENT-DOC          docs/adr/0024-global-language-routing.md
   643 CURRENT-DOC          docs/adr/0025-provider-specific-asr-serving.md ||   438 CURRENT-DOC          docs/adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md
-  365 CURRENT-DOC          docs/adr/0031-eight-agent-voice-os-roster.md ||  1253 CURRENT-DOC          docs/architecture/boundaries/EXECUTABLE-OWNERSHIP.md
- 1279 CURRENT-DOC          docs/architecture/CURRENT-ARCHITECTURE.md ||  1316 CURRENT-DOC          docs/CURRENT-STATUS.md
-  709 CURRENT-DOC          docs/evidence/governed-knowledge-maintainability/VERIFICATION.md ||  1023 CURRENT-DOC          docs/plans/active/2026-07-17-voiceos-decision-evidence-queue.md
-  440 CURRENT-DOC          docs/plans/active/2026-08-11-eight-agent-voice-os-delivery.md ||   627 HISTORICAL-DOC       docs/plans/archived/2026-07-05-client-state-machine-implementation.md
+  370 CURRENT-DOC          docs/adr/0031-eight-agent-voice-os-roster.md ||  1253 CURRENT-DOC          docs/architecture/boundaries/EXECUTABLE-OWNERSHIP.md
+ 1280 CURRENT-DOC          docs/architecture/CURRENT-ARCHITECTURE.md ||  1317 CURRENT-DOC          docs/CURRENT-STATUS.md
+  711 CURRENT-DOC          docs/evidence/governed-knowledge-maintainability/VERIFICATION.md ||  1024 CURRENT-DOC          docs/plans/active/2026-07-17-voiceos-decision-evidence-queue.md
+  444 CURRENT-DOC          docs/plans/active/2026-08-11-eight-agent-voice-os-delivery.md ||   627 HISTORICAL-DOC       docs/plans/archived/2026-07-05-client-state-machine-implementation.md
   561 HISTORICAL-DOC       docs/plans/archived/2026-07-08-local-audio-preprocessing-stack.md ||   525 HISTORICAL-DOC       docs/plans/archived/2026-07-09-client-hardening-storage.md
   988 HISTORICAL-DOC       docs/plans/archived/2026-07-10-client-audio-foundation.md ||   450 HISTORICAL-DOC       docs/plans/completed/2026-07-08-model-download-ux.md
   855 HISTORICAL-DOC       docs/plans/completed/2026-07-10-server-contract-durable-connector.md ||  1953 HISTORICAL-DOC       docs/plans/completed/2026-07-16-audio-preprocessing-and-language-routing.md
   391 HISTORICAL-DOC       docs/plans/completed/2026-07-18-codebase-ownership-and-maintainability-review.md ||   646 HISTORICAL-DOC       docs/plans/completed/2026-07-25-tenant-scoped-identity-and-job-authorization.md
   923 HISTORICAL-DOC       docs/research/2026-07-16-dynamic-language-detection-evaluation.md ||   913 HISTORICAL-DOC       docs/research/2026-07-17-asr-evaluation-corpus-and-runtime-matrix.md
-  383 CURRENT-DOC          docs/roadmap/ROADMAP.md ||   886 CURRENT-DOC          docs/runbooks/integrated-identity-access-gate.md
+  385 CURRENT-DOC          docs/roadmap/ROADMAP.md ||   886 CURRENT-DOC          docs/runbooks/integrated-identity-access-gate.md
   506 CURRENT-DOC          docs/runbooks/integrated-preprocessing-language-routing-gate.md ||  1154 CURRENT-DOC          docs/runbooks/yap-server-node-setup.md
   554 CURRENT-DOC          docs/specs/source-aware-diarization.md ||   586 CURRENT-DOC          docs/specs/testing-strategy.md
- 1259 CURRENT-DOC          docs/VOICE-OS-ARCHITECTURE.md ||   696 INFRA                infra/yap-server-node/owned-process-group.sh
+ 1260 CURRENT-DOC          docs/VOICE-OS-ARCHITECTURE.md ||   696 INFRA                infra/yap-server-node/owned-process-group.sh
   989 INFRA                infra/yap-server-node/owned-process-supervisor.py ||   601 INFRA                infra/yap-server-node/private-container-loopback-proxy.sh
  1113 INFRA                infra/yap-server-node/resident-provider-lifecycle-gate.sh ||   504 INFRA                infra/yap-server-node/setup-server.sh
   350 SERVER-CONTRACT      server/librarian-workload-fixtures.json ||   364 SERVER-CONTRACT      server/orchestrator/src/agent_admission.rs
   463 SERVER-CONTRACT      server/orchestrator/src/supervisor.rs ||   453 SERVER-CONTRACT      server/orchestrator/tests/supervised_service.rs
- 1063 SERVER-RUNBOOK       server/README.md ||   754 SERVER-CONTRACT      server/src/yap_server/agents/analyst_result_audit.py
+ 1064 SERVER-RUNBOOK       server/README.md ||   754 SERVER-CONTRACT      server/src/yap_server/agents/analyst_result_audit.py
   905 SERVER-CONTRACT      server/src/yap_server/agents/analyst_service.py ||   398 SERVER-CONTRACT      server/src/yap_server/agents/analyst.py
   426 SERVER-CONTRACT      server/src/yap_server/agents/archivist_service.py ||   694 SERVER-CONTRACT      server/src/yap_server/agents/auditor_result_audit.py
   871 SERVER-CONTRACT      server/src/yap_server/agents/auditor_service.py ||   833 SERVER-CONTRACT      server/src/yap_server/agents/auditor.py

@@ -92,8 +92,7 @@ evidence above plus three exact warm-provider repeats.
 
 Analyst is a qualified merged internal core, not a product-exposed workflow.
 The merged roster contains Scribe, Archivist, Student, Curator, Librarian,
-Analyst, and Coordinator. Auditor is a privately qualified unmerged candidate.
-No evidence here proves
+Analyst, Coordinator, and Auditor. No evidence here proves
 simultaneous Qwen/Gemma residency, sustained multi-user capacity or fairness,
 production p50/p95/p99 or an SLO, availability, enterprise networking, or
 deployment. One Spark can run the unchanged full Qwen and Gemma profiles only
