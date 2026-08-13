@@ -129,6 +129,7 @@ test("history keeps committed review actions separate from recoverable capture a
                 jobStatus: false,
                 liveStreaming: false,
                 transcriptCorrection: false,
+                archivistIngestions: false,
               },
               checkedAtMs: 1,
               errorCode: null,

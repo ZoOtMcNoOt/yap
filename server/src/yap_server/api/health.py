@@ -12,6 +12,7 @@ _HEALTH_VIEW = HealthView(
         job_status=False,
         transcript_correction=False,
         librarian_queries=False,
+        archivist_ingestions=False,
     ),
 )
 
@@ -22,12 +23,14 @@ def health(
     authentication_required: bool = False,
     transcript_correction: bool = False,
     librarian_queries: bool = False,
+    archivist_ingestions: bool = False,
 ) -> dict[str, object]:
     if (
         not batch_jobs
         and not authentication_required
         and not transcript_correction
         and not librarian_queries
+        and not archivist_ingestions
     ):
         return _HEALTH_VIEW.to_wire()
     return HealthView(
@@ -41,5 +44,6 @@ def health(
             job_status=batch_jobs,
             transcript_correction=transcript_correction,
             librarian_queries=librarian_queries,
+            archivist_ingestions=archivist_ingestions,
         ),
     ).to_wire()

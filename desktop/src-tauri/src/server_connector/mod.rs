@@ -1,4 +1,5 @@
 mod access_token_expiry;
+pub(crate) mod archivist;
 mod authorization;
 pub(crate) mod batch;
 mod boundary;
@@ -31,11 +32,12 @@ pub(crate) use capability_snapshot::LastKnownAsrCapabilities;
 pub use core::ServerConnector;
 #[cfg(test)]
 pub(crate) use core::{
-    librarian_connection_lease_for_test, transcript_correction_connection_lease_for_test,
+    archivist_connection_lease_for_test, librarian_connection_lease_for_test,
+    transcript_correction_connection_lease_for_test,
 };
 pub(crate) use core::{
-    AsrCatalogDispatchProof, BatchConnectionLease, CurrentAsrCatalog, LibrarianConnectionLease,
-    LidPreflightDispatchProof, TranscriptCorrectionConnectionLease,
+    ArchivistConnectionLease, AsrCatalogDispatchProof, BatchConnectionLease, CurrentAsrCatalog,
+    LibrarianConnectionLease, LidPreflightDispatchProof, TranscriptCorrectionConnectionLease,
 };
 pub(crate) use desktop::{
     current_asr_capabilities, last_known_asr_capabilities, with_current_asr_capabilities,

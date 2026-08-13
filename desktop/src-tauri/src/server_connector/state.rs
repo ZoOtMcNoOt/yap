@@ -20,6 +20,7 @@ pub struct ServerCapabilities {
     pub job_status: bool,
     pub transcript_correction: bool,
     pub librarian_queries: bool,
+    pub archivist_ingestions: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -421,6 +422,7 @@ mod tests {
                     job_status: true,
                     transcript_correction: true,
                     librarian_queries: true,
+                    archivist_ingestions: true,
                 },
             },
             20,
@@ -728,6 +730,7 @@ mod tests {
                         job_status: true,
                         transcript_correction: true,
                         librarian_queries: true,
+                        archivist_ingestions: true,
                     },
                 },
                 20,
@@ -745,6 +748,7 @@ mod tests {
                 job_status: true,
                 transcript_correction: true,
                 librarian_queries: true,
+                archivist_ingestions: true,
             }
         );
         assert!(!inner.arm_retry(6, 1_020));

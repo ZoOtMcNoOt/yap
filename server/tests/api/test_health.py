@@ -18,6 +18,7 @@ class HealthTests(unittest.TestCase):
                     "jobStatus": False,
                     "transcriptCorrection": False,
                     "librarianQueries": False,
+                    "archivistIngestions": False,
                 },
             },
         )
@@ -36,6 +37,7 @@ class HealthTests(unittest.TestCase):
                     "jobStatus": False,
                     "transcriptCorrection": False,
                     "librarianQueries": False,
+                    "archivistIngestions": False,
                 },
             },
         )

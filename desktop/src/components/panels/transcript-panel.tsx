@@ -1,5 +1,6 @@
 import { Copy } from "@phosphor-icons/react/Copy";
 import { FileText } from "@phosphor-icons/react/FileText";
+import { Books } from "@phosphor-icons/react/Books";
 import { Question as HelpCircle } from "@phosphor-icons/react/Question";
 import { ArrowCounterClockwise as RotateCcw } from "@phosphor-icons/react/ArrowCounterClockwise";
 import { useEffect, useState, type ReactNode } from "react";
@@ -42,6 +43,7 @@ export function TranscriptPanel({
   className,
   elapsedSeconds,
   item,
+  knowledgeStaging,
   languageLabelReview,
   onCopy,
   onOpen,
@@ -56,6 +58,14 @@ export function TranscriptPanel({
   className?: string;
   elapsedSeconds: number;
   item?: RecordingJobView;
+  knowledgeStaging?: {
+    active: boolean;
+    canStage: boolean;
+    error: string;
+    onStage: () => void;
+    staged: boolean;
+    statusLine: string;
+  };
   languageLabelReview?: ReactNode;
   onCopy: (item: RecordingJobView) => void;
   onOpen: (path: string) => void;
@@ -138,6 +148,17 @@ export function TranscriptPanel({
                     : "Select a file or finish a transcription to preview text here."}
           </CardDescription>
           <TranscriptResultSummaryLine className="mt-2" summary={item?.resultSummary} />
+          {knowledgeStaging ? (
+            <p
+              className={cn(
+                "mt-2 text-xs",
+                knowledgeStaging.error ? "text-destructive" : "text-muted-foreground",
+              )}
+              role={knowledgeStaging.error ? "alert" : "status"}
+            >
+              {knowledgeStaging.error || knowledgeStaging.statusLine}
+            </p>
+          ) : null}
         </div>
         {output ? (
           <CardAction className="col-span-full col-start-1 row-span-1 row-start-2 w-full justify-self-stretch sm:col-span-1 sm:col-start-2 sm:row-span-2 sm:row-start-1 sm:w-auto sm:justify-self-end">
@@ -164,6 +185,24 @@ export function TranscriptPanel({
                 <FileText data-icon="inline-start" />
                 {hasSeparateSpeakerTranscript ? "Open text" : "Open"}
               </Button>
+              {knowledgeStaging ? (
+                <Button
+                  aria-label={`Stage ${item.name} for knowledge review`}
+                  disabled={!knowledgeStaging.canStage}
+                  onClick={knowledgeStaging.onStage}
+                  size="sm"
+                  title={knowledgeStaging.statusLine}
+                  type="button"
+                  variant="secondary"
+                >
+                  <Books data-icon="inline-start" />
+                  {knowledgeStaging.staged
+                    ? "Staged"
+                    : knowledgeStaging.active
+                      ? "Staging…"
+                      : "Stage for knowledge"}
+                </Button>
+              ) : null}
             </ButtonGroup>
           </CardAction>
         ) : null}

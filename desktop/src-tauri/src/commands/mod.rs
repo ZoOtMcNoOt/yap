@@ -21,6 +21,7 @@ pub(crate) fn register(builder: tauri::Builder<tauri::Wry>) -> tauri::Builder<ta
         .manage(recording_jobs)
         .manage(remote_job_drain)
         .manage(crate::librarian_query::LibrarianQueryOwner::new())
+        .manage(crate::archivist_ingestion::ArchivistIngestionOwner::new())
         .manage(crate::transcript_correction::TranscriptCorrectionOwner::new())
         .manage(crate::server_connector::ServerConnector::new());
     builder.invoke_handler(tauri::generate_handler![
@@ -108,6 +109,9 @@ pub(crate) fn register(builder: tauri::Builder<tauri::Wry>) -> tauri::Builder<ta
         crate::librarian_query::start_librarian_query,
         crate::librarian_query::librarian_query_status,
         crate::librarian_query::cancel_librarian_query,
+        crate::archivist_ingestion::start_archivist_ingestion,
+        crate::archivist_ingestion::archivist_ingestion_status,
+        crate::archivist_ingestion::cancel_archivist_ingestion,
         crate::file_actions::open_app_path,
         crate::file_actions::reveal_app_path,
         #[cfg(feature = "wdio")]

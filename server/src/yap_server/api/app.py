@@ -19,6 +19,10 @@ from yap_server.auth import (
 from yap_server.config import ServerSettings, ensure_private_application_bind
 from yap_server.jobs import RecordingJobService
 
+from .archivist_ingestion_requests import (
+    ArchivistIngestionRequestMixin,
+    ArchivistIngestionServiceProtocol,
+)
 from .http_server import (
     MAX_CONCURRENT_REQUEST_THREADS,
     ThreadingYapHTTPServer,
@@ -38,6 +42,8 @@ from .request_io import (
 )
 from .responses import ResponseMixin
 from .routes import (
+    ARCHIVIST_INGESTION_PATH,
+    ARCHIVIST_INGESTIONS_PATH,
     LID_PREFLIGHT_CANCEL_PATH,
     LID_PREFLIGHT_PATH,
     LIBRARIAN_QUERIES_PATH,
@@ -59,6 +65,7 @@ _REQUEST_LOGGER = logging.getLogger("yap_server.requests")
 
 
 class _HealthRequestHandler(
+    ArchivistIngestionRequestMixin,
     LibrarianQueryRequestMixin,
     TranscriptCorrectionRequestMixin,
     LidRequestMixin,
@@ -78,6 +85,7 @@ class _HealthRequestHandler(
         job_service: RecordingJobService | None,
         lid_preflight_service: LidPreflightServiceProtocol | None,
         librarian_query_service: LibrarianQueryServiceProtocol | None,
+        archivist_ingestion_service: ArchivistIngestionServiceProtocol | None,
         transcript_correction_service: TranscriptCorrectionServiceProtocol | None,
         asr_capabilities: Mapping[str, object] | None,
         **kwargs: Any,
@@ -88,6 +96,7 @@ class _HealthRequestHandler(
         self._job_service = job_service
         self._lid_preflight_service = lid_preflight_service
         self._librarian_query_service = librarian_query_service
+        self._archivist_ingestion_service = archivist_ingestion_service
         self._transcript_correction_service = transcript_correction_service
         self._asr_capabilities = asr_capabilities
         self._request_id = f"req-{uuid4().hex}"
@@ -179,6 +188,9 @@ class _HealthRequestHandler(
                         self._transcript_correction_service is not None
                     ),
                     librarian_queries=(self._librarian_query_service is not None),
+                    archivist_ingestions=(
+                        self._archivist_ingestion_service is not None
+                    ),
                 ),
             )
             return
@@ -242,6 +254,21 @@ class _HealthRequestHandler(
             self._dispatch_librarian_query_request(path)
             return
 
+        is_archivist_ingestion_route = (
+            path == ARCHIVIST_INGESTIONS_PATH
+            or ARCHIVIST_INGESTION_PATH.fullmatch(path) is not None
+        )
+        if is_archivist_ingestion_route:
+            if self._archivist_ingestion_service is None:
+                self._send_error(
+                    HTTPStatus.NOT_IMPLEMENTED,
+                    code="NOT_IMPLEMENTED",
+                    message="Knowledge staging is not configured.",
+                )
+                return
+            self._dispatch_archivist_ingestion_request(path)
+            return
+
         if self._job_service is not None and path != "/v1/live":
             self._dispatch_job_request(path)
             return
@@ -285,6 +312,7 @@ def create_server(
     job_service: RecordingJobService | None = None,
     lid_preflight_service: LidPreflightServiceProtocol | None = None,
     librarian_query_service: LibrarianQueryServiceProtocol | None = None,
+    archivist_ingestion_service: ArchivistIngestionServiceProtocol | None = None,
     transcript_correction_service: TranscriptCorrectionServiceProtocol | None = None,
     asr_capabilities: Mapping[str, object] | None = None,
 ) -> HTTPServer:
@@ -321,6 +349,7 @@ def create_server(
         job_service=job_service,
         lid_preflight_service=lid_preflight_service,
         librarian_query_service=librarian_query_service,
+        archivist_ingestion_service=archivist_ingestion_service,
         transcript_correction_service=transcript_correction_service,
         asr_capabilities=asr_capabilities,
     )
@@ -330,6 +359,7 @@ def create_server(
             job_service is not None
             or lid_preflight_service is not None
             or librarian_query_service is not None
+            or archivist_ingestion_service is not None
             or transcript_correction_service is not None
         ),
     )((settings.host, settings.port), handler)
@@ -346,6 +376,7 @@ def serve(
     request_authenticator: RequestAuthenticator | None = None,
     lid_preflight_service: LidPreflightServiceProtocol | None = None,
     librarian_query_service: LibrarianQueryServiceProtocol | None = None,
+    archivist_ingestion_service: ArchivistIngestionServiceProtocol | None = None,
     transcript_correction_service: TranscriptCorrectionServiceProtocol | None = None,
     asr_capabilities: Mapping[str, object] | None = None,
 ) -> None:
@@ -355,6 +386,7 @@ def serve(
         job_service=job_service,
         lid_preflight_service=lid_preflight_service,
         librarian_query_service=librarian_query_service,
+        archivist_ingestion_service=archivist_ingestion_service,
         transcript_correction_service=transcript_correction_service,
         asr_capabilities=asr_capabilities,
     ) as server:

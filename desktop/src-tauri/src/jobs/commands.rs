@@ -57,6 +57,13 @@ pub struct PublishedRemoteTranscriptCatalog {
     pub maintenance_warnings: Vec<String>,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct ArchivistIngestionSource {
+    pub(crate) server_job_id: String,
+    pub(crate) server_base_url: String,
+    pub(crate) result_sha256: String,
+}
+
 #[derive(Debug, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PublishedRemoteTranscriptSummary {

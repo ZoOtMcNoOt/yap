@@ -99,6 +99,7 @@ async function installPlaybackBridge(
                 jobStatus: false,
                 liveStreaming: false,
                 transcriptCorrection: false,
+                archivistIngestions: false,
               },
               checkedAtMs: 1,
               errorCode: null,
