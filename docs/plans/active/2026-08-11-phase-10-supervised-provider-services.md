@@ -18,10 +18,9 @@ through PR #170 as `52c45d22...`. Exact `fed729b3...` privately qualified
 Coordinator; hosted head `53ee0152...` passed all 12 checks and PR #171 merged
 it as `67d836da...`. Exact `08b06f6d...` privately qualified Auditor; hosted
 head `937a4129...` passed all 12 checks and PR #172 merged it as `1b255e9a...`.
-Exact unmerged `e2ba1864...` adds a Librarian HTTP/native/Knowledge candidate;
-its authenticated HTTP server boundary is privately qualified and its native/
-renderer path is exact-head public-test green. Hosted review and merge remain
-open. Archivist,
+Exact `e2ba1864...` privately qualified Librarian's authenticated HTTP server
+boundary; hosted head `67a79ce2...` passed all 12 checks and PR #174 merged its
+HTTP/native/Knowledge surface as `98af78c9...`. Archivist,
 Student, Curator, Analyst, Coordinator, and Auditor product exposure, simultaneous full-
 profile capacity, and production promotion remain open.
 

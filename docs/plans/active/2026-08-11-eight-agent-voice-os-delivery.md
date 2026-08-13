@@ -18,19 +18,21 @@ only `8fee7a5c...` publishes the matching batch-invariant route lock. Hosted hea
 all 12 checks and PR #171 merged it as `67d836da...`. Exact `08b06f6d...`
 privately qualified Auditor; hosted head `937a4129...` passed all 12 checks and
 PR #172 merged it as `1b255e9a...`. All eight bounded internal role cores are
-merged. Exact unmerged candidate `e2ba1864...` adds Librarian product exposure;
-its authenticated HTTP server boundary is privately qualified and its native/
-renderer path is exact-head public-test green. Hosted review and merge plus
-every other non-Scribe product surface remain open.
+merged. Exact `e2ba1864...` privately qualified Librarian's authenticated HTTP
+server boundary; hosted head `67a79ce2...` passed all 12 checks and PR #174
+merged its HTTP/native/Knowledge product surface as `98af78c9...`. Every other
+non-Scribe product surface remains open.
 
-**Current branch:** `agent/phase10-librarian-product` contains exact candidate
-`e2ba1864...`, the first post-Scribe product vertical. It adds authenticated
-Librarian HTTP/native/Knowledge behavior, privately qualifies the authenticated
-HTTP server boundary, and passes the exact-head public native/renderer matrix.
-Hosted review and merge remain open.
+**Current branch:** `docs/phase10-librarian-product-closure` reconciles PR #174's
+exact hosted merge before the next product slice. The executable qualification
+remains attributed to `e2ba1864...`; hosted head `67a79ce2...` merged as
+`98af78c9...`.
 
-**Base:** documentation-only PR #173 merge `c77bed52...`, descended from the
-merged Auditor internal core at `1b255e9a...`.
+**Base:** Non-product CI-harness repair merge
+`9a4a391ba83c7d98f99b0a9e12dc60a96145d60c` from PR #176, descended from the
+Librarian product merge `98af78c940ea801a37103f615002658f90626fb3`
+from PR #174 and the merged Auditor internal core at
+`1b255e9a...`.
 
 **Applied decisions:** [ADR 0031](../../adr/0031-eight-agent-voice-os-roster.md),
 [ADR 0030](../../adr/0030-rust-supervised-provider-service-lifecycle.md),
@@ -427,9 +429,9 @@ Auditor as `1b255e9a...`, completing the bounded internal roster.
 
 - [ ] Expose the roster through authenticated server endpoints and native Tauri
   commands with role-specific UI states, retry/cancel controls, and graceful
-  degradation. Exact `e2ba1864...` implements this for Librarian only, privately
-  qualifies its authenticated HTTP server boundary, and is native/renderer
-  public-test green; hosted review and merge remain open.
+  degradation. Exact `e2ba1864...` qualified this for Librarian's authenticated
+  server boundary, and PR #174 merged its hosted-green native/Knowledge surface.
+  The remaining product surfaces stay open.
 - [ ] Run portable, database, lifecycle, private-model, mixed-route,
   simultaneous-residency, sustained-capacity, security, accessibility, and
   aggregate exact-head gates.

@@ -75,9 +75,9 @@ Each line contains up to two independent entries in the form
   373 CURRENT-DOC          docs/adr/0017-knowledge-base-compiler.md ||   805 CURRENT-DOC          docs/adr/0024-global-language-routing.md
   643 CURRENT-DOC          docs/adr/0025-provider-specific-asr-serving.md ||   438 CURRENT-DOC          docs/adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md
   374 CURRENT-DOC          docs/adr/0031-eight-agent-voice-os-roster.md ||  1261 CURRENT-DOC          docs/architecture/boundaries/EXECUTABLE-OWNERSHIP.md
- 1291 CURRENT-DOC          docs/architecture/CURRENT-ARCHITECTURE.md ||  1337 CURRENT-DOC          docs/CURRENT-STATUS.md
-  746 CURRENT-DOC          docs/evidence/governed-knowledge-maintainability/VERIFICATION.md ||  1027 CURRENT-DOC          docs/plans/active/2026-07-17-voiceos-decision-evidence-queue.md
-  450 CURRENT-DOC          docs/plans/active/2026-08-11-eight-agent-voice-os-delivery.md ||   627 HISTORICAL-DOC       docs/plans/archived/2026-07-05-client-state-machine-implementation.md
+ 1292 CURRENT-DOC          docs/architecture/CURRENT-ARCHITECTURE.md ||  1339 CURRENT-DOC          docs/CURRENT-STATUS.md
+  747 CURRENT-DOC          docs/evidence/governed-knowledge-maintainability/VERIFICATION.md ||  1028 CURRENT-DOC          docs/plans/active/2026-07-17-voiceos-decision-evidence-queue.md
+  449 CURRENT-DOC          docs/plans/active/2026-08-11-eight-agent-voice-os-delivery.md ||   627 HISTORICAL-DOC       docs/plans/archived/2026-07-05-client-state-machine-implementation.md
   561 HISTORICAL-DOC       docs/plans/archived/2026-07-08-local-audio-preprocessing-stack.md ||   525 HISTORICAL-DOC       docs/plans/archived/2026-07-09-client-hardening-storage.md
   988 HISTORICAL-DOC       docs/plans/archived/2026-07-10-client-audio-foundation.md ||   450 HISTORICAL-DOC       docs/plans/completed/2026-07-08-model-download-ux.md
   855 HISTORICAL-DOC       docs/plans/completed/2026-07-10-server-contract-durable-connector.md ||  1953 HISTORICAL-DOC       docs/plans/completed/2026-07-16-audio-preprocessing-and-language-routing.md
@@ -86,12 +86,12 @@ Each line contains up to two independent entries in the form
   389 CURRENT-DOC          docs/roadmap/ROADMAP.md ||   886 CURRENT-DOC          docs/runbooks/integrated-identity-access-gate.md
   506 CURRENT-DOC          docs/runbooks/integrated-preprocessing-language-routing-gate.md ||  1154 CURRENT-DOC          docs/runbooks/yap-server-node-setup.md
   554 CURRENT-DOC          docs/specs/source-aware-diarization.md ||   586 CURRENT-DOC          docs/specs/testing-strategy.md
- 1267 CURRENT-DOC          docs/VOICE-OS-ARCHITECTURE.md ||   696 INFRA                infra/yap-server-node/owned-process-group.sh
+ 1266 CURRENT-DOC          docs/VOICE-OS-ARCHITECTURE.md ||   696 INFRA                infra/yap-server-node/owned-process-group.sh
   989 INFRA                infra/yap-server-node/owned-process-supervisor.py ||   601 INFRA                infra/yap-server-node/private-container-loopback-proxy.sh
  1113 INFRA                infra/yap-server-node/resident-provider-lifecycle-gate.sh ||   504 INFRA                infra/yap-server-node/setup-server.sh
   350 SERVER-CONTRACT      server/librarian-workload-fixtures.json ||   364 SERVER-CONTRACT      server/orchestrator/src/agent_admission.rs
   463 SERVER-CONTRACT      server/orchestrator/src/supervisor.rs ||   453 SERVER-CONTRACT      server/orchestrator/tests/supervised_service.rs
- 1089 SERVER-RUNBOOK       server/README.md ||   754 SERVER-CONTRACT      server/src/yap_server/agents/analyst_result_audit.py
+ 1090 SERVER-RUNBOOK       server/README.md ||   754 SERVER-CONTRACT      server/src/yap_server/agents/analyst_result_audit.py
   905 SERVER-CONTRACT      server/src/yap_server/agents/analyst_service.py ||   398 SERVER-CONTRACT      server/src/yap_server/agents/analyst.py
   426 SERVER-CONTRACT      server/src/yap_server/agents/archivist_service.py ||   694 SERVER-CONTRACT      server/src/yap_server/agents/auditor_result_audit.py
   871 SERVER-CONTRACT      server/src/yap_server/agents/auditor_service.py ||   833 SERVER-CONTRACT      server/src/yap_server/agents/auditor.py

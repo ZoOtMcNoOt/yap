@@ -3,9 +3,11 @@
 **Status:** Exact executable candidate
 `e2ba1864ec989a2bb693e000d0b4c30910d2720f` privately qualified the
 authenticated Librarian HTTP server boundary. Its native, renderer, and
-Knowledge-workspace code is exact-head public-test green, but that client path
-was not part of the private gate. Hosted checks, review, and merge remain open,
-so this is an unmerged product candidate rather than a shipped product surface.
+Knowledge-workspace code was exact-head public-test green, but that client path
+was not part of the private gate. Hosted head
+`67a79ce2a888e626ab562515b665c8ed33c8d51e` passed all 12 required checks,
+and PR #174 merged the vertical as
+`98af78c940ea801a37103f615002658f90626fb3`.
 
 ## What the candidate implements
 
@@ -97,8 +99,7 @@ This candidate does **not** prove:
 - a private native-to-server-to-renderer round trip or a live enterprise
   identity-provider exchange; the private gate qualifies the authenticated HTTP
   server boundary, while native and renderer behavior are public-tested;
-- hosted exact-head review, merge, enterprise deployment, or production
-  operation;
+- enterprise deployment or production operation;
 - sustained throughput, p95/p99, simultaneous Qwen/Gemma residency, or a
   production SLO; or
 - product exposure for Archivist, Student, Curator, Analyst, Coordinator, or

@@ -13,8 +13,8 @@ The Phase 9 delta receives deeper inspection, but it is not the coverage limit.
 
 The current read-back below extends the navigation and cohesion inventory
 through exact Librarian product candidate `e2ba1864...`. Its authenticated HTTP
-server boundary is privately qualified, and its native/renderer path is exact-
-head public-test green; hosted review and merge remain open. The numerical
+server boundary is privately qualified; hosted head `67a79ce2...` passed all 12
+checks and PR #174 merged its HTTP/native/Knowledge surface as `98af78c9...`. The numerical
 inventory is recomputed from this candidate with the public documentation
 reconciliation applied. This document does not claim a privately qualified
 native/renderer round trip, sustained capacity, simultaneous full-profile

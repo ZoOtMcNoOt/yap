@@ -893,7 +893,7 @@ inadmissible because adversarial review found only seven broker submissions.
 See the [Librarian verification record](../docs/evidence/librarian-permission-safe-evidence/VERIFICATION.md).
 Hosted head `7505247e...` merged through PR #169 as `d7a7e003...`.
 
-Exact unmerged candidate `e2ba1864...` composes this core into one product
+Exact executable `e2ba1864...` composes this core into one product
 vertical. In authenticated team mode it exposes:
 
 - `POST /v1/librarian-queries` to create one bounded query;
@@ -915,7 +915,8 @@ authenticated server boundary with eight synchronized owners, 10/10 exact
 terminals, strict bearer and cross-owner denial, two PostgreSQL restarts, exact
 audits, and complete teardown. Native/renderer behavior is exact-head
 public-test green, but the private gate does not include a client round trip or
-live enterprise identity provider. Hosted review and merge remain open. See the
+live enterprise identity provider. Hosted head `67a79ce2...` passed all 12
+required checks, and PR #174 merged the vertical as `98af78c9...`. See the
 [product-vertical verification record](../docs/evidence/librarian-product-vertical/VERIFICATION.md).
 Sustained capacity and production operation remain pending.
 
