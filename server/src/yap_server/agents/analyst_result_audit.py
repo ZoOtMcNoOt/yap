@@ -170,7 +170,9 @@ def install_analyst_result_audit_schema(connection: Connection[object]) -> None:
                     CHECK (candidate_id ~ '^[ -~]{1,128}$'
                         AND candidate_id = btrim(candidate_id)),
                 model varchar(512) NOT NULL
-                    CHECK (model ~ '^[ -~]{1,512}$' AND model = btrim(model)),
+                    CHECK (model ~ '^[ -~]+$'
+                        AND char_length(model) BETWEEN 1 AND 512
+                        AND model = btrim(model)),
                 model_revision varchar(40) NOT NULL
                     CHECK (model_revision ~ '^[0-9a-f]{40}$'),
                 runtime_id varchar(128) NOT NULL

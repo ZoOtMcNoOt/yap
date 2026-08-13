@@ -290,6 +290,8 @@ class AnalystResultAuditTests(unittest.TestCase):
             "librarian_request_id IS NOT NULL",
             "answer_sha256 IS NOT NULL",
             "citation_sha256 IS NOT NULL",
+            "model ~ '^[ -~]+$'",
+            "char_length(model) BETWEEN 1 AND 512",
             "duration_milliseconds BETWEEN 0 AND 300000",
             "'model-evidence-unavailable'",
             "'invalid-output'",
@@ -298,6 +300,7 @@ class AnalystResultAuditTests(unittest.TestCase):
         ):
             with self.subTest(contract=contract):
                 self.assertIn(contract, sql)
+        self.assertNotIn("model ~ '^[ -~]{1,512}$'", sql)
         for forbidden in (
             "question_body",
             "evidence_body",
