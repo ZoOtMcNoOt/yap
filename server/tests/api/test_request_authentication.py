@@ -70,6 +70,7 @@ class RequestAuthenticationTests(HealthServerTestCase):
                 "liveStreaming": False,
                 "jobStatus": False,
                 "transcriptCorrection": False,
+                "librarianQueries": False,
             },
         )
         self.assertEqual(self.authenticator.headers, [])

@@ -12,6 +12,7 @@ mod install_identity;
 pub mod jobs;
 pub mod language;
 pub mod language_preferences;
+mod librarian_query;
 pub mod live;
 pub(crate) mod media_protocol;
 mod paths;

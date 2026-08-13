@@ -19,6 +19,7 @@ pub struct ServerCapabilities {
     pub live_streaming: bool,
     pub job_status: bool,
     pub transcript_correction: bool,
+    pub librarian_queries: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -419,6 +420,7 @@ mod tests {
                     live_streaming: true,
                     job_status: true,
                     transcript_correction: true,
+                    librarian_queries: true,
                 },
             },
             20,
@@ -725,6 +727,7 @@ mod tests {
                         live_streaming: false,
                         job_status: true,
                         transcript_correction: true,
+                        librarian_queries: true,
                     },
                 },
                 20,
@@ -741,6 +744,7 @@ mod tests {
                 live_streaming: false,
                 job_status: true,
                 transcript_correction: true,
+                librarian_queries: true,
             }
         );
         assert!(!inner.arm_retry(6, 1_020));

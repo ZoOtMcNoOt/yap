@@ -7,6 +7,7 @@
     "batchJobs": false,
     "liveStreaming": false,
     "jobStatus": false,
-    "transcriptCorrection": false
+    "transcriptCorrection": false,
+    "librarianQueries": false
   }
 }

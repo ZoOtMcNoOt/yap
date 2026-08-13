@@ -2,6 +2,7 @@ import re
 
 _PATH_ID = r"[A-Za-z0-9_-]+"
 _LID_REQUEST_ID = r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}"
+_LIBRARIAN_QUERY_ID = r"librarian-query-[0-9a-f]{32}"
 LID_PREFLIGHT_PATH = "/v1/lid/preflight"
 LID_PREFLIGHT_CANCEL_PATH = re.compile(
     rf"^/v1/lid/preflights/(?P<request_id>{_LID_REQUEST_ID})$"
@@ -10,11 +11,13 @@ TRANSCRIPT_CORRECTIONS_PATH = "/v1/transcript-corrections"
 TRANSCRIPT_CORRECTION_PATH = re.compile(
     rf"^/v1/transcript-corrections/(?P<request_id>{_LID_REQUEST_ID})$"
 )
+LIBRARIAN_QUERIES_PATH = "/v1/librarian-queries"
+LIBRARIAN_QUERY_PATH = re.compile(
+    rf"^/v1/librarian-queries/(?P<request_id>{_LIBRARIAN_QUERY_ID})$"
+)
 JOB_PATH = re.compile(rf"^/v1/jobs/(?P<job_id>{_PATH_ID})$")
 RESULT_PATH = re.compile(rf"^/v1/jobs/(?P<job_id>{_PATH_ID})/result$")
-SPEAKER_RESULT_PATH = re.compile(
-    rf"^/v1/jobs/(?P<job_id>{_PATH_ID})/speaker-result$"
-)
+SPEAKER_RESULT_PATH = re.compile(rf"^/v1/jobs/(?P<job_id>{_PATH_ID})/speaker-result$")
 CHUNK_PATH = re.compile(
     rf"^/v1/jobs/(?P<job_id>{_PATH_ID})/chunks/"
     rf"(?P<track_id>{_PATH_ID})/(?P<sequence_start>[0-9]+)-"
@@ -42,6 +45,10 @@ def allowed_methods(path: str) -> frozenset[str] | None:
     if path == TRANSCRIPT_CORRECTIONS_PATH:
         return frozenset({"POST"})
     if TRANSCRIPT_CORRECTION_PATH.fullmatch(path):
+        return frozenset({"DELETE", "GET"})
+    if path == LIBRARIAN_QUERIES_PATH:
+        return frozenset({"POST"})
+    if LIBRARIAN_QUERY_PATH.fullmatch(path):
         return frozenset({"DELETE", "GET"})
     if path == "/v1/jobs":
         return frozenset({"POST"})

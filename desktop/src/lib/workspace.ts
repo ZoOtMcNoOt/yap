@@ -1,4 +1,4 @@
-const workspaceViews = ["home", "transcribe", "correct"] as const;
+const workspaceViews = ["home", "transcribe", "correct", "knowledge"] as const;
 
 export type WorkspaceView = (typeof workspaceViews)[number];
 
@@ -16,6 +16,10 @@ export const workspaceCopy: Record<WorkspaceView, { title: string; description: 
   correct: {
     title: "Transcript correction",
     description: "Review source-bound corrections without changing raw ASR.",
+  },
+  knowledge: {
+    title: "Knowledge",
+    description: "Find permission-safe evidence in reviewed organization knowledge.",
   },
 };
 

@@ -25,6 +25,10 @@ from .http_server import (
     server_type,
 )
 from .job_requests import JobRequestMixin
+from .librarian_query_requests import (
+    LibrarianQueryRequestMixin,
+    LibrarianQueryServiceProtocol,
+)
 from .lid_requests import LidPreflightServiceProtocol, LidRequestMixin
 from .request_io import (
     BoundedRequestBody,
@@ -36,6 +40,8 @@ from .responses import ResponseMixin
 from .routes import (
     LID_PREFLIGHT_CANCEL_PATH,
     LID_PREFLIGHT_PATH,
+    LIBRARIAN_QUERIES_PATH,
+    LIBRARIAN_QUERY_PATH,
     SUPPORTED_HTTP_VERSIONS,
     TRANSCRIPT_CORRECTION_PATH,
     TRANSCRIPT_CORRECTIONS_PATH,
@@ -53,6 +59,7 @@ _REQUEST_LOGGER = logging.getLogger("yap_server.requests")
 
 
 class _HealthRequestHandler(
+    LibrarianQueryRequestMixin,
     TranscriptCorrectionRequestMixin,
     LidRequestMixin,
     JobRequestMixin,
@@ -70,6 +77,7 @@ class _HealthRequestHandler(
         request_authenticator: RequestAuthenticator,
         job_service: RecordingJobService | None,
         lid_preflight_service: LidPreflightServiceProtocol | None,
+        librarian_query_service: LibrarianQueryServiceProtocol | None,
         transcript_correction_service: TranscriptCorrectionServiceProtocol | None,
         asr_capabilities: Mapping[str, object] | None,
         **kwargs: Any,
@@ -79,6 +87,7 @@ class _HealthRequestHandler(
         self._principal: AuthenticatedPrincipal | None = None
         self._job_service = job_service
         self._lid_preflight_service = lid_preflight_service
+        self._librarian_query_service = librarian_query_service
         self._transcript_correction_service = transcript_correction_service
         self._asr_capabilities = asr_capabilities
         self._request_id = f"req-{uuid4().hex}"
@@ -169,6 +178,7 @@ class _HealthRequestHandler(
                     transcript_correction=(
                         self._transcript_correction_service is not None
                     ),
+                    librarian_queries=(self._librarian_query_service is not None),
                 ),
             )
             return
@@ -217,6 +227,21 @@ class _HealthRequestHandler(
             self._dispatch_transcript_correction_request(path)
             return
 
+        is_librarian_query_route = (
+            path == LIBRARIAN_QUERIES_PATH
+            or LIBRARIAN_QUERY_PATH.fullmatch(path) is not None
+        )
+        if is_librarian_query_route:
+            if self._librarian_query_service is None:
+                self._send_error(
+                    HTTPStatus.NOT_IMPLEMENTED,
+                    code="NOT_IMPLEMENTED",
+                    message="Knowledge queries are not configured.",
+                )
+                return
+            self._dispatch_librarian_query_request(path)
+            return
+
         if self._job_service is not None and path != "/v1/live":
             self._dispatch_job_request(path)
             return
@@ -259,6 +284,7 @@ def create_server(
     request_authenticator: RequestAuthenticator | None = None,
     job_service: RecordingJobService | None = None,
     lid_preflight_service: LidPreflightServiceProtocol | None = None,
+    librarian_query_service: LibrarianQueryServiceProtocol | None = None,
     transcript_correction_service: TranscriptCorrectionServiceProtocol | None = None,
     asr_capabilities: Mapping[str, object] | None = None,
 ) -> HTTPServer:
@@ -294,6 +320,7 @@ def create_server(
         request_authenticator=active_authenticator,
         job_service=job_service,
         lid_preflight_service=lid_preflight_service,
+        librarian_query_service=librarian_query_service,
         transcript_correction_service=transcript_correction_service,
         asr_capabilities=asr_capabilities,
     )
@@ -302,6 +329,7 @@ def create_server(
         threaded=(
             job_service is not None
             or lid_preflight_service is not None
+            or librarian_query_service is not None
             or transcript_correction_service is not None
         ),
     )((settings.host, settings.port), handler)
@@ -317,6 +345,7 @@ def serve(
     job_service: RecordingJobService | None = None,
     request_authenticator: RequestAuthenticator | None = None,
     lid_preflight_service: LidPreflightServiceProtocol | None = None,
+    librarian_query_service: LibrarianQueryServiceProtocol | None = None,
     transcript_correction_service: TranscriptCorrectionServiceProtocol | None = None,
     asr_capabilities: Mapping[str, object] | None = None,
 ) -> None:
@@ -325,6 +354,7 @@ def serve(
         request_authenticator=request_authenticator,
         job_service=job_service,
         lid_preflight_service=lid_preflight_service,
+        librarian_query_service=librarian_query_service,
         transcript_correction_service=transcript_correction_service,
         asr_capabilities=asr_capabilities,
     ) as server:

@@ -565,6 +565,138 @@
         }
       }
     },
+    "/v1/librarian-queries": {
+      "post": {
+        "tags": [
+          "agents"
+        ],
+        "summary": "Submit one permission-safe knowledge query",
+        "description": "Starts one owner-bound Librarian query over the current authorized knowledge generation. The request carries no tenant, subject, capability, route, or provider authority.",
+        "operationId": "submitLibrarianQuery",
+        "x-yap-runtime-status": "Implemented only when the authenticated Librarian runtime verifies",
+        "x-yap-runtime-owner": "Librarian permission-safe evidence",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LibrarianRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "The owner-bound query was accepted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LibrarianQueryJobView"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          }
+        }
+      }
+    },
+    "/v1/librarian-queries/{requestId}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/LibrarianQueryRequestId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "agents"
+        ],
+        "summary": "Read one owner-bound knowledge query",
+        "operationId": "getLibrarianQuery",
+        "x-yap-runtime-status": "Implemented only when the authenticated Librarian runtime verifies",
+        "x-yap-runtime-owner": "Librarian permission-safe evidence",
+        "responses": {
+          "200": {
+            "description": "The current bounded lifecycle projection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LibrarianQueryJobView"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/AuthenticationUnavailableResponse"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "agents"
+        ],
+        "summary": "Request cancellation of one owner-bound knowledge query",
+        "description": "Signals the in-flight permission-safe read and returns its cancellation-requested projection; status polling observes the terminal acknowledgement.",
+        "operationId": "cancelLibrarianQuery",
+        "x-yap-runtime-status": "Implemented only when the authenticated Librarian runtime verifies",
+        "x-yap-runtime-owner": "Librarian permission-safe evidence",
+        "responses": {
+          "202": {
+            "description": "Cancellation was requested for the owned query.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LibrarianQueryJobView"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          }
+        }
+      }
+    },
     "/v1/jobs": {
       "post": {
         "tags": [
@@ -1290,8 +1422,7 @@
         "schema": {
           "$ref": "#/components/schemas/ServerStageName"
         }
-      }
-      ,
+      },
       "TranscriptCorrectionRequestId": {
         "name": "requestId",
         "in": "path",
@@ -1302,6 +1433,18 @@
           "minLength": 1,
           "maxLength": 128,
           "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+        }
+      },
+      "LibrarianQueryRequestId": {
+        "name": "requestId",
+        "in": "path",
+        "required": true,
+        "description": "Opaque Librarian product request identity scoped to the authenticated owner.",
+        "schema": {
+          "type": "string",
+          "minLength": 48,
+          "maxLength": 48,
+          "pattern": "^librarian-query-[0-9a-f]{32}$"
         }
       }
     },
@@ -1527,6 +1670,170 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 32768
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+          }
+        }
+      },
+      "LibrarianRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "searchText",
+          "maximumResults",
+          "expectedGenerationSha256"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "searchText": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "maximumResults": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "expectedGenerationSha256": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      },
+      "LibrarianEvidenceItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "conceptId",
+          "sourceRevision",
+          "contentSha256",
+          "charStart",
+          "charEnd",
+          "text"
+        ],
+        "properties": {
+          "conceptId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "sourceRevision": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "contentSha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "charStart": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9223372036854775807
+          },
+          "charEnd": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9223372036854775807
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          }
+        }
+      },
+      "LibrarianEvidencePack": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operation",
+          "generationSha256",
+          "permissionHash",
+          "authorizationHash",
+          "evidenceSha256",
+          "items",
+          "outputBudgetExhausted"
+        ],
+        "properties": {
+          "operation": {
+            "type": "string",
+            "const": "search"
+          },
+          "generationSha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "permissionHash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "authorizationHash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "evidenceSha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "items": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 5,
+            "items": {
+              "$ref": "#/components/schemas/LibrarianEvidenceItem"
+            }
+          },
+          "outputBudgetExhausted": {
+            "type": "boolean"
+          }
+        }
+      },
+      "LibrarianQueryJobView": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "requestId",
+          "status"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "requestId": {
+            "type": "string",
+            "minLength": 48,
+            "maxLength": 48,
+            "pattern": "^librarian-query-[0-9a-f]{32}$"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "cancellation-requested",
+              "complete",
+              "evidence-unavailable",
+              "cancelled",
+              "failed"
+            ]
+          },
+          "evidencePack": {
+            "$ref": "#/components/schemas/LibrarianEvidencePack"
           },
           "reason": {
             "type": "string",
@@ -4191,7 +4498,8 @@
           "batchJobs",
           "liveStreaming",
           "jobStatus",
-          "transcriptCorrection"
+          "transcriptCorrection",
+          "librarianQueries"
         ],
         "properties": {
           "batchJobs": {
@@ -4209,6 +4517,10 @@
           "transcriptCorrection": {
             "type": "boolean",
             "description": "True only when authenticated source-bound transcript correction is configured."
+          },
+          "librarianQueries": {
+            "type": "boolean",
+            "description": "True only when authenticated permission-safe Librarian queries are configured."
           }
         }
       },

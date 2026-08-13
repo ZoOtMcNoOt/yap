@@ -89,6 +89,10 @@ class LiveRuntimeWiringTests(unittest.TestCase):
                 authenticator=admitted_authenticator,
                 close=Mock(),
             )
+            librarian_runtime = SimpleNamespace(
+                service=object(),
+                close=Mock(),
+            )
             live_transport = Mock()
             live_transport.start.return_value = live_transport
 
@@ -116,6 +120,11 @@ class LiveRuntimeWiringTests(unittest.TestCase):
                 ),
                 patch.object(
                     server_main,
+                    "build_librarian_runtime",
+                    return_value=librarian_runtime,
+                ) as build_librarian,
+                patch.object(
+                    server_main,
                     "private_live_port_from_env",
                     return_value=19_001,
                 ),
@@ -139,12 +148,18 @@ class LiveRuntimeWiringTests(unittest.TestCase):
         live_transport.start.assert_called_once_with()
         live_transport.close.assert_called_once_with()
         authorization_runtime.close.assert_called_once_with()
+        librarian_runtime.close.assert_called_once_with()
+        build_librarian.assert_called_once_with(
+            server_main.os.environ,
+            authenticated_team_mode=True,
+        )
         serve.assert_called_once_with(
             settings,
             request_authenticator=admitted_authenticator,
             job_service=None,
             lid_preflight_service=None,
             asr_capabilities=None,
+            librarian_query_service=librarian_runtime.service,
             transcript_correction_service=None,
         )
 
@@ -168,6 +183,11 @@ class LiveRuntimeWiringTests(unittest.TestCase):
                 return_value=authorization_runtime,
             ),
             patch.object(server_main, "build_batch_runtime", return_value=None),
+            patch.object(
+                server_main,
+                "build_librarian_runtime",
+                return_value=None,
+            ),
             patch.object(server_main, "PrivateLiveWebSocketServer") as live_server,
             patch.object(server_main, "serve", side_effect=KeyboardInterrupt),
         ):

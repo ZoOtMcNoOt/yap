@@ -8,6 +8,7 @@ class ServerCapabilities:
     live_streaming: bool
     job_status: bool
     transcript_correction: bool
+    librarian_queries: bool
 
     def to_wire(self) -> dict[str, bool]:
         return {
@@ -15,6 +16,7 @@ class ServerCapabilities:
             "liveStreaming": self.live_streaming,
             "jobStatus": self.job_status,
             "transcriptCorrection": self.transcript_correction,
+            "librarianQueries": self.librarian_queries,
         }
 
 

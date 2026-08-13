@@ -30,6 +30,7 @@ export type ServerCapabilities = {
   liveStreaming: boolean;
   jobStatus: boolean;
   transcriptCorrection: boolean;
+  librarianQueries: boolean;
 };
 
 export type AsrExecutionMode =

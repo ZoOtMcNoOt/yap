@@ -19,6 +19,8 @@ describe("workspace navigation", () => {
       .toBe("openCorrection");
     expect(workspaceNavigationEffectForIntent({ type: "openWorkspace", action: "home" }))
       .toBeUndefined();
+    expect(workspaceNavigationEffectForIntent({ type: "openWorkspace", action: "knowledge" }))
+      .toBeUndefined();
     expect(workspaceNavigationEffectForIntent({ type: "showDetails" })).toBeUndefined();
   });
 
@@ -70,6 +72,18 @@ describe("workspace navigation", () => {
     ).toMatchObject({
       activeRail: "correct",
       workspaceView: "correct",
+    });
+  });
+
+  it("opens knowledge as a dedicated workspace", () => {
+    expect(
+      workspaceNavigationStateForAction(
+        state({ activeRail: "home", workspaceView: "home" }),
+        { type: "openWorkspace", action: "knowledge" },
+      ),
+    ).toMatchObject({
+      activeRail: "knowledge",
+      workspaceView: "knowledge",
     });
   });
 

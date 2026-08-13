@@ -467,6 +467,7 @@ mod authentication_projection_tests {
                 live_streaming: false,
                 job_status: true,
                 transcript_correction: true,
+                librarian_queries: true,
             },
         }
     }

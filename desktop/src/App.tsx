@@ -10,6 +10,7 @@ import { FirstRunTakeover } from "@/components/onboarding/first-run-takeover";
 import { DropHero } from "@/components/panels/drop-hero";
 import { HistoryPanel } from "@/components/panels/history-panel";
 import { TranscriptCorrectionPanel } from "@/components/panels/transcript-correction-panel";
+import { LibrarianPanel } from "@/components/panels/librarian-panel";
 import { QueuePanel } from "@/components/panels/queue-panel";
 import { TranscriptPanel } from "@/components/panels/transcript-panel";
 import { WorkspaceHeader } from "@/components/panels/workspace-header";
@@ -187,6 +188,7 @@ export default function App() {
   const showHistory = workspaceView === "home";
   const showTranscript = workspaceView === "transcribe" || workspaceView === "correct";
   const showCorrection = workspaceView === "correct";
+  const showKnowledge = workspaceView === "knowledge";
 
   useEffect(() => {
     if (settings.setupPromptRequest) showDetails();
@@ -273,6 +275,13 @@ export default function App() {
           item={selectedItem}
           onOpenHelp={() => openWorkspace("help")}
           originalText={selectedItem?.outputPath ? transcriptText[selectedItem.outputPath] : undefined}
+        />
+      ) : null}
+
+      {showKnowledge ? (
+        <LibrarianPanel
+          available={settings.serverSnapshot.state === "ready"
+            && settings.serverSnapshot.capabilities.librarianQueries}
         />
       ) : null}
     </>

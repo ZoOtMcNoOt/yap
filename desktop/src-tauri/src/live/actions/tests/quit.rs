@@ -1,9 +1,20 @@
 use std::cell::RefCell;
 
 use super::super::quit::{
-    cancel_transcript_corrections_before_quit, run_quit_with, QuitClaim, QuitCoordinator,
-    QuitRunError,
+    cancel_librarian_queries_before_quit, cancel_transcript_corrections_before_quit, run_quit_with,
+    QuitClaim, QuitCoordinator, QuitRunError,
 };
+
+#[test]
+fn librarian_shutdown_enters_the_async_runtime_on_its_worker_thread() {
+    let owner = crate::librarian_query::LibrarianQueryOwner::new();
+    let cancelled = std::thread::spawn(move || cancel_librarian_queries_before_quit(&owner))
+        .join()
+        .expect("librarian shutdown worker panicked")
+        .expect("empty librarian owner failed shutdown");
+
+    assert_eq!(cancelled, 0);
+}
 
 #[test]
 fn transcript_correction_shutdown_enters_the_async_runtime_on_its_worker_thread() {
