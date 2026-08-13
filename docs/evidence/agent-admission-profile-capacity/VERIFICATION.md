@@ -2,9 +2,10 @@
 
 **Status:** Exact executable candidate
 `0665c486398d2803ba33ebbb6e6dedddcd844dbd` passed the replacement
-batch-invariant route qualification and aggregate governed-knowledge gate.
+batch-invariant route qualification.
 Lock-only successor `8fee7a5c4969d482e5248b72013935e3f6f83b3c`
-publishes the matching route lock. Hosted review/merge, simultaneous two-route
+publishes the matching route lock and passed the aggregate governed-knowledge
+gate. Hosted review/merge, simultaneous two-route
 residency, sustained capacity/SLO evidence, product promotion, and deployment
 remain open. The prior profile-capacity successor remains merged through PR
 #168; its historical receipt is not relabeled.
