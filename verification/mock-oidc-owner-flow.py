@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import threading
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from http import HTTPStatus
 from http.client import HTTPConnection
 from pathlib import Path
@@ -65,6 +65,23 @@ def _arguments() -> argparse.Namespace:
     parser.add_argument("--provider-base-url", required=True)
     parser.add_argument("--state-root", required=True, type=Path)
     return parser.parse_args()
+
+
+def _live_recording_job_request() -> dict[str, object]:
+    request = batch_api_recording_job_request()
+    metadata = request.get("metadata")
+    if not isinstance(metadata, dict):
+        raise TypeError("Synthetic recording metadata was unavailable.")
+    now = datetime.now(UTC)
+    metadata["startedAtUtc"] = (
+        (now - timedelta(minutes=1))
+        .isoformat(timespec="seconds")
+        .replace("+00:00", "Z")
+    )
+    metadata["retentionExpiresAtUtc"] = (
+        (now + timedelta(days=1)).isoformat(timespec="seconds").replace("+00:00", "Z")
+    )
+    return request
 
 
 def _bounded_json(response: object) -> dict[str, object]:
@@ -274,6 +291,7 @@ def main() -> None:
         request_authenticator=authenticator,
         job_service=jobs,
     )
+    live_job_request = _live_recording_job_request()
     host, port = server.server_address[:2]
     base_url = f"http://{host}:{port}"
     thread = threading.Thread(
@@ -290,7 +308,7 @@ def main() -> None:
                 "/v1/jobs",
                 alice_token,
                 method="POST",
-                payload=batch_api_recording_job_request(),
+                payload=live_job_request,
                 idempotency_key="synthetic-owner-flow",
             ),
             HTTPStatus.ACCEPTED,
@@ -316,7 +334,7 @@ def main() -> None:
                 "/v1/jobs",
                 wrong_audience_token,
                 method="POST",
-                payload=batch_api_recording_job_request(),
+                payload=live_job_request,
                 idempotency_key="synthetic-wrong-audience",
             ),
             HTTPStatus.UNAUTHORIZED,
@@ -329,7 +347,7 @@ def main() -> None:
                 "/v1/jobs",
                 insufficient_scope_token,
                 method="POST",
-                payload=batch_api_recording_job_request(),
+                payload=live_job_request,
                 idempotency_key="synthetic-insufficient-scope",
             ),
             HTTPStatus.FORBIDDEN,

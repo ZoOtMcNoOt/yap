@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import runpy
 from pathlib import Path
 import queue
 import re
@@ -14,6 +15,7 @@ import tempfile
 import threading
 import time
 import unittest
+from datetime import UTC, datetime, timedelta
 
 
 REPOSITORY = Path(__file__).resolve().parents[3]
@@ -308,6 +310,25 @@ finally {{
         )
         self.assertNotIn("not-loopback.invalid", completed.stdout)
         self.assertNotIn("loopback origin", completed.stdout)
+
+    def test_live_owner_flow_retention_is_relative_to_the_execution_clock(
+        self,
+    ) -> None:
+        flow = runpy.run_path(str(FLOW))
+        request = flow["_live_recording_job_request"]()
+        metadata = request["metadata"]
+        self.assertIsInstance(metadata, dict)
+        started = datetime.fromisoformat(metadata["startedAtUtc"])
+        retention = datetime.fromisoformat(metadata["retentionExpiresAtUtc"])
+        observed_at = datetime.now(UTC)
+
+        self.assertLessEqual(started, observed_at)
+        self.assertGreater(retention, observed_at)
+        self.assertLessEqual(retention - started, timedelta(days=30))
+        self.assertNotEqual(
+            metadata["retentionExpiresAtUtc"],
+            "2026-08-13T21:00:00Z",
+        )
 
     def test_harness_and_exact_runtime_are_cross_platform_powershell(self) -> None:
         script = HARNESS.read_text(encoding="utf-8")
