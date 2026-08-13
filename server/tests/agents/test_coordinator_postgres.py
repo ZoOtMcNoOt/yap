@@ -197,6 +197,13 @@ class CoordinatorPostgresTests(unittest.TestCase):
                    WHERE tenant_id = %s AND request_id = %s""",
                 (owner.tenant_id, admission.ticket.request_id),
             ).fetchone()
+            tool_row = verification.execute(
+                """SELECT agent_id, operation, outcome, result_count,
+                          generation_sha256, permission_hash, authorization_hash
+                   FROM yap_knowledge_tool_audit
+                   WHERE tenant_id = %s AND agent_id = 'coordinator'""",
+                (owner.tenant_id,),
+            ).fetchone()
             content_hits = verification.execute(
                 """SELECT count(*) FROM yap_coordinator_result_audit AS audit
                    WHERE tenant_id = %s AND row_to_json(audit)::text LIKE %s""",
@@ -218,6 +225,18 @@ class CoordinatorPostgresTests(unittest.TestCase):
                     "succeeded",
                     None,
                     2,
+                ),
+            )
+            self.assertEqual(
+                tool_row,
+                (
+                    "coordinator",
+                    "open-proposal-evidence",
+                    "succeeded",
+                    2,
+                    view.bundle.generation_sha256,
+                    stored.permission_hash,
+                    stored.authorization_hash,
                 ),
             )
             self.assertEqual((content_hits, proposal_hits), (0, 0))
