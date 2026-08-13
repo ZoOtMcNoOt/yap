@@ -18,6 +18,7 @@ pub struct ServiceProfileIdentity {
     profile_id: String,
     profile_sha256: String,
     candidate_lock_sha256: String,
+    maximum_sequences: u8,
 }
 
 impl ServiceProfileIdentity {
@@ -28,6 +29,7 @@ impl ServiceProfileIdentity {
         profile_id: String,
         profile_sha256: String,
         candidate_lock_sha256: String,
+        maximum_sequences: u8,
     ) -> Result<Self, OrchestratorError> {
         if !valid_model_identity(&expected_model) {
             return Err(OrchestratorError::new("provider model identity is invalid"));
@@ -36,6 +38,7 @@ impl ServiceProfileIdentity {
             || !valid_profile_id(&profile_id)
             || !is_lower_sha256(&profile_sha256)
             || !is_lower_sha256(&candidate_lock_sha256)
+            || !(1..=64).contains(&maximum_sequences)
         {
             return Err(OrchestratorError::new(
                 "provider service profile identity is invalid",
@@ -48,6 +51,7 @@ impl ServiceProfileIdentity {
             profile_id,
             profile_sha256,
             candidate_lock_sha256,
+            maximum_sequences,
         })
     }
 
@@ -74,6 +78,10 @@ impl ServiceProfileIdentity {
     pub(crate) fn candidate_lock_sha256(&self) -> &str {
         &self.candidate_lock_sha256
     }
+
+    pub(crate) fn maximum_sequences(&self) -> u8 {
+        self.maximum_sequences
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -85,6 +93,7 @@ struct ServiceProfileDocument {
     endpoint: String,
     candidate_lock_sha256: String,
     expected_model: String,
+    maximum_sequences: u8,
 }
 
 pub(crate) fn load_service_profile(
@@ -112,6 +121,7 @@ pub(crate) fn load_service_profile(
         || !valid_profile_id(&document.profile_id)
         || !valid_model_identity(&document.expected_model)
         || !is_lower_sha256(&document.candidate_lock_sha256)
+        || !(1..=64).contains(&document.maximum_sequences)
     {
         return Err(OrchestratorError::new(
             "provider service profile identity differs",
@@ -129,6 +139,7 @@ pub(crate) fn load_service_profile(
         document.profile_id,
         expected_profile_sha256.to_owned(),
         document.candidate_lock_sha256,
+        document.maximum_sequences,
     )
 }
 

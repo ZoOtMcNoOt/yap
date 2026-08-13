@@ -244,10 +244,18 @@ topic-copy prompt repair is complete-portable-test green on the unchanged full
 Qwen rapid profile at 1,241 tests (1,207 passed and 34 declared skips). Exact
 head `428d6e48...` then returned `student-learning-questions-qualified` with
 public-safe evidence SHA-256 `f597cca7...`; exact `0970d74c...` remains terminal
-`deterministic-no-student`. Student hosted
-review/product exposure and the five remaining workflows (Curator, Auditor,
-Librarian, Analyst, and Coordinator) remain open. One
-Spark cannot retain both
+`deterministic-no-student`. Hosted-green head `b03c6e79...` passed all 12 checks
+and PR #166 merged the internal Student core as `2254605e...`; product exposure
+remains open. Exact route head `dab19fe...` returned
+`required-workload-routes-qualified` with public-safe evidence SHA-256
+`96228914...`. Exact workflow head `7cd24deb...` requalified Scribe and Student
+and qualified the nonmutating Curator candidate with public-safe evidence
+SHA-256 `b60df1e2...`; exact aggregate/public-lock head `7f896b34...` passed with
+public-safe evidence SHA-256 `fd197b98...`. PR #168 remains draft, so hosted
+merge and Student/Curator product exposure remain open. The four later
+workflows (Auditor, Librarian, Analyst, and Coordinator) remain open. Proven
+selected-route limits of four rapid/eight complex are not simultaneous-model,
+sustained-capacity, or production-SLO evidence. One Spark cannot retain both
 unchanged full profiles simultaneously, so warm two-route promotion requires a
 second owned GPU node/private routing rather than throttling or model swapping.
 Sustained mixed-owner route-specific capacity and p95/p99 evidence,

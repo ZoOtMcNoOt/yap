@@ -186,6 +186,7 @@ class TranscriptCorrectionModelTests(unittest.TestCase):
         self.assertEqual(payload["model"], "nvidia/Qwen3.6-35B-A3B-NVFP4")
         self.assertEqual(payload["temperature"], 0.0)
         self.assertEqual(payload["max_tokens"], 512)
+        self.assertEqual(payload["n"], 1)
         self.assertEqual(payload["chat_template_kwargs"], {"enable_thinking": False})
         response_format = payload["response_format"]
         self.assertEqual(response_format["type"], "json_schema")  # type: ignore[index]

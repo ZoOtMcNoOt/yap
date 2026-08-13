@@ -3,7 +3,54 @@
 This changelog records product/architecture milestones. Exact test counts and
 immutable evidence belong in phase/checkpoint evidence records.
 
-## Unreleased — Architecture Checkpoint A
+## Unreleased — Phase 10 Curator and admission-capacity successor
+
+- Adds an explicit-submission-only Curator workflow that may publish a
+  governed noncanonical proposal but cannot activate knowledge or mutate source
+  truth.
+- Qualifies the profile-bound admission successor at four rapid and eight
+  complex active distinct owners on the selected unchanged full route, with one
+  active request per owner, explicit overflow queueing, and exact containment.
+- Exact `7cd24deb...` privately qualified Curator, Scribe, and Student against
+  the successor; exact public-lock/aggregate head `7f896b34...` passed the
+  governed gate. Public-safe records are indexed under `docs/evidence/`.
+- PR #168 remains draft. These results do not claim hosted review/merge, a
+  Curator product surface, simultaneous Qwen/Gemma residency, sustained
+  capacity, production SLOs, or deployment readiness.
+
+## 2026-08-12 — Phase 10 bounded role cores
+
+- Merged the supervised-provider lifecycle, immutable Qwen/Gemma profiles, and
+  bounded already-warm admission through PRs #155, #157, and #158.
+- Merged authenticated source-bound Scribe transcript correction through PR
+  #164, the no-LLM Archivist ingestion core through PR #165, and the internal
+  source-grounded Student learning-question core through PR #166.
+- Student remains an internal core without HTTP, native, or renderer exposure;
+  these merges are not sustained-capacity, simultaneous-residency, production,
+  or enterprise-deployment evidence.
+
+## 2026-08-10 — Phase 9 governed knowledge
+
+- Merged deterministic governed knowledge, permission-safe Postgres/pgvector
+  retrieval, governed RAG/MCP tools, and privately qualified Qwen/Gemma vLLM
+  workload routes through PR #152. The follow-on maintainability checkpoint
+  merged through PR #153, with documentation closure through PR #154.
+- Kept production supervision, simultaneous residency, sustained mixed-user
+  capacity, and enterprise serving in Phase 10.
+
+## 2026-08-04 — Phase 8 meeting baseline
+
+- Merged the explicit Tiron meeting Preview and its bounded source-time
+  integration through PRs #142–#144 without promoting it as the default
+  provider or replacing either dictation candidate.
+
+## 2026-07-25 — Phase 6 preprocessing and language routing
+
+- Merged durable preprocessing, provider/language routing contracts, guarded
+  language preflight, and provider-specific serving candidates through PR #67.
+  The candidates remained evidence-gated rather than production-promoted.
+
+## 2026-07-16 — Architecture Checkpoint A
 
 - Reviewed the complete Phase 1–5 executable system for lifecycle, persistence,
   UI/window, network, trust, correctness, security, maintainability, and
@@ -26,8 +73,9 @@ immutable evidence belong in phase/checkpoint evidence records.
 - Passed the one-time complete local/native/server/GB10 checkpoint matrix on
   exact implementation candidate
   `6d55816b0406a2365376d7b2d9a7da2afecf9118`.
-- Final public evidence, hosted CI/CodeQL, disposable-Windows NSIS, review, and
-  PR closure remain pending.
+- Final PR head `2dc1c48c31928106d07cc638828f055929c33e0c` passed hosted
+  CI, CodeQL, and disposable-Windows NSIS, then merged through PR #59 as
+  `a80934d844a068110e7f86b30b6e29d35146db57`.
 
 ## 2026-07-15 — Phase 5 remote STT MVP
 

@@ -34,7 +34,7 @@ class GovernedKnowledgeGateContractTests(unittest.TestCase):
         self.assertEqual(route.outcome, "required-workload-routes-qualified")
         self.assertEqual(
             gate._LOCAL_OFFLINE_DESKTOP_BASE_HEAD,
-            "6d1400ccdf481333840700b51f516c813960272b",
+            "2254605ed19a592d2db1747d576762ccf11a5cc0",
         )
         self.assertEqual(len(route.artifact_sha256), 15)
         self.assertIn("qualification.json", route.artifact_sha256)

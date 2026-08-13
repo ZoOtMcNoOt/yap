@@ -27,13 +27,26 @@ class _Handler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
     status = 200
     observed: dict[str, object] | None = None
+    observed_paths: list[str] = []
+    rendered_token_ids: object = [1, 2, 3]
     delay_seconds = 0.0
     trickle_seconds = 0.0
 
     def do_POST(self) -> None:
         length = int(self.headers["Content-Length"])
         type(self).observed = json.loads(self.rfile.read(length))
+        type(self).observed_paths.append(self.path)
         time.sleep(type(self).delay_seconds)
+        if self.path == "/v1/chat/completions/render":
+            body = json.dumps(
+                {"token_ids": type(self).rendered_token_ids}
+            ).encode()
+            self.send_response(type(self).status)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
         if "tools" in type(self).observed:
             message = {
                 "content": None,
@@ -118,6 +131,8 @@ class VllmReasoningClientTests(unittest.TestCase):
     def setUp(self) -> None:
         _Handler.status = 200
         _Handler.observed = None
+        _Handler.observed_paths = []
+        _Handler.rendered_token_ids = [1, 2, 3]
         _Handler.delay_seconds = 0.0
         _Handler.trickle_seconds = 0.0
         self.server = _Server(("127.0.0.1", 0), _Handler)
@@ -146,6 +161,7 @@ class VllmReasoningClientTests(unittest.TestCase):
         )
         self.assertEqual(_Handler.observed["model"], "selected/model")
         self.assertEqual(_Handler.observed["max_tokens"], 100)
+        self.assertEqual(_Handler.observed["n"], 1)
         self.assertEqual(
             _Handler.observed["chat_template_kwargs"], {"enable_thinking": False}
         )
@@ -185,6 +201,36 @@ class VllmReasoningClientTests(unittest.TestCase):
         _Handler.status = 503
         with self.assertRaises(ReasoningRetryableError):
             self.client("governed prompt", threading.Event())
+
+    def test_render_chat_counts_exact_tokens_and_fails_closed(self) -> None:
+        transport = BoundedVllmJsonClient(
+            endpoint=f"http://127.0.0.1:{self.server.server_port}",
+            timeout_seconds=2,
+            maximum_response_bytes=10_000,
+        )
+        payload = {"model": "selected/model", "messages": [{"role": "user"}]}
+
+        self.assertEqual(
+            transport.render_chat_token_count(payload, threading.Event()),
+            3,
+        )
+        self.assertEqual(_Handler.observed_paths, ["/v1/chat/completions/render"])
+
+        for invalid in ([], [1, True], [1, -1], "tokens"):
+            with self.subTest(invalid=invalid):
+                _Handler.rendered_token_ids = invalid
+                with self.assertRaisesRegex(ValueError, "rendered token response"):
+                    transport.render_chat_token_count(payload, threading.Event())
+
+        _Handler.status = 400
+        with self.assertRaisesRegex(ValueError, "exceeds or differs"):
+            transport.render_chat_token_count(payload, threading.Event())
+
+    def test_deep_json_is_a_bounded_contract_failure(self) -> None:
+        with self.assertRaisesRegex(ValueError, "differs from the contract"):
+            vllm_reasoning_client._response_json(
+                ("[" * 5_000 + "]" * 5_000).encode("utf-8")
+            )
 
     def test_fails_closed_when_transport_does_not_acknowledge_cancellation(
         self,

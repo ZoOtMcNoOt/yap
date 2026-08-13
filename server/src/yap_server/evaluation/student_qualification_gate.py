@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import platform
 import re
+import secrets
 import subprocess
 import tempfile
 import threading
@@ -15,6 +16,15 @@ from typing import Callable, Sequence
 
 import psycopg
 
+from yap_server.agents.admission_client import AgentAdmissionClient
+from yap_server.agents.admission_protocol import (
+    AgentPurpose,
+    AgentRole,
+    AgentWorkSpec,
+    ExecutionRoute,
+    SchedulingClass,
+    UnixAgentAdmissionTransport,
+)
 from yap_server.agents.student import (
     StudentRequest,
     student_request_sha256,
@@ -37,6 +47,7 @@ from yap_server.auth import AuthenticatedPrincipal
 from yap_server.evaluation.agent_admission_broker_observation import (
     build_checked_admission_broker,
     observe_admission_broker,
+    probe_agent_admission_broker_capacity,
 )
 from yap_server.evaluation.agent_service_lifecycle_observation import (
     probe_exact_service,
@@ -90,6 +101,7 @@ _TENANT_ID = "student-qualification"
 _CURATOR_ID = "student-qualification-curator"
 _CROSS_OWNER_ID = "student-cross-owner-probe"
 _MAXIMUM_OUTPUT_TOKENS = 512
+_BROKER_ACTIVE_CAPACITY = 4
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _REQUEST_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 
@@ -144,8 +156,21 @@ def run_student_qualification_gate(
             expected_rapid_state_path=rapid_state_path,
         )
 
-    observe_provider()
-    observe_admission()
+    capacity_evidence = probe_agent_admission_broker_capacity(
+        AgentAdmissionClient(UnixAgentAdmissionTransport(admission_socket_path)),
+        work=AgentWorkSpec(
+            role=AgentRole.STUDENT,
+            purpose=AgentPurpose.LEARNING_QUESTIONS,
+            route=ExecutionRoute.RAPID_AUTOMATION,
+            scheduling_class=SchedulingClass.BACKGROUND_LLM,
+        ),
+        expected_route=ExecutionRoute.RAPID_AUTOMATION,
+        expected_capacity=_BROKER_ACTIVE_CAPACITY,
+        tenant_id=_TENANT_ID,
+        run_scope=f"run-{secrets.token_hex(8)}",
+        observe_provider_state=observe_provider,
+        observe_broker_state=observe_admission,
+    )
     database_lock = load_knowledge_database_runtime_lock(root)
     database = OwnedPostgresKnowledgeRuntime(
         checked_head=checked_head,
@@ -247,6 +272,22 @@ def run_student_qualification_gate(
         "model": profile.expected_model,
         "maximumOutputTokens": _MAXIMUM_OUTPUT_TOKENS,
         "maximumSequences": profile.maximum_sequences,
+        "brokerActiveCapacity": capacity_evidence["admittedOwnerCount"],
+        "admissionBrokerBinarySha256": expected_broker_sha256,
+        "brokerRapidProfileObserved": capacity_evidence[
+            "expectedRouteObserved"
+        ],
+        "brokerExpectedCapacityObserved": capacity_evidence[
+            "expectedCapacityObserved"
+        ],
+        "fifthOwnerQueued": capacity_evidence["overflowOwnerQueued"],
+        "capacityProbeContained": capacity_evidence["contained"],
+        "capacityProbeProviderIdentityUnchanged": capacity_evidence[
+            "providerIdentityUnchanged"
+        ],
+        "capacityProbeBrokerIdentityUnchanged": capacity_evidence[
+            "brokerIdentityUnchanged"
+        ],
         "gpuMemoryUtilization": "0.40",
         "requestTimeModelLaunchAbsent": True,
         "requestTimeModelSwapAbsent": True,
@@ -719,6 +760,9 @@ def _candidate_input_paths(repository_root: Path) -> tuple[Path, ...]:
         server / "tests/evaluation/test_student_qualification_gate.py",
         server / "orchestrator/Cargo.toml",
         server / "orchestrator/Cargo.lock",
+        server / "orchestrator/src/service_profile.rs",
+        server / "orchestrator/tests/supervised_service.rs",
+        server / "orchestrator/tests/support/mod.rs",
     )
     broker_sources = tuple(
         sorted(

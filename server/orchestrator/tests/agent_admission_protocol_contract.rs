@@ -39,7 +39,7 @@ fn queued_owner_observes_queue_inclusive_admission_time() {
         "admitted"
     );
     assert_eq!(
-        send(&mut scheduler, scribe_submit(1, "bob"), Duration::ZERO,),
+        send(&mut scheduler, scribe_submit(1, "alice"), Duration::ZERO,),
         json!({"outcome": "queued", "schemaVersion": 1})
     );
 

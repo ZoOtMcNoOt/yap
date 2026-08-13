@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "qualificationScope": "curator-knowledge-proposals",
+  "minimumCaseCount": 8,
+  "minimumOwnerCount": 8,
+  "concurrentRequestCount": 8,
+  "minimumProposedCaseCount": 4,
+  "minimumRejectedCaseCount": 4,
+  "maximumTerminalFailureCount": 0,
+  "maximumP95LatencyMilliseconds": 60000,
+  "maximumOutputTokens": 512,
+  "maximumInputTokens": 7680,
+  "brokerActiveCapacity": 8
+}

@@ -6,6 +6,7 @@ import json
 import re
 
 from psycopg import Connection
+from psycopg.pq import TransactionStatus
 from psycopg.types.json import Jsonb
 
 from yap_server.auth.principal import PrincipalKey
@@ -26,6 +27,11 @@ _CLASSIFICATION_ORDER = {
     "confidential": 2,
     "restricted": 3,
 }
+MAX_UNRESOLVED_PROPOSALS_PER_SUBJECT = 64
+
+
+class KnowledgeProposalCapacityExceeded(RuntimeError):
+    pass
 
 
 @dataclass(frozen=True, slots=True)
@@ -77,6 +83,11 @@ def install_knowledge_proposal_schema(connection: Connection[object]) -> None:
                     REFERENCES yap_knowledge_builds ON DELETE CASCADE
             )"""
         )
+        connection.execute(
+            """CREATE INDEX IF NOT EXISTS yap_knowledge_proposals_unresolved_owner
+               ON yap_knowledge_proposals (tenant_id, proposer_subject_id)
+               WHERE status = 'proposed'"""
+        )
 
 
 def store_knowledge_proposal(
@@ -94,7 +105,7 @@ def store_knowledge_proposal(
     """Store a noncanonical proposal with exact provenance and inherited policy."""
 
     with connection.transaction():
-        return _store_knowledge_proposal(
+        return store_knowledge_proposal_in_transaction(
             connection,
             principal=principal,
             purpose=purpose,
@@ -107,7 +118,7 @@ def store_knowledge_proposal(
         )
 
 
-def _store_knowledge_proposal(
+def store_knowledge_proposal_in_transaction(
     connection: Connection[object],
     *,
     principal: PrincipalKey,
@@ -119,6 +130,10 @@ def _store_knowledge_proposal(
     source_citations: tuple[ProposalCitation, ...],
     expected_generation_sha256: str | None,
 ) -> KnowledgeProposal:
+    """Store one proposal inside a transaction owned by the calling workflow."""
+
+    if connection.info.transaction_status == TransactionStatus.IDLE:
+        raise RuntimeError("knowledge proposal requires an owned transaction")
     _proposal_input(agent_id, proposal_type, proposed_content, source_citations)
     authorized = _authorize_knowledge_query(
         connection,
@@ -175,52 +190,100 @@ def _store_knowledge_proposal(
         "inheritedPermissionSha256": inherited_hash,
     }
     proposal_id = _sha256(canonical)
-    with connection.transaction():
-        row = connection.execute(
-            """INSERT INTO yap_knowledge_proposals (
-                   tenant_id, proposal_id, generation_sha256,
-                   proposer_subject_id, proposer_agent_id, proposal_type,
-                   proposed_content, source_citations, inherited_policy,
-                   inherited_permission_sha256, status
-               ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'proposed')
-               ON CONFLICT (tenant_id, proposal_id) DO NOTHING
-               RETURNING generation_sha256, proposer_subject_id,
-                         proposer_agent_id, proposal_type, proposed_content,
-                         source_citations, inherited_permission_sha256, status""",
-            (
-                principal.tenant_id,
-                proposal_id,
-                authorized.generation_sha256,
-                principal.subject_id,
-                agent_id,
-                proposal_type,
-                proposed_content,
-                Jsonb(canonical["sourceCitations"]),
-                Jsonb(inherited),
-                inherited_hash,
+    connection.execute(
+        "SELECT pg_advisory_xact_lock(hashtextextended(%s, 1))",
+        (
+            json.dumps(
+                [principal.tenant_id, principal.subject_id],
+                separators=(",", ":"),
             ),
-        ).fetchone()
-        if row is None:
-            row = connection.execute(
-                """SELECT generation_sha256, proposer_subject_id,
-                          proposer_agent_id, proposal_type, proposed_content,
-                          source_citations, inherited_permission_sha256, status
-                   FROM yap_knowledge_proposals
-                   WHERE tenant_id = %s AND proposal_id = %s""",
-                (principal.tenant_id, proposal_id),
-            ).fetchone()
-        expected_row = (
+        ),
+    )
+    stored = connection.execute(
+        """SELECT generation_sha256, proposer_subject_id,
+                  proposer_agent_id, proposal_type, proposed_content,
+                  source_citations, inherited_permission_sha256, status
+           FROM yap_knowledge_proposals
+           WHERE tenant_id = %s AND proposal_id = %s""",
+        (principal.tenant_id, proposal_id),
+    ).fetchone()
+    expected_row = (
+        authorized.generation_sha256,
+        principal.subject_id,
+        agent_id,
+        proposal_type,
+        proposed_content,
+        canonical["sourceCitations"],
+        inherited_hash,
+        "proposed",
+    )
+    if stored is not None:
+        if tuple(stored) != expected_row:
+            raise ValueError("knowledge proposal conflicts with stored truth")
+        return KnowledgeProposal(
+            principal.tenant_id,
+            proposal_id,
+            authorized.generation_sha256,
+            proposal_type,
+            proposed_content,
+            source_citations,
+            inherited_hash,
+            authorized.permission_hash,
+            authorized.authorization_hash,
+            "proposed",
+        )
+    unresolved = connection.execute(
+        """SELECT count(*)
+           FROM yap_knowledge_proposals
+           WHERE tenant_id = %s AND proposer_subject_id = %s
+             AND status = 'proposed'""",
+        (principal.tenant_id, principal.subject_id),
+    ).fetchone()
+    if (
+        unresolved is None
+        or isinstance(unresolved[0], bool)
+        or not isinstance(unresolved[0], int)
+    ):
+        raise RuntimeError("knowledge proposal capacity was not observed")
+    if unresolved[0] >= MAX_UNRESOLVED_PROPOSALS_PER_SUBJECT:
+        raise KnowledgeProposalCapacityExceeded(
+            "knowledge proposal capacity is temporarily unavailable"
+        )
+    row = connection.execute(
+        """INSERT INTO yap_knowledge_proposals (
+               tenant_id, proposal_id, generation_sha256,
+               proposer_subject_id, proposer_agent_id, proposal_type,
+               proposed_content, source_citations, inherited_policy,
+               inherited_permission_sha256, status
+           ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'proposed')
+           ON CONFLICT (tenant_id, proposal_id) DO NOTHING
+           RETURNING generation_sha256, proposer_subject_id,
+                     proposer_agent_id, proposal_type, proposed_content,
+                     source_citations, inherited_permission_sha256, status""",
+        (
+            principal.tenant_id,
+            proposal_id,
             authorized.generation_sha256,
             principal.subject_id,
             agent_id,
             proposal_type,
             proposed_content,
-            canonical["sourceCitations"],
+            Jsonb(canonical["sourceCitations"]),
+            Jsonb(inherited),
             inherited_hash,
-            "proposed",
-        )
-        if row is None or tuple(row) != expected_row:
-            raise ValueError("knowledge proposal conflicts with stored truth")
+        ),
+    ).fetchone()
+    if row is None:
+        row = connection.execute(
+            """SELECT generation_sha256, proposer_subject_id,
+                      proposer_agent_id, proposal_type, proposed_content,
+                      source_citations, inherited_permission_sha256, status
+               FROM yap_knowledge_proposals
+               WHERE tenant_id = %s AND proposal_id = %s""",
+            (principal.tenant_id, proposal_id),
+        ).fetchone()
+    if row is None or tuple(row) != expected_row:
+        raise ValueError("knowledge proposal conflicts with stored truth")
     return KnowledgeProposal(
         principal.tenant_id,
         proposal_id,
@@ -351,8 +414,11 @@ def _sha256(value: object) -> str:
 
 __all__ = [
     "KnowledgeProposal",
+    "KnowledgeProposalCapacityExceeded",
     "KnowledgeProposalDisposition",
+    "MAX_UNRESOLVED_PROPOSALS_PER_SUBJECT",
     "discard_knowledge_proposal",
     "install_knowledge_proposal_schema",
     "store_knowledge_proposal",
+    "store_knowledge_proposal_in_transaction",
 ]

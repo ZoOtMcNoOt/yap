@@ -913,6 +913,18 @@ PR #158 as `84d95842...`. The merged Scribe workflow below is its first product
 consumer. Simultaneous residency, sustained capacity, and production promotion
 remain open.
 
+The current protected successor changes admission inputs so active capacity is
+derived from the immutable service profiles: four for rapid automation and
+eight for complex orchestration, while Server IO remains one and one active
+request per owner remains global. Exact route head `dab19fe...` qualified Qwen
+and Gemma sequentially on those unchanged full profiles with public-safe
+evidence SHA-256 `96228914...`; exact workflow head `7cd24deb...` then qualified
+Scribe, Student, and Curator, and aggregate/public-lock head `7f896b34...`
+passed with evidence SHA-256 `fd197b98...`. The exact one-slot evidence above
+remains historical and authoritative for its merged head; it is no longer the
+current candidate boundary. PR #168 remains draft. Selected-route capacity is
+not sustained-throughput, simultaneous-residency, or production-SLO evidence.
+
 ### 27. Scribe transcript correction
 
 - **Entry point:** native commands in `desktop/src-tauri/src/transcript_correction/`
@@ -1028,8 +1040,42 @@ subject was absent from its exact quote/evidence; the server rejected it. The
 current prompt/test repair changes protected inputs and is complete-portable-
 test green and privately qualified at exact head `428d6e48...` on the unchanged
 full Qwen rapid profile, with public-safe evidence SHA-256 `f597cca7...`.
-Hosted merge and an
-HTTP/native/UI surface remain open.
+Hosted-green head `b03c6e79...` passed all 12 required checks and PR #166 merged
+the internal core as `2254605e...`. An HTTP/native/UI surface remains open.
+
+### 30. Curator knowledge-proposal candidate
+
+- **Status:** privately qualified internal candidate at exact head
+  `7cd24deb...` with public-safe evidence SHA-256 `b60df1e2...`; PR #168 is
+  draft, and no hosted merge, HTTP/native/UI surface, or production promotion
+  exists.
+- **Entry point:** `yap_server/agents/curator_service.py` owns an internal
+  complex-route workflow for only `explicit-proposal` and
+  `reviewed-student-answer` submissions.
+- **Authoritative owner:** the server re-reads each submitted citation from the
+  authenticated permission-safe generation. The model may return only a
+  bounded propose/reject decision; it cannot supply citation authority or
+  activate knowledge.
+- **Persisted state:** `curator_publisher.py` may atomically append one
+  noncanonical `KnowledgeProposal` plus its audit identity. Proposal state is
+  proposed or discarded and is not an active generation, compiled source, or
+  mutation of reviewed source truth.
+- **Failure/recovery:** invalid/stale evidence, cross-owner access, model
+  rejection, cancellation, deadline, provider loss, capacity, and audit/write
+  failure publish no successful proposal. Exact retries must replay the same
+  durable terminal outcome.
+- **Duplicate owner:** none. Permission-safe retrieval owns evidence;
+  `CuratorService` owns the workflow; the existing proposal ledger owns
+  noncanonical proposal state; activation remains outside Curator.
+
+The exact gate completed eight cases/eight owners with four proposals, four
+rejections, zero terminal failures, complex capacity eight plus a queued ninth
+owner, unchanged warm/broker identities, PostgreSQL restart/read-back and exact
+teardown. Candidate `7ba4e45c...` failed closed on the empty forced-tool content-
+envelope contract, wrote no Curator qualification receipt, established no
+admissible Curator success evidence, and remains terminal; no teardown result is
+attributed to it. See the
+[Curator verification record](../../evidence/curator-knowledge-proposals/VERIFICATION.md).
 
 ## Persistent-state owners
 

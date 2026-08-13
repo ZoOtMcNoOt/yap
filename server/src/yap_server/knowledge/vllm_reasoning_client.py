@@ -49,6 +49,48 @@ class BoundedVllmJsonClient:
         cancellation: threading.Event,
         dispatched: threading.Event | None = None,
     ) -> dict[str, object]:
+        return self._exchange(
+            path="/v1/chat/completions",
+            payload=payload,
+            cancellation=cancellation,
+            dispatched=dispatched,
+        )
+
+    def render_chat_token_count(
+        self,
+        payload: dict[str, object],
+        cancellation: threading.Event,
+    ) -> int:
+        """Render the exact chat request and return its pinned-model token count."""
+
+        result = self._exchange(
+            path="/v1/chat/completions/render",
+            payload=payload,
+            cancellation=cancellation,
+            dispatched=None,
+        )
+        token_ids = result.get("token_ids")
+        if (
+            not isinstance(token_ids, list)
+            or not token_ids
+            or any(
+                isinstance(token_id, bool)
+                or not isinstance(token_id, int)
+                or token_id < 0
+                for token_id in token_ids
+            )
+        ):
+            raise ValueError("vLLM rendered token response differs from the contract")
+        return len(token_ids)
+
+    def _exchange(
+        self,
+        *,
+        path: str,
+        payload: dict[str, object],
+        cancellation: threading.Event,
+        dispatched: threading.Event | None,
+    ) -> dict[str, object]:
         if not isinstance(payload, dict) or not payload:
             raise ValueError("vLLM request payload is invalid")
         if cancellation.is_set():
@@ -69,6 +111,7 @@ class BoundedVllmJsonClient:
                 target=_request,
                 args=(
                     connection,
+                    path,
                     body,
                     self._maximum_response_bytes,
                     outcome,
@@ -156,6 +199,7 @@ class VllmReasoningClient:
                 {"role": "user", "content": prompt},
             ],
             "temperature": 0,
+            "n": 1,
             "max_tokens": self._maximum_output_tokens,
             "chat_template_kwargs": {"enable_thinking": False},
         }
@@ -172,6 +216,7 @@ class VllmReasoningClient:
 
 def _request(
     connection: http.client.HTTPConnection,
+    path: str,
     body: bytes,
     maximum_response_bytes: int,
     outcome: queue.Queue[dict[str, object] | BaseException],
@@ -180,7 +225,7 @@ def _request(
     try:
         connection.request(
             "POST",
-            "/v1/chat/completions",
+            path,
             body=body,
             headers={"Content-Type": "application/json"},
         )
@@ -190,6 +235,8 @@ def _request(
         response_body = response.read(maximum_response_bytes + 1)
         if response.status in {429, 502, 503, 504}:
             raise ReasoningRetryableError("vLLM reasoning is temporarily unavailable")
+        if path.endswith("/render") and response.status in {400, 413, 422}:
+            raise ValueError("vLLM chat request exceeds or differs from the route")
         if response.status != 200:
             raise RuntimeError("vLLM reasoning request was rejected")
         if len(response_body) > maximum_response_bytes:
@@ -211,7 +258,7 @@ def _close_connection(connection: http.client.HTTPConnection) -> None:
 def _response_json(body: bytes) -> dict[str, object]:
     try:
         value = json.loads(body)
-    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError) as error:
         raise ValueError("vLLM response differs from the contract") from error
     if not isinstance(value, dict):
         raise ValueError("vLLM response differs from the contract")

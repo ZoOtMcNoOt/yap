@@ -7,6 +7,8 @@ development checks from a one-time phase/checkpoint gate.
 Current architecture-review evidence:
 
 - [Archivist ingestion verification](archivist-ingestion/VERIFICATION.md)
+- [Agent admission profile-capacity verification](agent-admission-profile-capacity/VERIFICATION.md)
+- [Curator knowledge-proposal verification](curator-knowledge-proposals/VERIFICATION.md)
 - [Student learning-question verification](student-learning/VERIFICATION.md)
 - [Scribe transcript-correction verification](scribe-transcript-correction/VERIFICATION.md)
 - [Governed-knowledge maintainability coverage](governed-knowledge-maintainability/COVERAGE.md)

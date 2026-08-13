@@ -611,6 +611,22 @@ configuration, state, and verification details are in the
 [provider supervisor runbook](../docs/runbooks/provider-supervisor-service.md)
 and [agent admission runbook](../docs/runbooks/agent-admission-service.md).
 
+The current protected profile-capacity successor derives active route limits
+from the immutable service profiles: four rapid and eight complex, with Server
+IO remaining one and one active request per owner remaining global. Exact route
+head `dab19fe...` returned `required-workload-routes-qualified` with public-safe
+evidence SHA-256 `96228914...`; Qwen and Gemma were admitted sequentially on
+their unchanged full profiles and completed exact teardown. Exact workflow head
+`7cd24deb...` qualified Scribe, Student, and Curator, including rapid-four/
+fifth-queued and complex-eight/ninth-queued live broker probes. Replacement
+public-lock/aggregate head `7f896b34...` returned
+`governed-knowledge-gate-passed` with public-safe evidence SHA-256
+`fd197b98...`. The exact one-slot evidence above remains historical authority
+for its merged head, not the current candidate boundary. PR #168 remains draft.
+Selected-route limits do not prove simultaneous Qwen/Gemma residency, sustained
+capacity/fairness, production p95/p99, or deployment. See the
+[profile-capacity record](../docs/evidence/agent-admission-profile-capacity/VERIFICATION.md).
+
 ## Scribe transcript correction
 
 The first merged product consumer of the broker is the authenticated
@@ -775,8 +791,10 @@ successor also passed the complete portable server suite at 1,241 total tests:
 All eight distinct owners completed with one grounded question each and zero
 terminal failures. The full warm profile, provider generation, broker,
 PostgreSQL restart/cross-owner/audit boundaries, and six-part teardown remained
-exact. This proves the bounded internal core, not product exposure or sustained
-capacity; hosted review and merge remain pending.
+exact. Hosted-green head `b03c6e79f19bad451437c3f0c495daa67bb7171f`
+then passed all 12 required checks and PR #166 merged the internal core as
+`2254605ed19a592d2db1747d576762ccf11a5cc0`. This proves the bounded
+internal core, not product exposure or sustained capacity.
 
 Exact head `0970d74c7961a63bd1b2366bc0ecef6b5fc55714` returned terminal
 `deterministic-no-student` evidence with public-safe SHA-256
@@ -814,11 +832,37 @@ behavior, queue bound, timeout, or acceptance threshold.
 
 The [public verification record](../docs/evidence/student-learning/VERIFICATION.md)
 contains the exact public-safe identities and limits. Student still has no HTTP
-endpoint, native adapter, renderer/UI workflow, hosted merge, or production
-promotion. A second owned GPU node/private route remains required before both
+endpoint, native adapter, renderer/UI workflow, or production promotion. A
+second owned GPU node/private route remains required before both
 unchanged full Qwen and Gemma services can be kept warm together. Student does
 not reduce the pinned full profile, and request-time model swapping remains
 prohibited.
+
+## Curator knowledge-proposal candidate
+
+The current development branch also contains a privately qualified internal
+Curator candidate. It
+accepts only an explicit proposal or reviewed Student answer, re-reads every
+citation through the server's permission-safe generation owner, and asks the
+already-warm complex route for one bounded propose/reject decision. A proposed
+result may append only a noncanonical `KnowledgeProposal`; Curator cannot
+compile, stage, activate, or otherwise mutate source truth or active knowledge.
+
+Exact head `7cd24deb...` returned `curator-knowledge-proposals-qualified` with
+public-safe evidence SHA-256 `b60df1e2...`: eight cases/eight owners, four
+proposals, four rejections, zero terminal failures, complex capacity eight with
+the ninth owner queued, unchanged warm/broker identities, exact PostgreSQL
+lifecycle/read-back, and teardown. Candidate `7ba4e45c...` failed closed on the
+empty forced-tool content envelope, wrote no Curator qualification receipt, and
+established no admissible Curator success evidence; it remains terminal and no
+teardown result is claimed for it. Invalid/stale evidence, model rejection,
+cancellation, timeout, provider loss, capacity, or audit/write failure publishes
+no successful proposal.
+
+The [Curator verification record](../docs/evidence/curator-knowledge-proposals/VERIFICATION.md)
+contains the public-safe exact-head result. PR #168 is draft; hosted review,
+merge, HTTP/native/UI integration, active-knowledge promotion, and production
+operation remain open.
 
 ## Local checks
 

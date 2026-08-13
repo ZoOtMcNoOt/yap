@@ -50,9 +50,18 @@ async fn private_broker_admits_queues_cancels_and_cleans_up() {
         send(&socket_path, submit(0, "alice")).await["outcome"],
         "admitted"
     );
+    for (index, owner) in [(1, "bob"), (2, "carol"), (3, "dave")] {
+        assert_eq!(
+            send(&socket_path, submit(index, owner)).await["outcome"],
+            "admitted"
+        );
+    }
     assert_eq!(
-        send(&socket_path, submit(1, "bob")).await,
-        json!({"outcome": "queued", "schemaVersion": 1})
+        send(&socket_path, submit(4, "erin")).await,
+        json!({
+            "outcome": "queued",
+            "schemaVersion": 1,
+        })
     );
     assert_eq!(
         send(&socket_path, control("cancel", 0)).await["outcome"],
@@ -63,7 +72,7 @@ async fn private_broker_admits_queues_cancels_and_cleans_up() {
         json!({"outcome": "cancelled", "schemaVersion": 1})
     );
     assert_eq!(
-        send(&socket_path, control("status", 1)).await["outcome"],
+        send(&socket_path, control("status", 4)).await["outcome"],
         "admitted"
     );
 

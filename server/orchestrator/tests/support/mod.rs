@@ -21,12 +21,14 @@ pub fn scheduler() -> AgentAdmissionScheduler {
             ProviderService::RapidAutomation,
             RAPID_PROFILE_SHA256.to_owned(),
             CANDIDATE_LOCK_SHA256.to_owned(),
+            4,
         )
         .unwrap(),
         ProviderRouteIdentity::new(
             ProviderService::ComplexOrchestration,
             COMPLEX_PROFILE_SHA256.to_owned(),
             CANDIDATE_LOCK_SHA256.to_owned(),
+            8,
         )
         .unwrap(),
     )

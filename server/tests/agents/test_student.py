@@ -354,6 +354,7 @@ class StudentTests(unittest.TestCase):
         )
         payload = transport.payloads[0]
         self.assertEqual(payload["max_tokens"], 256)
+        self.assertEqual(payload["n"], 1)
         prompt = payload["messages"][1]["content"]
         self.assertIn('"topic":"crash safety"', prompt)
         self.assertIn(

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+from contextlib import ExitStack
 from pathlib import Path
 import tempfile
 import unittest
@@ -34,7 +35,11 @@ class StudentQualificationGateTests(unittest.TestCase):
                 "server/src/yap_server/knowledge/generation_ledger.py",
                 "server/src/yap_server/knowledge/postgres_knowledge_retrieval.py",
                 "server/orchestrator/src/agent_admission.rs",
+                "server/orchestrator/src/agent_admission_config.rs",
                 "server/orchestrator/src/bin/yap-agent-admission-broker.rs",
+                "server/orchestrator/src/service_profile.rs",
+                "server/orchestrator/tests/supervised_service.rs",
+                "server/orchestrator/tests/support/mod.rs",
                 "server/tests/agents/test_student_postgres.py",
                 "server/tests/evaluation/test_student_qualification.py",
                 "server/tests/evaluation/test_student_qualification_gate.py",
@@ -180,73 +185,100 @@ class StudentQualificationGateTests(unittest.TestCase):
             "terminalOutcomeAuditExact": True,
             "workflowIdentityAuditExact": True,
         }
+        capacity = {
+            "admittedOwnerCount": 4,
+            "expectedCapacityObserved": True,
+            "expectedRouteObserved": True,
+            "overflowOwnerQueued": True,
+            "contained": True,
+            "providerIdentityUnchanged": True,
+            "brokerIdentityUnchanged": True,
+        }
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             evidence = root / "private" / "receipt.json"
-            with (
-                mock.patch.object(
-                    gate, "admit_checked_candidate", return_value=Candidate()
-                ),
-                mock.patch.object(gate, "_candidate_input_paths", return_value=()),
-                mock.patch.object(gate, "_require_private_arm64_host"),
-                mock.patch.object(
-                    gate, "load_student_qualification_acceptance", return_value=object()
-                ),
-                mock.patch.object(
-                    gate,
-                    "load_student_qualification_corpus",
-                    return_value=mock.Mock(cases=(mock.Mock(),)),
-                ),
-                mock.patch.object(
-                    gate, "load_student_service_profile", return_value=profile
-                ),
-                mock.patch.object(
-                    gate, "build_checked_admission_broker", return_value="6" * 64
-                ),
-                mock.patch.object(gate, "read_service_state", return_value={}),
-                mock.patch.object(gate, "validate_state_identity"),
-                mock.patch.object(gate, "probe_exact_service"),
-                mock.patch.object(gate, "observe_admission_broker", return_value={}),
-                mock.patch.object(
-                    gate,
-                    "load_knowledge_database_runtime_lock",
-                    return_value=mock.Mock(lock_sha256="7" * 64),
-                ),
-                mock.patch.object(gate, "OwnedPostgresKnowledgeRuntime", Database),
-                mock.patch.object(
-                    gate, "_initialize_student_knowledge", return_value=generation
-                ),
-                mock.patch.object(
-                    gate, "_expected_student_evidence", return_value={}
-                ),
-                mock.patch.object(gate, "build_student_runtime", return_value=runtime),
-                mock.patch.object(
-                    gate,
-                    "_run_cross_owner_hidden",
-                    return_value=mock.Mock(
-                        status="evidence-unavailable",
-                        reason="evidence-unavailable",
-                        questions=(),
+            with ExitStack() as stack:
+                patches = (
+                    mock.patch.object(
+                        gate, "admit_checked_candidate", return_value=Candidate()
                     ),
-                ),
-                mock.patch.object(
-                    gate, "evaluate_student_qualification", return_value=result
-                ),
-                mock.patch.object(
-                    gate,
-                    "_verify_student_database_state",
-                    return_value=database_state,
-                ),
-                mock.patch.object(
-                    gate,
-                    "bind_checked_candidate_evidence",
-                    side_effect=lambda value, candidate: {
-                        **value,
-                        "candidate": candidate.input_sha256,
-                        "evidenceSha256": "8" * 64,
-                    },
-                ),
-            ):
+                    mock.patch.object(
+                        gate, "_candidate_input_paths", return_value=()
+                    ),
+                    mock.patch.object(gate, "_require_private_arm64_host"),
+                    mock.patch.object(
+                        gate,
+                        "load_student_qualification_acceptance",
+                        return_value=object(),
+                    ),
+                    mock.patch.object(
+                        gate,
+                        "load_student_qualification_corpus",
+                        return_value=mock.Mock(cases=(mock.Mock(),)),
+                    ),
+                    mock.patch.object(
+                        gate, "load_student_service_profile", return_value=profile
+                    ),
+                    mock.patch.object(
+                        gate, "build_checked_admission_broker", return_value="6" * 64
+                    ),
+                    mock.patch.object(gate, "read_service_state", return_value={}),
+                    mock.patch.object(gate, "validate_state_identity"),
+                    mock.patch.object(gate, "probe_exact_service"),
+                    mock.patch.object(
+                        gate, "observe_admission_broker", return_value={}
+                    ),
+                    mock.patch.object(
+                        gate,
+                        "probe_agent_admission_broker_capacity",
+                        return_value=capacity,
+                    ),
+                    mock.patch.object(
+                        gate,
+                        "load_knowledge_database_runtime_lock",
+                        return_value=mock.Mock(lock_sha256="7" * 64),
+                    ),
+                    mock.patch.object(
+                        gate, "OwnedPostgresKnowledgeRuntime", Database
+                    ),
+                    mock.patch.object(
+                        gate, "_initialize_student_knowledge", return_value=generation
+                    ),
+                    mock.patch.object(
+                        gate, "_expected_student_evidence", return_value={}
+                    ),
+                    mock.patch.object(
+                        gate, "build_student_runtime", return_value=runtime
+                    ),
+                    mock.patch.object(
+                        gate,
+                        "_run_cross_owner_hidden",
+                        return_value=mock.Mock(
+                            status="evidence-unavailable",
+                            reason="evidence-unavailable",
+                            questions=(),
+                        ),
+                    ),
+                    mock.patch.object(
+                        gate, "evaluate_student_qualification", return_value=result
+                    ),
+                    mock.patch.object(
+                        gate,
+                        "_verify_student_database_state",
+                        return_value=database_state,
+                    ),
+                    mock.patch.object(
+                        gate,
+                        "bind_checked_candidate_evidence",
+                        side_effect=lambda value, candidate: {
+                            **value,
+                            "candidate": candidate.input_sha256,
+                            "evidenceSha256": "8" * 64,
+                        },
+                    ),
+                )
+                for patcher in patches:
+                    stack.enter_context(patcher)
                 receipt = gate.run_student_qualification_gate(
                     repository_root=REPOSITORY_ROOT,
                     checked_head="a" * 40,
@@ -264,6 +296,9 @@ class StudentQualificationGateTests(unittest.TestCase):
                 ],
             )
             self.assertEqual(receipt["workload"]["maximumOutputTokens"], 512)
+            self.assertEqual(receipt["workload"]["brokerActiveCapacity"], 4)
+            self.assertTrue(receipt["workload"]["fifthOwnerQueued"])
+            self.assertTrue(receipt["workload"]["capacityProbeContained"])
             self.assertEqual(receipt["workload"]["gpuMemoryUtilization"], "0.40")
             self.assertNotIn("private-restarted", str(receipt))
             self.assertNotIn("private question", str(receipt))

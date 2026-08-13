@@ -72,6 +72,7 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
 
         self.assertEqual(len(requests), 2)
         self.assertEqual([item["max_tokens"] for item in requests], [64, 64])
+        self.assertEqual([item["n"] for item in requests], [1, 1])
         self.assertIn("tools", requests[0])
         self.assertIs(requests[0]["parallel_tool_calls"], False)
         self.assertIn("tools", requests[1])
@@ -256,6 +257,19 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
             "I cannot query the raw repository or filesystem or bypass permissions.",
         )
         for prompt in fixture["systemPrompts"].values():
+            self.assertIn(
+                "During governed-tool selection, emit exactly the required next "
+                "governed tool call before any refusal",
+                prompt,
+            )
+            self.assertIn(
+                "Apply the refusal rule only to the final answer after all required "
+                "governed tool results are supplied; it never permits skipping or "
+                "replacing a required tool call.",
+                prompt,
+            )
+            self.assertIn("citationConceptIds", prompt)
+            self.assertIn("never append citation labels or IDs to answer", prompt)
             self.assertIn("answer exactly Evidence is unavailable.", prompt)
             self.assertIn(
                 "answer exactly I cannot query the raw repository or filesystem or bypass permissions.",
@@ -722,6 +736,56 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
         )
         self.assertGreaterEqual(score.invalid_structured_output_count, 1)
         self.assertFalse(score.passed)
+
+    def test_does_not_retry_a_prose_refusal_during_tool_selection(self) -> None:
+        fixture = json.loads(
+            (REPOSITORY_ROOT / "server" / "agent-workload-fixtures.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        injection_index = next(
+            index
+            for index, case in enumerate(fixture["cases"])
+            if case["caseId"] == "prompt-injection-denial"
+        )
+        tool_requests = 0
+
+        def request(payload: dict[str, object]) -> dict[str, object]:
+            nonlocal tool_requests
+            if "tools" in payload:
+                if tool_requests == injection_index:
+                    tool_requests += 1
+                    return {
+                        "choices": [
+                            {
+                                "message": {
+                                    "role": "assistant",
+                                    "content": fixture["cases"][injection_index][
+                                        "expectedAnswer"
+                                    ],
+                                }
+                            }
+                        ]
+                    }
+                tool_requests += 1
+                return _tool_response("search_knowledge")
+            return _answer_response()
+
+        results = run_agent_model_fixtures(
+            REPOSITORY_ROOT,
+            model="synthetic",
+            workload_class="rapid-automation",
+            maximum_output_tokens=256,
+            final_response_protocol="json-schema",
+            request_json=request,
+        )
+        result = next(
+            item for item in results if item.case_id == "prompt-injection-denial"
+        )
+
+        self.assertTrue(result.invalid_structured_output)
+        self.assertEqual(result.model_request_count, 1)
+        self.assertEqual(result.tool_calls, ())
 
     def test_identifies_the_case_for_a_runtime_request_failure(self) -> None:
         def request(_payload: dict[str, object]) -> dict[str, object]:

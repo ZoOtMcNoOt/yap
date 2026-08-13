@@ -1,6 +1,6 @@
 # ADR 0031: Eight-agent Voice OS roster and execution boundaries
 
-**Status:** Accepted target; service profiles, bounded admission, Scribe, and Archivist merged; Student privately qualified and awaiting hosted merge; remaining workflows and promotion pending
+**Status:** Accepted target; three role cores merged; the Curator/profile-capacity successor is privately qualified under draft PR #168; four later workflows, hosted merge, product exposure, and promotion remain open
 **Date:** 2026-08-11
 **Deciders:** Yap product and engineering owner
 **Amends:** [ADR 0006](0006-silero-agents-state-machine.md),
@@ -37,9 +37,29 @@ complete-portable-test-green topic-copy prompt repair on the already-warm full Q
 rapid route. Exact `428d6e48...` returned
 `student-learning-questions-qualified` with public-safe evidence SHA-256
 `f597cca7...`; exact predecessor `0970d74c...` remains terminal
-`deterministic-no-student`. Hosted merge and product exposure remain open.
-The five remaining workflows—Curator, Auditor, Librarian, Analyst, and
-Coordinator—remain pending.
+`deterministic-no-student`. Hosted-green head `b03c6e79...` passed all 12 checks
+and PR #166 merged the internal core as `2254605e...`; product exposure remains
+open. Exact workflow head `7cd24deb...` then privately requalified Scribe and
+Student and qualified the explicit-submission-only Curator candidate. Curator
+returned `curator-knowledge-proposals-qualified` with public-safe evidence
+SHA-256 `b60df1e2...`: eight cases/eight owners, four proposals, four
+rejections, zero terminal failures, complex capacity eight with a ninth owner
+queued, exact PostgreSQL lifecycle/read-back, and teardown. Curator may append
+only a noncanonical proposal; it cannot activate or mutate source truth. PR
+#168 remains draft, so hosted merge and product exposure remain open. The four
+later workflows—Auditor, Librarian, Analyst, and Coordinator—remain pending.
+
+The current protected profile-capacity successor derives four rapid and eight
+complex active limits from the immutable full profiles while retaining one
+active request per owner. Exact route head `dab19fe...` returned
+`required-workload-routes-qualified` with public-safe evidence SHA-256
+`96228914...`; Qwen and Gemma were admitted sequentially on unchanged full
+profiles and completed exact teardown. Exact public-lock/aggregate head
+`7f896b34...` returned `governed-knowledge-gate-passed` with public-safe
+evidence SHA-256 `fd197b98...`. The merged one-slot evidence remains historical
+authority for its exact head, not the current candidate boundary. These
+selected-route limits are not proof of simultaneous Qwen/Gemma residency,
+sustained capacity/fairness, production SLOs, or deployment.
 
 Calling the foundations "the agent team" would be incorrect. Conversely,
 implementing eight unrelated prompts would duplicate authority, bypass
@@ -99,8 +119,12 @@ product workflow, not an autonomous identity and not a generic chat agent.
 
 ### Scheduling classes
 
-- **HOT:** Scribe only. One admitted request. Its product deadline includes
-  queueing and inference; deadline failure yields raw ASR.
+- **HOT:** Scribe only. Its product deadline includes queueing and inference;
+  deadline failure yields raw ASR. Admission is bounded by the exact ready
+  rapid profile and one-active-per-owner rule. The privately qualified current
+  candidate admits four distinct rapid-route owners and queues a fifth. This is
+  selected-route admission evidence, not simultaneous-model or sustained-
+  throughput evidence.
 - **INTERACTIVE:** Librarian reads and user-requested Analyst work. Interactive
   work may pause new background admission but does not cancel accepted durable
   work without an acknowledged transition.
@@ -189,6 +213,20 @@ an LLM or activation, and passed focused portable plus real PostgreSQL
 restart/idempotency/cross-owner/cancellation/teardown evidence. Hosted-green
 head `e1899db7...` merged it through PR #165 as `2a7ec819...`.
 
+The protected profile-capacity successor was then qualified without reducing
+either immutable service profile. Exact route head `dab19fe...` returned
+`required-workload-routes-qualified` with public-safe evidence SHA-256
+`96228914...`; Qwen and Gemma were admitted sequentially and exact teardown
+held. Terminal attempts `9551532d...` and `98fb89f9...` exposed respectively a
+prompt-refusal/tool-selection phase ambiguity and answer/citation field-
+ownership ambiguity; both returned `deterministic-no-model`, remain
+inadmissible, and were not reused. Exact workflow head `7cd24deb...` requalified
+Scribe with public-safe evidence SHA-256 `9c3c44c5...`, requalified Student with
+public-safe evidence SHA-256 `d3561e1a...`, and qualified Curator with public-
+safe evidence SHA-256 `b60df1e2...`. Exact public-lock/aggregate head
+`7f896b34...` then returned `governed-knowledge-gate-passed` with public-safe
+evidence SHA-256 `fd197b98...`.
+
 Exact Student candidate `452c8b76...` originally returned
 `student-learning-questions-qualified` with public-safe semantic evidence
 SHA-256 `3e1ddc61...`. It recorded one synchronized eight-owner wave, unchanged
@@ -222,10 +260,15 @@ does not prove product exposure or sustained capacity. Exact
 `476f7a9c...` returned terminal `deterministic-no-student` with public-safe
 evidence SHA-256 `9c2f68ff...`; six of eight cases completed while the warm
 provider/broker, queue wave, database boundaries, and teardown held. Hosted
-merge, product exposure, warm simultaneous two-route
-residency, the five remaining workflows (Curator, Auditor, Librarian, Analyst,
-and Coordinator), sustained multi-owner capacity,
-and production promotion remain open.
+head `b03c6e79...` passed all 12 checks and PR #166 merged the internal core as
+`2254605e...`. The current Curator/profile-capacity successor is privately
+qualified at exact `7cd24deb...`/`7f896b34...` under draft PR #168. Hosted
+review/merge, Student and Curator product exposure, warm simultaneous two-route
+residency, the four later workflows (Auditor, Librarian, Analyst, and
+Coordinator), sustained multi-owner capacity, and production promotion remain
+open. One Spark cannot retain the unchanged `0.40` Qwen and `0.70` Gemma
+profiles simultaneously; a second owned GPU node/private route remains
+required for the intended two-route topology.
 
 ## Consequences
 

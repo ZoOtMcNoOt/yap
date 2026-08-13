@@ -9,8 +9,9 @@ The inventory includes the repository's tracked source, text, policy, and
 provenance contract extensions and excludes only the two tracked OpenAPI products, the
 package lock, and the two generated dependency-inventory JSON products named in
 the script. The four large JSON gate/evaluation contracts remain included as
-hand-maintained policy. At this tree the complete 250-line inventory is 527
-files: 287 listed below at 350 or more lines and 240 from 250 through 349.
+hand-maintained policy. At this current candidate tree the complete 250-line
+inventory is 541 files: 297 listed below at 350 or more lines and 244 from 250
+through 349.
 
 Each line contains up to two independent entries in the form
 `physical-lines disposition exact-path`.
@@ -73,77 +74,81 @@ Each line contains up to two independent entries in the form
   466 CURRENT-DOC          docs/adr/0014-server-tier-compute-topology.md ||   390 CURRENT-DOC          docs/adr/0016-auth-identity-bridge.md
   373 CURRENT-DOC          docs/adr/0017-knowledge-base-compiler.md ||   805 CURRENT-DOC          docs/adr/0024-global-language-routing.md
   643 CURRENT-DOC          docs/adr/0025-provider-specific-asr-serving.md ||   438 CURRENT-DOC          docs/adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md
- 1066 CURRENT-DOC          docs/architecture/boundaries/EXECUTABLE-OWNERSHIP.md ||  1171 CURRENT-DOC          docs/architecture/CURRENT-ARCHITECTURE.md
- 1160 CURRENT-DOC          docs/CURRENT-STATUS.md ||   495 CURRENT-DOC          docs/evidence/governed-knowledge-maintainability/VERIFICATION.md
- 1009 CURRENT-DOC          docs/plans/active/2026-07-17-voiceos-decision-evidence-queue.md ||   627 HISTORICAL-DOC       docs/plans/archived/2026-07-05-client-state-machine-implementation.md
-  374 CURRENT-DOC          docs/plans/active/2026-08-11-eight-agent-voice-os-delivery.md
-  561 HISTORICAL-DOC       docs/plans/archived/2026-07-08-local-audio-preprocessing-stack.md ||   525 HISTORICAL-DOC       docs/plans/archived/2026-07-09-client-hardening-storage.md
-  988 HISTORICAL-DOC       docs/plans/archived/2026-07-10-client-audio-foundation.md ||   450 HISTORICAL-DOC       docs/plans/completed/2026-07-08-model-download-ux.md
-  855 HISTORICAL-DOC       docs/plans/completed/2026-07-10-server-contract-durable-connector.md ||  1953 HISTORICAL-DOC       docs/plans/completed/2026-07-16-audio-preprocessing-and-language-routing.md
-  391 HISTORICAL-DOC       docs/plans/completed/2026-07-18-codebase-ownership-and-maintainability-review.md ||   646 HISTORICAL-DOC       docs/plans/completed/2026-07-25-tenant-scoped-identity-and-job-authorization.md
-  923 HISTORICAL-DOC       docs/research/2026-07-16-dynamic-language-detection-evaluation.md ||   913 HISTORICAL-DOC       docs/research/2026-07-17-asr-evaluation-corpus-and-runtime-matrix.md
-  353 CURRENT-DOC          docs/roadmap/ROADMAP.md ||   886 CURRENT-DOC          docs/runbooks/integrated-identity-access-gate.md
-  506 CURRENT-DOC          docs/runbooks/integrated-preprocessing-language-routing-gate.md ||  1154 CURRENT-DOC          docs/runbooks/yap-server-node-setup.md
-  554 CURRENT-DOC          docs/specs/source-aware-diarization.md ||   586 CURRENT-DOC          docs/specs/testing-strategy.md
- 1233 CURRENT-DOC          docs/VOICE-OS-ARCHITECTURE.md ||   696 INFRA                infra/yap-server-node/owned-process-group.sh
-  989 INFRA                infra/yap-server-node/owned-process-supervisor.py ||   601 INFRA                infra/yap-server-node/private-container-loopback-proxy.sh
- 1113 INFRA                infra/yap-server-node/resident-provider-lifecycle-gate.sh ||   504 INFRA                infra/yap-server-node/setup-server.sh
-  350 SERVER-CONTRACT      server/orchestrator/src/agent_admission.rs ||   463 SERVER-CONTRACT      server/orchestrator/src/supervisor.rs
-  452 SERVER-CONTRACT      server/orchestrator/tests/supervised_service.rs ||   902 SERVER-RUNBOOK       server/README.md
-  426 SERVER-CONTRACT      server/src/yap_server/agents/archivist_service.py ||   512 SERVER-CONTRACT      server/src/yap_server/agents/student_model.py
+ 1112 CURRENT-DOC          docs/architecture/boundaries/EXECUTABLE-OWNERSHIP.md ||  1201 CURRENT-DOC          docs/architecture/CURRENT-ARCHITECTURE.md
+ 1224 CURRENT-DOC          docs/CURRENT-STATUS.md ||   541 CURRENT-DOC          docs/evidence/governed-knowledge-maintainability/VERIFICATION.md
+ 1015 CURRENT-DOC          docs/plans/active/2026-07-17-voiceos-decision-evidence-queue.md ||   395 CURRENT-DOC          docs/plans/active/2026-08-11-eight-agent-voice-os-delivery.md
+  627 HISTORICAL-DOC       docs/plans/archived/2026-07-05-client-state-machine-implementation.md ||   561 HISTORICAL-DOC       docs/plans/archived/2026-07-08-local-audio-preprocessing-stack.md
+  525 HISTORICAL-DOC       docs/plans/archived/2026-07-09-client-hardening-storage.md ||   988 HISTORICAL-DOC       docs/plans/archived/2026-07-10-client-audio-foundation.md
+  450 HISTORICAL-DOC       docs/plans/completed/2026-07-08-model-download-ux.md ||   855 HISTORICAL-DOC       docs/plans/completed/2026-07-10-server-contract-durable-connector.md
+ 1953 HISTORICAL-DOC       docs/plans/completed/2026-07-16-audio-preprocessing-and-language-routing.md ||   391 HISTORICAL-DOC       docs/plans/completed/2026-07-18-codebase-ownership-and-maintainability-review.md
+  646 HISTORICAL-DOC       docs/plans/completed/2026-07-25-tenant-scoped-identity-and-job-authorization.md ||   923 HISTORICAL-DOC       docs/research/2026-07-16-dynamic-language-detection-evaluation.md
+  913 HISTORICAL-DOC       docs/research/2026-07-17-asr-evaluation-corpus-and-runtime-matrix.md ||   361 CURRENT-DOC          docs/roadmap/ROADMAP.md
+  886 CURRENT-DOC          docs/runbooks/integrated-identity-access-gate.md ||   506 CURRENT-DOC          docs/runbooks/integrated-preprocessing-language-routing-gate.md
+ 1154 CURRENT-DOC          docs/runbooks/yap-server-node-setup.md ||   554 CURRENT-DOC          docs/specs/source-aware-diarization.md
+  586 CURRENT-DOC          docs/specs/testing-strategy.md ||  1248 CURRENT-DOC          docs/VOICE-OS-ARCHITECTURE.md
+  696 INFRA                infra/yap-server-node/owned-process-group.sh ||   989 INFRA                infra/yap-server-node/owned-process-supervisor.py
+  601 INFRA                infra/yap-server-node/private-container-loopback-proxy.sh ||  1113 INFRA                infra/yap-server-node/resident-provider-lifecycle-gate.sh
+  504 INFRA                infra/yap-server-node/setup-server.sh ||   364 SERVER-CONTRACT      server/orchestrator/src/agent_admission.rs
+  463 SERVER-CONTRACT      server/orchestrator/src/supervisor.rs ||   453 SERVER-CONTRACT      server/orchestrator/tests/supervised_service.rs
+  946 SERVER-RUNBOOK       server/README.md ||   426 SERVER-CONTRACT      server/src/yap_server/agents/archivist_service.py
+  379 SERVER-CONTRACT      server/src/yap_server/agents/curator_result_audit.py ||   899 SERVER-CONTRACT      server/src/yap_server/agents/curator_service.py
+  724 SERVER-CONTRACT      server/src/yap_server/agents/curator.py ||   513 SERVER-CONTRACT      server/src/yap_server/agents/student_model.py
   680 SERVER-CONTRACT      server/src/yap_server/agents/student_service.py ||   430 SERVER-CONTRACT      server/src/yap_server/agents/student.py
-  439 SERVER-CONTRACT      server/src/yap_server/agents/transcript_correction_model.py ||   754 SERVER-CONTRACT      server/src/yap_server/agents/transcript_correction_service.py
+  440 SERVER-CONTRACT      server/src/yap_server/agents/transcript_correction_model.py ||   754 SERVER-CONTRACT      server/src/yap_server/agents/transcript_correction_service.py
  1136 SERVER-CONTRACT      server/src/yap_server/agents/transcript_correction.py ||   623 AUTH                 server/src/yap_server/auth/identity_repository.py
   542 AUTH                 server/src/yap_server/auth/oidc_access_tokens.py ||   414 AUTH                 server/src/yap_server/auth/oidc_metadata.py
-  586 EVALUATION           server/src/yap_server/evaluation/agent_model_acceptance.py ||   539 EVALUATION           server/src/yap_server/evaluation/agent_model_fixture_runner.py
-  803 EVALUATION           server/src/yap_server/evaluation/agent_model_qualification.py ||   517 EVALUATION           server/src/yap_server/evaluation/agent_route_qualification_evidence.py
-  382 EVALUATION           server/src/yap_server/evaluation/agent_service_lifecycle_observation.py ||   582 EVALUATION           server/src/yap_server/evaluation/agent_service_lifecycle_runtime.py
-  626 EVALUATION           server/src/yap_server/evaluation/agent_vllm_runtime.py ||   506 EVALUATION           server/src/yap_server/evaluation/ami_meeting_lock.py
- 1396 EVALUATION           server/src/yap_server/evaluation/corpus_manifest.py ||   612 EVALUATION           server/src/yap_server/evaluation/duration_tracks.py
-  399 EVALUATION           server/src/yap_server/evaluation/european_parliament_speech_source.py ||   350 EVALUATION           server/src/yap_server/evaluation/fleurs_cohere_comparator.py
-  804 EVALUATION           server/src/yap_server/evaluation/fleurs_corpus.py ||   573 EVALUATION           server/src/yap_server/evaluation/governed_knowledge_gate.py
-  427 EVALUATION           server/src/yap_server/evaluation/human_reference_adjudication.py ||   672 EVALUATION           server/src/yap_server/evaluation/manifest_scoring.py
-  703 EVALUATION           server/src/yap_server/evaluation/meeting_acceptance_plan.py ||   753 EVALUATION           server/src/yap_server/evaluation/owned_postgres_knowledge_runtime.py
-  719 EVALUATION           server/src/yap_server/evaluation/provider_cancellation_qualification.py ||   619 EVALUATION           server/src/yap_server/evaluation/provider_capacity_qualification.py
-  669 EVALUATION           server/src/yap_server/evaluation/provider_duration_suite.py ||   488 EVALUATION           server/src/yap_server/evaluation/provider_fixed_auto_contract_qualification.py
-  715 EVALUATION           server/src/yap_server/evaluation/provider_resource_observations.py ||   534 EVALUATION           server/src/yap_server/evaluation/provider_runtime_observations.py
-  667 EVALUATION           server/src/yap_server/evaluation/provider_runtime_qualification.py ||   718 EVALUATION           server/src/yap_server/evaluation/reference_review_registry.py
-  391 EVALUATION           server/src/yap_server/evaluation/resident_provider_duration_qualification.py ||   533 EVALUATION           server/src/yap_server/evaluation/resident_provider_lifecycle_evidence.py
-  573 EVALUATION           server/src/yap_server/evaluation/resident_provider_resource_sampler.py ||   831 EVALUATION           server/src/yap_server/evaluation/runtime_plan.py
-  812 EVALUATION           server/src/yap_server/evaluation/student_qualification_gate.py ||   652 EVALUATION           server/src/yap_server/evaluation/student_qualification.py
-  448 EVALUATION           server/src/yap_server/evaluation/transcript_correction_corpus.py ||   422 EVALUATION           server/src/yap_server/evaluation/transcript_correction_qualification_gate.py
-  775 EVALUATION           server/src/yap_server/evaluation/transcript_correction_qualification.py ||   447 EVALUATION           server/src/yap_server/evaluation/transcript_correction_source_evidence.py
-  401 EVALUATION           server/src/yap_server/evaluation/transcript_reference_review.py ||  1231 EVALUATION           server/src/yap_server/evaluation/transcript_scoring.py
-  390 EVALUATION           server/src/yap_server/evaluation/vllm_runtime_metrics.py ||   667 JOBS                 server/src/yap_server/jobs/completion.py
-  357 JOBS                 server/src/yap_server/jobs/intake_contract.py ||   746 JOBS                 server/src/yap_server/jobs/job_store.py
-  595 JOBS                 server/src/yap_server/jobs/runtime.py ||  1401 JOBS                 server/src/yap_server/jobs/service.py
-  835 KNOWLEDGE            server/src/yap_server/knowledge/generation_ledger.py ||   358 KNOWLEDGE            server/src/yap_server/knowledge/knowledge_proposals.py
-  377 KNOWLEDGE            server/src/yap_server/knowledge/knowledge_source_admission.py ||   501 KNOWLEDGE            server/src/yap_server/knowledge/knowledge_tool_contract.py
-  387 KNOWLEDGE            server/src/yap_server/knowledge/okf_compiler.py ||   541 KNOWLEDGE            server/src/yap_server/knowledge/postgres_knowledge_retrieval.py
-  594 LID                  server/src/yap_server/lid/component_lock.py ||   445 LID                  server/src/yap_server/lid/container_runtime.py
-  505 LID                  server/src/yap_server/lid/materialization.py ||   397 LID                  server/src/yap_server/lid/policy.py
-  490 LID                  server/src/yap_server/lid/worker_contract.py ||  1173 LIVE                 server/src/yap_server/live/protocol.py
-  586 LIVE                 server/src/yap_server/live/websocket_server.py ||   491 MEETING              server/src/yap_server/meeting_transcription/container_worker.py
-  764 MEETING              server/src/yap_server/meeting_transcription/result_revisions.py ||   692 MEETING              server/src/yap_server/meeting_transcription/runtime_provenance.py
-  410 POOLS                server/src/yap_server/pools/agent_vllm_service_profile.py ||   381 POOLS                server/src/yap_server/pools/batch_asr.py
-  484 POOLS                server/src/yap_server/pools/checked_runtime_image.py ||   730 POOLS                server/src/yap_server/pools/cohere_engine.py
-  427 POOLS                server/src/yap_server/pools/nemo_stream_scheduler.py ||   665 POOLS                server/src/yap_server/pools/nemotron_engine.py
-  531 POOLS                server/src/yap_server/pools/nemotron_nemo_client.py ||   470 POOLS                server/src/yap_server/pools/nemotron_nemo_pipeline.py
-  488 POOLS                server/src/yap_server/pools/nemotron_nemo_service.py ||   418 POOLS                server/src/yap_server/pools/nemotron_nemo_streaming.py
-  378 POOLS                server/src/yap_server/pools/provider_worker_factory.py ||   513 POOLS                server/src/yap_server/pools/utterance_plan.py
-  577 POOLS                server/src/yap_server/pools/vllm_transcription_client.py ||   380 SERVER-CONTRACT      server/tests/agents/test_student_postgres.py
-  841 SERVER-CONTRACT      server/tests/agents/test_student.py ||   562 SERVER-CONTRACT      server/tests/agents/test_transcript_correction_model.py
-  778 SERVER-CONTRACT      server/tests/agents/test_transcript_correction_service.py ||   605 SERVER-CONTRACT      server/tests/agents/test_transcript_correction.py
-  426 TEST-AUTH-CONTRACT   server/tests/auth/test_oidc_access_tokens.py ||   407 TEST-AUTH-CONTRACT   server/tests/auth/test_oidc_metadata.py
-  453 TEST-AUTH-CONTRACT   server/tests/capabilities/test_asr_catalog.py ||   350 TEST-AUTH-CONTRACT   server/tests/contract/contract_http_values.py
-  549 TEST-AUTH-CONTRACT   server/tests/contract/test_contract.py ||   358 TEST-AUTH-CONTRACT   server/tests/contract/test_examples_contract.py
-  395 TEST-EVALUATION      server/tests/evaluation/promotion_registry_fixture.py ||   790 TEST-EVALUATION      server/tests/evaluation/test_agent_model_fixture_runner.py
-  880 TEST-EVALUATION      server/tests/evaluation/test_agent_model_qualification.py ||   354 TEST-EVALUATION      server/tests/evaluation/test_agent_model_scoring.py
-  647 TEST-EVALUATION      server/tests/evaluation/test_agent_vllm_runtime.py ||  1433 TEST-EVALUATION      server/tests/evaluation/test_corpus_manifest.py
-  359 TEST-EVALUATION      server/tests/evaluation/test_governed_knowledge_gate.py ||   495 TEST-EVALUATION      server/tests/evaluation/test_owned_postgres_knowledge_runtime.py
-  388 TEST-EVALUATION      server/tests/evaluation/test_provider_duration_suite.py ||   552 TEST-EVALUATION      server/tests/evaluation/test_provider_runtime_qualification.py
-  358 TEST-EVALUATION      server/tests/evaluation/test_resident_provider_lifecycle_evidence.py ||  1137 TEST-EVALUATION      server/tests/evaluation/test_transcript_correction_qualification.py
-  394 TEST-EVALUATION      server/tests/evaluation/test_student_qualification.py
+  405 EVALUATION           server/src/yap_server/evaluation/agent_admission_broker_observation.py ||   586 EVALUATION           server/src/yap_server/evaluation/agent_model_acceptance.py
+  543 EVALUATION           server/src/yap_server/evaluation/agent_model_fixture_runner.py ||   803 EVALUATION           server/src/yap_server/evaluation/agent_model_qualification.py
+  517 EVALUATION           server/src/yap_server/evaluation/agent_route_qualification_evidence.py ||   382 EVALUATION           server/src/yap_server/evaluation/agent_service_lifecycle_observation.py
+  582 EVALUATION           server/src/yap_server/evaluation/agent_service_lifecycle_runtime.py ||   626 EVALUATION           server/src/yap_server/evaluation/agent_vllm_runtime.py
+  506 EVALUATION           server/src/yap_server/evaluation/ami_meeting_lock.py ||  1396 EVALUATION           server/src/yap_server/evaluation/corpus_manifest.py
+ 1417 EVALUATION           server/src/yap_server/evaluation/curator_qualification_gate.py ||   740 EVALUATION           server/src/yap_server/evaluation/curator_qualification.py
+  612 EVALUATION           server/src/yap_server/evaluation/duration_tracks.py ||   399 EVALUATION           server/src/yap_server/evaluation/european_parliament_speech_source.py
+  350 EVALUATION           server/src/yap_server/evaluation/fleurs_cohere_comparator.py ||   804 EVALUATION           server/src/yap_server/evaluation/fleurs_corpus.py
+  573 EVALUATION           server/src/yap_server/evaluation/governed_knowledge_gate.py ||   427 EVALUATION           server/src/yap_server/evaluation/human_reference_adjudication.py
+  672 EVALUATION           server/src/yap_server/evaluation/manifest_scoring.py ||   703 EVALUATION           server/src/yap_server/evaluation/meeting_acceptance_plan.py
+  753 EVALUATION           server/src/yap_server/evaluation/owned_postgres_knowledge_runtime.py ||   719 EVALUATION           server/src/yap_server/evaluation/provider_cancellation_qualification.py
+  619 EVALUATION           server/src/yap_server/evaluation/provider_capacity_qualification.py ||   669 EVALUATION           server/src/yap_server/evaluation/provider_duration_suite.py
+  488 EVALUATION           server/src/yap_server/evaluation/provider_fixed_auto_contract_qualification.py ||   715 EVALUATION           server/src/yap_server/evaluation/provider_resource_observations.py
+  534 EVALUATION           server/src/yap_server/evaluation/provider_runtime_observations.py ||   667 EVALUATION           server/src/yap_server/evaluation/provider_runtime_qualification.py
+  718 EVALUATION           server/src/yap_server/evaluation/reference_review_registry.py ||   391 EVALUATION           server/src/yap_server/evaluation/resident_provider_duration_qualification.py
+  533 EVALUATION           server/src/yap_server/evaluation/resident_provider_lifecycle_evidence.py ||   573 EVALUATION           server/src/yap_server/evaluation/resident_provider_resource_sampler.py
+  831 EVALUATION           server/src/yap_server/evaluation/runtime_plan.py ||   856 EVALUATION           server/src/yap_server/evaluation/student_qualification_gate.py
+  652 EVALUATION           server/src/yap_server/evaluation/student_qualification.py ||   448 EVALUATION           server/src/yap_server/evaluation/transcript_correction_corpus.py
+  425 EVALUATION           server/src/yap_server/evaluation/transcript_correction_qualification_gate.py ||   775 EVALUATION           server/src/yap_server/evaluation/transcript_correction_qualification.py
+  447 EVALUATION           server/src/yap_server/evaluation/transcript_correction_source_evidence.py ||   401 EVALUATION           server/src/yap_server/evaluation/transcript_reference_review.py
+ 1231 EVALUATION           server/src/yap_server/evaluation/transcript_scoring.py ||   390 EVALUATION           server/src/yap_server/evaluation/vllm_runtime_metrics.py
+  667 JOBS                 server/src/yap_server/jobs/completion.py ||   357 JOBS                 server/src/yap_server/jobs/intake_contract.py
+  746 JOBS                 server/src/yap_server/jobs/job_store.py ||   595 JOBS                 server/src/yap_server/jobs/runtime.py
+ 1401 JOBS                 server/src/yap_server/jobs/service.py ||   835 KNOWLEDGE            server/src/yap_server/knowledge/generation_ledger.py
+  424 KNOWLEDGE            server/src/yap_server/knowledge/knowledge_proposals.py ||   377 KNOWLEDGE            server/src/yap_server/knowledge/knowledge_source_admission.py
+  501 KNOWLEDGE            server/src/yap_server/knowledge/knowledge_tool_contract.py ||   387 KNOWLEDGE            server/src/yap_server/knowledge/okf_compiler.py
+  541 KNOWLEDGE            server/src/yap_server/knowledge/postgres_knowledge_retrieval.py ||   594 LID                  server/src/yap_server/lid/component_lock.py
+  445 LID                  server/src/yap_server/lid/container_runtime.py ||   505 LID                  server/src/yap_server/lid/materialization.py
+  397 LID                  server/src/yap_server/lid/policy.py ||   490 LID                  server/src/yap_server/lid/worker_contract.py
+ 1173 LIVE                 server/src/yap_server/live/protocol.py ||   586 LIVE                 server/src/yap_server/live/websocket_server.py
+  491 MEETING              server/src/yap_server/meeting_transcription/container_worker.py ||   764 MEETING              server/src/yap_server/meeting_transcription/result_revisions.py
+  692 MEETING              server/src/yap_server/meeting_transcription/runtime_provenance.py ||   410 POOLS                server/src/yap_server/pools/agent_vllm_service_profile.py
+  381 POOLS                server/src/yap_server/pools/batch_asr.py ||   484 POOLS                server/src/yap_server/pools/checked_runtime_image.py
+  730 POOLS                server/src/yap_server/pools/cohere_engine.py ||   427 POOLS                server/src/yap_server/pools/nemo_stream_scheduler.py
+  665 POOLS                server/src/yap_server/pools/nemotron_engine.py ||   531 POOLS                server/src/yap_server/pools/nemotron_nemo_client.py
+  470 POOLS                server/src/yap_server/pools/nemotron_nemo_pipeline.py ||   488 POOLS                server/src/yap_server/pools/nemotron_nemo_service.py
+  418 POOLS                server/src/yap_server/pools/nemotron_nemo_streaming.py ||   378 POOLS                server/src/yap_server/pools/provider_worker_factory.py
+  513 POOLS                server/src/yap_server/pools/utterance_plan.py ||   577 POOLS                server/src/yap_server/pools/vllm_transcription_client.py
+  423 SERVER-CONTRACT      server/tests/agents/test_curator_postgres.py ||  1055 SERVER-CONTRACT      server/tests/agents/test_curator.py
+  380 SERVER-CONTRACT      server/tests/agents/test_student_postgres.py ||   842 SERVER-CONTRACT      server/tests/agents/test_student.py
+  563 SERVER-CONTRACT      server/tests/agents/test_transcript_correction_model.py ||   778 SERVER-CONTRACT      server/tests/agents/test_transcript_correction_service.py
+  605 SERVER-CONTRACT      server/tests/agents/test_transcript_correction.py ||   426 TEST-AUTH-CONTRACT   server/tests/auth/test_oidc_access_tokens.py
+  407 TEST-AUTH-CONTRACT   server/tests/auth/test_oidc_metadata.py ||   453 TEST-AUTH-CONTRACT   server/tests/capabilities/test_asr_catalog.py
+  350 TEST-AUTH-CONTRACT   server/tests/contract/contract_http_values.py ||   549 TEST-AUTH-CONTRACT   server/tests/contract/test_contract.py
+  358 TEST-AUTH-CONTRACT   server/tests/contract/test_examples_contract.py ||   395 TEST-EVALUATION      server/tests/evaluation/promotion_registry_fixture.py
+  854 TEST-EVALUATION      server/tests/evaluation/test_agent_model_fixture_runner.py ||   880 TEST-EVALUATION      server/tests/evaluation/test_agent_model_qualification.py
+  354 TEST-EVALUATION      server/tests/evaluation/test_agent_model_scoring.py ||   647 TEST-EVALUATION      server/tests/evaluation/test_agent_vllm_runtime.py
+ 1433 TEST-EVALUATION      server/tests/evaluation/test_corpus_manifest.py ||   382 TEST-EVALUATION      server/tests/evaluation/test_curator_qualification_gate.py
+  364 TEST-EVALUATION      server/tests/evaluation/test_curator_qualification.py ||   359 TEST-EVALUATION      server/tests/evaluation/test_governed_knowledge_gate.py
+  495 TEST-EVALUATION      server/tests/evaluation/test_owned_postgres_knowledge_runtime.py ||   388 TEST-EVALUATION      server/tests/evaluation/test_provider_duration_suite.py
+  552 TEST-EVALUATION      server/tests/evaluation/test_provider_runtime_qualification.py ||   358 TEST-EVALUATION      server/tests/evaluation/test_resident_provider_lifecycle_evidence.py
+  394 TEST-EVALUATION      server/tests/evaluation/test_student_qualification.py ||  1137 TEST-EVALUATION      server/tests/evaluation/test_transcript_correction_qualification.py
   580 TEST-EVALUATION      server/tests/evaluation/test_transcript_scoring.py ||   966 TEST-INFRA           server/tests/infra/test_mock_oidc_harness.py
   898 TEST-INFRA           server/tests/infra/test_owned_process_supervisor.py ||  1458 TEST-INFRA           server/tests/infra/test_private_container_loopback_proxy_behavior.py
   801 TEST-INFRA           server/tests/infra/test_resident_provider_lifecycle_gate.py ||  1049 TEST-JOBS            server/tests/jobs/test_runtime.py

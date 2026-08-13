@@ -205,6 +205,7 @@ def warm_agent_model_fixture_runtime(
             "tool_choice": "required",
             "parallel_tool_calls": False,
             "temperature": 0,
+            "n": 1,
             "max_tokens": warmup_output_tokens,
             "chat_template_kwargs": {"enable_thinking": False},
         }
@@ -222,6 +223,7 @@ def warm_agent_model_fixture_runtime(
             },
         ],
         "temperature": 0,
+        "n": 1,
         "max_tokens": warmup_output_tokens,
         "chat_template_kwargs": {"enable_thinking": False},
     }
@@ -334,6 +336,7 @@ def _run_case(
                 "tool_choice": "required",
                 "parallel_tool_calls": False,
                 "temperature": 0,
+                "n": 1,
                 "max_tokens": case_output_tokens,
                 "chat_template_kwargs": {"enable_thinking": False},
             }
@@ -383,6 +386,7 @@ def _run_case(
         "model": model,
         "messages": messages,
         "temperature": 0,
+        "n": 1,
         "max_tokens": case_output_tokens,
         "chat_template_kwargs": {"enable_thinking": False},
     }

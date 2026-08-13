@@ -85,6 +85,31 @@ fn command_line_rejects_swapped_profiles_and_changed_hashes() {
 }
 
 #[test]
+fn command_line_rejects_a_rehashed_profile_with_reduced_sequence_capacity() {
+    let changed_path = runtime_path("rapid-profile-reduced.json");
+    let mut document: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(rapid_profile_path()).unwrap()).unwrap();
+    document["maximumSequences"] = serde_json::json!(3);
+    std::fs::write(&changed_path, serde_json::to_vec(&document).unwrap()).unwrap();
+    let changed_path = changed_path.canonicalize().unwrap();
+
+    let mut values = arguments();
+    let profile_position = values
+        .iter()
+        .position(|value| value == "--rapid-profile")
+        .unwrap();
+    values[profile_position + 1] = changed_path.clone().into_os_string();
+    let digest_position = values
+        .iter()
+        .position(|value| value == "--rapid-profile-sha256")
+        .unwrap();
+    values[digest_position + 1] = OsString::from(profile_sha256(&changed_path));
+
+    assert!(parse_agent_admission_arguments(values).is_err());
+    std::fs::remove_file(changed_path).unwrap();
+}
+
+#[test]
 fn command_line_rejects_relative_noncanonical_and_colliding_runtime_paths() {
     let complete = arguments();
     let socket_position = complete

@@ -302,6 +302,9 @@ def _candidate_input_paths(repository_root: Path) -> tuple[Path, ...]:
         server / "tests/knowledge/test_terminology_ledger.py",
         server / "orchestrator/Cargo.toml",
         server / "orchestrator/Cargo.lock",
+        server / "orchestrator/src/service_profile.rs",
+        server / "orchestrator/tests/supervised_service.rs",
+        server / "orchestrator/tests/support/mod.rs",
     )
     broker_sources = tuple(
         sorted(
