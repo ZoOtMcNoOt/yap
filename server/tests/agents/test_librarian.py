@@ -5,6 +5,7 @@ import hashlib
 import threading
 import time
 import unittest
+from unittest.mock import patch
 
 from psycopg.errors import QueryCanceled
 
@@ -20,15 +21,16 @@ from yap_server.agents.librarian import (
     LibrarianEvidenceItem,
     LibrarianEvidencePack,
     LibrarianRequest,
+    LibrarianStaleGeneration,
     librarian_request_sha256,
     librarian_work_sha256,
     validate_librarian_evidence,
 )
+from yap_server.auth import AuthenticatedPrincipal
 from yap_server.agents.librarian_service import (
     LibrarianContainmentError,
     LibrarianService,
 )
-from yap_server.auth import AuthenticatedPrincipal
 from yap_server.knowledge.knowledge_tool_contract import (
     KnowledgeToolCancelled,
     KnowledgeToolCitation,
@@ -180,6 +182,18 @@ class _Auditor:
         self.records.append(kwargs)
 
 
+class _DeadlineAuditor(_Auditor):
+    def record(self, **kwargs) -> None:
+        if kwargs["outcome"] == "succeeded":
+            cancellation = kwargs["cancellation"]
+            assert isinstance(cancellation, threading.Event)
+            self.records.append({**kwargs, "committed": False})
+            if not cancellation.wait(1):
+                raise AssertionError("success audit did not receive operation cutoff")
+            raise KnowledgeToolCancelled("success audit crossed operation cutoff")
+        self.records.append({**kwargs, "committed": True})
+
+
 class LibrarianContractTests(unittest.TestCase):
     def test_request_wire_is_exact_and_server_authority_is_not_caller_owned(self) -> None:
         value = {
@@ -227,6 +241,29 @@ class LibrarianContractTests(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             replace(evidence, items=(evidence.items[0], evidence.items[0]))
+        with self.assertRaisesRegex(ValueError, "span"):
+            replace(
+                evidence.items[0],
+                char_start=2**63,
+                char_end=2**63 + len(evidence.items[0].text),
+            )
+        wide_text = "😀" * 1_902
+        wide_item = LibrarianEvidenceItem(
+            concept_id="meetings/wide",
+            source_revision="revision-1",
+            content_sha256=hashlib.sha256(wide_text.encode()).hexdigest(),
+            char_start=0,
+            char_end=len(wide_text),
+            text=wide_text,
+        )
+        with self.assertRaisesRegex(ValueError, "pack"):
+            LibrarianEvidencePack.create(
+                generation_sha256="a" * 64,
+                permission_hash="b" * 64,
+                authorization_hash="c" * 64,
+                items=(wide_item,),
+                output_budget_exhausted=False,
+            )
         for forged in (
             replace(evidence, evidence_sha256="0" * 64),
             replace(evidence, generation_sha256="9" * 64),
@@ -402,7 +439,7 @@ class LibrarianServiceTests(unittest.TestCase):
             (QueryCanceled("timeout"), "storage-timeout", "failed"),
             (PermissionError("private"), "unauthorized", "failed"),
             (LookupError("hidden"), "evidence-unavailable", "evidence-unavailable"),
-            (ValueError("stale"), "stale-generation", "failed"),
+            (LibrarianStaleGeneration("stale"), "stale-generation", "failed"),
             (OSError("private"), "storage-unavailable", "failed"),
         )
         for error, reason, status in cases:
@@ -419,6 +456,15 @@ class LibrarianServiceTests(unittest.TestCase):
                 self.assertEqual(view.reason, reason)
                 self.assertIsNone(view.evidence)
                 self.assertNotIn("private", repr(view.to_wire()))
+
+        with self.assertRaisesRegex(
+            LibrarianContainmentError, "evidence conversion"
+        ):
+            self._service(reader=_Reader(error=ValueError("corrupt row"))).query(
+                _request(),
+                principal=_principal(),
+                cancellation=threading.Event(),
+            )
 
     def test_capacity_rejection_is_audited_and_never_reaches_storage(self) -> None:
         admission = _Admission(outcome="queue-full")
@@ -468,6 +514,56 @@ class LibrarianServiceTests(unittest.TestCase):
                 cancellation=threading.Event(),
             )
         self.assertEqual(admission.outcome, "completed")
+
+    def test_success_audit_cannot_cross_the_operation_cutoff(self) -> None:
+        auditor = _DeadlineAuditor()
+        with (
+            patch(
+                "yap_server.agents.librarian_service."
+                "LIBRARIAN_OPERATION_DEADLINE_SECONDS",
+                0.05,
+            ),
+            patch(
+                "yap_server.agents.librarian_service."
+                "LIBRARIAN_WORKFLOW_DEADLINE_SECONDS",
+                0.5,
+            ),
+            patch(
+                "yap_server.agents.librarian_service."
+                "LIBRARIAN_RESULT_AUDIT_CONNECTION_BUDGET_SECONDS",
+                0.01,
+            ),
+        ):
+            view = self._service(auditor=auditor).query(
+                _request(),
+                principal=_principal(),
+                cancellation=threading.Event(),
+            )
+
+        self.assertEqual(view.status, "cancelled")
+        self.assertEqual(view.reason, "deadline-exceeded")
+        self.assertEqual(
+            [(record["outcome"], record["committed"]) for record in auditor.records],
+            [("succeeded", False), ("cancelled", True)],
+        )
+
+    def test_submit_response_loss_requires_proven_ticket_containment(self) -> None:
+        class _LostAdmission(_Admission):
+            def submit(self, ticket, **kwargs):
+                del ticket, kwargs
+                raise OSError("response lost")
+
+            def cancel(self, ticket):
+                return AgentAdmission(ticket, "not-found-or-unauthorized")
+
+        with self.assertRaisesRegex(
+            LibrarianContainmentError, "could not be contained"
+        ):
+            self._service(admission=_LostAdmission()).query(
+                _request(),
+                principal=_principal(),
+                cancellation=threading.Event(),
+            )
 
 
 def _wait_for(predicate) -> None:

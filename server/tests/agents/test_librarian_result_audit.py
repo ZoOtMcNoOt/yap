@@ -1,13 +1,21 @@
 from __future__ import annotations
 
 from contextlib import AbstractContextManager
+import threading
+import time
 import unittest
+
+from psycopg import OperationalError
 
 from yap_server.agents.librarian_result_audit import (
     PostgresLibrarianResultAuditor,
     install_librarian_result_audit_schema,
 )
 from yap_server.auth import AuthenticatedPrincipal
+from yap_server.knowledge.knowledge_tool_contract import (
+    KnowledgeToolCancelled,
+    KnowledgeToolTimedOut,
+)
 
 
 class _Cursor:
@@ -24,18 +32,35 @@ class _Transaction(AbstractContextManager[None]):
 
     def __enter__(self) -> None:
         self._connection.transaction_entries += 1
+        self._rows_before = dict(self._connection.rows)
 
-    def __exit__(self, *unused: object) -> None:
+    def __exit__(self, exception_type, *unused: object) -> None:
         self._connection.transaction_exits += 1
+        if exception_type is not None:
+            self._connection.rows = self._rows_before
+        elif self._connection.cancel_after_commit is not None:
+            self._connection.cancel_after_commit.set()
+            time.sleep(0.02)
+        if exception_type is None and self._connection.commit_error is not None:
+            raise self._connection.commit_error
 
 
 class _Connection(AbstractContextManager["_Connection"]):
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        *,
+        cancel_after_insert: threading.Event | None = None,
+        cancel_after_commit: threading.Event | None = None,
+        commit_error: BaseException | None = None,
+    ) -> None:
         self.schema_sql: str | None = None
         self.rows: dict[tuple[object, object], tuple[object, ...]] = {}
         self.executions: list[tuple[str, tuple[object, ...]]] = []
         self.transaction_entries = 0
         self.transaction_exits = 0
+        self.cancel_after_insert = cancel_after_insert
+        self.cancel_after_commit = cancel_after_commit
+        self.commit_error = commit_error
 
     def __enter__(self) -> _Connection:
         return self
@@ -45,6 +70,12 @@ class _Connection(AbstractContextManager["_Connection"]):
 
     def transaction(self) -> _Transaction:
         return _Transaction(self)
+
+    def cancel_safe(self, *, timeout: float) -> None:
+        del timeout
+
+    def close(self) -> None:
+        return None
 
     def execute(
         self,
@@ -56,11 +87,16 @@ class _Connection(AbstractContextManager["_Connection"]):
         if normalized.startswith("CREATE TABLE"):
             self.schema_sql = normalized
             return _Cursor()
+        if normalized.startswith("SELECT set_config"):
+            return _Cursor((values[0],))
         if normalized.startswith("INSERT INTO yap_librarian_result_audit"):
             key = (values[0], values[2])
             if key in self.rows:
                 return _Cursor()
             self.rows[key] = values
+            if self.cancel_after_insert is not None:
+                self.cancel_after_insert.set()
+                time.sleep(0.02)
             return _Cursor((1,))
         if normalized.startswith("SELECT tenant_id"):
             return _Cursor(self.rows.get((values[0], values[1])))
@@ -90,6 +126,8 @@ def _success_values() -> dict[str, object]:
         "reason": None,
         "result_count": 5,
         "duration_milliseconds": 17,
+        "cancellation": threading.Event(),
+        "deadline": time.monotonic() + 5,
     }
 
 
@@ -166,6 +204,103 @@ class LibrarianResultAuditTests(unittest.TestCase):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, insert_sql)
 
+    def test_deadline_and_cancellation_fail_before_a_terminal_row_commits(self) -> None:
+        connection = _Connection()
+        auditor = PostgresLibrarianResultAuditor(lambda: connection)
+        with self.assertRaises(KnowledgeToolTimedOut):
+            auditor.record(**{**_success_values(), "deadline": time.monotonic() - 1})
+        cancellation = threading.Event()
+        cancellation.set()
+        with self.assertRaises(KnowledgeToolCancelled):
+            auditor.record(
+                **{
+                    **_success_values(),
+                    "cancellation": cancellation,
+                    "deadline": time.monotonic() + 5,
+                }
+            )
+        self.assertEqual(connection.rows, {})
+
+        factory_calls = 0
+
+        def slow_factory():
+            nonlocal factory_calls
+            factory_calls += 1
+            time.sleep(0.08)
+            return connection
+
+        started = time.monotonic()
+        with self.assertRaises(KnowledgeToolTimedOut):
+            PostgresLibrarianResultAuditor(slow_factory).record(
+                **{**_success_values(), "deadline": time.monotonic() + 0.02}
+            )
+        self.assertEqual(factory_calls, 0)
+        self.assertLess(time.monotonic() - started, 0.05)
+
+    def test_cancellation_after_commit_recovers_the_exact_terminal_row(self) -> None:
+        cancellation = threading.Event()
+        connection = _Connection(cancel_after_commit=cancellation)
+        auditor = PostgresLibrarianResultAuditor(lambda: connection)
+
+        auditor.record(
+            **{
+                **_success_values(),
+                "cancellation": cancellation,
+                "deadline": time.monotonic() + 5,
+            }
+        )
+
+        self.assertEqual(len(connection.rows), 1)
+
+    def test_recovery_read_is_rebound_to_the_absolute_deadline(self) -> None:
+        connection = _Connection()
+        auditor = PostgresLibrarianResultAuditor(lambda: connection)
+        values = _success_values()
+        auditor.record(**values)  # type: ignore[arg-type]
+        stored = next(iter(connection.rows.values()))
+        connection.executions.clear()
+
+        recovered = auditor._recover_exact(  # noqa: SLF001
+            stored,
+            values["principal"],  # type: ignore[arg-type]
+            values["request_id"],  # type: ignore[arg-type]
+            deadline=time.monotonic() + 5,
+        )
+
+        self.assertTrue(recovered)
+        timeout_statements = [
+            statement
+            for statement, _ in connection.executions
+            if statement.startswith("SELECT set_config")
+        ]
+        self.assertEqual(len(timeout_statements), 2)
+
+    def test_commit_transport_error_recovers_the_exact_terminal_row(self) -> None:
+        connection = _Connection(
+            commit_error=OperationalError("commit response was lost")
+        )
+        auditor = PostgresLibrarianResultAuditor(lambda: connection)
+
+        auditor.record(**_success_values())  # type: ignore[arg-type]
+
+        self.assertEqual(len(connection.rows), 1)
+
+    def test_cancellation_before_commit_rolls_back_the_terminal_row(self) -> None:
+        cancellation = threading.Event()
+        connection = _Connection(cancel_after_insert=cancellation)
+        auditor = PostgresLibrarianResultAuditor(lambda: connection)
+
+        with self.assertRaises(KnowledgeToolCancelled):
+            auditor.record(
+                **{
+                    **_success_values(),
+                    "cancellation": cancellation,
+                    "deadline": time.monotonic() + 5,
+                }
+            )
+
+        self.assertEqual(connection.rows, {})
+
     def test_same_tenant_request_with_different_identity_conflicts(self) -> None:
         connection = _Connection()
         auditor = PostgresLibrarianResultAuditor(lambda: connection)
@@ -209,6 +344,8 @@ class LibrarianResultAuditTests(unittest.TestCase):
                     reason=reason,
                     result_count=0,
                     duration_milliseconds=3,
+                    cancellation=threading.Event(),
+                    deadline=time.monotonic() + 5,
                 )
                 stored = next(iter(connection.rows.values()))
                 self.assertEqual(stored[4:6], (None, None))
@@ -269,6 +406,8 @@ class LibrarianResultAuditTests(unittest.TestCase):
                 reason="storage-unavailable",
                 result_count=0,
                 duration_milliseconds=1,
+                cancellation=threading.Event(),
+                deadline=time.monotonic() + 5,
             )
 
 

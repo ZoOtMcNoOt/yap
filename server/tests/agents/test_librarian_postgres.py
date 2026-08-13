@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import os
 import threading
+import time
 import unittest
 from uuid import uuid4
 
 import psycopg
+from psycopg.errors import CheckViolation
 
 from yap_server.agents import AgentAdmission, AgentAdmissionTicket, ExecutionRoute
 from yap_server.agents.archivist import (
@@ -152,22 +154,39 @@ class LibrarianPostgresTests(unittest.TestCase):
             ],
         )
 
-    def test_stale_generation_and_pre_cancelled_read_fail_closed(self) -> None:
+    def test_stale_generation_and_pre_cancelled_service_results_are_durable(
+        self,
+    ) -> None:
         owner, principal, compiled = _active_generation()
         reader = PostgresLibrarianEvidenceReader(_connect)
+        auditor = PostgresLibrarianResultAuditor(_connect)
         stale = LibrarianRequest(
             search_text="crash safe transcript",
             maximum_results=1,
             expected_generation_sha256="0" * 64,
         )
-        with self.assertRaisesRegex(ValueError, "stale"):
-            reader.read(
-                stale,
-                principal=principal,
-                cancellation=threading.Event(),
-            )
+        stale_view = LibrarianService(
+            admission=_Admission(f"librarian-stale-{uuid4().hex}"),
+            evidence_reader=reader,
+            result_auditor=auditor,
+        ).query(stale, principal=principal, cancellation=threading.Event())
         cancellation = threading.Event()
         cancellation.set()
+        cancelled_view = LibrarianService(
+            admission=_Admission(f"librarian-cancelled-{uuid4().hex}"),
+            evidence_reader=reader,
+            result_auditor=auditor,
+        ).query(
+            LibrarianRequest(
+                search_text="crash safe transcript",
+                maximum_results=1,
+                expected_generation_sha256=compiled.generation_sha256,
+            ),
+            principal=principal,
+            cancellation=cancellation,
+        )
+        active_cancellation = threading.Event()
+        active_cancellation.set()
         with self.assertRaises(KnowledgeToolCancelled):
             reader.read(
                 LibrarianRequest(
@@ -176,7 +195,7 @@ class LibrarianPostgresTests(unittest.TestCase):
                     expected_generation_sha256=compiled.generation_sha256,
                 ),
                 principal=principal,
-                cancellation=cancellation,
+                cancellation=active_cancellation,
             )
 
         with psycopg.connect(POSTGRES_DSN) as verification:
@@ -186,8 +205,89 @@ class LibrarianPostgresTests(unittest.TestCase):
                    ORDER BY audit_id""",
                 (owner.tenant_id,),
             ).fetchall()
+            result_outcomes = verification.execute(
+                """SELECT outcome, reason, result_count
+                   FROM yap_librarian_result_audit
+                   WHERE tenant_id = %s ORDER BY audit_id""",
+                (owner.tenant_id,),
+            ).fetchall()
             _cleanup(verification, owner.tenant_id)
+        self.assertEqual(stale_view.status, "failed")
+        self.assertEqual(stale_view.reason, "stale-generation")
+        self.assertEqual(cancelled_view.status, "cancelled")
+        self.assertEqual(cancelled_view.reason, "client-cancelled")
         self.assertEqual(outcomes, [("failed",), ("cancelled",)])
+        self.assertEqual(
+            result_outcomes,
+            [
+                ("unavailable", "stale-generation", 0),
+                ("cancelled", "client-cancelled", 0),
+            ],
+        )
+
+    def test_result_audit_replay_conflict_and_database_checks_are_exact(self) -> None:
+        suffix = uuid4().hex
+        principal = _authenticated(
+            PrincipalKey(f"tenant-{suffix}", f"alice-{suffix}")
+        )
+        other = _authenticated(
+            PrincipalKey(principal.tenant_id, f"bob-{suffix}")
+        )
+        request_id = f"librarian-audit-{suffix}"
+        values = {
+            "principal": principal,
+            "request_id": request_id,
+            "request_sha256": "a" * 64,
+            "work_sha256": "b" * 64,
+            "evidence_sha256": "c" * 64,
+            "generation_sha256": "d" * 64,
+            "permission_hash": "e" * 64,
+            "authorization_hash": "f" * 64,
+            "outcome": "succeeded",
+            "reason": None,
+            "result_count": 1,
+            "duration_milliseconds": 17,
+            "cancellation": threading.Event(),
+            "deadline": time.monotonic() + 5,
+        }
+        with psycopg.connect(POSTGRES_DSN) as setup:
+            install_librarian_result_audit_schema(setup)
+        auditor = PostgresLibrarianResultAuditor(_connect)
+
+        auditor.record(**values)
+        auditor.record(**values)
+        with self.assertRaisesRegex(ValueError, "identity conflicts"):
+            auditor.record(**{**values, "principal": other})
+
+        with psycopg.connect(POSTGRES_DSN) as verification:
+            count = verification.execute(
+                """SELECT COUNT(*) FROM yap_librarian_result_audit
+                   WHERE tenant_id = %s AND request_id = %s""",
+                (principal.tenant_id, request_id),
+            ).fetchone()[0]
+            with self.assertRaises(CheckViolation):
+                with verification.transaction():
+                    verification.execute(
+                        """INSERT INTO yap_librarian_result_audit (
+                               tenant_id, subject_id, request_id, request_sha256,
+                               work_sha256, evidence_sha256, generation_sha256,
+                               permission_hash, authorization_hash, agent_role,
+                               purpose, route, scheduling_class, outcome, reason,
+                               result_count, duration_milliseconds
+                           ) VALUES (
+                               %s, %s, %s, %s, NULL, NULL, NULL, NULL, NULL,
+                               'librarian', 'knowledge-read', 'server-io',
+                               'interactive', 'succeeded', NULL, 0, 1
+                           )""",
+                        (
+                            principal.tenant_id,
+                            principal.subject_id,
+                            f"invalid-{suffix}",
+                            "0" * 64,
+                        ),
+                    )
+            _cleanup(verification, principal.tenant_id)
+        self.assertEqual(count, 1)
 
 
 class _Admission:

@@ -28,13 +28,19 @@ from .librarian import (
     LibrarianEvidenceItem,
     LibrarianEvidencePack,
     LibrarianRequest,
+    LibrarianStaleGeneration,
     librarian_request_sha256,
     librarian_work_sha256,
     validate_librarian_evidence,
 )
+from .librarian_result_audit import (
+    LIBRARIAN_RESULT_AUDIT_CONNECTION_BUDGET_SECONDS,
+)
 
 
-LIBRARIAN_WORKFLOW_DEADLINE_SECONDS = 15.0
+LIBRARIAN_OPERATION_DEADLINE_SECONDS = 15.0
+LIBRARIAN_TERMINAL_AUDIT_DEADLINE_SECONDS = 19.0
+LIBRARIAN_WORKFLOW_DEADLINE_SECONDS = 21.0
 
 _LIBRARIAN_WORK = AgentWorkSpec(
     role=AgentRole.LIBRARIAN,
@@ -96,6 +102,8 @@ class LibrarianResultAuditor(Protocol):
         reason: str | None,
         result_count: int,
         duration_milliseconds: int,
+        cancellation: threading.Event,
+        deadline: float,
     ) -> None: ...
 
 
@@ -180,7 +188,11 @@ class LibrarianService:
             raise TypeError("librarian cancellation type is invalid")
 
         started = time.monotonic()
-        deadline = started + LIBRARIAN_WORKFLOW_DEADLINE_SECONDS
+        operation_deadline = started + LIBRARIAN_OPERATION_DEADLINE_SECONDS
+        terminal_audit_deadline = (
+            started + LIBRARIAN_TERMINAL_AUDIT_DEADLINE_SECONDS
+        )
+        terminal_audit_cancellation = threading.Event()
         ticket = self._admission.new_ticket()
         if cancellation.is_set():
             return self._result(
@@ -191,6 +203,8 @@ class LibrarianService:
                 status="cancelled",
                 outcome="cancelled",
                 reason="client-cancelled",
+                audit_cancellation=terminal_audit_cancellation,
+                audit_deadline=terminal_audit_deadline,
             )
 
         worker_cancellation = threading.Event()
@@ -202,7 +216,7 @@ class LibrarianService:
             daemon=False,
         )
         deadline_timer = threading.Timer(
-            max(0.0, deadline - time.monotonic()),
+            max(0.0, operation_deadline - time.monotonic()),
             worker_cancellation.set,
         )
         deadline_timer.name = f"librarian-deadline-{ticket.request_id}"
@@ -212,7 +226,7 @@ class LibrarianService:
         ticket_open = False
         evidence: LibrarianEvidencePack | None = None
         try:
-            remaining_deadline_ms = _remaining_deadline_ms(deadline)
+            remaining_deadline_ms = _remaining_deadline_ms(operation_deadline)
             if remaining_deadline_ms is None:
                 return self._result(
                     ticket,
@@ -262,7 +276,7 @@ class LibrarianService:
                         request,
                         principal,
                         started,
-                        _cancellation_reason(cancellation, deadline),
+                        _cancellation_reason(cancellation, operation_deadline),
                         evidence,
                     )
                     ticket_open = False
@@ -297,7 +311,7 @@ class LibrarianService:
                     request,
                     principal,
                     started,
-                    _cancellation_reason(cancellation, deadline),
+                    _cancellation_reason(cancellation, operation_deadline),
                     evidence,
                 )
                 ticket_open = False
@@ -316,7 +330,7 @@ class LibrarianService:
                     request,
                     principal,
                     started,
-                    _cancellation_reason(cancellation, deadline),
+                    _cancellation_reason(cancellation, operation_deadline),
                     evidence,
                 )
                 ticket_open = False
@@ -335,8 +349,12 @@ class LibrarianService:
                     "unavailable",
                     "evidence-unavailable",
                 )
-            except ValueError:
+            except LibrarianStaleGeneration:
                 failure = ("failed", "unavailable", "stale-generation")
+            except ValueError as error:
+                raise LibrarianContainmentError(
+                    "librarian evidence conversion was not contained"
+                ) from error
             except (OSError, PostgresError):
                 failure = ("failed", "failed", "storage-unavailable")
 
@@ -374,7 +392,7 @@ class LibrarianService:
                     request,
                     principal,
                     started,
-                    _cancellation_reason(cancellation, deadline),
+                    _cancellation_reason(cancellation, operation_deadline),
                     evidence,
                 )
                 ticket_open = False
@@ -406,7 +424,7 @@ class LibrarianService:
                     started=started,
                     status="cancelled",
                     outcome="cancelled",
-                    reason=_cancellation_reason(cancellation, deadline),
+                    reason=_cancellation_reason(cancellation, operation_deadline),
                     audit_evidence=evidence,
                 )
             if failure is not None:
@@ -436,17 +454,57 @@ class LibrarianService:
                     reason="empty-result",
                     audit_evidence=evidence,
                 )
-            return self._result(
-                ticket,
-                request,
-                principal=principal,
-                started=started,
-                status="complete",
-                outcome="succeeded",
-                reason=None,
-                audit_evidence=evidence,
-                response_evidence=evidence,
-            )
+            if (
+                operation_deadline - time.monotonic()
+                <= LIBRARIAN_RESULT_AUDIT_CONNECTION_BUDGET_SECONDS
+            ):
+                return self._result(
+                    ticket,
+                    request,
+                    principal=principal,
+                    started=started,
+                    status="cancelled",
+                    outcome="cancelled",
+                    reason="deadline-exceeded",
+                    audit_evidence=evidence,
+                )
+            try:
+                return self._result(
+                    ticket,
+                    request,
+                    principal=principal,
+                    started=started,
+                    status="complete",
+                    outcome="succeeded",
+                    reason=None,
+                    audit_evidence=evidence,
+                    response_evidence=evidence,
+                    audit_cancellation=worker_cancellation,
+                    audit_deadline=terminal_audit_deadline,
+                )
+            except (KnowledgeToolCancelled, KnowledgeToolTimedOut):
+                reason = _cancellation_reason(cancellation, operation_deadline)
+                return self._result(
+                    ticket,
+                    request,
+                    principal=principal,
+                    started=started,
+                    status="cancelled",
+                    outcome="cancelled",
+                    reason=reason,
+                    audit_evidence=evidence,
+                )
+            except (QueryCanceled, LockNotAvailable):
+                return self._result(
+                    ticket,
+                    request,
+                    principal=principal,
+                    started=started,
+                    status="failed",
+                    outcome="failed",
+                    reason="storage-timeout",
+                    audit_evidence=evidence,
+                )
         except BaseException:
             if ticket_open:
                 self._contain_ticket(ticket)
@@ -469,7 +527,15 @@ class LibrarianService:
         reason: str | None,
         audit_evidence: LibrarianEvidencePack | None = None,
         response_evidence: LibrarianEvidencePack | None = None,
+        audit_cancellation: threading.Event | None = None,
+        audit_deadline: float | None = None,
     ) -> LibrarianJobView:
+        if audit_cancellation is None:
+            audit_cancellation = threading.Event()
+        if audit_deadline is None:
+            audit_deadline = (
+                started + LIBRARIAN_TERMINAL_AUDIT_DEADLINE_SECONDS
+            )
         work_sha256 = (
             librarian_work_sha256(request, audit_evidence)
             if audit_evidence is not None
@@ -507,6 +573,8 @@ class LibrarianService:
                 0,
                 round((time.monotonic() - started) * 1_000),
             ),
+            cancellation=audit_cancellation,
+            deadline=audit_deadline,
         )
         return LibrarianJobView(
             request_id=ticket.request_id,
@@ -619,7 +687,6 @@ class LibrarianService:
                     "completed",
                     "deadline-exceeded",
                     "provider-unavailable",
-                    "not-found-or-unauthorized",
                 }
         except BaseException:
             contained = False
@@ -680,10 +747,12 @@ def _cancellation_reason(cancellation: threading.Event, deadline: float) -> str:
         return "client-cancelled"
     if time.monotonic() >= deadline:
         return "deadline-exceeded"
-    return "client-cancelled"
+    return "deadline-exceeded"
 
 
 __all__ = [
+    "LIBRARIAN_OPERATION_DEADLINE_SECONDS",
+    "LIBRARIAN_TERMINAL_AUDIT_DEADLINE_SECONDS",
     "LIBRARIAN_WORKFLOW_DEADLINE_SECONDS",
     "LibrarianContainmentError",
     "LibrarianJobView",

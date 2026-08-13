@@ -28,10 +28,16 @@ LIBRARIAN_AGENT_ID = "librarian"
 LIBRARIAN_KNOWLEDGE_PURPOSE = "knowledge.read"
 LIBRARIAN_MAXIMUM_RESULTS = 5
 LIBRARIAN_MAXIMUM_OUTPUT_CHARACTERS = 2_000
+LIBRARIAN_MAXIMUM_WIRE_BYTES = 8_192
 LIBRARIAN_STATEMENT_TIMEOUT_MILLISECONDS = 5_000
 
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _MAXIMUM_SOURCE_REVISION_CHARACTERS = 512
+_MAXIMUM_CITATION_OFFSET = 2**63 - 1
+
+
+class LibrarianStaleGeneration(ValueError):
+    pass
 
 
 @dataclass(frozen=True, slots=True)
@@ -109,8 +115,9 @@ class LibrarianEvidenceItem:
             or not isinstance(self.char_start, int)
             or isinstance(self.char_end, bool)
             or not isinstance(self.char_end, int)
-            or self.char_start < 0
+            or not 0 <= self.char_start <= _MAXIMUM_CITATION_OFFSET
             or self.char_end <= self.char_start
+            or self.char_end > _MAXIMUM_CITATION_OFFSET
             or not isinstance(self.text, str)
             or not self.text
             or self.char_end - self.char_start != len(self.text)
@@ -156,6 +163,7 @@ class LibrarianEvidencePack:
             or not isinstance(self.output_budget_exhausted, bool)
             or _evidence_character_count(self.items)
             > LIBRARIAN_MAXIMUM_OUTPUT_CHARACTERS
+            or _evidence_wire_bytes(self) > LIBRARIAN_MAXIMUM_WIRE_BYTES
         ):
             raise ValueError("librarian evidence pack is invalid")
 
@@ -272,20 +280,27 @@ class PostgresLibrarianEvidenceReader:
         if not isinstance(cancellation, threading.Event):
             raise TypeError("librarian cancellation type is invalid")
         with self._connection_factory() as connection:
-            response = self._tools.execute(
-                connection,
-                principal=principal.key,
-                agent_id=LIBRARIAN_AGENT_ID,
-                request=SearchKnowledgeRequest(
-                    purpose=LIBRARIAN_KNOWLEDGE_PURPOSE,
-                    search_text=request.search_text,
-                    maximum_results=request.maximum_results,
-                    expected_generation_sha256=(
-                        request.expected_generation_sha256
+            try:
+                response = self._tools.execute(
+                    connection,
+                    principal=principal.key,
+                    agent_id=LIBRARIAN_AGENT_ID,
+                    request=SearchKnowledgeRequest(
+                        purpose=LIBRARIAN_KNOWLEDGE_PURPOSE,
+                        search_text=request.search_text,
+                        maximum_results=request.maximum_results,
+                        expected_generation_sha256=(
+                            request.expected_generation_sha256
+                        ),
                     ),
-                ),
-                cancellation=cancellation,
-            )
+                    cancellation=cancellation,
+                )
+            except ValueError as error:
+                if str(error) == "knowledge generation is stale":
+                    raise LibrarianStaleGeneration(
+                        "librarian generation is stale"
+                    ) from error
+                raise
         evidence = LibrarianEvidencePack.from_tool_response(response)
         validate_librarian_evidence(request, evidence)
         return evidence
@@ -369,6 +384,26 @@ def _evidence_character_count(items: tuple[LibrarianEvidenceItem, ...]) -> int:
     )
 
 
+def _evidence_wire_bytes(evidence: LibrarianEvidencePack) -> int:
+    value = {
+        "operation": "search",
+        "generationSha256": evidence.generation_sha256,
+        "permissionHash": evidence.permission_hash,
+        "authorizationHash": evidence.authorization_hash,
+        "evidenceSha256": evidence.evidence_sha256,
+        "items": [item.to_wire() for item in evidence.items],
+        "outputBudgetExhausted": evidence.output_budget_exhausted,
+    }
+    return len(
+        json.dumps(
+            value,
+            ensure_ascii=False,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("utf-8")
+    )
+
+
 def _utf8(value: object, field: str) -> None:
     if not isinstance(value, str):
         raise ValueError(f"{field} is invalid")
@@ -393,10 +428,12 @@ __all__ = [
     "LIBRARIAN_KNOWLEDGE_PURPOSE",
     "LIBRARIAN_MAXIMUM_OUTPUT_CHARACTERS",
     "LIBRARIAN_MAXIMUM_RESULTS",
+    "LIBRARIAN_MAXIMUM_WIRE_BYTES",
     "LIBRARIAN_STATEMENT_TIMEOUT_MILLISECONDS",
     "LibrarianEvidenceItem",
     "LibrarianEvidencePack",
     "LibrarianRequest",
+    "LibrarianStaleGeneration",
     "PostgresLibrarianEvidenceReader",
     "librarian_evidence_sha256",
     "librarian_request_sha256",

@@ -42,6 +42,7 @@ from yap_server.agents.librarian_result_audit import (
 )
 from yap_server.agents.librarian_service import (
     LIBRARIAN_OPERATION_DEADLINE_SECONDS,
+    LIBRARIAN_TERMINAL_AUDIT_DEADLINE_SECONDS,
     LIBRARIAN_WORKFLOW_DEADLINE_SECONDS,
     LibrarianJobView,
     LibrarianService,
@@ -955,10 +956,9 @@ def _sorted_rows(rows) -> list[tuple[object, ...]]:
 def _require_exact_deadline_contract(maximum_p95_milliseconds: int) -> None:
     if (
         LIBRARIAN_OPERATION_DEADLINE_SECONDS != 15.0
-        or LIBRARIAN_WORKFLOW_DEADLINE_SECONDS != 16.0
+        or LIBRARIAN_TERMINAL_AUDIT_DEADLINE_SECONDS != 19.0
+        or LIBRARIAN_WORKFLOW_DEADLINE_SECONDS != 21.0
         or maximum_p95_milliseconds != _MAXIMUM_P95_MILLISECONDS
-        or maximum_p95_milliseconds
-        != round(LIBRARIAN_WORKFLOW_DEADLINE_SECONDS * 1_000)
     ):
         raise ValueError("Librarian qualification deadline contract differs")
 
