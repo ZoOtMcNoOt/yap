@@ -77,7 +77,7 @@ class _Executor:
         cancellation: threading.Event,
     ) -> _View:
         self.calls.append((invocation, cancellation.is_set()))
-        if self._synchronized is not None and invocation.run_id != "deadline-exceeded":
+        if self._synchronized is not None and invocation.mode == "normal":
             self._synchronized.wait(1.0)
         override = self._overrides.get(invocation.invocation_id)
         if isinstance(override, BaseException):
@@ -104,13 +104,13 @@ class LibrarianQualificationTests(unittest.TestCase):
         self.bound = _bound_corpus(self.corpus)
         self.expected = self.bound.expected_views
 
-    def test_contract_freezes_eight_owners_and_nine_bounded_invocations(self) -> None:
+    def test_contract_freezes_eight_owners_and_ten_bounded_invocations(self) -> None:
         invocations = build_librarian_qualification_invocations(self.corpus)
 
         self.assertEqual(len(self.corpus.cases), 8)
         self.assertEqual(len({case.owner_id for case in self.corpus.cases}), 8)
-        self.assertEqual(len(invocations), 9)
-        self.assertEqual(len(self.expected), 9)
+        self.assertEqual(len(invocations), 10)
+        self.assertEqual(len(self.expected), 10)
         self.assertEqual(
             {item.mode for item in invocations},
             {"normal", "pre-cancelled", "deadline"},
@@ -121,6 +121,17 @@ class LibrarianQualificationTests(unittest.TestCase):
         )
         self.assertTrue(
             all(item.purpose == "knowledge.read" for item in invocations)
+        )
+        primary = [item for item in invocations if item.mode == "normal"]
+        controlled = [item for item in invocations if item.mode != "normal"]
+        self.assertEqual(len(primary), 8)
+        self.assertEqual(len({item.owner_id for item in primary}), 8)
+        self.assertEqual(
+            [(item.run_id, item.mode) for item in controlled],
+            [
+                ("client-cancelled", "pre-cancelled"),
+                ("deadline-exceeded", "deadline"),
+            ],
         )
 
         acceptance = json.loads(
@@ -433,8 +444,32 @@ class LibrarianQualificationTests(unittest.TestCase):
             item.invocation_id: was_set
             for item, was_set in executor.calls
         }
+        primary_calls = [
+            (item, was_set)
+            for item, was_set in executor.calls
+            if item.mode == "normal"
+        ]
+        self.assertEqual(len(primary_calls), 8)
+        self.assertEqual(len({item.owner_id for item, _ in primary_calls}), 8)
+        self.assertTrue(all(not was_set for _, was_set in primary_calls))
+        self.assertFalse(cancelled["terminal-cutover:normal"])
         self.assertTrue(cancelled["terminal-cutover:client-cancelled"])
         self.assertFalse(cancelled["terminal-cutover:deadline-exceeded"])
+
+    def test_wave_metric_fails_closed_when_one_primary_submission_fails(self) -> None:
+        result = evaluate_librarian_qualification(
+            executor=_Executor(
+                self.expected,
+                {"visible-exact:normal": RuntimeError("submit failed")},
+                require_synchronized_call_count=8,
+            ),
+            corpus=self.bound,
+            acceptance=self.acceptance,
+        )
+
+        self.assertFalse(result.public_evidence["qualified"])
+        self.assertEqual(result.public_evidence["synchronizedOwnerWaveCount"], 7)
+        self.assertFalse(result.public_evidence["synchronizedOwnerWaveMet"])
 
     def test_wave_timeout_cancels_and_contains_workers(self) -> None:
         class _BlockingExecutor:
@@ -531,7 +566,7 @@ class LibrarianQualificationTests(unittest.TestCase):
                 )
                 self.assertFalse(result.public_evidence["qualified"])
                 self.assertEqual(
-                    result.public_evidence["exactEvidenceMatchCount"], 8
+                    result.public_evidence["exactEvidenceMatchCount"], 9
                 )
                 self.assertEqual(
                     result.public_evidence["terminalMismatchCount"], 1
@@ -656,7 +691,7 @@ class LibrarianQualificationTests(unittest.TestCase):
             {**acceptance, "schemaVersion": 2},
             {**acceptance, "minimumCaseCount": 8},
             {**acceptance, "modelProfile": "none"},
-            {**acceptance, "exactEvidenceMatchCount": 8},
+            {**acceptance, "exactEvidenceMatchCount": 9},
         )
         for index, changed in enumerate(changed_acceptance):
             with self.subTest(acceptance=index), tempfile.TemporaryDirectory() as temp:

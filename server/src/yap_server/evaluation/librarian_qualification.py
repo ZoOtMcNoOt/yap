@@ -453,7 +453,7 @@ def load_librarian_qualification_acceptance(
     if (
         acceptance.case_count != 8
         or acceptance.owner_count != acceptance.case_count
-        or acceptance.invocation_count != 9
+        or acceptance.invocation_count != 10
         or acceptance.maximum_p95_milliseconds != 16_000
         or acceptance.synchronized_owner_wave_count != 8
         or acceptance.complete_count
@@ -528,7 +528,7 @@ def load_librarian_qualification_corpus(
         != len(generations)
         or len({item.case_id for item in cases}) != len(cases)
         or len({item.owner_id for item in cases}) != len(cases)
-        or sum(len(item.runs) for item in cases) != 9
+        or sum(len(item.runs) for item in cases) != 10
     ):
         raise ValueError("Librarian qualification fixture identities differ")
     known_generations = {item.generation_id for item in generations}
@@ -538,6 +538,20 @@ def load_librarian_qualification_corpus(
         for item in cases
     ):
         raise ValueError("Librarian qualification generation reference differs")
+    if (
+        any(sum(run.mode == "normal" for run in case.runs) != 1 for case in cases)
+        or tuple(
+            (case.case_id, run.run_id, run.mode)
+            for case in cases
+            for run in case.runs
+            if run.mode != "normal"
+        )
+        != (
+            ("terminal-cutover", "client-cancelled", "pre-cancelled"),
+            ("terminal-cutover", "deadline-exceeded", "deadline"),
+        )
+    ):
+        raise ValueError("Librarian qualification wave contract differs")
     corpus = LibrarianQualificationCorpus(
         corpus_id,
         identity,
@@ -973,15 +987,22 @@ def evaluate_librarian_qualification(
         tenant_id=corpus.tenant_id,
         generation_sha256s=corpus.generation_sha256s,
     )
-    primary = tuple(item for item in invocations if item.run_id != "deadline-exceeded")
-    controlled = tuple(item for item in invocations if item.run_id == "deadline-exceeded")
-    if len(primary) != 8 or len(controlled) != 1:
+    primary = tuple(item for item in invocations if item.mode == "normal")
+    controlled = tuple(item for item in invocations if item.mode != "normal")
+    if (
+        len(primary) != 8
+        or len({item.owner_id for item in primary}) != 8
+        or tuple((item.run_id, item.mode) for item in controlled)
+        != (
+            ("client-cancelled", "pre-cancelled"),
+            ("deadline-exceeded", "deadline"),
+        )
+    ):
         raise ValueError("Librarian qualification synchronized wave differs")
     barrier = threading.Barrier(len(primary))
     cancellations = {
         item.invocation_id: threading.Event() for item in primary
     }
-    cancellations["terminal-cutover:client-cancelled"].set()
     pool: ThreadPoolExecutor | None = ThreadPoolExecutor(
         max_workers=len(primary),
         thread_name_prefix="librarian-qualification",
@@ -1010,20 +1031,24 @@ def evaluate_librarian_qualification(
                     "Librarian qualification cancellation was not contained"
                 )
             raise TimeoutError("Librarian qualification wave exceeded its timeout")
-        observations = [future.result() for future in futures]
+        primary_observations = [future.result() for future in futures]
     finally:
         if pool is not None:
             pool.shutdown(wait=True, cancel_futures=True)
-    observations.extend(
-        _run_invocation(
-            executor,
-            invocation,
-            expected[invocation.invocation_id],
-            threading.Event(),
-            None,
+    observations = list(primary_observations)
+    for invocation in controlled:
+        controlled_cancellation = threading.Event()
+        if invocation.mode == "pre-cancelled":
+            controlled_cancellation.set()
+        observations.append(
+            _run_invocation(
+                executor,
+                invocation,
+                expected[invocation.invocation_id],
+                controlled_cancellation,
+                None,
+            )
         )
-        for invocation in controlled
-    )
 
     by_id = {item.invocation.invocation_id: item for item in observations}
     valid_views = [item.observed for item in observations if item.observed is not None]
@@ -1042,15 +1067,19 @@ def evaluate_librarian_qualification(
         and hidden.observed.terminal_shape()
         == absent.observed.terminal_shape()
     )
+    synchronized_owner_ids = {
+        item.invocation.owner_id
+        for item in primary_observations
+        if item.exact_match
+    }
+    synchronized_owner_wave_count = len(synchronized_owner_ids)
     public: dict[str, int | bool] = {
         "schemaVersion": 1,
         "qualified": False,
         "caseCount": len(corpus_value.cases),
         "ownerCount": len({item.owner_id for item in corpus_value.cases}),
         "invocationCount": len(observations),
-        "synchronizedOwnerWaveCount": len(
-            {item.invocation.owner_id for item in observations[:8]}
-        ),
+        "synchronizedOwnerWaveCount": synchronized_owner_wave_count,
         "completeCount": sum(
             item is not None and item.status == "complete" for item in valid_views
         ),
@@ -1078,9 +1107,7 @@ def evaluate_librarian_qualification(
         "terminalMismatchCount": sum(
             not item.exact_match for item in observations
         ),
-        "synchronizedOwnerWaveMet": len(
-            {item.invocation.owner_id for item in observations[:8]}
-        )
+        "synchronizedOwnerWaveMet": synchronized_owner_wave_count
         == acceptance.synchronized_owner_wave_count,
         "p95WithinBound": durations[p95_index]
         <= acceptance.maximum_p95_milliseconds,
@@ -1208,7 +1235,7 @@ def _case(value: object) -> LibrarianQualificationCase:
             "expected generation identity",
         ),
     )
-    if not isinstance(raw_runs, list) or not 1 <= len(raw_runs) <= 2:
+    if not isinstance(raw_runs, list) or not 1 <= len(raw_runs) <= 3:
         raise ValueError("Librarian qualification run count differs")
     runs = tuple(_run(item) for item in raw_runs)
     if len({item.run_id for item in runs}) != len(runs):

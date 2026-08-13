@@ -319,6 +319,18 @@
       },
       "runs": [
         {
+          "runId": "normal",
+          "mode": "normal",
+          "expectedStatus": "complete",
+          "expectedReason": null,
+          "expectedEvidence": [
+            {
+              "conceptId": "operations/zephyr-terminal",
+              "quote": "Zephyr cancellation preserves the previously published evidence pack."
+            }
+          ]
+        },
+        {
           "runId": "client-cancelled",
           "mode": "pre-cancelled",
           "expectedStatus": "cancelled",
