@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 2,
+  "qualificationScope": "auditor-source-cited-review-findings",
+  "qualified": true,
+  "caseCount": 8,
+  "ownerCount": 8,
+  "invocationCount": 29,
+  "maximumNormalP95Milliseconds": 85000,
+  "synchronizedWaveCount": 3,
+  "ownersPerSynchronizedWave": 8,
+  "synchronizedInvocationCount": 24,
+  "exactSynchronizedInvocationCount": 24,
+  "exactSynchronizedWaveCount": 3,
+  "synchronizedWaves": [
+    {
+      "waveId": "repeat-1",
+      "caseOrder": [
+        "numeric-limit-conflict",
+        "status-conflict",
+        "multi-conflict",
+        "instruction-data-conflict",
+        "time-scope-difference",
+        "missing-value-unavailable",
+        "hidden-only-unavailable",
+        "absent-unavailable"
+      ]
+    },
+    {
+      "waveId": "repeat-2",
+      "caseOrder": [
+        "numeric-limit-conflict",
+        "status-conflict",
+        "multi-conflict",
+        "instruction-data-conflict",
+        "time-scope-difference",
+        "missing-value-unavailable",
+        "hidden-only-unavailable",
+        "absent-unavailable"
+      ]
+    },
+    {
+      "waveId": "repeat-3",
+      "caseOrder": [
+        "numeric-limit-conflict",
+        "status-conflict",
+        "multi-conflict",
+        "instruction-data-conflict",
+        "time-scope-difference",
+        "missing-value-unavailable",
+        "hidden-only-unavailable",
+        "absent-unavailable"
+      ]
+    }
+  ],
+  "completeCount": 12,
+  "unavailableCount": 13,
+  "failedCount": 1,
+  "cancelledCount": 3,
+  "exactTerminalMatchCount": 29,
+  "exactReportMatchCount": 12,
+  "uniqueRequestIdCount": 29,
+  "reportCount": 12,
+  "findingCount": 15,
+  "citationCount": 30,
+  "terminalMismatchCount": 0,
+  "warmProviderRepeatabilityMet": true,
+  "normalP95WithinBound": true,
+  "serverDerivedReportExact": true,
+  "serverOwnedCitationsExact": true,
+  "canonicalPairOrderExact": true,
+  "reviewOnlyContractMet": true,
+  "noncanonicalReviewRequiredExact": true,
+  "hiddenOnlyIndistinguishable": true,
+  "unavailableReportAbsent": true,
+  "cancellationFailedClosed": true,
+  "deadlineFailedClosed": true,
+  "staleGenerationFailedClosed": true,
+  "invalidOutputFailedClosed": true,
+  "workerContainmentMet": true
+}

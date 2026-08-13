@@ -122,6 +122,10 @@ class AuditorModelTests(unittest.TestCase):
         self.assertNotIn("contentSha256", serialized)
         self.assertIn("untrusted source data", serialized)
         self.assertIn("directly incompatible factual claims", serialized)
+        self.assertIn("same stated time and scope", serialized)
+        self.assertIn(
+            "missing information, distinct scopes, distinct times", serialized
+        )
 
     def test_parser_rejects_broader_envelopes_and_invalid_pairs(self) -> None:
         valid = {
