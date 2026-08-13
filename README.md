@@ -22,8 +22,9 @@ Auditor's idle-only, source-cited review-findings internal core. Hosted head
 `1b255e9a...`. All eight bounded internal role cores are now merged.
 
 Scribe is the only merged product surface. Exact unmerged candidate
-`8565145b...` adds a public-portable-green Librarian HTTP/native/Knowledge
-vertical; its private product gate, hosted review, and merge remain pending.
+`e2ba1864...` adds a Librarian HTTP/native/Knowledge vertical and privately
+qualifies its authenticated HTTP server boundary; the native/renderer path is
+exact-head public-test green. Hosted review and merge remain pending.
 Production identity, simultaneous full-profile residency, sustained capacity,
 enterprise deployment, and the remaining role product surfaces stay explicitly
 gated.

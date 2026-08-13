@@ -32,12 +32,14 @@ qualified Coordinator; hosted head `53ee0152...` passed all 12 checks, and PR
 #171 merged it as `67d836da...`. Exact `08b06f6d...` privately qualified
 Auditor; hosted head `937a4129...` passed all 12 checks, and PR #172 merged it
 as `1b255e9a...`. Documentation-only PR #173 merged the eight-role closure as
-`c77bed52...`. Exact successor `8565145b...` adds an unmerged Librarian product
+`c77bed52...`. Exact successor `e2ba1864...` adds an unmerged Librarian product
 vertical: authenticated bounded HTTP query jobs, native-owned bearer exchange
-and evidence validation, and a dedicated Knowledge workspace. Its public
-portable checks are green, but it has no new private end-to-end product receipt,
-hosted review, or merge. The historical Librarian core receipt does not qualify
-the endpoint/native/renderer path. Archivist, Student, Curator, Analyst,
+and evidence validation, and a dedicated Knowledge workspace. Its authenticated
+HTTP server boundary is privately qualified with 10/10 exact terminals and
+complete teardown; its native/renderer path is exact-head public-test green.
+Hosted review and merge remain open. The private receipt does not qualify a
+native/renderer round trip or live enterprise identity-provider exchange.
+Archivist, Student, Curator, Analyst,
 Coordinator, and Auditor product exposure and the capacity/operations layers
 remain open.
 Phase 7

@@ -1,11 +1,11 @@
 # Librarian product-vertical verification
 
 **Status:** Exact executable candidate
-`8565145b5279ed009f4c0da4339de1d35e478b93` implements the first
-Librarian HTTP/native/renderer product vertical. Public portable checks are
-green. The candidate has not run a new owner-private database/broker product
-gate, hosted checks, review, or merge, so it is not a qualified or shipped
-product surface.
+`e2ba1864ec989a2bb693e000d0b4c30910d2720f` privately qualified the
+authenticated Librarian HTTP server boundary. Its native, renderer, and
+Knowledge-workspace code is exact-head public-test green, but that client path
+was not part of the private gate. Hosted checks, review, and merge remain open,
+so this is an unmerged product candidate rather than a shipped product surface.
 
 ## What the candidate implements
 
@@ -30,23 +30,62 @@ The vertical reuses the previously qualified Librarian core. It adds no model,
 proposal, source mutation, knowledge activation, bearer storage in React,
 renderer-owned server call, fallback route, or compatibility path.
 
-## Public verification
+## Private authenticated-server qualification
+
+The exact candidate returned
+`librarian-authenticated-product-server-boundary-qualified` with public-safe
+evidence SHA-256
+`45eac22913c807c0390ae2410e5a486d4bd03fd849e00c8a39e927f973635a92`.
+The frozen acceptance-plan and corpus SHA-256 values are
+`eda3e4d6c674ad5d737d95309f689b3421ce8b93e14aea883095426d403125fc`
+and `928c4053d2237e1ca64e990402520e296b27ef1d8378747083fb622f6d031ffe`.
+
+The owner-private gate proved:
+
+- eight synchronized authenticated owner calls through a real threaded HTTP
+  server and **10/10** exact terminal views: four complete, three unavailable,
+  one failed, and two cancelled;
+- missing and invalid bearer rejection for `POST`, `GET`, and `DELETE`, plus
+  uniform `404` denial for a foreign owner's read and cancellation request;
+- live Server-IO capacity **1**, a second owner remaining queued, explicit
+  queued cancellation, and a queue-inclusive deadline with exact containment;
+- independently revalidated evidence wires, content hashes, spans, ordering,
+  request identities, and durable result/tool-audit cardinality;
+- two owned PostgreSQL restarts with exact read-back, unchanged active
+  generation, no proposal mutation, no model-route lease, worker containment,
+  and six-part database teardown; and
+- a public-safe receipt containing only bounded hashes, counts, booleans, and
+  outcome identities. Raw tenants, subjects, queries, evidence, measurements,
+  paths, credentials, and database rows remain owner-private outside Git.
+
+Exact predecessor `1d5862669bf53b0b551090c5edb6945d36ee17a2` failed before
+workload or database execution because candidate admission rejected a tracked
+zero-byte package marker. It emitted no receipt and is terminal/inadmissible.
+The successor makes that nonempty bounded-input invariant executable in its
+focused gate test.
+
+## Exact-head public verification
 
 The exact candidate completed these public checks on 2026-08-13:
 
-- portable server suite: **1,513 total = 1,466 passed + 47 declared skips**;
+- portable server suite: **1,521 total = 1,474 passed + 47 declared skips**;
+- governed fixed membership: **173 total = 169 passed + 4 declared skips**;
 - Ruff over all server `src` and `tests`: passed;
-- desktop unit suite: **59 files / 372 tests passed**;
-- focused successor desktop suite after the final offline-state regression:
-  **27/27 passed**;
+- desktop unit suite: **59 files / 373 tests passed**;
 - production TypeScript/Vite build: passed;
 - Rust workspace tests: **1,253 passed + 11 expected ignored**;
 - strict Rust Clippy with all targets/features: passed;
-- focused native Librarian tests: **8/8 passed**; and
-- OpenAPI JSON parse, focused token/secret scan, and `git diff --check`: passed.
+- focused product-gate suite: **8/8 passed**;
+- combined native WDIO: **4/4 spec files**, **15 passed + 2 declared
+  hardware-dependent skips**, including the Knowledge offline workspace,
+  genuine process restart, live-overlay focus, and tray flows; and
+- `git diff --check` plus the exact maintainability inventory: passed.
 
-These are public development checks, not a replacement owner-private product
-qualification receipt. The earlier
+The 250-line inventory is **598 = 344 at or above 350 lines + 254 from 250
+through 349**. The exact 344 high-band path/line/disposition tuples are recorded
+in the governed-maintainability evidence.
+
+The earlier
 [Librarian core receipt](../librarian-permission-safe-evidence/VERIFICATION.md)
 remains historical evidence for its exact internal-core head and is not
 relabelled as endpoint/native/UI evidence.
@@ -55,11 +94,9 @@ relabelled as endpoint/native/UI evidence.
 
 This candidate does **not** prove:
 
-- a live product round trip through the real PostgreSQL store, admission broker,
-  organization identity provider, native client, and renderer on one exact head;
-- owner-private hidden/revoked/cross-owner data behavior through the new HTTP
-  and native boundary;
-- accessibility or native WDIO behavior for the Knowledge workspace;
+- a private native-to-server-to-renderer round trip or a live enterprise
+  identity-provider exchange; the private gate qualifies the authenticated HTTP
+  server boundary, while native and renderer behavior are public-tested;
 - hosted exact-head review, merge, enterprise deployment, or production
   operation;
 - sustained throughput, p95/p99, simultaneous Qwen/Gemma residency, or a

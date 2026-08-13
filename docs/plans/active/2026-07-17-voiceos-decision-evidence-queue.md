@@ -915,9 +915,10 @@ unconfigured.
   `53ee0152...` passed all 12 checks and PR #171 merged it as `67d836da...`.
   Exact `08b06f6d...` privately qualified Auditor; hosted head `937a4129...`
   passed all 12 checks and PR #172 merged it as `1b255e9a...`. All eight bounded
-  internal role cores are merged. Exact unmerged `8565145b...` adds a Librarian
-  product candidate; its private gate and merge plus the other non-Scribe product
-  surfaces remain open. Proven
+  internal role cores are merged. Exact unmerged `e2ba1864...` adds a Librarian
+  product candidate with a privately qualified authenticated HTTP server
+  boundary and exact-head public-tested native/renderer path; hosted review and
+  merge plus the other non-Scribe product surfaces remain open. Proven
   selected-route capacity four/eight is
   not simultaneous-model residency, sustained capacity/SLO, or production
   evidence.

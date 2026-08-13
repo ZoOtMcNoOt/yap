@@ -7,9 +7,9 @@ justifications and disposition meanings live in [COVERAGE.md](COVERAGE.md).
 
 The inventory includes tracked source, text, policy, and provenance contract
 extensions and applies the script's frozen generated-product exclusions. Against
-executable candidate `8565145b5279ed009f4c0da4339de1d35e478b93`,
+executable candidate `e2ba1864ec989a2bb693e000d0b4c30910d2720f`,
 with this public documentation reconciliation applied, the
-complete 250-line inventory is 596 files: 342 listed below at 350 or more lines
+complete 250-line inventory is 598 files: 344 listed below at 350 or more lines
 and 254 from 250 through 349.
 
 Each line contains up to two independent entries in the form
@@ -70,28 +70,28 @@ Each line contains up to two independent entries in the form
   549 DESKTOP-TEST         desktop/tests/scripts/shipped-dependency-inventory.mjs ||   526 DESKTOP-TEST         desktop/tests/wdio.target-client-language-routing.conf.ts
   479 DESKTOP-TEST         desktop/tests/wdio/live-overlay-window-fixture.js ||   415 DESKTOP-TEST         desktop/tests/wdio/live-overlay.hardware.spec.js
   472 DESKTOP-TEST         desktop/tests/wdio/live-overlay.spec.js ||   859 DESKTOP-TEST         desktop/tests/wdio/private-server-asr.gate.spec.js
-  489 DESKTOP-TEST         desktop/tests/wdio/smoke.spec.js ||   388 DESKTOP-TEST         desktop/tests/wdio/target-client-language-routing-hardware.js
+  511 DESKTOP-TEST         desktop/tests/wdio/smoke.spec.js ||   388 DESKTOP-TEST         desktop/tests/wdio/target-client-language-routing-hardware.js
   466 CURRENT-DOC          docs/adr/0014-server-tier-compute-topology.md ||   390 CURRENT-DOC          docs/adr/0016-auth-identity-bridge.md
   373 CURRENT-DOC          docs/adr/0017-knowledge-base-compiler.md ||   805 CURRENT-DOC          docs/adr/0024-global-language-routing.md
   643 CURRENT-DOC          docs/adr/0025-provider-specific-asr-serving.md ||   438 CURRENT-DOC          docs/adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md
-  373 CURRENT-DOC          docs/adr/0031-eight-agent-voice-os-roster.md ||  1260 CURRENT-DOC          docs/architecture/boundaries/EXECUTABLE-OWNERSHIP.md
- 1289 CURRENT-DOC          docs/architecture/CURRENT-ARCHITECTURE.md ||  1331 CURRENT-DOC          docs/CURRENT-STATUS.md
-  711 CURRENT-DOC          docs/evidence/governed-knowledge-maintainability/VERIFICATION.md ||  1026 CURRENT-DOC          docs/plans/active/2026-07-17-voiceos-decision-evidence-queue.md
-  448 CURRENT-DOC          docs/plans/active/2026-08-11-eight-agent-voice-os-delivery.md ||   627 HISTORICAL-DOC       docs/plans/archived/2026-07-05-client-state-machine-implementation.md
+  374 CURRENT-DOC          docs/adr/0031-eight-agent-voice-os-roster.md ||  1261 CURRENT-DOC          docs/architecture/boundaries/EXECUTABLE-OWNERSHIP.md
+ 1291 CURRENT-DOC          docs/architecture/CURRENT-ARCHITECTURE.md ||  1337 CURRENT-DOC          docs/CURRENT-STATUS.md
+  746 CURRENT-DOC          docs/evidence/governed-knowledge-maintainability/VERIFICATION.md ||  1027 CURRENT-DOC          docs/plans/active/2026-07-17-voiceos-decision-evidence-queue.md
+  450 CURRENT-DOC          docs/plans/active/2026-08-11-eight-agent-voice-os-delivery.md ||   627 HISTORICAL-DOC       docs/plans/archived/2026-07-05-client-state-machine-implementation.md
   561 HISTORICAL-DOC       docs/plans/archived/2026-07-08-local-audio-preprocessing-stack.md ||   525 HISTORICAL-DOC       docs/plans/archived/2026-07-09-client-hardening-storage.md
   988 HISTORICAL-DOC       docs/plans/archived/2026-07-10-client-audio-foundation.md ||   450 HISTORICAL-DOC       docs/plans/completed/2026-07-08-model-download-ux.md
   855 HISTORICAL-DOC       docs/plans/completed/2026-07-10-server-contract-durable-connector.md ||  1953 HISTORICAL-DOC       docs/plans/completed/2026-07-16-audio-preprocessing-and-language-routing.md
   391 HISTORICAL-DOC       docs/plans/completed/2026-07-18-codebase-ownership-and-maintainability-review.md ||   646 HISTORICAL-DOC       docs/plans/completed/2026-07-25-tenant-scoped-identity-and-job-authorization.md
   923 HISTORICAL-DOC       docs/research/2026-07-16-dynamic-language-detection-evaluation.md ||   913 HISTORICAL-DOC       docs/research/2026-07-17-asr-evaluation-corpus-and-runtime-matrix.md
-  388 CURRENT-DOC          docs/roadmap/ROADMAP.md ||   886 CURRENT-DOC          docs/runbooks/integrated-identity-access-gate.md
+  389 CURRENT-DOC          docs/roadmap/ROADMAP.md ||   886 CURRENT-DOC          docs/runbooks/integrated-identity-access-gate.md
   506 CURRENT-DOC          docs/runbooks/integrated-preprocessing-language-routing-gate.md ||  1154 CURRENT-DOC          docs/runbooks/yap-server-node-setup.md
   554 CURRENT-DOC          docs/specs/source-aware-diarization.md ||   586 CURRENT-DOC          docs/specs/testing-strategy.md
- 1264 CURRENT-DOC          docs/VOICE-OS-ARCHITECTURE.md ||   696 INFRA                infra/yap-server-node/owned-process-group.sh
+ 1267 CURRENT-DOC          docs/VOICE-OS-ARCHITECTURE.md ||   696 INFRA                infra/yap-server-node/owned-process-group.sh
   989 INFRA                infra/yap-server-node/owned-process-supervisor.py ||   601 INFRA                infra/yap-server-node/private-container-loopback-proxy.sh
  1113 INFRA                infra/yap-server-node/resident-provider-lifecycle-gate.sh ||   504 INFRA                infra/yap-server-node/setup-server.sh
   350 SERVER-CONTRACT      server/librarian-workload-fixtures.json ||   364 SERVER-CONTRACT      server/orchestrator/src/agent_admission.rs
   463 SERVER-CONTRACT      server/orchestrator/src/supervisor.rs ||   453 SERVER-CONTRACT      server/orchestrator/tests/supervised_service.rs
- 1086 SERVER-RUNBOOK       server/README.md ||   754 SERVER-CONTRACT      server/src/yap_server/agents/analyst_result_audit.py
+ 1089 SERVER-RUNBOOK       server/README.md ||   754 SERVER-CONTRACT      server/src/yap_server/agents/analyst_result_audit.py
   905 SERVER-CONTRACT      server/src/yap_server/agents/analyst_service.py ||   398 SERVER-CONTRACT      server/src/yap_server/agents/analyst.py
   426 SERVER-CONTRACT      server/src/yap_server/agents/archivist_service.py ||   694 SERVER-CONTRACT      server/src/yap_server/agents/auditor_result_audit.py
   871 SERVER-CONTRACT      server/src/yap_server/agents/auditor_service.py ||   833 SERVER-CONTRACT      server/src/yap_server/agents/auditor.py
@@ -114,10 +114,10 @@ Each line contains up to two independent entries in the form
  1535 EVALUATION           server/src/yap_server/evaluation/auditor_qualification.py ||  1926 EVALUATION           server/src/yap_server/evaluation/coordinator_qualification_gate.py
  1726 EVALUATION           server/src/yap_server/evaluation/coordinator_qualification.py ||  1396 EVALUATION           server/src/yap_server/evaluation/corpus_manifest.py
  1422 EVALUATION           server/src/yap_server/evaluation/curator_qualification_gate.py ||   740 EVALUATION           server/src/yap_server/evaluation/curator_qualification.py
-  740 EVALUATION           server/src/yap_server/evaluation/curator_qualification.py ||   612 EVALUATION           server/src/yap_server/evaluation/duration_tracks.py
-  399 EVALUATION           server/src/yap_server/evaluation/european_parliament_speech_source.py ||   350 EVALUATION           server/src/yap_server/evaluation/fleurs_cohere_comparator.py
-  804 EVALUATION           server/src/yap_server/evaluation/fleurs_corpus.py ||   570 EVALUATION           server/src/yap_server/evaluation/governed_knowledge_gate.py
-  427 EVALUATION           server/src/yap_server/evaluation/human_reference_adjudication.py ||  1139 EVALUATION           server/src/yap_server/evaluation/librarian_qualification_gate.py
+  612 EVALUATION           server/src/yap_server/evaluation/duration_tracks.py ||   399 EVALUATION           server/src/yap_server/evaluation/european_parliament_speech_source.py
+  350 EVALUATION           server/src/yap_server/evaluation/fleurs_cohere_comparator.py ||   804 EVALUATION           server/src/yap_server/evaluation/fleurs_corpus.py
+  570 EVALUATION           server/src/yap_server/evaluation/governed_knowledge_gate.py ||   427 EVALUATION           server/src/yap_server/evaluation/human_reference_adjudication.py
+ 1669 EVALUATION           server/src/yap_server/evaluation/librarian_product_qualification_gate.py ||  1139 EVALUATION           server/src/yap_server/evaluation/librarian_qualification_gate.py
  1860 EVALUATION           server/src/yap_server/evaluation/librarian_qualification.py ||   672 EVALUATION           server/src/yap_server/evaluation/manifest_scoring.py
   703 EVALUATION           server/src/yap_server/evaluation/meeting_acceptance_plan.py ||   753 EVALUATION           server/src/yap_server/evaluation/owned_postgres_knowledge_runtime.py
   719 EVALUATION           server/src/yap_server/evaluation/provider_cancellation_qualification.py ||   619 EVALUATION           server/src/yap_server/evaluation/provider_capacity_qualification.py
@@ -166,26 +166,26 @@ Each line contains up to two independent entries in the form
   449 TEST-EVALUATION      server/tests/evaluation/test_auditor_qualification.py ||   872 TEST-EVALUATION      server/tests/evaluation/test_coordinator_qualification_gate.py
   476 TEST-EVALUATION      server/tests/evaluation/test_coordinator_qualification.py ||  1433 TEST-EVALUATION      server/tests/evaluation/test_corpus_manifest.py
   434 TEST-EVALUATION      server/tests/evaluation/test_curator_qualification_gate.py ||   364 TEST-EVALUATION      server/tests/evaluation/test_curator_qualification.py
-  359 TEST-EVALUATION      server/tests/evaluation/test_governed_knowledge_gate.py ||   485 TEST-EVALUATION      server/tests/evaluation/test_librarian_qualification_gate.py
-  762 TEST-EVALUATION      server/tests/evaluation/test_librarian_qualification.py ||   495 TEST-EVALUATION      server/tests/evaluation/test_owned_postgres_knowledge_runtime.py
-  388 TEST-EVALUATION      server/tests/evaluation/test_provider_duration_suite.py ||   552 TEST-EVALUATION      server/tests/evaluation/test_provider_runtime_qualification.py
-  358 TEST-EVALUATION      server/tests/evaluation/test_resident_provider_lifecycle_evidence.py ||   394 TEST-EVALUATION      server/tests/evaluation/test_student_qualification.py
- 1137 TEST-EVALUATION      server/tests/evaluation/test_transcript_correction_qualification.py ||   580 TEST-EVALUATION      server/tests/evaluation/test_transcript_scoring.py
-  966 TEST-INFRA           server/tests/infra/test_mock_oidc_harness.py ||   898 TEST-INFRA           server/tests/infra/test_owned_process_supervisor.py
- 1458 TEST-INFRA           server/tests/infra/test_private_container_loopback_proxy_behavior.py ||   801 TEST-INFRA           server/tests/infra/test_resident_provider_lifecycle_gate.py
- 1050 TEST-JOBS            server/tests/jobs/test_runtime.py ||   646 TEST-JOBS            server/tests/jobs/test_service_commit_admission.py
-  681 TEST-JOBS            server/tests/jobs/test_service_contract.py ||   462 TEST-JOBS            server/tests/jobs/test_service_meeting_result.py
-  681 TEST-JOBS            server/tests/jobs/test_service_processing.py ||   399 TEST-JOBS            server/tests/jobs/test_service_restart_admission.py
-  390 TEST-JOBS            server/tests/jobs/test_service_result_recovery.py ||   705 TEST-JOBS            server/tests/jobs/test_service_retention.py
-  409 TEST-KNOWLEDGE       server/tests/knowledge/test_knowledge_proposals.py ||   544 TEST-KNOWLEDGE       server/tests/knowledge/test_okf_compiler.py
-  802 TEST-KNOWLEDGE       server/tests/knowledge/test_postgres_generation_ledger.py ||   485 TEST-KNOWLEDGE       server/tests/knowledge/test_postgres_permission_safe_retrieval.py
-  768 TEST-KNOWLEDGE       server/tests/knowledge/test_reviewed_meeting_postgres_route.py ||   437 TEST-RUNTIME         server/tests/lid/test_container_runtime.py
-  374 TEST-RUNTIME         server/tests/lid/test_service.py ||   904 TEST-RUNTIME         server/tests/live/test_websocket_server.py
-  428 TEST-RUNTIME         server/tests/model_pools/test_batch_pool.py ||   452 TEST-RUNTIME         server/tests/model_pools/test_nemo_stream_scheduler.py
-  991 TEST-RUNTIME         server/tests/model_pools/test_nemotron_nemo_service.py ||   599 TEST-RUNTIME         server/tests/model_pools/test_vllm_transcription_client.py
-  391 TEST-RUNTIME         server/tests/pools/test_checked_runtime_image.py ||  1363 VERIFICATION         verification/integrated-gate-runner.mjs
-  417 VERIFICATION         verification/integrated-hosted-closure.mjs ||   839 VERIFICATION         verification/integrated-private-evidence.mjs
-  353 VERIFICATION         verification/integrated-product-checkpoint-gate.json ||   548 VERIFICATION         verification/meeting-transcription-checkpoint-evidence.mjs
-  623 VERIFICATION         verification/mock-oidc-docker-owner.psm1 ||   781 VERIFICATION         verification/test-mock-oidc-owner-flow.ps1
-  499 VERIFICATION         verification/verify-github-hosted-checkout.ps1
+  359 TEST-EVALUATION      server/tests/evaluation/test_governed_knowledge_gate.py ||   439 TEST-EVALUATION      server/tests/evaluation/test_librarian_product_qualification_gate.py
+  485 TEST-EVALUATION      server/tests/evaluation/test_librarian_qualification_gate.py ||   762 TEST-EVALUATION      server/tests/evaluation/test_librarian_qualification.py
+  495 TEST-EVALUATION      server/tests/evaluation/test_owned_postgres_knowledge_runtime.py ||   388 TEST-EVALUATION      server/tests/evaluation/test_provider_duration_suite.py
+  552 TEST-EVALUATION      server/tests/evaluation/test_provider_runtime_qualification.py ||   358 TEST-EVALUATION      server/tests/evaluation/test_resident_provider_lifecycle_evidence.py
+  394 TEST-EVALUATION      server/tests/evaluation/test_student_qualification.py ||  1137 TEST-EVALUATION      server/tests/evaluation/test_transcript_correction_qualification.py
+  580 TEST-EVALUATION      server/tests/evaluation/test_transcript_scoring.py ||   966 TEST-INFRA           server/tests/infra/test_mock_oidc_harness.py
+  898 TEST-INFRA           server/tests/infra/test_owned_process_supervisor.py ||  1458 TEST-INFRA           server/tests/infra/test_private_container_loopback_proxy_behavior.py
+  801 TEST-INFRA           server/tests/infra/test_resident_provider_lifecycle_gate.py ||  1050 TEST-JOBS            server/tests/jobs/test_runtime.py
+  646 TEST-JOBS            server/tests/jobs/test_service_commit_admission.py ||   681 TEST-JOBS            server/tests/jobs/test_service_contract.py
+  462 TEST-JOBS            server/tests/jobs/test_service_meeting_result.py ||   681 TEST-JOBS            server/tests/jobs/test_service_processing.py
+  399 TEST-JOBS            server/tests/jobs/test_service_restart_admission.py ||   390 TEST-JOBS            server/tests/jobs/test_service_result_recovery.py
+  705 TEST-JOBS            server/tests/jobs/test_service_retention.py ||   409 TEST-KNOWLEDGE       server/tests/knowledge/test_knowledge_proposals.py
+  544 TEST-KNOWLEDGE       server/tests/knowledge/test_okf_compiler.py ||   802 TEST-KNOWLEDGE       server/tests/knowledge/test_postgres_generation_ledger.py
+  485 TEST-KNOWLEDGE       server/tests/knowledge/test_postgres_permission_safe_retrieval.py ||   768 TEST-KNOWLEDGE       server/tests/knowledge/test_reviewed_meeting_postgres_route.py
+  437 TEST-RUNTIME         server/tests/lid/test_container_runtime.py ||   374 TEST-RUNTIME         server/tests/lid/test_service.py
+  904 TEST-RUNTIME         server/tests/live/test_websocket_server.py ||   428 TEST-RUNTIME         server/tests/model_pools/test_batch_pool.py
+  452 TEST-RUNTIME         server/tests/model_pools/test_nemo_stream_scheduler.py ||   991 TEST-RUNTIME         server/tests/model_pools/test_nemotron_nemo_service.py
+  599 TEST-RUNTIME         server/tests/model_pools/test_vllm_transcription_client.py ||   391 TEST-RUNTIME         server/tests/pools/test_checked_runtime_image.py
+ 1363 VERIFICATION         verification/integrated-gate-runner.mjs ||   417 VERIFICATION         verification/integrated-hosted-closure.mjs
+  839 VERIFICATION         verification/integrated-private-evidence.mjs ||   353 VERIFICATION         verification/integrated-product-checkpoint-gate.json
+  548 VERIFICATION         verification/meeting-transcription-checkpoint-evidence.mjs ||   623 VERIFICATION         verification/mock-oidc-docker-owner.psm1
+  781 VERIFICATION         verification/test-mock-oidc-owner-flow.ps1 ||   499 VERIFICATION         verification/verify-github-hosted-checkout.ps1
 ```

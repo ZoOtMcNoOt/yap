@@ -25,7 +25,7 @@ backlog.
 - [Executable ownership and trust boundaries](architecture/boundaries/EXECUTABLE-OWNERSHIP.md)
 - [Roadmap](roadmap/ROADMAP.md)
 - [Changelog](../CHANGELOG.md)
-- [Librarian product-vertical candidate verification](evidence/librarian-product-vertical/VERIFICATION.md)
+- [Librarian product-vertical qualified-candidate verification](evidence/librarian-product-vertical/VERIFICATION.md)
 
 ## Long-term architecture frame
 

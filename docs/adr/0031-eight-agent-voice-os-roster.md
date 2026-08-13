@@ -1,6 +1,6 @@
 # ADR 0031: Eight-agent Voice OS roster and execution boundaries
 
-**Status:** Accepted target; all eight bounded role cores merged through PR #172; an unmerged Librarian product candidate exists; remaining product exposure and promotion stay open
+**Status:** Accepted target; all eight bounded role cores merged through PR #172; an unmerged Librarian product candidate has a privately qualified authenticated HTTP server boundary; remaining product exposure and promotion stay open
 **Date:** 2026-08-11
 **Deciders:** Yap product and engineering owner
 **Amends:** [ADR 0006](0006-silero-agents-state-machine.md),
@@ -14,9 +14,10 @@
 
 The product architecture names eight agents, and the merged system now delivers
 all eight as bounded internal role cores. Only Scribe has a current product
-surface in the merged product. Exact successor `8565145b...` adds an unmerged,
-public-portable-green Librarian HTTP/native/Knowledge candidate; it has no new
-owner-private product receipt, hosted review, or merge. Phase 9 merged the
+surface in the merged product. Exact successor `e2ba1864...` adds an unmerged
+Librarian HTTP/native/Knowledge candidate. Its authenticated HTTP server
+boundary is privately qualified, its native/renderer path is exact-head
+public-test green, and hosted review and merge remain open. Phase 9 merged the
 governed knowledge, tool, retrieval, terminology,
 and two qualified reasoning-route foundations. Phase 10
 Slices 10.1 and 10.2 merged the Rust-supervised lifecycle and exact Qwen rapid/
