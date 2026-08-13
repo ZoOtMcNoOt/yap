@@ -566,6 +566,32 @@ try {
         $Flow.Refresh()
     }
     if ($Flow.ExitCode -ne 0) {
+        $FailureMarker = $null
+        if (Test-Path -LiteralPath $FlowOut) {
+            $FlowOutput = Get-Item -LiteralPath $FlowOut -Force
+            if ($FlowOutput.Length -le 512) {
+                $FailureMarkers = @(
+                    Get-Content -LiteralPath $FlowOut |
+                        Where-Object {
+                            $_ -cmatch (
+                                '^MOCK_OIDC_OWNER_FLOW=FAIL:' +
+                                '[a-z][a-z0-9-]{0,31}:' +
+                                '(?:timeout|http|assertion|transport|' +
+                                'invalid-data|runtime|internal)$'
+                            )
+                        }
+                )
+                if ($FailureMarkers.Count -eq 1) {
+                    $FailureMarker = $FailureMarkers[0]
+                }
+            }
+        }
+        if ($null -ne $FailureMarker) {
+            throw (
+                "Synthetic OIDC owner flow failed with exit code " +
+                "$($Flow.ExitCode) at $FailureMarker."
+            )
+        }
         throw "Synthetic OIDC owner flow failed with exit code $($Flow.ExitCode)."
     }
     $Result = (Get-Content -LiteralPath $FlowOut -Raw).Trim()

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import runpy
 from pathlib import Path
 import queue
 import re
@@ -14,6 +15,7 @@ import tempfile
 import threading
 import time
 import unittest
+from datetime import UTC, datetime, timedelta
 
 
 REPOSITORY = Path(__file__).resolve().parents[3]
@@ -236,6 +238,9 @@ finally {{
         self.assertNotIn("YAP_AUTH_MODE", script)
         self.assertNotIn("YAP_OIDC_ISSUER", script)
         self.assertNotIn("Get-Content -LiteralPath $FlowErr -Raw", script)
+        self.assertIn("$FlowOutput.Length -le 512", script)
+        self.assertIn("^MOCK_OIDC_OWNER_FLOW=FAIL:", script)
+        self.assertNotIn("Get-Content -LiteralPath $FlowErr", script)
         for expected in (
             "Resolve-LockedMockOidcDockerImage",
             "synthetic OIDC Docker platform inspection",
@@ -266,6 +271,63 @@ finally {{
         self.assertLess(
             script.index("[Console]::remove_CancelKeyPress"),
             script.index("Write-Output $Result"),
+        )
+
+    def test_flow_failure_marker_is_bounded_and_contains_no_exception_text(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory(prefix="yap-oidc-marker-") as temporary:
+            environment = {
+                **os.environ,
+                "PYTHONPATH": os.pathsep.join(
+                    (
+                        str(REPOSITORY / "server" / "src"),
+                        str(REPOSITORY / "server"),
+                    )
+                ),
+            }
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    str(FLOW),
+                    "--provider-base-url",
+                    "https://not-loopback.invalid",
+                    "--state-root",
+                    temporary,
+                ],
+                cwd=REPOSITORY,
+                env=environment,
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+
+        self.assertNotEqual(completed.returncode, 0)
+        self.assertEqual(
+            completed.stdout.strip(),
+            "MOCK_OIDC_OWNER_FLOW=FAIL:authority-validation:runtime",
+        )
+        self.assertNotIn("not-loopback.invalid", completed.stdout)
+        self.assertNotIn("loopback origin", completed.stdout)
+
+    def test_live_owner_flow_retention_is_relative_to_the_execution_clock(
+        self,
+    ) -> None:
+        flow = runpy.run_path(str(FLOW))
+        request = flow["_live_recording_job_request"]()
+        metadata = request["metadata"]
+        self.assertIsInstance(metadata, dict)
+        started = datetime.fromisoformat(metadata["startedAtUtc"])
+        retention = datetime.fromisoformat(metadata["retentionExpiresAtUtc"])
+        observed_at = datetime.now(UTC)
+
+        self.assertLessEqual(started, observed_at)
+        self.assertGreater(retention, observed_at)
+        self.assertLessEqual(retention - started, timedelta(days=30))
+        self.assertNotEqual(
+            metadata["retentionExpiresAtUtc"],
+            "2026-08-13T21:00:00Z",
         )
 
     def test_harness_and_exact_runtime_are_cross_platform_powershell(self) -> None:
