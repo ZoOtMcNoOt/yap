@@ -12,12 +12,13 @@ Phase 9. Earlier phase and checkpoint acceptance is evidence, not an exemption.
 The Phase 9 delta receives deeper inspection, but it is not the coverage limit.
 
 The freeze-time read-back below extends the navigation and cohesion inventory to
-the current Phase 10 Curator/profile-capacity candidate. Exact route head
+the pre-merge Phase 10 Curator/profile-capacity candidate. Exact route head
 `dab19fe...`, workflow head `7cd24deb...`, and aggregate/public-lock head
-`7f896b34...` are privately qualified/public-safe recorded. PR #168 remains
-draft; this document does not claim hosted merge, product exposure, sustained
-capacity, simultaneous full-profile residency, production SLOs, deployment, or
-production promotion.
+`7f896b34...` are privately qualified/public-safe recorded. Hosted-green head
+`593e627b...` later passed all 12 checks, and PR #168 merged the slice as
+`284ab96b...`. The numerical inventory remains the frozen pre-merge snapshot;
+this document does not claim product exposure, sustained capacity, simultaneous
+full-profile residency, production SLOs, deployment, or production promotion.
 
 ## Method and exclusions
 
@@ -167,7 +168,7 @@ The previously recorded Phase 10 Student candidate snapshot remains historical:
 527 in-scope surfaces at or above 250 physical lines, comprising 287 at or above
 350 and 240 from 250 through 349. It is not recomputed against this successor.
 
-At the current Phase 10 Curator/profile-capacity candidate tree, the
+At the frozen pre-merge Phase 10 Curator/profile-capacity candidate tree, the
 inventory contains 541 in-scope tracked source, text, policy, and provenance
 surfaces at or above 250 physical lines: 297 at or above 350 and 244 from 250
 through 349. The completed checkpoint reviews remain the authority for their
@@ -192,7 +193,7 @@ decisions.
 | `docs/plans/{archived,completed}/**` and `docs/research/**` | 11 | Retain as immutable historical delivery/evidence records. Rewriting or splitting them would damage provenance; current truth lives in current/normative documents. |
 | `infra/**` | 5 | Retain each process-group, supervisor, loopback proxy, resident lifecycle, and setup owner because containment must remain end to end within its script/process boundary. |
 | `server/README.md` | 1 | Retain the server runbook as the single operator navigation surface; executable gates and source modules remain authoritative. |
-| `server/orchestrator/**` | 3 | Retain the supervisor as the provider-lifecycle owner, the admission scheduler as the bounded multi-user lease/fairness/capacity owner, and the hardware-independent integration suite as the end-to-end lifecycle contract. The current candidate derives rapid/complex active limits from immutable service profiles while preserving one active request per owner; configuration, protocol, dispatch, queue, terminal, and readiness concerns remain split across functional Rust modules. This is an ownership disposition, not capacity qualification. |
+| `server/orchestrator/**` | 3 | Retain the supervisor as the provider-lifecycle owner, the admission scheduler as the bounded multi-user lease/fairness/capacity owner, and the hardware-independent integration suite as the end-to-end lifecycle contract. The frozen candidate derives rapid/complex active limits from immutable service profiles while preserving one active request per owner; configuration, protocol, dispatch, queue, terminal, and readiness concerns remain split across functional Rust modules. This is an ownership disposition, not capacity qualification. |
 | `server/src/yap_server/auth/**` | 3 | Retain identity repository, token validation, and OIDC metadata as separate trust-boundary owners. The obsolete identity migration was deleted; no caller-chosen tenant/subject path remains. |
 | `server/src/yap_server/evaluation/**` | 42 | Retain each named acceptance, corpus/review, scorer, runtime observation, lifecycle, qualification, and aggregate-decision owner. Curator, Scribe, and Student qualification/gate modules separate public decision logic, private input admission, measurement, database/runtime lifecycle, and aggregate containment rather than sharing runtime mutation. The shared broker observation owns the active-capacity probe without taking scheduler or provider mutation authority. Exact route/workflow/aggregate outcomes are bounded by their public-safe receipts; their implementation presence alone proves nothing. |
 | `server/src/yap_server/jobs/**` | 5 | Retain completion/store/runtime plus the single locked service aggregate. The 1,401-line service owns one `RLock`; pure policies may move only when they do not create a second job-state authority. |
@@ -301,7 +302,7 @@ proposal disposition and audit, (5) explicit model-route selection and the
 vLLM/Postgres lifecycle owners, (6) private/public evidence publication, and
 (7) their portable versus required-real-Postgres tests without relying on
 tribal naming. The test split and functional private-evidence name removed the
-two ambiguous navigation points found during discovery. The current candidate
+two ambiguous navigation points found during discovery. The frozen candidate
 adds explicit profile-capacity and live-probe owners; simultaneous provider
 residency, sustained throughput/SLOs, external networking, deployment, and
 production promotion remain outside this public maintainability read-back.

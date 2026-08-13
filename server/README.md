@@ -622,7 +622,8 @@ fifth-queued and complex-eight/ninth-queued live broker probes. Replacement
 public-lock/aggregate head `7f896b34...` returned
 `governed-knowledge-gate-passed` with public-safe evidence SHA-256
 `fd197b98...`. The exact one-slot evidence above remains historical authority
-for its merged head, not the current candidate boundary. PR #168 remains draft.
+for its merged head, not the current boundary. Hosted-green head `593e627b...`
+passed all 12 checks, and PR #168 merged the successor as `284ab96b...`.
 Selected-route limits do not prove simultaneous Qwen/Gemma residency, sustained
 capacity/fairness, production p95/p99, or deployment. See the
 [profile-capacity record](../docs/evidence/agent-admission-profile-capacity/VERIFICATION.md).
@@ -838,10 +839,9 @@ unchanged full Qwen and Gemma services can be kept warm together. Student does
 not reduce the pinned full profile, and request-time model swapping remains
 prohibited.
 
-## Curator knowledge-proposal candidate
+## Curator knowledge-proposal core
 
-The current development branch also contains a privately qualified internal
-Curator candidate. It
+The merged server contains a privately qualified internal Curator core. It
 accepts only an explicit proposal or reviewed Student answer, re-reads every
 citation through the server's permission-safe generation owner, and asks the
 already-warm complex route for one bounded propose/reject decision. A proposed
@@ -860,9 +860,10 @@ cancellation, timeout, provider loss, capacity, or audit/write failure publishes
 no successful proposal.
 
 The [Curator verification record](../docs/evidence/curator-knowledge-proposals/VERIFICATION.md)
-contains the public-safe exact-head result. PR #168 is draft; hosted review,
-merge, HTTP/native/UI integration, active-knowledge promotion, and production
-operation remain open.
+contains the public-safe exact-head result. Hosted-green head `593e627b...`
+passed all 12 checks, and PR #168 merged the core as `284ab96b...`. HTTP,
+native, renderer/UI, active-knowledge promotion, and production operation remain
+open.
 
 ## Local checks
 

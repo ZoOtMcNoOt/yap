@@ -904,10 +904,11 @@ unconfigured.
   terminal `deterministic-no-student`. Hosted-green head `b03c6e79...` passed
   all 12 checks and PR #166 merged the internal Student core as `2254605e...`;
   product exposure remains open. Exact route head `dab19fe...`, workflow head
-  `7cd24deb...`, and aggregate/public-lock head `7f896b34...` privately qualify
-  the current Curator/profile-capacity successor under draft PR #168. The four
-  later workflows (Auditor, Librarian, Analyst, and Coordinator), hosted merge,
-  and product exposure remain open. Proven selected-route capacity four/eight is
+  `7cd24deb...`, and aggregate/public-lock head `7f896b34...` privately qualified
+  the Curator/profile-capacity successor. Hosted-green head `593e627b...` passed
+  all 12 checks, and PR #168 merged it as `284ab96b...`. Librarian, Analyst,
+  Coordinator, and Auditor plus product exposure remain open. Proven selected-
+  route capacity four/eight is
   not simultaneous-model residency, sustained capacity/SLO, or production
   evidence.
 - Integrate the remaining provider-specific ASR and vLLM agent/LLM workflows

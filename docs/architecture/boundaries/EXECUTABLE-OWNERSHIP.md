@@ -922,7 +922,8 @@ evidence SHA-256 `96228914...`; exact workflow head `7cd24deb...` then qualified
 Scribe, Student, and Curator, and aggregate/public-lock head `7f896b34...`
 passed with evidence SHA-256 `fd197b98...`. The exact one-slot evidence above
 remains historical and authoritative for its merged head; it is no longer the
-current candidate boundary. PR #168 remains draft. Selected-route capacity is
+current merged boundary. Hosted-green head `593e627b...` passed all 12 checks,
+and PR #168 merged the successor as `284ab96b...`. Selected-route capacity is
 not sustained-throughput, simultaneous-residency, or production-SLO evidence.
 
 ### 27. Scribe transcript correction
@@ -1043,12 +1044,12 @@ full Qwen rapid profile, with public-safe evidence SHA-256 `f597cca7...`.
 Hosted-green head `b03c6e79...` passed all 12 required checks and PR #166 merged
 the internal core as `2254605e...`. An HTTP/native/UI surface remains open.
 
-### 30. Curator knowledge-proposal candidate
+### 30. Curator knowledge-proposal core
 
-- **Status:** privately qualified internal candidate at exact head
-  `7cd24deb...` with public-safe evidence SHA-256 `b60df1e2...`; PR #168 is
-  draft, and no hosted merge, HTTP/native/UI surface, or production promotion
-  exists.
+- **Status:** privately qualified internal core at exact head `7cd24deb...` with
+  public-safe evidence SHA-256 `b60df1e2...`; hosted-green head `593e627b...`
+  passed all 12 checks, and PR #168 merged it as `284ab96b...`. No HTTP, native,
+  renderer/UI surface, active-knowledge promotion, or production promotion exists.
 - **Entry point:** `yap_server/agents/curator_service.py` owns an internal
   complex-route workflow for only `explicit-proposal` and
   `reviewed-student-answer` submissions.

@@ -2,9 +2,12 @@
 
 **Status:** Exact protected route qualification and the aggregate governed-
 knowledge gate passed for the profile-derived admission successor. The public
-lock is committed at `7f896b341c31fcabb3f894a8d693764c8bc30600`. PR #168 is
-draft; hosted review, merge, simultaneous two-route residency, sustained
-capacity/SLO evidence, product promotion, and deployment remain open.
+lock is committed at `7f896b341c31fcabb3f894a8d693764c8bc30600`. Hosted-green
+head `593e627b5b7aef10db082913c3e68fbaa872a942` passed all 12 required
+checks, and PR #168 merged the successor as
+`284ab96b58af0fdf1e939dbb8b1b075808b6b5b8` on 2026-08-13. Simultaneous
+two-route residency, sustained capacity/SLO evidence, product promotion, and
+deployment remain open.
 
 ## Qualified route evidence
 

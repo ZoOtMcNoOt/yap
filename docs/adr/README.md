@@ -78,14 +78,15 @@ evidence SHA-256 `5e187ed4...` and merged through PR #164. Archivist merged
 through PR #165. Student's topic-copy prompt repair is complete-portable-test
 green and privately qualified at exact `428d6e48...` with public-safe evidence
 SHA-256 `f597cca7...`; hosted-green head `b03c6e79...` passed all 12 checks and
-PR #166 merged the internal core as `2254605e...`. Product exposure remains
+  PR #166 merged the internal core as `2254605e...`. Product exposure remains
   open. Exact `0970d74c...` remains terminal `deterministic-no-student` evidence.
   Exact workflow head `7cd24deb...` privately requalified Scribe and Student and
-  qualified the explicit-submission-only Curator candidate; exact route head
+  qualified the explicit-submission-only Curator core; exact route head
   `dab19fe...` qualified four-rapid/eight-complex selected-route admission, and
-  exact aggregate head `7f896b34...` passed. PR #168 remains draft. Hosted
-  merge, product exposure, warm simultaneous residency, the four later
-  workflows, sustained capacity, and promotion remain open.
+  exact aggregate head `7f896b34...` passed. Hosted-green head `593e627b...`
+  passed all 12 checks, and PR #168 merged the slice as `284ab96b...`. Curator
+  product exposure, warm simultaneous residency, Librarian, Analyst,
+  Coordinator, and Auditor, sustained capacity, and promotion remain open.
 
 ## Applicability and precedence
 
@@ -136,7 +137,7 @@ Every implementation plan must list its applied ADRs, superseded details it inte
 | [0028](0028-model-independent-terminology-authority.md) | Model-independent terminology authority and frozen projections | Accepted; merged Phase 9 has server-derived ownership, immutable job snapshots, bounded projections, revocation, governed-agent consumption, and a passed complete gate; production UI and operations remain open |
 | [0029](0029-vllm-agent-reasoning-runtime.md) | vLLM agent reasoning runtime on DGX Spark | Accepted; exact-head private Qwen rapid/Gemma complex route qualification and aggregate Phase 9 admission passed and merged through PR #152; the post-Phase-9 checkpoint gate passed at `22c3f369...` and hosted head `84c22ec9...` merged through PR #153; production serving, simultaneous residency, and sustained capacity remain Phase 10 |
 | [0030](0030-rust-supervised-provider-service-lifecycle.md) | Rust-supervised provider service lifecycle | Accepted Phase 10 target; Slices 10.1 and 10.2 merged the hardware-independent systemd/Rust/foreground-launcher boundary and immutable Qwen/Gemma profiles through PRs #155 and #157. Slice 10.3 bounded admission merged under ADR 0031 through PR #158; simultaneous residency, sustained capacity, and production operation remain open. |
-| [0031](0031-eight-agent-voice-os-roster.md) | Eight-agent Voice OS roster and execution boundaries | Accepted Phase 10 target; bounded already-warm admission merged through PR #158, Scribe through PR #164, Archivist through PR #165, and the internal Student core through PR #166 as `2254605e...`. Exact workflow head `7cd24deb...` privately requalified Scribe and Student and qualified the nonmutating Curator candidate; exact route head `dab19fe...` qualified selected-route capacity four/eight, and exact aggregate head `7f896b34...` passed. PR #168 remains draft. Three role cores are merged, Curator is a privately qualified candidate, and the four later workflows (Auditor, Librarian, Analyst, and Coordinator), hosted merge, product exposure, simultaneous full-profile residency, sustained capacity, and production promotion remain pending. |
+| [0031](0031-eight-agent-voice-os-roster.md) | Eight-agent Voice OS roster and execution boundaries | Accepted Phase 10 target; bounded already-warm admission merged through PR #158, Scribe through PR #164, Archivist through PR #165, and Student through PR #166. Exact workflow head `7cd24deb...` privately requalified Scribe and Student and qualified the nonmutating Curator core; exact route head `dab19fe...` qualified selected-route capacity four/eight, and exact aggregate head `7f896b34...` passed. Hosted-green head `593e627b...` passed all 12 checks, and PR #168 merged the Curator/profile-capacity slice as `284ab96b...`. Four role cores are merged; Librarian, Analyst, Coordinator, and Auditor, product exposure, simultaneous full-profile residency, sustained capacity, and production promotion remain pending. |
 
 **Build specs** (how, not why): [docs/specs/](../specs/) — STT sidecar, LLM sidecar, live UX, testing.
 

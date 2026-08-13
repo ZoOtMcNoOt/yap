@@ -4,11 +4,11 @@
 is complete-portable-test green and privately qualified. Hosted-green head
 `b03c6e79f19bad451437c3f0c495daa67bb7171f` passed all 12 required checks and
 PR #166 merged the internal core as
-`2254605ed19a592d2db1747d576762ccf11a5cc0`. HTTP/native/UI exposure, Curator
-integration, and product promotion remain pending. The later profile-capacity
+`2254605ed19a592d2db1747d576762ccf11a5cc0`. HTTP/native/UI exposure and product
+promotion remain pending. The later profile-capacity
 successor was freshly qualified with Student at exact head
-`7cd24deb1131ecf89258ddb821c6bffae8e0cd25`; PR #168 remains draft, so that
-successor is not yet hosted-green or merged.
+`7cd24deb1131ecf89258ddb821c6bffae8e0cd25`; hosted-green head `593e627b...`
+passed all 12 checks, and PR #168 merged it as `284ab96b...`.
 
 ## Current candidate contract
 
@@ -90,8 +90,8 @@ boundaries, and completed exact teardown. Student still launches, swaps,
 substitutes, or reduces no model.
 
 This new exact-head receipt qualifies the protected admission successor without
-relabeling PR #166's historical merge receipt. It is internal candidate evidence,
-not PR #168 hosted review/merge or product exposure. See the
+relabeling PR #166's historical merge receipt. PR #168 later merged the
+successor; this remains internal evidence, not product exposure. See the
 [profile-capacity evidence](../agent-admission-profile-capacity/VERIFICATION.md).
 
 ## Terminal private evidence
@@ -150,13 +150,13 @@ output cap, timeout, queue bound, or acceptance threshold.
 
 Student is a merged internal core. There is no Student HTTP endpoint, native
 adapter, renderer/UI workflow, user review surface, or production deployment.
-The current development branch's profile-capacity admission successor changed
+The merged profile-capacity admission successor changed
 protected broker/model-client inputs and therefore received its own exact-head
 route and affected-workflow qualifications; the historical PR #166 receipt is
 not relabeled. Current evidence does not prove sustained multi-owner throughput,
 route p95/p99 SLOs, simultaneous full Qwen/Gemma residency, or a two-node warm
-topology. Curator is a qualified internal candidate pending hosted review/merge;
-the four later workflows (Auditor, Librarian, Analyst, and Coordinator), and
+topology. Curator is a merged internal core without product exposure; the four
+remaining workflows (Librarian, Analyst, Coordinator, and Auditor), and
 aggregate Phase 10 completion remain open. A fresh post-aggregate observation
 on 2026-08-12 found the unchanged full Qwen rapid route warm on the current
 single Spark. Full-strength two-route promotion requires a second owned GPU

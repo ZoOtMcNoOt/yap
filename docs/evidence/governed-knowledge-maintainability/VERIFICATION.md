@@ -1,10 +1,13 @@
 # Governed Knowledge Maintainability Verification
 
 This record separates inherited merged evidence, focused repair checks, the
-completed and hosted-merged Phase 9 checkpoint gate, and the current Phase 10
-public read-back. The Curator/profile-capacity successor is privately qualified
-at exact protected heads and has a public-lock/aggregate result, but PR #168
-remains draft: hosted review/merge and product exposure are not complete.
+completed and hosted-merged Phase 9 checkpoint gate, the frozen pre-merge Phase
+10 public read-back, and its later hosted merge status. The
+Curator/profile-capacity successor is privately qualified
+at exact protected heads and has a public-lock/aggregate result. Hosted-green
+head `593e627b...` passed all 12 checks, and PR #168 merged it as `284ab96b...`.
+Product exposure remains open. The numerical inventory below remains the frozen
+pre-merge read-back and is not recomputed by this docs-only merge closure.
 
 ## Inherited Phase 9 evidence
 
@@ -497,9 +500,9 @@ CodeQL lane. PR #153 merged it as
 simultaneous model residency, sustained mixed-owner capacity/SLOs, enterprise
 networking, and deployment remain Phase 10 or explicit IT/security handoffs.
 
-## Current Phase 10 Curator/profile-capacity candidate public read-back
+## Pre-merge Phase 10 Curator/profile-capacity public read-back
 
-The current candidate has the following bounded exact-head evidence:
+The frozen pre-merge candidate has the following bounded exact-head evidence:
 
 - Route head `dab19fe7563a9d596cbe7d861460a5c6fed7025c` returned
   `required-workload-routes-qualified` with public-safe evidence SHA-256
@@ -537,5 +540,5 @@ complex-eight profile-derived broker limits, one active request per owner, and
 the live qualification probes that hold the selected route at its limit, queue
 one additional owner, contain every probe lease, and require unchanged provider
 and broker identities. They do not demonstrate simultaneous Qwen/Gemma
-residency, sustained multi-user throughput, a production SLO, hosted review or
-merge, product exposure, or deployment. PR #168 remains draft.
+residency, sustained multi-user throughput, a production SLO, product exposure,
+or deployment. PR #168 merged as `284ab96b...`.

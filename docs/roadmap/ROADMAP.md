@@ -249,11 +249,12 @@ and PR #166 merged the internal Student core as `2254605e...`; product exposure
 remains open. Exact route head `dab19fe...` returned
 `required-workload-routes-qualified` with public-safe evidence SHA-256
 `96228914...`. Exact workflow head `7cd24deb...` requalified Scribe and Student
-and qualified the nonmutating Curator candidate with public-safe evidence
+and qualified the nonmutating Curator core with public-safe evidence
 SHA-256 `b60df1e2...`; exact aggregate/public-lock head `7f896b34...` passed with
-public-safe evidence SHA-256 `fd197b98...`. PR #168 remains draft, so hosted
-merge and Student/Curator product exposure remain open. The four later
-workflows (Auditor, Librarian, Analyst, and Coordinator) remain open. Proven
+public-safe evidence SHA-256 `fd197b98...`. Hosted-green head `593e627b...`
+passed all 12 checks, and PR #168 merged the slice as `284ab96b...`. Student and
+Curator product exposure remain open. Librarian, Analyst, Coordinator, and
+Auditor remain unimplemented. Proven
 selected-route limits of four rapid/eight complex are not simultaneous-model,
 sustained-capacity, or production-SLO evidence. One Spark cannot retain both
 unchanged full profiles simultaneously, so warm two-route promotion requires a

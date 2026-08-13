@@ -9,7 +9,7 @@ The inventory includes the repository's tracked source, text, policy, and
 provenance contract extensions and excludes only the two tracked OpenAPI products, the
 package lock, and the two generated dependency-inventory JSON products named in
 the script. The four large JSON gate/evaluation contracts remain included as
-hand-maintained policy. At this current candidate tree the complete 250-line
+hand-maintained policy. At this frozen pre-merge candidate tree the complete 250-line
 inventory is 541 files: 297 listed below at 350 or more lines and 244 from 250
 through 349.
 

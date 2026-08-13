@@ -3,7 +3,7 @@
 This changelog records product/architecture milestones. Exact test counts and
 immutable evidence belong in phase/checkpoint evidence records.
 
-## Unreleased — Phase 10 Curator and admission-capacity successor
+## 2026-08-13 — Phase 10 Curator and admission-capacity successor
 
 - Adds an explicit-submission-only Curator workflow that may publish a
   governed noncanonical proposal but cannot activate knowledge or mutate source
@@ -14,9 +14,11 @@ immutable evidence belong in phase/checkpoint evidence records.
 - Exact `7cd24deb...` privately qualified Curator, Scribe, and Student against
   the successor; exact public-lock/aggregate head `7f896b34...` passed the
   governed gate. Public-safe records are indexed under `docs/evidence/`.
-- PR #168 remains draft. These results do not claim hosted review/merge, a
-  Curator product surface, simultaneous Qwen/Gemma residency, sustained
-  capacity, production SLOs, or deployment readiness.
+- Hosted-green head `593e627b...` passed all 12 required checks, and PR #168
+  merged the Curator/profile-capacity slice as `284ab96b...`.
+- Curator remains an internal core with no HTTP, native, renderer, or user-facing
+  product surface. The merge does not claim simultaneous Qwen/Gemma residency,
+  sustained capacity, production SLOs, or deployment readiness.
 
 ## 2026-08-12 — Phase 10 bounded role cores
 
