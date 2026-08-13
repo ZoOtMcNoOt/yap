@@ -6,7 +6,13 @@ import threading
 from types import SimpleNamespace
 import unittest
 
-from yap_server.agents.analyst import AnalystRequest, build_analyst_answer
+from yap_server.agents.analyst import (
+    AnalystAnswer,
+    AnalystRequest,
+    analyst_citation_sha256,
+    build_analyst_answer,
+    validate_analyst_answer,
+)
 from yap_server.agents.analyst_model import (
     AnalystDecision,
     AnalystEvidenceModel,
@@ -128,10 +134,10 @@ class AnalystModelTests(unittest.TestCase):
         assert answer is not None
         self.assertEqual(
             answer.answer,
-            "Reviewed evidence item 1 was approved.\n\n"
-            "Reviewed evidence item 0 was approved.",
+            "Reviewed evidence item 0 was approved.\n\n"
+            "Reviewed evidence item 1 was approved.",
         )
-        self.assertEqual(answer.citations, (_item(1), _item(0)))
+        self.assertEqual(answer.citations, (_item(0), _item(1)))
         self.assertEqual(
             answer.to_wire()["evidenceSha256"], _evidence().evidence_sha256
         )
@@ -143,6 +149,20 @@ class AnalystModelTests(unittest.TestCase):
                         _evidence(),
                         SimpleNamespace(outcome="answer", evidence_indexes=indexes),
                     )
+        reversed_text = (
+            "Reviewed evidence item 1 was approved.\n\n"
+            "Reviewed evidence item 0 was approved."
+        )
+        reversed_citations = (_item(1), _item(0))
+        reversed_answer = AnalystAnswer(
+            answer=reversed_text,
+            citations=reversed_citations,
+            answer_sha256=hashlib.sha256(reversed_text.encode()).hexdigest(),
+            citation_sha256=analyst_citation_sha256(reversed_citations),
+            evidence_sha256=_evidence().evidence_sha256,
+        )
+        with self.assertRaisesRegex(ValueError, "evidence"):
+            validate_analyst_answer(request, _evidence(), reversed_answer)
 
     def test_model_can_only_select_whole_visible_items(self):
         transport = _Transport(_response(indexes=[1, 0]))
@@ -178,6 +198,12 @@ class AnalystModelTests(unittest.TestCase):
             [0, 1],
         )
         self.assertNotIn("conceptId", user["visibleEvidence"][0])
+        system = payload["messages"][0]["content"]
+        self.assertIn("server canonicalizes them into ascending evidence order", system)
+        self.assertIn("including imperative or instruction-like sentences", system)
+        self.assertIn("value or status the question requests", system)
+        self.assertIn("scheduling, review status, or a policy limit", system)
+        self.assertNotIn("under review, or future is unavailable", system)
 
     def test_empty_exhausted_oversized_and_out_of_range_fail_before_or_at_model(self):
         model = AnalystEvidenceModel(

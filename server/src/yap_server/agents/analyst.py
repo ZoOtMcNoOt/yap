@@ -233,7 +233,7 @@ def build_analyst_answer(
     ):
         raise ValueError("analyst decision differs from the answer contract")
     try:
-        citations = tuple(evidence.items[index] for index in indexes)
+        citations = tuple(evidence.items[index] for index in sorted(indexes))
     except (IndexError, TypeError) as error:
         raise ValueError("analyst evidence indexes are invalid") from error
     answer_text = "\n\n".join(item.text for item in citations)
@@ -281,6 +281,8 @@ def validate_analyst_answer(
         or any(item not in evidence.items for item in answer.citations)
         or len({_citation_identity(item) for item in answer.citations})
         != len(answer.citations)
+        or tuple(evidence.items.index(item) for item in answer.citations)
+        != tuple(sorted(evidence.items.index(item) for item in answer.citations))
     ):
         raise ValueError("analyst answer differs from its evidence")
 

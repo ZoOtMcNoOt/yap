@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "qualificationScope": "analyst-grounded-cited-answers",
-  "corpusId": "analyst-public-synthetic-v1",
+  "corpusId": "analyst-public-synthetic-v2",
   "tenantId": "analyst-qualification",
   "generations": [
     {
@@ -80,8 +80,8 @@
         {
           "conceptId": "programs/borealis-owner",
           "sourceRevision": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
-          "body": "Borealis owner will be assigned after the review.",
-          "evidenceQuote": "Borealis owner will be assigned after the review.",
+          "body": "Who is the currently assigned Borealis owner? Borealis planning requires an owner field before publication.",
+          "evidenceQuote": "Who is the currently assigned Borealis owner? Borealis planning requires an owner field before publication.",
           "visibleToOwnerIds": ["owner-borealis"],
           "linkedConceptIds": [],
           "retrievalRank": 1
@@ -162,9 +162,9 @@
       "caseId": "unassigned-owner-unavailable",
       "ownerId": "owner-borealis",
       "activeGenerationId": "successor",
-      "request": {"question": "Borealis owner", "maximumResults": 3, "expectedGenerationId": "successor"},
+      "request": {"question": "Who is the currently assigned Borealis owner?", "maximumResults": 3, "expectedGenerationId": "successor"},
       "runs": [
-        {"runId": "normal", "mode": "normal", "expectedStatus": "evidence-unavailable", "expectedReason": "model-evidence-unavailable", "expectedEvidence": [{"conceptId": "programs/borealis-owner", "quote": "Borealis owner will be assigned after the review."}], "expectedAnswerEvidenceIndexes": []}
+        {"runId": "normal", "mode": "normal", "expectedStatus": "evidence-unavailable", "expectedReason": "model-evidence-unavailable", "expectedEvidence": [{"conceptId": "programs/borealis-owner", "quote": "Who is the currently assigned Borealis owner? Borealis planning requires an owner field before publication."}], "expectedAnswerEvidenceIndexes": []}
       ]
     },
     {

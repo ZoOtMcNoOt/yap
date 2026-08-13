@@ -88,6 +88,7 @@ class AnalystQualificationTests(unittest.TestCase):
         controlled = tuple(item for item in invocations if item.mode != "normal")
 
         self.assertEqual(len(self.corpus.cases), 8)
+        self.assertEqual(self.corpus.corpus_id, "analyst-public-synthetic-v2")
         self.assertEqual(len(invocations), 13)
         self.assertEqual(len(primary), 8)
         self.assertEqual(len({item.owner_id for item in primary}), 8)
@@ -120,6 +121,18 @@ class AnalystQualificationTests(unittest.TestCase):
             AnalystExpectedView("evidence-unavailable", "empty-result", None),
         )
         self.assertNotIn(empty.case_id, self.bound.evidence_by_case)
+        borealis = next(
+            item
+            for item in self.corpus.cases
+            if item.case_id == "unassigned-owner-unavailable"
+        )
+        self.assertEqual(
+            borealis.request.question,
+            "Who is the currently assigned Borealis owner?",
+        )
+        borealis_evidence = borealis.runs[0].expected_evidence[0]
+        self.assertIn("requires an owner field", borealis_evidence.quote)
+        self.assertNotIn("assigned or identified", borealis_evidence.quote)
 
     def test_renderer_compiler_binding_derives_exact_answers_and_citations(
         self,
