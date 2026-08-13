@@ -1,6 +1,6 @@
 # ADR 0031: Eight-agent Voice OS roster and execution boundaries
 
-**Status:** Accepted target; seven role cores merged through PR #171; Auditor privately qualified as an unmerged internal candidate; product exposure and promotion remain open
+**Status:** Accepted target; all eight bounded role cores merged through PR #172; non-Scribe product exposure and promotion remain open
 **Date:** 2026-08-11
 **Deciders:** Yap product and engineering owner
 **Amends:** [ADR 0006](0006-silero-agents-state-machine.md),
@@ -12,9 +12,10 @@
 
 ## Context
 
-The product architecture names eight agents, but the merged system does not yet
-deliver that complete roster. Phase 9 merged the governed knowledge, tool,
-retrieval, terminology, and two qualified reasoning-route foundations. Phase 10
+The product architecture names eight agents, and the merged system now delivers
+all eight as bounded internal role cores. Only Scribe has a current product
+surface. Phase 9 merged the governed knowledge, tool, retrieval, terminology,
+and two qualified reasoning-route foundations. Phase 10
 Slices 10.1 and 10.2 merged the Rust-supervised lifecycle and exact Qwen rapid/
 Gemma complex profiles. Exact protected head `7bd93dc6...` implements the
 bounded admission substrate, exact public-lock head `135cc2ba...` passed its
@@ -72,7 +73,8 @@ Auditor's idle-only review-findings core with public-safe evidence SHA-256
 calls, all 29 terminals matched, and 12 noncanonical review-required reports
 contained 15 potential-contradiction findings and 30 server-owned citations.
 Active and queued non-idle work blocked admission; Auditor resumed only after
-the non-idle work became terminal. Hosted review/merge remains pending.
+the non-idle work became terminal. Hosted head `937a4129...` passed all 12
+required checks, and PR #172 merged Auditor as `1b255e9a...`.
 
 The current protected successor still derives four rapid and eight complex
 active limits from the immutable full profiles while retaining one active
@@ -279,6 +281,8 @@ of 24 normal matches, 29 exact terminals, 12 server-derived reports, 15
 potential-contradiction findings, 30 citations, one lease per invocation,
 active/pending non-idle blocking with post-terminal resumption, two PostgreSQL
 restart/read-backs, zero proposal writes, and exact teardown.
+Hosted head `937a4129...` passed all 12 checks and PR #172 merged Auditor as
+`1b255e9a...`, completing the bounded internal roster.
 
 Exact Student candidate `452c8b76...` originally returned
 `student-learning-questions-qualified` with public-safe semantic evidence
@@ -319,10 +323,11 @@ qualification at `7cd24deb...`/`7f896b34...`; hosted-green head `593e627b...`
 passed all 12 checks, and PR #168 merged it as `284ab96b...`. Hosted head
 `7505247e...` then merged Librarian through PR #169 as `d7a7e003...`; hosted
 head `da1127f8...` merged Analyst through PR #170 as `52c45d22...`; hosted head
-`53ee0152...` merged Coordinator through PR #171 as `67d836da...`. Student,
-Curator, Librarian, Analyst, and Coordinator product exposure, warm simultaneous
-two-route residency, Auditor hosted review/merge and product exposure,
-sustained multi-owner capacity, and production promotion remain open.
+`53ee0152...` merged Coordinator through PR #171 as `67d836da...`; hosted head
+`937a4129...` merged Auditor through PR #172 as `1b255e9a...`. Student, Curator,
+Librarian, Analyst, Coordinator, and Auditor product exposure, warm simultaneous
+two-route residency, sustained multi-owner capacity, and production promotion
+remain open.
 One Spark cannot retain the
 unchanged `0.40` Qwen and `0.70` Gemma
 profiles simultaneously; a second owned GPU node/private route remains

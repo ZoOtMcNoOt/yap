@@ -262,8 +262,10 @@ PR #170 merged Analyst as `52c45d22...`. Exact `fed729b3...` then privately
 qualified Coordinator's selection-only source-cited proposal-bundle internal
 core. Hosted head `53ee0152...` passed all 12 checks, and PR #171 merged
 Coordinator as `67d836da...`. Exact `08b06f6d...` then privately qualified
-Auditor's idle-only source-cited review-findings internal core. Auditor hosted
-review/merge and product exposure remain open. Proven selected-route
+Auditor's idle-only source-cited review-findings internal core. Hosted head
+`937a4129...` passed all 12 checks, and PR #172 merged Auditor as
+`1b255e9a...`, completing the eight bounded internal role cores. Non-Scribe
+product exposure remains open. Proven selected-route
 limits of four rapid/eight complex are not simultaneous-model,
 sustained-capacity, or production-SLO evidence. One Spark cannot retain both
 unchanged full profiles simultaneously, so warm two-route promotion requires a

@@ -12,10 +12,10 @@ Phase 9. Earlier phase and checkpoint acceptance is evidence, not an exemption.
 The Phase 9 delta receives deeper inspection, but it is not the coverage limit.
 
 The current read-back below extends the navigation and cohesion inventory
-through the Coordinator internal core merged by PR #171 as `67d836da...` and
-the privately qualified Auditor candidate at exact executable `08b06f6d...`.
-The numerical inventory is recomputed from this Auditor documentation successor
-tree;
+through all eight bounded internal role cores. Exact executable `08b06f6d...`
+privately qualified Auditor; hosted head `937a4129...` passed all 12 checks and
+PR #172 merged it as `1b255e9a...`. The numerical inventory is recomputed from
+this post-Auditor-merge documentation successor tree;
 this document does not claim product exposure, sustained capacity, simultaneous
 full-profile residency, production SLOs, deployment, or production promotion.
 
@@ -76,7 +76,7 @@ out above rather than treated as refactor candidates.
 | Verification tooling | 47 | 12,312 |
 | Infrastructure | 2 | 1,131 |
 | Hosted workflows | 4 | 1,372 |
-| Documentation | 104 | 33,543 |
+| Documentation | 104 | 33,563 |
 | Root/configuration/provenance text | 49 | 19,801 |
 
 At the merged Phase 9 inventory anchor, the reproducible threshold screen found
@@ -167,7 +167,7 @@ The previously recorded Phase 10 Student candidate snapshot remains historical:
 527 in-scope surfaces at or above 250 physical lines, comprising 287 at or above
 350 and 240 from 250 through 349. It is not recomputed against this successor.
 
-At the current Phase 10 Auditor documentation-successor tree, the inventory contains 593
+At the current post-Auditor-merge documentation-successor tree, the inventory contains 593
 in-scope tracked source, text, policy, and provenance surfaces at or above 250
 physical lines: 339 at or above 350 and 254 from 250 through 349. The completed
 checkpoint reviews remain the authority for their historical exact heads. This

@@ -16,9 +16,9 @@ Hosted-green head `593e627b...` passed all 12 checks, and PR #168 merged it as
 matching batch-invariant route lock. Hosted head `da1127f8...` merged Analyst
 through PR #170 as `52c45d22...`. Exact `fed729b3...` privately qualified
 Coordinator; hosted head `53ee0152...` passed all 12 checks and PR #171 merged
-it as `67d836da...`. Exact `08b06f6d...` privately qualified Auditor.
-Student/Curator/Librarian/Analyst/Coordinator product exposure, Auditor hosted
-review/merge and product exposure,
+it as `67d836da...`. Exact `08b06f6d...` privately qualified Auditor; hosted
+head `937a4129...` passed all 12 checks and PR #172 merged it as `1b255e9a...`.
+Student/Curator/Librarian/Analyst/Coordinator/Auditor product exposure,
 simultaneous full-profile capacity, and production promotion remain open.
 
 **Base:** merged post-Phase-9 maintainability closure

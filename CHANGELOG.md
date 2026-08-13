@@ -3,7 +3,7 @@
 This changelog records product/architecture milestones. Exact test counts and
 immutable evidence belong in phase/checkpoint evidence records.
 
-## 2026-08-13 — Phase 10 Auditor qualified candidate
+## 2026-08-13 — Phase 10 Auditor merged internal core
 
 - Exact executable candidate `08b06f6d...` privately qualified the internal
   Auditor idle-only, source-cited review-findings core. Three synchronized
@@ -15,10 +15,12 @@ immutable evidence belong in phase/checkpoint evidence records.
   eight owners and queued the ninth. Exact authority, audit cardinality, two
   PostgreSQL restart/read-backs, one lease per invocation, cancellation, and
   teardown passed.
-- Auditor remains unmerged and has no HTTP, native, renderer, UI, product,
-  scheduled-autonomy, action, proposal, or knowledge-mutation surface. Same-
-  warm-process evidence is not simultaneous residency, sustained capacity, a
-  production SLO, or deployment evidence.
+- Hosted head `937a4129...` passed all 12 required checks, and PR #172 merged
+  Auditor as `1b255e9a...`, completing the eight bounded internal role cores.
+  Auditor still has no HTTP, native, renderer, UI, product, scheduled-autonomy,
+  action, proposal, or knowledge-mutation surface. Same-warm-process evidence
+  is not simultaneous residency, sustained capacity, a production SLO, or
+  deployment evidence.
 
 ## 2026-08-13 — Phase 10 Coordinator merged internal core
 

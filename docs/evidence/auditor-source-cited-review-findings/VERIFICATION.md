@@ -2,8 +2,11 @@
 
 **Status:** Exact executable candidate
 `08b06f6db45e233d92035788dabdee7157a83d2f` privately qualified the
-internal Auditor core. Hosted review, merge, HTTP/native/renderer/UI exposure,
-production operation, and deployment remain pending.
+internal Auditor core. Hosted head
+`937a4129e13d70e68c6d8151cf9643512b6b6e16` passed all 12 required
+checks, and PR #172 merged the core as
+`1b255e9aafdc88865425f7455be92cfa27cc265e`. HTTP/native/renderer/UI
+exposure, production operation, and deployment remain pending.
 
 ## Exact qualified candidate
 
@@ -86,9 +89,8 @@ outside Git.
 
 ## Deliberate limits
 
-Auditor is a qualified internal candidate, not a merged or product-exposed
-workflow. The merged roster contains Scribe, Archivist, Student, Curator,
-Librarian, Analyst, and Coordinator. Auditor accepts only an explicit
+Auditor is a qualified merged internal core, not a product-exposed workflow.
+The merged roster contains all eight bounded roles. Auditor accepts only an explicit
 authenticated internal request, runs only under the idle-only admission class,
 and returns source-cited potential-contradiction findings for review. It writes
 no proposal, source, canonical knowledge, task, or action and performs no

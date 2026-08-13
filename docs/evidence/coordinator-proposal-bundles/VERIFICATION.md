@@ -93,8 +93,7 @@ terminal acknowledgement.
 
 Coordinator is a qualified merged internal core, not a product-exposed
 workflow. The merged roster contains Scribe, Archivist, Student, Curator,
-Librarian, Analyst, and Coordinator. Auditor is a privately qualified unmerged
-internal candidate.
+Librarian, Analyst, Coordinator, and Auditor.
 Coordinator accepts an explicit authenticated request, considers only the
 caller's current open Curator proposals, and returns a source-cited selection
 bundle. It writes no plan, task, proposal, source, or active knowledge and

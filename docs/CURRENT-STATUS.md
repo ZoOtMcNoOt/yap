@@ -211,7 +211,7 @@ Hosted head `53ee0152...` passed all 12 required checks, and PR #171 merged the
 core as `67d836da...`. Coordinator still has no HTTP, native, renderer, UI, or
 product surface.
 
-Auditor is a privately qualified internal candidate at exact executable head
+Auditor privately qualified at exact executable head
 `08b06f6db45e233d92035788dabdee7157a83d2f`. Its
 `auditor-source-cited-review-findings-qualified` public-safe evidence SHA-256 is
 `2c1dbc0552233c377f0eff35bcfda3a5d761dbb548d06e638426cd232bddc376`.
@@ -227,10 +227,12 @@ backs, exact content-free audits, zero proposal writes, and complete teardown
 passed. Auditor writes no proposal, source, active knowledge, task, or action
 and performs no autonomous mutation. See the
 [Auditor evidence](evidence/auditor-source-cited-review-findings/VERIFICATION.md).
+Hosted head `937a4129e13d70e68c6d8151cf9643512b6b6e16` passed all 12
+required checks, and PR #172 merged the internal core as
+`1b255e9aafdc88865425f7455be92cfa27cc265e`.
 
-The roster is seven merged roles plus Auditor as the eighth qualified
-candidate. Auditor hosted review/merge and every non-Scribe role product
-surface remain pending.
+All eight bounded role cores are merged. Every non-Scribe role product surface
+remains pending.
 
 These results do not prove simultaneous Qwen/Gemma residency, sustained
 capacity/fairness, a production SLO, or deployment. The unchanged `0.40` and
@@ -511,7 +513,7 @@ rewrite that target; this status document distinguishes what currently executes.
 | Meeting-transcription maintainability checkpoint | Merged and closed | The [ownership review](plans/completed/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md) keeps server result adapters independent from worker admission, accepts only current persisted contracts, excludes evaluation code from the request-time image, linearizes native publication/cancellation, and bounds selected History speaker detail. Historical candidate `fb0985e...` passed before documentation successor `e22368fc...` exposed `GHSA-mwp4-54f8-5fhr`. Patched candidate `393710999b53a4bd1b00639e30c0fec88b152530` then passed the canonical build, receipt-bound image preflight, real History/cancellation lifecycle with teardown, single 18-child matrix, receipt validation, and required CI/CodeQL jobs. PR #143 merged as `8fb511ad2fd7217a87e95ddba31d74dfa474fac2`. This did not change model-quality, capacity, or production-promotion qualification. Private evidence remains outside Git and hosted artifacts. |
 | Phase 9 | Merged and gated | Pinned OKF compilation, immutable terminology snapshots, Postgres/pgvector generation and permission-safe retrieval, governed agents/RAG/MCP, explicit no-fallback routing, and private Qwen rapid/Gemma complex workload qualification execute. Exact candidate `a4f34678...` passed the complete Phase 9 gate with real Postgres restart/recovery and exact teardown. Exact hosted-green head `fa26caaf...` merged through PR #152 as `ae81ff06...`. Production service integration and Phase 10 capacity remain unproved. |
 | Post-Phase-9 maintainability checkpoint | Merged and closed | The [governed-knowledge ownership and maintainability review](plans/completed/2026-08-10-governed-knowledge-ownership-and-maintainability-review.md) resolved its accepted public findings at reviewed executable head `a76ed9b0...`, including bounded final structural decoding without tool replay, one exact cited-proposal fixture contract, candidate-specific Qwen 26.07+XGrammar 0.2.1 / Gemma 26.06 runtimes, and separate common/proposal rapid-route qualification bounds. The fresh exact-head route qualification returned `required-workload-routes-qualified`; schema-3 public lock commit `2cf1e92c...` passed semantic admission; exact aggregate candidate `22c3f369...` passed the checkpoint gate. Final hosted head `84c22ec9...` passed every required CI and CodeQL lane and merged through PR #153 as `ca151b1b...`. No Phase 10 behavior was added. |
-| Phase 10 | Seven role cores merged; Auditor qualified candidate | PRs #164/#165/#166/#168/#169/#170/#171 merged Scribe, Archivist, Student, Curator, Librarian, Analyst, and Coordinator internal cores. Exact `08b06f6d...` privately qualified the Auditor idle-only review-findings core with 29/29 exact terminals, one lease per invocation, source/current-authority binding, active/queued non-idle blocking and resumption, and exact teardown. Auditor hosted review/merge and every non-Scribe role product surface remain pending. Simultaneous full-profile residency, sustained capacity/SLOs, production operations, and explicit IT/security handoffs remain open. |
+| Phase 10 | Eight bounded role cores merged | PRs #164/#165/#166/#168/#169/#170/#171/#172 merged Scribe, Archivist, Student, Curator, Librarian, Analyst, Coordinator, and Auditor internal cores. Exact `08b06f6d...` privately qualified Auditor with 29/29 exact terminals, one lease per invocation, source/current-authority binding, active/queued non-idle blocking and resumption, and exact teardown; hosted head `937a4129...` passed all 12 required checks and merged as `1b255e9a...`. Every non-Scribe role product surface, simultaneous full-profile residency, sustained capacity/SLOs, production operations, and explicit IT/security handoffs remain open. |
 
 Admitted checkpoint head `4ab13497b19ef74ff54e3bc96b9718058f3b1e11`
 is failed historical evidence and cannot be retried or relabeled. Its exact
@@ -1295,13 +1297,12 @@ The concise
 is the ordered closeout checklist: validate the complete workflow before broad
 provider optimization or non-blocking architecture work.
 
-1. Preserve the seven merged internal role boundaries without claiming product
+1. Preserve the eight merged internal role boundaries without claiming product
    surfaces, knowledge activation, sustained capacity, simultaneous residency,
    or production promotion.
-2. Obtain hosted review and merge for the qualified internal Auditor slice;
-   no Auditor product surface, scheduled autonomy, or mutation authority exists.
-   Do not substitute an eight-prompt facade for its source, permission,
-   persistence, idle-only admission, and failure owners.
+2. Keep every non-Scribe role internal until a separately reviewed product
+   trigger, endpoint, and client surface exists. Auditor has no scheduled
+   autonomy or mutation authority.
 3. Provision a second full-strength owned GPU node and IT-controlled private
    routing if the single Spark cannot keep the unchanged Qwen and Gemma profiles
    warm together. Do not reduce either qualified profile or swap models per
