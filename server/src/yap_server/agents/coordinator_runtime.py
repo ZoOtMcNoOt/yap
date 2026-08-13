@@ -26,7 +26,7 @@ from .coordinator_result_audit import (
     CoordinatorRuntimeAuditIdentity,
     PostgresCoordinatorResultAuditor,
 )
-from .coordinator_service import CoordinatorService
+from .coordinator_service import CoordinatorAdmission, CoordinatorService
 
 
 COORDINATOR_RUNTIME = "YAP_COORDINATOR_RUNTIME"
@@ -63,6 +63,7 @@ def build_coordinator_runtime(
     environ: Mapping[str, str],
     *,
     authenticated_team_mode: bool,
+    admission: CoordinatorAdmission | None = None,
 ) -> CoordinatorRuntime | None:
     mode = environ.get(COORDINATOR_RUNTIME)
     configured_paths = [name for name in _CONFIGURATION_PATHS if name in environ]
@@ -91,7 +92,11 @@ def build_coordinator_runtime(
     knowledge_dsn_path = _absolute_path(environ, COORDINATOR_KNOWLEDGE_DSN_FILE)
     profile = load_coordinator_service_profile(profile_path, candidate_lock_path)
 
-    admission = AgentAdmissionClient(UnixAgentAdmissionTransport(socket_path))
+    resolved_admission = admission
+    if resolved_admission is None:
+        resolved_admission = AgentAdmissionClient(
+            UnixAgentAdmissionTransport(socket_path)
+        )
     transport = BoundedVllmJsonClient(
         endpoint=profile.endpoint,
         timeout_seconds=_MODEL_TIMEOUT_SECONDS,
@@ -110,7 +115,7 @@ def build_coordinator_runtime(
         ),
     )
     service = CoordinatorService(
-        admission=admission,
+        admission=resolved_admission,
         evidence_reader=PostgresCoordinatorEvidenceReader(connection_factory),
         model=CoordinatorEvidenceModel(
             transport=transport,

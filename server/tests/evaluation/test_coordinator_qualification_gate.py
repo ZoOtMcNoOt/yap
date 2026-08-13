@@ -33,8 +33,11 @@ class CoordinatorQualificationGateTests(unittest.TestCase):
             "server/src/yap_server/agents/coordinator_runtime.py",
             "server/src/yap_server/agents/coordinator_service.py",
             "server/src/yap_server/agents/curator.py",
+            "server/src/yap_server/agents/curator_model.py",
             "server/src/yap_server/agents/curator_publisher.py",
             "server/src/yap_server/agents/curator_result_audit.py",
+            "server/src/yap_server/agents/curator_runtime.py",
+            "server/src/yap_server/agents/curator_service.py",
             "server/src/yap_server/agents/librarian.py",
             "server/src/yap_server/agents/student.py",
             "server/src/yap_server/agents/student_model.py",
@@ -46,21 +49,52 @@ class CoordinatorQualificationGateTests(unittest.TestCase):
             "server/src/yap_server/knowledge/knowledge_agent_authority.py",
             "server/src/yap_server/knowledge/knowledge_proposals.py",
             "server/src/yap_server/knowledge/postgres_relationship_retrieval.py",
+            "server/src/yap_server/jobs/contract_values.py",
+            "server/src/yap_server/pools/agent_model_snapshot.py",
+            "server/src/yap_server/auth/__init__.py",
+            "server/src/yap_server/evaluation/transcript_equivalence.py",
+            "server/src/yap_server/knowledge/reviewed_capture_ledger.py",
+            "server/src/yap_server/language_tags.py",
+            "server/src/yap_server/pools/batch_contract.py",
+            "server/src/yap_server/transcript_text.py",
             "server/tests/agents/test_coordinator.py",
             "server/tests/agents/test_coordinator_postgres.py",
             "server/tests/agents/test_coordinator_result_audit.py",
             "server/tests/agents/test_coordinator_runtime.py",
             "server/tests/agents/test_coordinator_service.py",
             "server/tests/agents/test_curator_postgres.py",
+            "server/tests/agents/test_curator_runtime.py",
             "server/tests/agents/test_librarian.py",
             "server/tests/evaluation/test_coordinator_qualification.py",
             "server/tests/evaluation/test_coordinator_qualification_gate.py",
             "server/tests/evaluation/test_librarian_qualification.py",
             "server/tests/knowledge/test_knowledge_proposals.py",
             "server/orchestrator/src/agent_admission.rs",
+            "server/orchestrator/src/agent_work.rs",
             "server/orchestrator/src/bin/yap-agent-admission-broker.rs",
+            "server/orchestrator/src/config.rs",
+            "server/orchestrator/src/endpoint.rs",
+            "server/orchestrator/src/error.rs",
+            "server/orchestrator/src/lifecycle.rs",
+            "server/orchestrator/src/readiness.rs",
+            "server/orchestrator/src/state_snapshot.rs",
+            "server/orchestrator/src/supervisor.rs",
+            "server/orchestrator/tests/agent_work_contract.rs",
+            "server/orchestrator/tests/lifecycle_contract.rs",
         }
         self.assertTrue(required.issubset(relative))
+        self.assertTrue(
+            {
+                path.relative_to(REPOSITORY_ROOT).as_posix()
+                for path in (REPOSITORY_ROOT / "server/src/yap_server").rglob("*.py")
+            }.issubset(relative)
+        )
+        self.assertTrue(
+            {
+                path.relative_to(REPOSITORY_ROOT).as_posix()
+                for path in (REPOSITORY_ROOT / "server/orchestrator/src").rglob("*.rs")
+            }.issubset(relative)
+        )
 
     def test_full_complex_profile_cannot_be_throttled(self) -> None:
         exact = (
@@ -296,6 +330,190 @@ class CoordinatorQualificationGateTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "evidence is incomplete"):
             evidence.require_complete(expected_synchronized_service_calls=2)
 
+    def test_observed_admission_requires_one_exact_lease_per_invocation(self) -> None:
+        class Admission:
+            def __init__(self) -> None:
+                self.next_id = 0
+                self.outcomes: dict[str, str] = {}
+
+            def new_ticket(self):
+                self.next_id += 1
+                return gate.AgentAdmissionTicket(
+                    f"coordinator-request-{self.next_id}",
+                    f"{self.next_id:064x}",
+                )
+
+            def submit(self, ticket, **kwargs):
+                del kwargs
+                self.outcomes[ticket.request_id] = "admitted"
+                return gate.AgentAdmission(
+                    ticket,
+                    "admitted",
+                    route=gate.ExecutionRoute.COMPLEX_ORCHESTRATION,
+                    provider_generation=7,
+                    queue_duration_ms=0,
+                )
+
+            def complete(self, ticket):
+                self.outcomes[ticket.request_id] = "completed"
+                return gate.AgentAdmission(ticket, "completed")
+
+            def cancel(self, ticket):
+                self.outcomes[ticket.request_id] = "cancellation-requested"
+                return gate.AgentAdmission(ticket, "cancellation-requested")
+
+            def acknowledge_cancellation(self, ticket):
+                self.outcomes[ticket.request_id] = "cancelled"
+                return gate.AgentAdmission(ticket, "cancelled")
+
+            def status(self, ticket):
+                return gate.AgentAdmission(ticket, self.outcomes[ticket.request_id])
+
+        delegate = Admission()
+        observed = gate._ObservedCoordinatorAdmission(delegate)
+        invocation_modes: dict[str, str] = {}
+        work = gate.AgentWorkSpec(
+            role=gate.AgentRole.COORDINATOR,
+            purpose=gate.AgentPurpose.CONVERSATION_COORDINATE,
+            route=gate.ExecutionRoute.COMPLEX_ORCHESTRATION,
+            scheduling_class=gate.SchedulingClass.BACKGROUND_LLM,
+        )
+        for index in range(28):
+            ticket = observed.new_ticket()
+            observed.submit(
+                ticket,
+                principal=mock.sentinel.principal,
+                work=work,
+                source_sha256="1" * 64,
+                remaining_deadline_ms=60_000,
+            )
+            if index < 26:
+                observed.complete(ticket)
+                invocation_modes[ticket.request_id] = (
+                    "normal"
+                    if index < 24
+                    else ("stale-generation" if index == 24 else "invalid-output")
+                )
+            else:
+                observed.cancel(ticket)
+                observed.acknowledge_cancellation(ticket)
+                invocation_modes[ticket.request_id] = (
+                    "client-cancelled" if index == 26 else "deadline"
+                )
+        pre_cancelled = observed.new_ticket()
+        invocation_modes[pre_cancelled.request_id] = "pre-cancelled"
+
+        evidence = observed.require_exact_lifecycle(
+            invocation_modes=invocation_modes,
+        )
+        self.assertEqual(
+            (
+                evidence["ticketCount"],
+                evidence["submittedTicketCount"],
+                evidence["completedTicketCount"],
+                evidence["cancelledTicketCount"],
+                evidence["preCancelledUnsubmittedTicketCount"],
+            ),
+            (29, 28, 26, 2, 1),
+        )
+        extra = observed.new_ticket()
+        observed.submit(
+            extra,
+            principal=mock.sentinel.principal,
+            work=work,
+            source_sha256="1" * 64,
+            remaining_deadline_ms=60_000,
+        )
+        observed.complete(extra)
+        with self.assertRaisesRegex(RuntimeError, "lifecycle evidence differs"):
+            observed.require_exact_lifecycle(
+                invocation_modes={**invocation_modes, extra.request_id: "normal"},
+            )
+
+    def test_curator_seed_publication_uses_the_production_runtime(self) -> None:
+        corpus = gate.load_coordinator_qualification_corpus(
+            REPOSITORY_ROOT / "server/coordinator-workload-fixtures.json"
+        )
+        rendered = gate.render_coordinator_qualification_generations(
+            corpus,
+            tenant_id="coordinator-q-1234567890abcdef",
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            compiled = {}
+            for generation in rendered:
+                bundle = root / generation.generation_id
+                bundle.mkdir()
+                gate._write_rendered_generation(bundle, generation)
+                compiled[generation.generation_id] = gate.compile_okf_bundle(
+                    bundle,
+                    tenant_id=generation.tenant_id,
+                    source_revision=generation.source_revision,
+                )
+            compiled_corpus = gate.bind_coordinator_compiled_corpus(
+                corpus,
+                rendered,
+                compiled,
+            )
+            seeds = {
+                seed.request.submission_id: seed
+                for seed in compiled_corpus.proposal_seeds_by_key.values()
+            }
+            observed: list[tuple[str, str, bool]] = []
+
+            def propose(request, *, principal, cancellation):
+                seed = seeds[request.submission_id]
+                observed.append(
+                    (request.submission_id, principal.subject_id, cancellation.is_set())
+                )
+                return gate.CuratorJobView(
+                    request_id=f"curator-runtime-request-{len(observed)}",
+                    submission_id=request.submission_id,
+                    status="proposed",
+                    generation_sha256=seed.evidence.generation_sha256,
+                    evidence_sha256=seed.evidence.evidence_sha256,
+                    proposal_id=seed.proposal_id,
+                )
+
+            runtime = mock.Mock(
+                service=mock.Mock(propose=mock.Mock(side_effect=propose))
+            )
+            dsn_path = (root / "knowledge.dsn").resolve()
+            socket_path = (root / "admission.sock").resolve()
+            profile_path = (root / "profile.json").resolve()
+            lock_path = (root / "candidate.lock.json").resolve()
+            with mock.patch.object(
+                gate,
+                "build_curator_runtime",
+                return_value=runtime,
+            ) as build_runtime:
+                request_ids = gate._publish_curator_proposals(
+                    dsn_path,
+                    compiled_corpus,
+                    admission_socket_path=socket_path,
+                    profile_path=profile_path,
+                    candidate_lock_path=lock_path,
+                )
+
+        self.assertEqual(set(request_ids), set(compiled_corpus.proposal_seeds_by_key))
+        self.assertEqual(len(set(request_ids.values())), 8)
+        self.assertEqual(len(observed), 8)
+        self.assertTrue(all(not cancelled for _, _, cancelled in observed))
+        self.assertEqual(
+            {owner for _, owner, _ in observed},
+            {seed.owner_id for seed in compiled_corpus.proposal_seeds_by_key.values()},
+        )
+        build_runtime.assert_called_once_with(
+            {
+                gate.CURATOR_RUNTIME: "warm_gemma",
+                gate.CURATOR_ADMISSION_SOCKET: str(socket_path),
+                gate.CURATOR_PROFILE: str(profile_path),
+                gate.CURATOR_CANDIDATE_LOCK: str(lock_path),
+                gate.CURATOR_KNOWLEDGE_DSN_FILE: str(dsn_path),
+            },
+            authenticated_team_mode=True,
+        )
+
     def test_stale_generation_reader_fails_closed_and_restores_successor(self) -> None:
         evidence = gate._ControlledModeEvidence()
         delegate = mock.Mock()
@@ -410,6 +628,16 @@ class CoordinatorQualificationGateTests(unittest.TestCase):
             ),
         )
         runtime = mock.Mock(maximum_output_tokens=512, maximum_input_tokens=7_680)
+        coordinator_admission = mock.Mock()
+        coordinator_admission.require_exact_lifecycle.return_value = {
+            "ticketCount": 29,
+            "submittedTicketCount": 28,
+            "completedTicketCount": 26,
+            "cancelledTicketCount": 2,
+            "preCancelledUnsubmittedTicketCount": 1,
+            "singleLeasePerInvocationExact": True,
+            "allSubmittedTicketsTerminal": True,
+        }
         controlled = mock.Mock(synchronized_service_calls=24)
         database_state = {
             "successorGenerationActive": True,
@@ -511,7 +739,11 @@ class CoordinatorQualificationGateTests(unittest.TestCase):
                     "bind_coordinator_curator_lineage",
                     return_value=bound,
                 ),
-                mock.patch.object(gate, "_build_runtime", return_value=runtime),
+                mock.patch.object(
+                    gate,
+                    "_build_runtime",
+                    return_value=(runtime, coordinator_admission),
+                ),
                 mock.patch.object(
                     gate,
                     "_build_coordinator_executor",
@@ -557,6 +789,9 @@ class CoordinatorQualificationGateTests(unittest.TestCase):
             controlled.require_complete.assert_called_once_with(
                 expected_synchronized_service_calls=24
             )
+            coordinator_admission.require_exact_lifecycle.assert_called_once_with(
+                invocation_modes={},
+            )
             self.assertEqual(events.count("provider-observed"), 2)
             self.assertEqual(events.count("broker-observed"), 2)
             self.assertEqual(
@@ -565,6 +800,11 @@ class CoordinatorQualificationGateTests(unittest.TestCase):
             )
             self.assertEqual(receipt["workload"]["brokerActiveCapacity"], 8)
             self.assertTrue(receipt["workload"]["ninthOwnerQueued"])
+            self.assertTrue(
+                receipt["workload"]["coordinatorAdmission"][
+                    "singleLeasePerInvocationExact"
+                ]
+            )
             self.assertTrue(receipt["knowledge"]["resultRestartReadBackObserved"])
             serialized = str(receipt)
             self.assertNotIn("private-restarted", serialized)

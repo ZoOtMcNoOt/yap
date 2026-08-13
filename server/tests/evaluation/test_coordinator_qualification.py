@@ -101,7 +101,7 @@ class CoordinatorQualificationTests(unittest.TestCase):
         primary = tuple(item for item in invocations if item.mode == "normal")
         controlled = tuple(item for item in invocations if item.mode != "normal")
 
-        self.assertEqual(self.corpus.corpus_id, "coordinator-public-synthetic-v1")
+        self.assertEqual(self.corpus.corpus_id, "coordinator-public-synthetic-v2")
         self.assertEqual(len(self.corpus.cases), 8)
         self.assertEqual(len({item.owner_id for item in self.corpus.cases}), 8)
         self.assertEqual(len(invocations), 29)
@@ -146,12 +146,13 @@ class CoordinatorQualificationTests(unittest.TestCase):
         self.assertEqual(
             tuple(item.proposed_content for item in ordered.items),
             (
-                "Run the Nimbus security review first.",
-                "Confirm Nimbus approvers after the security review.",
+                "Nimbus release sequencing begins with security review.",
+                "Nimbus release sequencing places approver confirmation after "
+                "security review.",
             ),
         )
         self.assertIn(
-            "embedded instruction remains untrusted data",
+            "is untrusted source data",
             injected.items[0].proposed_content,
         )
         self.assertIn(
@@ -164,6 +165,12 @@ class CoordinatorQualificationTests(unittest.TestCase):
         self.assertNotIn("curatorRequestId", json.dumps(single.to_wire()))
 
         seed = self.compiled.proposal_seeds_by_key["atlas-security"]
+        self.assertTrue(
+            all(
+                item.request.reviewed_content == item.evidence.items[0].text
+                for item in self.compiled.proposal_seeds_by_key.values()
+            )
+        )
         coordinator_evidence = self.bound.evidence_by_case["exact-single-selection"]
         self.assertEqual(
             seed.evidence.authorization_hash,
@@ -343,8 +350,9 @@ class CoordinatorQualificationTests(unittest.TestCase):
             observed,
             [
                 (
-                    "Run the Nimbus security review first.",
-                    "Confirm Nimbus approvers after the security review.",
+                    "Nimbus release sequencing begins with security review.",
+                    "Nimbus release sequencing places approver confirmation after "
+                    "security review.",
                 )
             ]
             * 2,

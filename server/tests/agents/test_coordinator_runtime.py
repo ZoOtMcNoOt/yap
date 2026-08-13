@@ -187,6 +187,29 @@ class CoordinatorRuntimeTests(unittest.TestCase):
             result_auditor=result_auditor,
         )
 
+    def test_runtime_accepts_one_explicit_observed_admission_owner(self) -> None:
+        socket_path = (Path(tempfile.gettempdir()) / "agent-admission.sock").resolve()
+        admission = object()
+        service = object()
+        with (
+            patch(
+                "yap_server.agents.coordinator_runtime.AgentAdmissionClient"
+            ) as admission_constructor,
+            patch(
+                "yap_server.agents.coordinator_runtime.CoordinatorService",
+                return_value=service,
+            ) as service_constructor,
+        ):
+            runtime = build_coordinator_runtime(
+                self._environment(socket_path),
+                authenticated_team_mode=True,
+                admission=admission,
+            )
+
+        self.assertIsNotNone(runtime)
+        admission_constructor.assert_not_called()
+        self.assertIs(service_constructor.call_args.kwargs["admission"], admission)
+
     def test_mode_paths_and_profile_bytes_fail_closed(self) -> None:
         socket_path = (Path(tempfile.gettempdir()) / "agent-admission.sock").resolve()
         environment = self._environment(socket_path)

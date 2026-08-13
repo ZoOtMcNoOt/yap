@@ -14,13 +14,14 @@ import secrets
 import subprocess
 import tempfile
 import threading
-import time
 from typing import Callable, Mapping, Sequence
 
 import psycopg
 
 from yap_server.agents.admission_client import AgentAdmissionClient
 from yap_server.agents.admission_protocol import (
+    AgentAdmission,
+    AgentAdmissionTicket,
     AgentPurpose,
     AgentRole,
     AgentWorkSpec,
@@ -61,12 +62,18 @@ from yap_server.agents.coordinator_service import (
     CoordinatorService,
 )
 from yap_server.agents.curator import curator_request_sha256, curator_work_sha256
-from yap_server.agents.curator_publisher import PostgresCuratorPublisher
 from yap_server.agents.curator_result_audit import (
-    CuratorRuntimeAuditIdentity,
-    PostgresCuratorResultAuditor,
     install_curator_result_audit_schema,
 )
+from yap_server.agents.curator_runtime import (
+    CURATOR_ADMISSION_SOCKET,
+    CURATOR_CANDIDATE_LOCK,
+    CURATOR_KNOWLEDGE_DSN_FILE,
+    CURATOR_PROFILE,
+    CURATOR_RUNTIME,
+    build_curator_runtime,
+)
+from yap_server.agents.curator_service import CuratorJobView
 from yap_server.auth import AuthenticatedPrincipal
 from yap_server.evaluation.agent_admission_broker_observation import (
     build_checked_admission_broker,
@@ -192,6 +199,181 @@ class _ControlledModeEvidence:
             raise RuntimeError("Coordinator controlled-mode evidence is incomplete")
 
 
+@dataclass(frozen=True, slots=True)
+class _AdmissionExchange:
+    command: str
+    request_id: str
+    outcome: str
+    work: AgentWorkSpec | None = None
+
+
+class _ObservedCoordinatorAdmission:
+    """Delegate to the production client while recording Coordinator lease use."""
+
+    def __init__(self, delegate: AgentAdmissionClient) -> None:
+        self._delegate = delegate
+        self._lock = threading.Lock()
+        self._tickets: list[AgentAdmissionTicket] = []
+        self._exchanges: list[_AdmissionExchange] = []
+
+    def new_ticket(self) -> AgentAdmissionTicket:
+        ticket = self._delegate.new_ticket()
+        with self._lock:
+            self._tickets.append(ticket)
+        return ticket
+
+    def submit(
+        self,
+        ticket: AgentAdmissionTicket,
+        *,
+        principal: AuthenticatedPrincipal,
+        work: AgentWorkSpec,
+        source_sha256: str,
+        remaining_deadline_ms: int,
+    ) -> AgentAdmission:
+        result = self._delegate.submit(
+            ticket,
+            principal=principal,
+            work=work,
+            source_sha256=source_sha256,
+            remaining_deadline_ms=remaining_deadline_ms,
+        )
+        self._record("submit", ticket, result, work=work)
+        return result
+
+    def status(self, ticket: AgentAdmissionTicket) -> AgentAdmission:
+        result = self._delegate.status(ticket)
+        self._record("status", ticket, result)
+        return result
+
+    def cancel(self, ticket: AgentAdmissionTicket) -> AgentAdmission:
+        result = self._delegate.cancel(ticket)
+        self._record("cancel", ticket, result)
+        return result
+
+    def complete(self, ticket: AgentAdmissionTicket) -> AgentAdmission:
+        result = self._delegate.complete(ticket)
+        self._record("complete", ticket, result)
+        return result
+
+    def acknowledge_cancellation(
+        self,
+        ticket: AgentAdmissionTicket,
+    ) -> AgentAdmission:
+        result = self._delegate.acknowledge_cancellation(ticket)
+        self._record("acknowledge-cancellation", ticket, result)
+        return result
+
+    def require_exact_lifecycle(
+        self,
+        *,
+        invocation_modes: Mapping[str, str],
+    ) -> dict[str, object]:
+        with self._lock:
+            tickets = tuple(self._tickets)
+            exchanges = tuple(self._exchanges)
+        ticket_by_id = {ticket.request_id: ticket for ticket in tickets}
+        submits = tuple(item for item in exchanges if item.command == "submit")
+        completes = tuple(item for item in exchanges if item.command == "complete")
+        cancels = tuple(item for item in exchanges if item.command == "cancel")
+        acknowledgements = tuple(
+            item for item in exchanges if item.command == "acknowledge-cancellation"
+        )
+        submitted_ids = {item.request_id for item in submits}
+        completed_ids = {item.request_id for item in completes}
+        cancelled_ids = {item.request_id for item in cancels}
+        acknowledged_ids = {item.request_id for item in acknowledgements}
+        terminal = {
+            request_id: self._delegate.status(ticket).outcome
+            for request_id, ticket in ticket_by_id.items()
+            if request_id in submitted_ids
+        }
+        expected_work = AgentWorkSpec(
+            role=AgentRole.COORDINATOR,
+            purpose=AgentPurpose.CONVERSATION_COORDINATE,
+            route=ExecutionRoute.COMPLEX_ORCHESTRATION,
+            scheduling_class=SchedulingClass.BACKGROUND_LLM,
+        )
+        expected_modes = {
+            "normal",
+            "pre-cancelled",
+            "client-cancelled",
+            "deadline",
+            "stale-generation",
+            "invalid-output",
+        }
+        expected_unsubmitted_ids = {
+            request_id
+            for request_id, mode in invocation_modes.items()
+            if mode == "pre-cancelled"
+        }
+        expected_cancelled_ids = {
+            request_id
+            for request_id, mode in invocation_modes.items()
+            if mode in {"client-cancelled", "deadline"}
+        }
+        expected_completed_ids = (
+            set(invocation_modes) - expected_unsubmitted_ids - expected_cancelled_ids
+        )
+        exact = (
+            len(invocation_modes) == 29
+            and set(invocation_modes.values()) <= expected_modes
+            and sum(mode == "normal" for mode in invocation_modes.values()) == 24
+            and all(
+                sum(mode == expected for mode in invocation_modes.values()) == 1
+                for expected in expected_modes - {"normal"}
+            )
+            and len(tickets) == 29
+            and len(ticket_by_id) == 29
+            and set(ticket_by_id) == set(invocation_modes)
+            and len(submits) == len(submitted_ids) == 28
+            and submitted_ids <= set(ticket_by_id)
+            and {item.request_id for item in exchanges}.issubset(set(ticket_by_id))
+            and all(
+                item.outcome == "admitted" and item.work == expected_work
+                for item in submits
+            )
+            and len(completes) == len(completed_ids) == 26
+            and all(item.outcome == "completed" for item in completes)
+            and len(cancels) == len(cancelled_ids) == 2
+            and all(item.outcome == "cancellation-requested" for item in cancels)
+            and len(acknowledgements) == len(acknowledged_ids) == 2
+            and all(item.outcome == "cancelled" for item in acknowledgements)
+            and completed_ids.isdisjoint(cancelled_ids)
+            and cancelled_ids == acknowledged_ids
+            and completed_ids | cancelled_ids == submitted_ids
+            and set(ticket_by_id) - submitted_ids == expected_unsubmitted_ids
+            and completed_ids == expected_completed_ids
+            and cancelled_ids == expected_cancelled_ids
+            and sum(outcome == "completed" for outcome in terminal.values()) == 26
+            and sum(outcome == "cancelled" for outcome in terminal.values()) == 2
+        )
+        if not exact:
+            raise RuntimeError("Coordinator admission lifecycle evidence differs")
+        return {
+            "ticketCount": len(tickets),
+            "submittedTicketCount": len(submits),
+            "completedTicketCount": len(completes),
+            "cancelledTicketCount": len(cancels),
+            "preCancelledUnsubmittedTicketCount": 1,
+            "singleLeasePerInvocationExact": True,
+            "allSubmittedTicketsTerminal": True,
+        }
+
+    def _record(
+        self,
+        command: str,
+        ticket: AgentAdmissionTicket,
+        result: AgentAdmission,
+        *,
+        work: AgentWorkSpec | None = None,
+    ) -> None:
+        with self._lock:
+            self._exchanges.append(
+                _AdmissionExchange(command, ticket.request_id, result.outcome, work)
+            )
+
+
 def run_coordinator_qualification_gate(
     *,
     repository_root: Path,
@@ -284,6 +466,7 @@ def run_coordinator_qualification_gate(
     initialized: _InitializedKnowledge | None = None
     bound: CoordinatorBoundQualificationCorpus | None = None
     result: CoordinatorQualificationResult | None = None
+    admission_evidence: dict[str, object] | None = None
     database_state: dict[str, bool] | None = None
     teardown: dict[str, bool] | None = None
     try:
@@ -311,15 +494,15 @@ def run_coordinator_qualification_gate(
             curator_request_ids = _publish_curator_proposals(
                 dsn_path,
                 initialized.corpus,
-                profile=profile,
-                provider_generation=provider_generation,
-                qualification_run_id=qualification_run_id,
+                admission_socket_path=admission_socket_path,
+                profile_path=profile_path,
+                candidate_lock_path=candidate_lock_path,
             )
             bound = bind_coordinator_curator_lineage(
                 initialized.corpus,
                 curator_request_ids,
             )
-            runtime = _build_runtime(
+            runtime, coordinator_admission = _build_runtime(
                 admission_socket_path=admission_socket_path,
                 profile_path=profile_path,
                 candidate_lock_path=candidate_lock_path,
@@ -327,7 +510,7 @@ def run_coordinator_qualification_gate(
             )
             executor, controlled = _build_coordinator_executor(
                 runtime=runtime,
-                admission_socket_path=admission_socket_path,
+                admission=coordinator_admission,
                 dsn_path=dsn_path,
                 profile=profile,
                 bound=bound,
@@ -343,6 +526,17 @@ def run_coordinator_qualification_gate(
                 expected_synchronized_service_calls=(
                     acceptance.synchronized_invocation_count
                 )
+            )
+            invocation_modes: dict[str, str] = {}
+            for observation in result.observations:
+                request_id = _required_request_id(observation.request_id)
+                if request_id in invocation_modes:
+                    raise RuntimeError(
+                        "Coordinator admission observation identity is duplicated"
+                    )
+                invocation_modes[request_id] = observation.invocation.mode
+            admission_evidence = coordinator_admission.require_exact_lifecycle(
+                invocation_modes=invocation_modes,
             )
             if (
                 observe_provider() != provider_before_workload
@@ -386,6 +580,7 @@ def run_coordinator_qualification_gate(
         initialized is None
         or bound is None
         or result is None
+        or admission_evidence is None
         or database_state is None
         or teardown is None
     ):
@@ -407,6 +602,7 @@ def run_coordinator_qualification_gate(
         capacity_evidence=capacity_evidence,
         broker_sha256=expected_broker_sha256,
         synchronized_service_calls=controlled.synchronized_service_calls,
+        admission_evidence=admission_evidence,
     )
     semantic["knowledge"] = {
         "freshTenantStateObserved": True,
@@ -585,47 +781,43 @@ def _publish_curator_proposals(
     dsn_path: Path,
     corpus: CoordinatorCompiledQualificationCorpus,
     *,
-    profile: AgentVllmServiceProfile,
-    provider_generation: int,
-    qualification_run_id: str,
+    admission_socket_path: Path,
+    profile_path: Path,
+    candidate_lock_path: Path,
 ) -> dict[str, str]:
-    connection_factory = private_postgres_connection_factory(dsn_path)
-    auditor = PostgresCuratorResultAuditor(
-        connection_factory,
-        CuratorRuntimeAuditIdentity(
-            candidate_id=profile.candidate_id,
-            model=profile.expected_model,
-            model_revision=profile.model_revision,
-            runtime_id=profile.runtime_id,
-            profile_sha256=profile.profile_sha256,
-            candidate_lock_sha256=profile.candidate_lock_sha256,
-        ),
+    runtime = build_curator_runtime(
+        {
+            CURATOR_RUNTIME: "warm_gemma",
+            CURATOR_ADMISSION_SOCKET: str(admission_socket_path),
+            CURATOR_PROFILE: str(profile_path),
+            CURATOR_CANDIDATE_LOCK: str(candidate_lock_path),
+            CURATOR_KNOWLEDGE_DSN_FILE: str(dsn_path),
+        },
+        authenticated_team_mode=True,
     )
-    publisher = PostgresCuratorPublisher(connection_factory, auditor)
+    if runtime is None:
+        raise RuntimeError("Coordinator Curator runtime is unavailable")
     request_ids: dict[str, str] = {}
-    for index, proposal in enumerate(corpus.corpus.proposals, start=1):
+    for proposal in corpus.corpus.proposals:
         seed = corpus.proposal_seeds_by_key[proposal.proposal_key]
-        request_id = f"{qualification_run_id}-curator-{index}"
-        started = time.monotonic()
-        published = publisher.publish(
+        published = runtime.service.propose(
+            seed.request,
             principal=_owner_principal(corpus.tenant_id, seed.owner_id),
-            request_id=request_id,
-            request=seed.request,
-            evidence=seed.evidence,
-            provider_generation=provider_generation,
-            started=started,
-            deadline=started + 30.0,
             cancellation=threading.Event(),
         )
         if (
-            published.proposal_id != seed.proposal_id
-            or published.generation_sha256 != seed.evidence.generation_sha256
-            or published.permission_hash != seed.proposal_permission_hash
-            or published.authorization_hash != seed.proposal_authorization_hash
+            not isinstance(published, CuratorJobView)
+            or _REQUEST_ID.fullmatch(published.request_id) is None
+            or published.submission_id != seed.request.submission_id
             or published.status != "proposed"
+            or published.generation_sha256 != seed.evidence.generation_sha256
+            or published.evidence_sha256 != seed.evidence.evidence_sha256
+            or published.proposal_id != seed.proposal_id
+            or published.reason is not None
+            or published.request_id in request_ids.values()
         ):
             raise RuntimeError("Coordinator Curator publication differs")
-        request_ids[proposal.proposal_key] = request_id
+        request_ids[proposal.proposal_key] = published.request_id
     if set(request_ids) != set(corpus.proposal_seeds_by_key):
         raise RuntimeError("Coordinator Curator publication is incomplete")
     return request_ids
@@ -637,7 +829,10 @@ def _build_runtime(
     profile_path: Path,
     candidate_lock_path: Path,
     dsn_path: Path,
-) -> CoordinatorRuntime:
+) -> tuple[CoordinatorRuntime, _ObservedCoordinatorAdmission]:
+    admission = _ObservedCoordinatorAdmission(
+        AgentAdmissionClient(UnixAgentAdmissionTransport(admission_socket_path))
+    )
     runtime = build_coordinator_runtime(
         {
             COORDINATOR_RUNTIME: "warm_gemma",
@@ -647,6 +842,7 @@ def _build_runtime(
             COORDINATOR_KNOWLEDGE_DSN_FILE: str(dsn_path),
         },
         authenticated_team_mode=True,
+        admission=admission,
     )
     if (
         runtime is None
@@ -654,13 +850,13 @@ def _build_runtime(
         or runtime.maximum_input_tokens != _MAXIMUM_INPUT_TOKENS
     ):
         raise RuntimeError("Coordinator qualification runtime is unavailable")
-    return runtime
+    return runtime, admission
 
 
 def _build_coordinator_executor(
     *,
     runtime: CoordinatorRuntime,
-    admission_socket_path: Path,
+    admission: _ObservedCoordinatorAdmission,
     dsn_path: Path,
     profile: AgentVllmServiceProfile,
     bound: CoordinatorBoundQualificationCorpus,
@@ -673,7 +869,6 @@ def _build_coordinator_executor(
     ):
         raise TypeError("Coordinator qualification corpus is invalid")
     connection_factory = private_postgres_connection_factory(dsn_path)
-    admission = AgentAdmissionClient(UnixAgentAdmissionTransport(admission_socket_path))
     evidence_reader = PostgresCoordinatorEvidenceReader(connection_factory)
     auditor = PostgresCoordinatorResultAuditor(
         connection_factory,
@@ -965,6 +1160,20 @@ def _verify_coordinator_database_state(
             (
                 seed.owner_id,
                 "curator",
+                "reviewed-source-evidence",
+                "succeeded",
+                len(seed.evidence.items),
+                seed.evidence.generation_sha256,
+                seed.evidence.permission_hash,
+                seed.evidence.authorization_hash,
+                True,
+            )
+            for seed in bound.proposal_seeds_by_key.values()
+        ],
+        *[
+            (
+                seed.owner_id,
+                "curator",
                 "propose",
                 "succeeded",
                 1,
@@ -1002,7 +1211,7 @@ def _verify_coordinator_database_state(
             len(proposals) == 8
             and len(curator_audits) == 8
             and len(coordinator_audits) == 29
-            and len(tool_audits) == 36
+            and len(tool_audits) == 44
         ),
     }
     if not all(checks.values()):
@@ -1256,6 +1465,7 @@ def _workload_receipt(
     capacity_evidence: Mapping[str, object],
     broker_sha256: str,
     synchronized_service_calls: int,
+    admission_evidence: Mapping[str, object],
 ) -> dict[str, object]:
     return {
         "route": "complex-orchestration",
@@ -1288,6 +1498,7 @@ def _workload_receipt(
         ],
         "synchronizedCoordinatorServiceCallCount": synchronized_service_calls,
         "synchronizedCoordinatorServiceCallsObserved": synchronized_service_calls == 24,
+        "coordinatorAdmission": dict(admission_evidence),
         "gpuMemoryUtilization": "0.70",
         "requestTimeModelLaunchAbsent": True,
         "requestTimeModelSwapAbsent": True,
@@ -1470,8 +1681,11 @@ def _candidate_input_paths(repository_root: Path) -> tuple[Path, ...]:
         server / "src/yap_server/agents/coordinator_runtime.py",
         server / "src/yap_server/agents/coordinator_service.py",
         server / "src/yap_server/agents/curator.py",
+        server / "src/yap_server/agents/curator_model.py",
         server / "src/yap_server/agents/curator_publisher.py",
         server / "src/yap_server/agents/curator_result_audit.py",
+        server / "src/yap_server/agents/curator_runtime.py",
+        server / "src/yap_server/agents/curator_service.py",
         server / "src/yap_server/agents/librarian.py",
         server / "src/yap_server/agents/student.py",
         server / "src/yap_server/agents/student_model.py",
@@ -1503,6 +1717,8 @@ def _candidate_input_paths(repository_root: Path) -> tuple[Path, ...]:
         server / "src/yap_server/knowledge/postgres_permission_view.py",
         server / "src/yap_server/knowledge/postgres_relationship_retrieval.py",
         server / "src/yap_server/knowledge/vllm_reasoning_client.py",
+        server / "src/yap_server/jobs/contract_values.py",
+        server / "src/yap_server/pools/agent_model_snapshot.py",
         server / "src/yap_server/pools/agent_vllm_launch_contract.py",
         server / "src/yap_server/pools/agent_vllm_service_profile.py",
         server / "src/yap_server/pools/agent_vllm_service_profile_cli.py",
@@ -1515,6 +1731,7 @@ def _candidate_input_paths(repository_root: Path) -> tuple[Path, ...]:
         server / "tests/agents/test_coordinator_service.py",
         server / "tests/agents/test_curator.py",
         server / "tests/agents/test_curator_postgres.py",
+        server / "tests/agents/test_curator_runtime.py",
         server / "tests/agents/test_librarian.py",
         server / "tests/evaluation/test_agent_admission_broker_observation.py",
         server / "tests/evaluation/test_agent_service_lifecycle_observation.py",
@@ -1537,24 +1754,45 @@ def _candidate_input_paths(repository_root: Path) -> tuple[Path, ...]:
         server / "orchestrator/Cargo.toml",
         server / "orchestrator/Cargo.lock",
         server / "orchestrator/src/lib.rs",
+        server / "orchestrator/src/agent_work.rs",
+        server / "orchestrator/src/endpoint.rs",
+        server / "orchestrator/src/error.rs",
+        server / "orchestrator/src/lifecycle.rs",
         server / "orchestrator/src/service_profile.rs",
+        server / "orchestrator/src/state_snapshot.rs",
+        server / "orchestrator/tests/agent_work_contract.rs",
+        server / "orchestrator/tests/lifecycle_contract.rs",
         server / "orchestrator/tests/supervised_service.rs",
         server / "orchestrator/tests/support/mod.rs",
         repository_root / "infra/yap-server-node/agent-vllm-server.sh",
     )
-    broker_sources = tuple(
+    broker_contracts = tuple(
         sorted(
-            (
-                *server.glob("orchestrator/src/agent_admission*.rs"),
-                *server.glob("orchestrator/src/agent_admission/**/*.rs"),
-                *server.glob("orchestrator/src/bin/yap-agent-admission-broker.rs"),
-                *server.glob("orchestrator/tests/agent_admission*.rs"),
-            ),
+            (*server.glob("orchestrator/tests/agent_admission*.rs"),),
             key=lambda path: path.as_posix(),
         )
     )
-    paths = (*fixed, *broker_sources)
-    if len(set(paths)) != len(paths) or any(not path.is_file() for path in paths):
+    python_sources = tuple(
+        sorted(
+            (server / "src/yap_server").rglob("*.py"),
+            key=lambda path: path.as_posix(),
+        )
+    )
+    rust_sources = tuple(
+        sorted(
+            (server / "orchestrator/src").rglob("*.rs"),
+            key=lambda path: path.as_posix(),
+        )
+    )
+    if len(set(fixed)) != len(fixed):
+        raise ValueError("Coordinator qualification candidate inputs are duplicated")
+    paths = tuple(
+        sorted(
+            {*fixed, *python_sources, *rust_sources, *broker_contracts},
+            key=lambda path: path.as_posix(),
+        )
+    )
+    if any(not path.is_file() for path in paths):
         raise ValueError("Coordinator qualification candidate inputs are incomplete")
     return paths
 
