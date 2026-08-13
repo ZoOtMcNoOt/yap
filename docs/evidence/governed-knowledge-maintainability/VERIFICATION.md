@@ -738,9 +738,10 @@ The exact 344 high-band path/line/disposition tuples are reproduced in
 [THRESHOLD-DISPOSITION.md](THRESHOLD-DISPOSITION.md).
 
 This record qualifies only the authenticated Librarian HTTP server boundary.
-The native/renderer path is exact-head public-test green but was not part of the
-private gate. Hosted review and merge, a live enterprise identity-provider
-exchange, sustained capacity/fairness, production p50/p95/p99 or an SLO,
+The native/renderer path was exact-head public-test green but was not part of the
+private gate. Hosted head `67a79ce2...` passed all 12 checks and PR #174 merged
+the vertical as `98af78c9...`. A live enterprise identity-provider exchange,
+sustained capacity/fairness, production p50/p95/p99 or an SLO,
 simultaneous Qwen/Gemma residency, enterprise networking, and deployment remain
 open. Owner-private tenants, subjects, queries, evidence, database rows, paths,
 credentials, and individual measurements remain outside Git.

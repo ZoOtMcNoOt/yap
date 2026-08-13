@@ -24,14 +24,15 @@ Merged production navigation:
 
 Transcript history currently lives on Home; there is no separate Transcripts navigation item or dedicated export command yet. Correct uses the merged authenticated Scribe route on a connected organization server. It preserves raw ASR, shows the original and proposed correction together, and publishes only an explicitly accepted separate revision. Remote failure leaves the raw transcript unchanged.
 
-Exact candidate `e2ba1864...` adds a dedicated **Knowledge** workspace backed by
+The merged product includes a dedicated **Knowledge** workspace backed by
 authenticated Librarian HTTP endpoints and native Tauri commands. It exposes
 only bounded permission-safe excerpts with source citations, one active query,
 cancel/retry controls, and an explicit unavailable state. The bearer and server
 exchange remain native-owned; remote failure does not disable local controls.
-Its authenticated HTTP server boundary is privately qualified, and its native/
-renderer path is exact-head public-test green. Hosted review and merge remain
-open, so Knowledge is not part of the merged product navigation yet.
+Exact executable `e2ba1864...` privately qualified its authenticated HTTP server
+boundary; hosted head `67a79ce2...` passed all 12 checks, and PR #174 merged the
+vertical as `98af78c9...`. The private gate did not include a native/renderer
+round trip or live enterprise identity-provider exchange.
 
 The internal Archivist, Student, Curator, Analyst, Coordinator, and Auditor
 cores are merged. None has a current HTTP, native, renderer, or desktop product

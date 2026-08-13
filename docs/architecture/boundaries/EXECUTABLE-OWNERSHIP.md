@@ -1092,9 +1092,9 @@ attributed to it. See the
 
 - **Status:** privately qualified at exact head `56b7f5d0...`; hosted head
   `7505247e...` merged the internal core through PR #169 as `d7a7e003...`.
-  Exact unmerged `e2ba1864...` adds a product candidate whose authenticated
-  HTTP server boundary is privately qualified and whose native/renderer path is
-  exact-head public-test green. Hosted review and merge remain pending.
+  Exact `e2ba1864...` privately qualified the authenticated HTTP server boundary;
+  hosted head `67a79ce2...` passed all 12 checks, and PR #174 merged the HTTP/
+  native/Knowledge product vertical as `98af78c9...`.
 - **Entry point:** `yap_server/agents/librarian_service.py` owns one bounded
   authenticated Server-IO read. It acquires no model-route lease.
 - **Authoritative owner:** the Postgres permission-safe retrieval owner pins the

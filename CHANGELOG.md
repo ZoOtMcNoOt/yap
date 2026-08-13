@@ -3,7 +3,7 @@
 This changelog records product/architecture milestones. Exact test counts and
 immutable evidence belong in phase/checkpoint evidence records.
 
-## Unreleased — qualified Librarian Knowledge product candidate
+## 2026-08-13 — Librarian Knowledge product vertical merged
 
 - Exact candidate `e2ba1864...` adds authenticated asynchronous Librarian query
   endpoints, native Tauri query ownership and evidence validation, and a
@@ -14,9 +14,9 @@ immutable evidence belong in phase/checkpoint evidence records.
   teardown. Public server, desktop, production build, Rust, lint, format, and
   combined native WDIO checks are green.
 - The private gate does not include a native/renderer round trip or live
-  enterprise identity provider. Hosted exact-head checks, review, and merge
-  remain pending, with no deployment, production-SLO, simultaneous-residency,
-  or other-role product claim.
+  enterprise identity provider. Hosted head `67a79ce2...` passed all 12 required
+  checks, and PR #174 merged the vertical as `98af78c9...`, with no deployment,
+  production-SLO, simultaneous-residency, or other-role product claim.
 
 ## 2026-08-13 — Phase 10 Auditor merged internal core
 

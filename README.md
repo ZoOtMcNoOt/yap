@@ -21,10 +21,10 @@ Auditor's idle-only, source-cited review-findings internal core. Hosted head
 `937a4129...` passed all 12 required checks, and PR #172 merged Auditor as
 `1b255e9a...`. All eight bounded internal role cores are now merged.
 
-Scribe is the only merged product surface. Exact unmerged candidate
-`e2ba1864...` adds a Librarian HTTP/native/Knowledge vertical and privately
-qualifies its authenticated HTTP server boundary; the native/renderer path is
-exact-head public-test green. Hosted review and merge remain pending.
+Scribe and Librarian are the two merged product surfaces. Exact executable
+`e2ba1864...` privately qualified Librarian's authenticated HTTP server boundary;
+hosted head `67a79ce2...` passed all 12 required checks, and PR #174 merged the
+HTTP/native/Knowledge vertical as `98af78c9...`.
 Production identity, simultaneous full-profile residency, sustained capacity,
 enterprise deployment, and the remaining role product surfaces stay explicitly
 gated.
