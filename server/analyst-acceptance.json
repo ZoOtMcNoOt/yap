@@ -1,24 +1,69 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "qualificationScope": "analyst-grounded-cited-answers",
   "qualified": true,
   "caseCount": 8,
   "ownerCount": 8,
-  "invocationCount": 13,
-  "maximumP95Milliseconds": 85000,
-  "synchronizedOwnerWaveCount": 8,
-  "completeCount": 4,
-  "unavailableCount": 5,
+  "invocationCount": 29,
+  "maximumNormalP95Milliseconds": 85000,
+  "synchronizedWaveCount": 3,
+  "ownersPerSynchronizedWave": 8,
+  "synchronizedInvocationCount": 24,
+  "exactSynchronizedInvocationCount": 24,
+  "exactSynchronizedWaveCount": 3,
+  "synchronizedWaves": [
+    {
+      "waveId": "repeat-1",
+      "caseOrder": [
+        "exact-single-answer",
+        "numeric-unit-answer",
+        "ordered-multi-answer",
+        "instruction-as-data-answer",
+        "missing-date-unavailable",
+        "unassigned-owner-unavailable",
+        "unstated-rationale-unavailable",
+        "absent-time-unavailable"
+      ]
+    },
+    {
+      "waveId": "repeat-2",
+      "caseOrder": [
+        "exact-single-answer",
+        "numeric-unit-answer",
+        "ordered-multi-answer",
+        "instruction-as-data-answer",
+        "missing-date-unavailable",
+        "unassigned-owner-unavailable",
+        "unstated-rationale-unavailable",
+        "absent-time-unavailable"
+      ]
+    },
+    {
+      "waveId": "repeat-3",
+      "caseOrder": [
+        "exact-single-answer",
+        "numeric-unit-answer",
+        "ordered-multi-answer",
+        "instruction-as-data-answer",
+        "missing-date-unavailable",
+        "unassigned-owner-unavailable",
+        "unstated-rationale-unavailable",
+        "absent-time-unavailable"
+      ]
+    }
+  ],
+  "completeCount": 12,
+  "unavailableCount": 13,
   "failedCount": 1,
   "cancelledCount": 3,
-  "exactTerminalMatchCount": 13,
-  "exactAnswerMatchCount": 4,
-  "uniqueRequestIdCount": 13,
-  "answerCount": 4,
-  "citationCount": 5,
+  "exactTerminalMatchCount": 29,
+  "exactAnswerMatchCount": 12,
+  "uniqueRequestIdCount": 29,
+  "answerCount": 12,
+  "citationCount": 15,
   "terminalMismatchCount": 0,
-  "synchronizedOwnerWaveMet": true,
-  "p95WithinBound": true,
+  "warmProviderRepeatabilityMet": true,
+  "normalP95WithinBound": true,
   "serverDerivedAnswerExact": true,
   "serverOwnedCitationsExact": true,
   "unavailableAnswerAbsent": true,

@@ -180,6 +180,7 @@ class AnalystModelTests(unittest.TestCase):
         self.assertEqual(decision, AnalystDecision("answer", (1, 0)))
         payload = transport.requested[0]
         self.assertEqual(payload["temperature"], 0.0)
+        self.assertEqual(payload["seed"], 0)
         self.assertEqual(payload["n"], 1)
         self.assertEqual(payload["max_tokens"], 512)
         self.assertEqual(payload["parallel_tool_calls"], False)

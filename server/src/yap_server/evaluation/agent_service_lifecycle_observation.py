@@ -96,7 +96,9 @@ def validate_container_policy(
     state = value.get("State")
     network_settings = value.get("NetworkSettings")
     mounts = value.get("Mounts")
-    if not all(isinstance(item, dict) for item in (config, host, state, network_settings)):
+    if not all(
+        isinstance(item, dict) for item in (config, host, state, network_settings)
+    ):
         raise ValueError("agent service container inspection is incomplete")
     assert isinstance(config, dict)
     assert isinstance(host, dict)
@@ -126,7 +128,7 @@ def validate_container_policy(
         or config.get("Cmd") != list(profile.launch_arguments)
         or not isinstance(labels, dict)
         or any(labels.get(key) != expected for key, expected in expected_labels.items())
-        or not _exact_environment(environment)
+        or not _exact_environment(environment, profile)
         or config.get("User") != f"{os.getuid()}:{os.getgid()}"
         or config.get("StopTimeout") != 10
         or not _exact_host_policy(host, profile, network_name)
@@ -138,7 +140,10 @@ def validate_container_policy(
         raise RuntimeError("agent service container policy differs")
 
 
-def _exact_environment(value: object) -> bool:
+def _exact_environment(
+    value: object,
+    profile: AgentVllmServiceProfile,
+) -> bool:
     if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
         return False
     required = {
@@ -148,9 +153,19 @@ def _exact_environment(value: object) -> bool:
         "DO_NOT_TRACK=1",
         "HOME=/tmp",
     }
-    return required.issubset(value) and not any(
-        item.startswith(("VLLM_API_KEY=", "HF_TOKEN=", "HUGGING_FACE_HUB_TOKEN="))
-        for item in value
+    batch_invariance = [
+        item for item in value if item.startswith("VLLM_BATCH_INVARIANT=")
+    ]
+    expected_batch_invariance = (
+        ["VLLM_BATCH_INVARIANT=1"] if profile.batch_invariant else []
+    )
+    return (
+        required.issubset(value)
+        and batch_invariance == expected_batch_invariance
+        and not any(
+            item.startswith(("VLLM_API_KEY=", "HF_TOKEN=", "HUGGING_FACE_HUB_TOKEN="))
+            for item in value
+        )
     )
 
 
@@ -233,10 +248,14 @@ def _exact_model_mount(mounts: list[object], model_snapshot: Path) -> bool:
         for value in mounts
         if isinstance(value, dict) and value.get("Destination") == "/model-cache"
     ]
-    return len(mounts) == 1 and len(matches) == 1 and (
-        matches[0].get("Type") == "bind"
-        and matches[0].get("RW") is False
-        and matches[0].get("Source") == str(model_root)
+    return (
+        len(mounts) == 1
+        and len(matches) == 1
+        and (
+            matches[0].get("Type") == "bind"
+            and matches[0].get("RW") is False
+            and matches[0].get("Source") == str(model_root)
+        )
     )
 
 
@@ -261,7 +280,11 @@ def validate_state_identity(
         "readinessTransitionCount",
     ):
         field_value = value.get(field)
-        if isinstance(field_value, bool) or not isinstance(field_value, int) or field_value < 0:
+        if (
+            isinstance(field_value, bool)
+            or not isinstance(field_value, int)
+            or field_value < 0
+        ):
             raise ValueError("agent service state counter is invalid")
 
 
@@ -322,7 +345,11 @@ def probe_exact_service(profile: AgentVllmServiceProfile) -> None:
 def container_pid(value: dict[str, object]) -> int:
     state = value.get("State")
     process_id = state.get("Pid") if isinstance(state, dict) else None
-    if isinstance(process_id, bool) or not isinstance(process_id, int) or process_id <= 1:
+    if (
+        isinstance(process_id, bool)
+        or not isinstance(process_id, int)
+        or process_id <= 1
+    ):
         raise ValueError("agent service container process identity is invalid")
     return process_id
 

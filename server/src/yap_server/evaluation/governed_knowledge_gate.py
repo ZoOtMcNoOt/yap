@@ -73,7 +73,7 @@ _EXPECTED_PORTABLE_MODULES = (
     "tests.knowledge.test_terminology_snapshot",
     "tests.knowledge.test_vllm_reasoning_client",
 )
-_EXPECTED_PORTABLE_TEST_COUNT = 172
+_EXPECTED_PORTABLE_TEST_COUNT = 173
 
 
 def evaluate_governed_knowledge_gate(
@@ -150,10 +150,7 @@ def evaluate_governed_knowledge_gate(
         portable_result = _run_json_command(
             [
                 sys.executable,
-                str(
-                    verification_root
-                    / "run-governed-knowledge-portable-suite.py"
-                ),
+                str(verification_root / "run-governed-knowledge-portable-suite.py"),
             ],
             cwd=server_root,
             environment=database_environment,

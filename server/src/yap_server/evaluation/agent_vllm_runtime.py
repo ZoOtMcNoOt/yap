@@ -15,6 +15,7 @@ import urllib.request
 from .provider_runtime_observations import canonical_evidence_sha256
 from yap_server.pools.agent_vllm_launch_contract import (
     build_qualified_agent_vllm_launch_arguments,
+    qualified_agent_vllm_batch_invariant,
 )
 
 
@@ -49,6 +50,7 @@ class StartedAgentVllmRuntime:
     model_artifact_manifest_sha256: str
     launch_arguments_sha256: str
     launch_arguments: tuple[str, ...]
+    batch_invariant: bool
     cgroup_path: Path
     process_id: int
 
@@ -78,14 +80,22 @@ class OwnedAgentVllmRuntime:
         checked_head: str,
         runtime: dict[str, object],
         candidate: dict[str, object],
+        batch_invariant: bool,
         runner: Runner = subprocess.run,
         home: Path | None = None,
     ) -> None:
         if not re.fullmatch(r"[0-9a-f]{40}", checked_head):
             raise ValueError("agent runtime checked head is invalid")
+        if type(
+            batch_invariant
+        ) is not bool or batch_invariant is not qualified_agent_vllm_batch_invariant(
+            candidate
+        ):
+            raise ValueError("agent runtime batch invariance policy differs")
         self._checked_head = checked_head
         self._runtime = runtime
         self._candidate = candidate
+        self._batch_invariant = batch_invariant
         self._runner = runner
         self._home = (home or Path.home()).resolve(strict=True)
         self._started: StartedAgentVllmRuntime | None = None
@@ -137,6 +147,7 @@ class OwnedAgentVllmRuntime:
                 "host",
                 "--env",
                 "HOME=/tmp",
+                *(["--env", "VLLM_BATCH_INVARIANT=1"] if self._batch_invariant else []),
                 "--volume",
                 f"{model_root}:/model-cache:ro",
                 image_id,
@@ -196,7 +207,7 @@ class OwnedAgentVllmRuntime:
             raise RuntimeError("agent runtime teardown did not complete")
         self._clear_identity()
         return {
-            "schemaVersion": 1,
+            "schemaVersion": 2,
             "checkedHead": self._checked_head,
             "candidateId": self._candidate["candidateId"],
             "model": self._candidate["model"],
@@ -207,6 +218,7 @@ class OwnedAgentVllmRuntime:
             "modelArtifactManifestSha256": started.model_artifact_manifest_sha256,
             "launchArguments": list(started.launch_arguments),
             "launchArgumentsSha256": started.launch_arguments_sha256,
+            "batchInvariant": started.batch_invariant,
             "toolCallStructuralGuidanceEnabled": True,
             "childEvidenceSha256": dict(sorted(child_evidence_sha256.items())),
             "teardown": {
@@ -265,6 +277,7 @@ class OwnedAgentVllmRuntime:
             "modelArtifactManifestSha256": started.model_artifact_manifest_sha256,
             "launchArguments": list(started.launch_arguments),
             "launchArgumentsSha256": started.launch_arguments_sha256,
+            "batchInvariant": started.batch_invariant,
             "teardown": teardown,
         }
 
@@ -292,8 +305,7 @@ class OwnedAgentVllmRuntime:
                 or _IMAGE_SHA256.fullmatch(manifest_digest) is None
                 or not isinstance(repo_digests, list)
                 or not any(
-                    str(value).endswith(f"@{manifest_digest}")
-                    for value in repo_digests
+                    str(value).endswith(f"@{manifest_digest}") for value in repo_digests
                 )
             ):
                 raise ValueError("agent runtime image differs from its lock")
@@ -370,9 +382,7 @@ class OwnedAgentVllmRuntime:
         return build_agent_vllm_launch_arguments(self._candidate)
 
     def _inspect_container(self, target: str) -> dict[str, object]:
-        return _single_inspection(
-            self._run(["docker", "container", "inspect", target])
-        )
+        return _single_inspection(self._run(["docker", "container", "inspect", target]))
 
     def _observe_started_container(
         self, target: str
@@ -405,11 +415,10 @@ class OwnedAgentVllmRuntime:
             container_name=_CONTAINER_NAME,
             container_id=container_id,
             image_id=pending.image_id,
-            model_artifact_manifest_sha256=(
-                pending.model_artifact_manifest_sha256
-            ),
+            model_artifact_manifest_sha256=(pending.model_artifact_manifest_sha256),
             launch_arguments_sha256=pending.launch_arguments_sha256,
             launch_arguments=pending.launch_arguments,
+            batch_invariant=self._batch_invariant,
             cgroup_path=cgroup_path,
             process_id=process_id,
         )
@@ -438,6 +447,12 @@ class OwnedAgentVllmRuntime:
             or config.get("User") != "1000:1000"
             or not isinstance(environment, list)
             or "HOME=/tmp" not in environment
+            or [
+                value
+                for value in environment
+                if isinstance(value, str) and value.startswith("VLLM_BATCH_INVARIANT=")
+            ]
+            != (["VLLM_BATCH_INVARIANT=1"] if self._batch_invariant else [])
             or any(
                 isinstance(value, str)
                 and value.startswith("VLLM_ENFORCE_STRICT_TOOL_CALLING=")
@@ -462,7 +477,9 @@ class OwnedAgentVllmRuntime:
                         return
             except (urllib.error.URLError, TimeoutError):
                 pass
-            if not self._container_exists(self._created_container_id or _CONTAINER_NAME):
+            if not self._container_exists(
+                self._created_container_id or _CONTAINER_NAME
+            ):
                 raise RuntimeError("agent runtime exited before readiness")
             time.sleep(0.25)
         raise TimeoutError("agent runtime readiness timed out")

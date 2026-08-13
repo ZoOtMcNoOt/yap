@@ -11,6 +11,10 @@ from yap_server.knowledge.vllm_reasoning_client import (
     VllmReasoningClient,
 )
 from yap_server.private_artifact import read_json_object_with_identity
+from yap_server.pools.agent_vllm_service_profile import (
+    load_complex_agent_vllm_service_profile,
+    load_rapid_agent_vllm_service_profile,
+)
 
 from .agent_model_acceptance import load_agent_model_acceptance
 from .agent_model_fixture_runner import (
@@ -62,10 +66,28 @@ def run_agent_model_candidate(
     )
     maximum_output_tokens = int(route_policy["maximumOutputTokens"])
     final_response_protocol = str(model_candidate["finalResponseProtocol"])
+    candidate_lock_path = (
+        repository_root / "server/agent-reasoning-candidates.lock.json"
+    )
+    service_profile = (
+        load_rapid_agent_vllm_service_profile(
+            repository_root / "server/agent-service-profiles/rapid-automation.json",
+            candidate_lock_path,
+        )
+        if workload_class == "rapid-automation"
+        else load_complex_agent_vllm_service_profile(
+            repository_root
+            / "server/agent-service-profiles/complex-orchestration.json",
+            candidate_lock_path,
+        )
+    )
+    if service_profile.candidate_id != candidate_id:
+        raise ValueError("agent model candidate service profile differs")
     owned_runtime = OwnedAgentVllmRuntime(
         checked_head=checked_candidate.checked_head,
         runtime=runtime_lock,
         candidate=model_candidate,
+        batch_invariant=service_profile.batch_invariant,
     )
     stage = "startup"
     try:
@@ -213,9 +235,7 @@ def _contained_failure(
     error: BaseException,
     teardown_timeout_seconds: int,
 ) -> FailedAgentCandidateRun:
-    runtime = owned_runtime.contain_failed_run(
-        timeout_seconds=teardown_timeout_seconds
-    )
+    runtime = owned_runtime.contain_failed_run(timeout_seconds=teardown_timeout_seconds)
     if not isinstance(error, _EXPECTED_CANDIDATE_FAILURES):
         raise error
     checked_candidate.verify_unchanged()
@@ -300,12 +320,13 @@ def _children(
             "sampleCount": pressure.memory_sample_count,
         },
         "lifecycle": {
-            "schemaVersion": 1,
+            "schemaVersion": 2,
             "checkedHead": checked_head,
             "containerId": started.container_id,
             "imageId": started.image_id,
             "modelArtifactManifestSha256": started.model_artifact_manifest_sha256,
             "launchArgumentsSha256": started.launch_arguments_sha256,
+            "batchInvariant": started.batch_invariant,
             "endpoint": started.endpoint,
         },
     }

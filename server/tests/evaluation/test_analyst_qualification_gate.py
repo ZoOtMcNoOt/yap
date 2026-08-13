@@ -71,17 +71,30 @@ class AnalystQualificationGateTests(unittest.TestCase):
             "8",
             "--max-num-batched-tokens",
             "8192",
+            "--no-enable-prefix-caching",
         )
-        gate._require_full_complex_profile(8, exact)
-        for sequences, arguments in (
-            (7, exact),
-            (8, tuple("0.60" if item == "0.70" else item for item in exact)),
-            (8, tuple("7" if item == "8" else item for item in exact)),
-            (8, tuple("4096" if item == "8192" else item for item in exact)),
+        gate._require_full_complex_profile(8, True, exact)
+        for sequences, batch_invariant, arguments in (
+            (7, True, exact),
+            (8, False, exact),
+            (8, True, tuple("0.60" if item == "0.70" else item for item in exact)),
+            (8, True, tuple("7" if item == "8" else item for item in exact)),
+            (8, True, tuple("4096" if item == "8192" else item for item in exact)),
+            (
+                8,
+                True,
+                tuple(item for item in exact if item != "--no-enable-prefix-caching"),
+            ),
         ):
-            with self.subTest(sequences=sequences, arguments=arguments):
+            with self.subTest(
+                sequences=sequences,
+                batch_invariant=batch_invariant,
+                arguments=arguments,
+            ):
                 with self.assertRaisesRegex(ValueError, "full complex profile"):
-                    gate._require_full_complex_profile(sequences, arguments)
+                    gate._require_full_complex_profile(
+                        sequences, batch_invariant, arguments
+                    )
 
     def test_compiler_binding_rejects_source_revision_and_permission_drift(
         self,
@@ -146,6 +159,9 @@ class AnalystQualificationGateTests(unittest.TestCase):
         corpus = gate.load_analyst_qualification_corpus(
             REPOSITORY_ROOT / "server/analyst-workload-fixtures.json"
         )
+        acceptance = gate.load_analyst_qualification_acceptance(
+            REPOSITORY_ROOT / "server/analyst-acceptance.json"
+        )
         rendered = gate.render_analyst_qualification_generations(
             corpus,
             tenant_id="analyst-q-1234567890abcdef",
@@ -168,6 +184,7 @@ class AnalystQualificationGateTests(unittest.TestCase):
         )
         invocations = gate.build_analyst_qualification_invocations(
             initialized.bound.corpus,
+            acceptance,
             tenant_id=initialized.bound.tenant_id,
             generation_sha256s=initialized.bound.generation_sha256s,
         )
@@ -192,6 +209,7 @@ class AnalystQualificationGateTests(unittest.TestCase):
             gate._expected_audit_rows(
                 initialized,
                 mock.Mock(observations=observations),
+                acceptance=acceptance,
                 profile=mock.Mock(),
                 provider_generation=7,
                 actual_result_rows=rows,
@@ -289,11 +307,14 @@ class AnalystQualificationGateTests(unittest.TestCase):
                 events.append("database-contained")
                 return {}
 
-        acceptance = mock.Mock(plan_sha256="2" * 64, maximum_p95_milliseconds=85_000)
+        acceptance = mock.Mock(
+            plan_sha256="2" * 64,
+            maximum_normal_p95_milliseconds=85_000,
+        )
         corpus = mock.Mock(corpus_sha256="3" * 64)
         initialized = mock.Mock()
         result = mock.Mock(
-            public_evidence={"schemaVersion": 1, "qualified": True}, observations=()
+            public_evidence={"schemaVersion": 2, "qualified": True}, observations=()
         )
         profile = mock.Mock(
             candidate_id="gemma",
@@ -303,6 +324,7 @@ class AnalystQualificationGateTests(unittest.TestCase):
             candidate_lock_sha256="4" * 64,
             profile_sha256="5" * 64,
             maximum_sequences=8,
+            batch_invariant=True,
             launch_arguments=(
                 "vllm",
                 "serve",
@@ -315,6 +337,7 @@ class AnalystQualificationGateTests(unittest.TestCase):
                 "8",
                 "--max-num-batched-tokens",
                 "8192",
+                "--no-enable-prefix-caching",
             ),
         )
         runtime = mock.Mock(maximum_output_tokens=512, maximum_input_tokens=7_680)

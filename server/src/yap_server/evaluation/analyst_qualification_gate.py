@@ -127,6 +127,7 @@ from yap_server.private_postgres_connection import (
 
 from .analyst_qualification import (
     AnalystBoundQualificationCorpus,
+    AnalystQualificationAcceptance,
     AnalystQualificationCorpus,
     AnalystQualificationInvocation,
     AnalystQualificationRenderedGeneration,
@@ -214,14 +215,18 @@ def run_analyst_qualification_gate(
     corpus = load_analyst_qualification_corpus(
         root / "server/analyst-workload-fixtures.json"
     )
-    _require_exact_deadline_contract(acceptance.maximum_p95_milliseconds)
+    _require_exact_deadline_contract(acceptance.maximum_normal_p95_milliseconds)
 
     profile_path = root / "server/agent-service-profiles/complex-orchestration.json"
     candidate_lock_path = root / "server/agent-reasoning-candidates.lock.json"
     profile = load_analyst_service_profile(profile_path, candidate_lock_path)
-    _require_full_complex_profile(profile.maximum_sequences, profile.launch_arguments)
+    _require_full_complex_profile(
+        profile.maximum_sequences,
+        profile.batch_invariant,
+        profile.launch_arguments,
+    )
     if (
-        acceptance.maximum_p95_milliseconds != _MAXIMUM_P95_MILLISECONDS
+        acceptance.maximum_normal_p95_milliseconds != _MAXIMUM_P95_MILLISECONDS
         or profile.maximum_sequences != _BROKER_ACTIVE_CAPACITY
     ):
         raise ValueError("Analyst qualification acceptance differs")
@@ -327,6 +332,7 @@ def run_analyst_qualification_gate(
                 result_restarted.dsn,
                 initialized,
                 result,
+                acceptance=acceptance,
                 profile=profile,
                 provider_generation=_provider_generation(provider_before_workload),
             )
@@ -374,6 +380,9 @@ def run_analyst_qualification_gate(
         "maximumModelLength": 8_192,
         "maximumSequences": profile.maximum_sequences,
         "maximumBatchedTokens": 8_192,
+        "batchInvariant": profile.batch_invariant,
+        "prefixCachingEnabled": False,
+        "requestSeed": 0,
         "brokerActiveCapacity": capacity_evidence["admittedOwnerCount"],
         "admissionBrokerBinarySha256": expected_broker_sha256,
         "brokerExpectedCapacityObserved": capacity_evidence["expectedCapacityObserved"],
@@ -892,6 +901,7 @@ def _verify_analyst_database_state(
     initialized: _InitializedKnowledge,
     result: AnalystQualificationResult,
     *,
+    acceptance: AnalystQualificationAcceptance,
     profile: AgentVllmServiceProfile,
     provider_generation: int,
 ) -> dict[str, bool]:
@@ -961,6 +971,7 @@ def _verify_analyst_database_state(
         _expected_audit_rows(
             initialized,
             result,
+            acceptance=acceptance,
             profile=profile,
             provider_generation=provider_generation,
             actual_result_rows=result_rows,
@@ -1031,6 +1042,7 @@ def _expected_audit_rows(
     initialized: _InitializedKnowledge,
     result: AnalystQualificationResult,
     *,
+    acceptance: AnalystQualificationAcceptance,
     profile: AgentVllmServiceProfile,
     provider_generation: int,
     actual_result_rows: Sequence[Sequence[object]],
@@ -1042,6 +1054,7 @@ def _expected_audit_rows(
     bound = initialized.bound
     invocations = build_analyst_qualification_invocations(
         bound.corpus,
+        acceptance,
         tenant_id=bound.tenant_id,
         generation_sha256s=bound.generation_sha256s,
     )
@@ -1079,7 +1092,7 @@ def _expected_audit_rows(
             maximum_results=invocation.maximum_results,
             expected_generation_sha256=invocation.expected_generation_sha256,
         )
-        expected = bound.expected_views[invocation.invocation_id]
+        expected = bound.expected_views[invocation.expected_view_id]
         analyst_pack = (
             None
             if invocation.mode == "pre-cancelled"
@@ -1192,7 +1205,7 @@ def _expected_audit_rows(
                 True,
             )
         )
-    if len(result_rows) != 13 or len(librarian_rows) != 12 or len(tool_rows) != 12:
+    if len(result_rows) != 29 or len(librarian_rows) != 28 or len(tool_rows) != 28:
         raise RuntimeError("Analyst audit cardinality differs")
     return result_rows, librarian_rows, tool_rows
 
@@ -1236,6 +1249,8 @@ def _private_observations(
             "invocationId": item.invocation.invocation_id,
             "caseId": item.invocation.case_id,
             "runId": item.invocation.run_id,
+            "waveId": item.invocation.wave_id,
+            "declaredPosition": item.invocation.declared_position,
             "ownerId": item.invocation.owner_id,
             "requestId": item.request_id,
             "durationMilliseconds": item.duration_milliseconds,
@@ -1284,6 +1299,7 @@ def _require_exact_deadline_contract(maximum_p95_milliseconds: int) -> None:
 
 def _require_full_complex_profile(
     maximum_sequences: int,
+    batch_invariant: bool,
     launch_arguments: tuple[str, ...],
 ) -> None:
     arguments = {
@@ -1294,10 +1310,13 @@ def _require_full_complex_profile(
     }
     if (
         maximum_sequences != _BROKER_ACTIVE_CAPACITY
+        or batch_invariant is not True
         or arguments.get("--gpu-memory-utilization") != "0.70"
         or arguments.get("--max-model-len") != "8192"
         or arguments.get("--max-num-seqs") != "8"
         or arguments.get("--max-num-batched-tokens") != "8192"
+        or "--no-enable-prefix-caching" not in launch_arguments
+        or "--enable-prefix-caching" in launch_arguments
     ):
         raise ValueError("Analyst qualification requires the full complex profile")
 
@@ -1357,6 +1376,7 @@ def _candidate_input_paths(repository_root: Path) -> tuple[Path, ...]:
         server / "src/yap_server/knowledge/vllm_reasoning_client.py",
         server / "src/yap_server/pools/agent_vllm_launch_contract.py",
         server / "src/yap_server/pools/agent_vllm_service_profile.py",
+        server / "src/yap_server/pools/agent_vllm_service_profile_cli.py",
         server / "src/yap_server/pools/numeric_loopback_endpoint.py",
         server / "tests/agents/test_agent_admission_client.py",
         server / "tests/agents/test_analyst_model.py",
@@ -1374,6 +1394,7 @@ def _candidate_input_paths(repository_root: Path) -> tuple[Path, ...]:
         server / "tests/evaluation/test_analyst_qualification_gate.py",
         server / "tests/evaluation/test_librarian_qualification.py",
         server / "tests/evaluation/test_owned_postgres_knowledge_runtime.py",
+        server / "tests/infra/test_agent_vllm_server.py",
         server / "tests/evaluation/test_private_json_evidence.py",
         server / "tests/evaluation/test_provider_runtime_observations.py",
         server / "tests/knowledge/test_cancellable_database_operation.py",
@@ -1389,6 +1410,7 @@ def _candidate_input_paths(repository_root: Path) -> tuple[Path, ...]:
         server / "orchestrator/src/lib.rs",
         server / "orchestrator/src/service_profile.rs",
         server / "orchestrator/tests/supervised_service.rs",
+        repository_root / "infra/yap-server-node/agent-vllm-server.sh",
         server / "orchestrator/tests/support/mod.rs",
     )
     broker_sources = tuple(

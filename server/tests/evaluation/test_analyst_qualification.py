@@ -57,11 +57,14 @@ class _Executor:
             raise override
         if override is not None:
             return override
-        expected = self._expected[invocation.invocation_id]
+        expected = self._expected[invocation.expected_view_id]
         request_id = (
             "analyst-duplicate"
             if self._duplicate_request_ids
-            else f"analyst-{invocation.case_id}-{invocation.run_id}"
+            else (
+                f"analyst-{invocation.wave_id or 'control'}-"
+                f"{invocation.case_id}-{invocation.run_id}"
+            )
         )
         return AnalystJobView(
             request_id=request_id,
@@ -83,15 +86,21 @@ class AnalystQualificationTests(unittest.TestCase):
         self.expected = dict(self.bound.expected_views)
 
     def test_contract_freezes_eight_owner_wave_and_five_controls(self) -> None:
-        invocations = build_analyst_qualification_invocations(self.corpus)
+        invocations = build_analyst_qualification_invocations(
+            self.corpus, self.acceptance
+        )
         primary = tuple(item for item in invocations if item.mode == "normal")
         controlled = tuple(item for item in invocations if item.mode != "normal")
 
         self.assertEqual(len(self.corpus.cases), 8)
         self.assertEqual(self.corpus.corpus_id, "analyst-public-synthetic-v4")
-        self.assertEqual(len(invocations), 13)
-        self.assertEqual(len(primary), 8)
+        self.assertEqual(len(invocations), 29)
+        self.assertEqual(len(primary), 24)
         self.assertEqual(len({item.owner_id for item in primary}), 8)
+        self.assertEqual(
+            {item.wave_id for item in primary},
+            {"repeat-1", "repeat-2", "repeat-3"},
+        )
         self.assertEqual(
             tuple(item.mode for item in controlled),
             (
@@ -109,15 +118,22 @@ class AnalystQualificationTests(unittest.TestCase):
                 self.acceptance.failed_count,
                 self.acceptance.cancelled_count,
             ),
-            (4, 5, 1, 3),
+            (12, 13, 1, 3),
         )
-        self.assertEqual(self.acceptance.answer_count, 4)
-        self.assertEqual(self.acceptance.citation_count, 5)
+        self.assertEqual(self.acceptance.answer_count, 12)
+        self.assertEqual(self.acceptance.citation_count, 15)
+        self.assertEqual(self.acceptance.synchronized_wave_count, 3)
+        self.assertEqual(self.acceptance.exact_synchronized_wave_count, 3)
+        self.assertEqual(
+            tuple(wave.wave_id for wave in self.acceptance.synchronized_waves),
+            ("repeat-1", "repeat-2", "repeat-3"),
+        )
+        self.assertTrue(self.acceptance.warm_provider_repeatability_met)
         empty = next(
             item for item in primary if item.case_id == "absent-time-unavailable"
         )
         self.assertEqual(
-            self.expected[empty.invocation_id],
+            self.expected[empty.expected_view_id],
             AnalystExpectedView("evidence-unavailable", "empty-result", None),
         )
         self.assertNotIn(empty.case_id, self.bound.evidence_by_case)
@@ -182,8 +198,8 @@ class AnalystQualificationTests(unittest.TestCase):
         self.assertEqual(
             sum(
                 len(item.answer.citations)
-                for item in self.expected.values()
-                if item.answer is not None
+                for key, item in self.expected.items()
+                if key.endswith(":normal") and item.answer is not None
             ),
             5,
         )
@@ -208,12 +224,15 @@ class AnalystQualificationTests(unittest.TestCase):
             self.acceptance.expected_public_evidence(),
         )
         self.assertTrue(result.public_evidence["qualified"])
+        self.assertTrue(result.public_evidence["warmProviderRepeatabilityMet"])
+        self.assertNotIn("schedulePermutationCount", result.public_evidence)
+        self.assertNotIn("schedulePermutationsExact", result.public_evidence)
         self.assertNotIn("question", json.dumps(result.public_evidence).casefold())
         normal_calls = [item for item in executor.calls if item[0].mode == "normal"]
         pre_cancelled = next(
             item for item in executor.calls if item[0].mode == "pre-cancelled"
         )
-        self.assertEqual(len(normal_calls), 8)
+        self.assertEqual(len(normal_calls), 24)
         self.assertTrue(all(not was_set for _invocation, was_set in normal_calls))
         self.assertTrue(pre_cancelled[1])
 
@@ -226,11 +245,13 @@ class AnalystQualificationTests(unittest.TestCase):
         scenarios = (
             _Executor(
                 self.expected,
-                overrides={"exact-single-answer:normal": unavailable},
+                overrides={"wave-repeat-1:exact-single-answer:normal": unavailable},
             ),
             _Executor(
                 self.expected,
-                overrides={"exact-single-answer:normal": RuntimeError("failed")},
+                overrides={
+                    "wave-repeat-1:exact-single-answer:normal": RuntimeError("failed")
+                },
             ),
             _Executor(self.expected, duplicate_request_ids=True),
         )
@@ -244,7 +265,7 @@ class AnalystQualificationTests(unittest.TestCase):
                 self.assertFalse(result.public_evidence["qualified"])
                 self.assertTrue(
                     result.public_evidence["terminalMismatchCount"] > 0
-                    or result.public_evidence["uniqueRequestIdCount"] != 13
+                    or result.public_evidence["uniqueRequestIdCount"] != 29
                 )
 
     def test_complete_answer_must_be_the_exact_domain_type(self) -> None:
@@ -261,7 +282,7 @@ class AnalystQualificationTests(unittest.TestCase):
         result = evaluate_analyst_qualification(
             executor=_Executor(
                 self.expected,
-                overrides={"exact-single-answer:normal": forged},
+                overrides={"wave-repeat-1:exact-single-answer:normal": forged},
             ),
             corpus=self.bound,
             acceptance=self.acceptance,
@@ -270,7 +291,8 @@ class AnalystQualificationTests(unittest.TestCase):
         observation = next(
             item
             for item in result.observations
-            if item.invocation.invocation_id == "exact-single-answer:normal"
+            if item.invocation.invocation_id
+            == "wave-repeat-1:exact-single-answer:normal"
         )
         self.assertEqual(observation.failure_kind, "executor-error")
 
@@ -307,7 +329,7 @@ class AnalystQualificationTests(unittest.TestCase):
         class _BlockingExecutor:
             def __call__(self, invocation, cancellation):
                 cancellation.wait(1.0)
-                expected = self_expected[invocation.invocation_id]
+                expected = self_expected[invocation.expected_view_id]
                 return AnalystJobView(
                     request_id=f"analyst-{invocation.case_id}-{invocation.run_id}",
                     status=expected.status,
@@ -342,9 +364,9 @@ class AnalystQualificationTests(unittest.TestCase):
             (SERVER_ROOT / "analyst-workload-fixtures.json").read_text(encoding="utf-8")
         )
         changed_acceptance = (
-            {**acceptance, "invocationCount": 12},
+            {**acceptance, "invocationCount": 28},
             {**acceptance, "legacyThreshold": 1},
-            {**acceptance, "synchronizedOwnerWaveMet": 1},
+            {**acceptance, "schedulePermutationsExact": True},
         )
         for changed in changed_acceptance:
             with (

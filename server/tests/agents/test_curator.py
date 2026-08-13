@@ -113,7 +113,7 @@ def _tool_response(decision: object = "propose") -> dict[str, object]:
                                 ),
                             },
                         }
-                    ]
+                    ],
                 }
             }
         ]
@@ -362,9 +362,7 @@ class CuratorTests(unittest.TestCase):
                 ),
             ),
         )
-        expected = CuratorReviewedStudentQuestion.from_wire(
-            student_question.to_wire()
-        )
+        expected = CuratorReviewedStudentQuestion.from_wire(student_question.to_wire())
         request = replace(
             _request(),
             trigger="reviewed-student-answer",
@@ -411,7 +409,9 @@ class CuratorTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "request fields"):
             CuratorRequest.from_wire({**wire, "sourceCitations": []})
 
-    def test_reviewed_student_answer_preserves_a_full_large_source_citation(self) -> None:
+    def test_reviewed_student_answer_preserves_a_full_large_source_citation(
+        self,
+    ) -> None:
         text = "x" * 1_100 + "\nrelease remains blocked\n" + "y" * 1_100
         citation = _citation(start=10, end=10 + len(text))
         item = StudentEvidenceItem(
@@ -472,6 +472,7 @@ class CuratorTests(unittest.TestCase):
         self.assertEqual(transport.rendered_payloads, [payload])
         self.assertEqual(payload["max_tokens"], 512)
         self.assertEqual(payload["n"], 1)
+        self.assertEqual(payload["seed"], 0)
         self.assertEqual(payload["parallel_tool_calls"], False)
         self.assertEqual(
             payload["tool_choice"],
@@ -582,8 +583,7 @@ class CuratorTests(unittest.TestCase):
                                     "function": {
                                         "name": "return_curator_decision",
                                         "arguments": (
-                                            '{"decision":"propose",'
-                                            '"decision":"reject"}'
+                                            '{"decision":"propose","decision":"reject"}'
                                         ),
                                     }
                                 }
@@ -598,9 +598,9 @@ class CuratorTests(unittest.TestCase):
                 parse_curator_decision(response)
 
         nested = _tool_response()
-        nested["choices"][0]["message"]["tool_calls"][0]["function"][
-            "arguments"
-        ] = "[" * 5_000 + "]" * 5_000
+        nested["choices"][0]["message"]["tool_calls"][0]["function"]["arguments"] = (
+            "[" * 5_000 + "]" * 5_000
+        )
         with self.assertRaisesRegex(ValueError, "not valid JSON"):
             parse_curator_decision(nested)
 
@@ -816,7 +816,9 @@ class CuratorTests(unittest.TestCase):
                 self.assertEqual(result.reason, "storage-timeout")
                 self.assertEqual(auditor.records[0]["reason"], "storage-timeout")
 
-    def test_completion_cancellation_race_is_acknowledged_and_never_published(self) -> None:
+    def test_completion_cancellation_race_is_acknowledged_and_never_published(
+        self,
+    ) -> None:
         admission = _Admission(complete_outcome="cancellation-requested")
         publisher = _Publisher()
         auditor = _Auditor()
@@ -941,7 +943,9 @@ class CuratorTests(unittest.TestCase):
             )
         self.assertIn("cancel", admission.calls)
 
-    def test_deadline_before_submit_is_durably_terminal_without_broker_work(self) -> None:
+    def test_deadline_before_submit_is_durably_terminal_without_broker_work(
+        self,
+    ) -> None:
         admission = _Admission()
         auditor = _Auditor()
         with patch(
@@ -969,7 +973,9 @@ class CuratorTests(unittest.TestCase):
         self.assertNotIn("submit", admission.calls)
         self.assertEqual(auditor.records[0]["reason"], "deadline-exceeded")
 
-    def test_uncontained_publication_is_never_recorded_as_an_ordinary_failure(self) -> None:
+    def test_uncontained_publication_is_never_recorded_as_an_ordinary_failure(
+        self,
+    ) -> None:
         auditor = _Auditor()
         with self.assertRaisesRegex(CuratorContainmentError, "was not contained"):
             CuratorService(
@@ -987,7 +993,9 @@ class CuratorTests(unittest.TestCase):
             )
         self.assertEqual(auditor.records, [])
 
-    def test_terminal_admission_result_is_replayed_instead_of_raising_capacity(self) -> None:
+    def test_terminal_admission_result_is_replayed_instead_of_raising_capacity(
+        self,
+    ) -> None:
         winner = CuratorStoredResult(
             request_id="curator-winner",
             submission_id="submission-1",
@@ -1027,7 +1035,9 @@ class CuratorTests(unittest.TestCase):
         self.assertEqual(result.request_id, "curator-winner")
         self.assertEqual(result.status, "proposed")
 
-    def test_admission_capacity_returns_the_same_durable_failed_view_shape(self) -> None:
+    def test_admission_capacity_returns_the_same_durable_failed_view_shape(
+        self,
+    ) -> None:
         admission = _Admission(initial_outcome="queue-full")
         auditor = _Auditor()
         publisher = _Publisher()

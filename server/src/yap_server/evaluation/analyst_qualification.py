@@ -93,13 +93,23 @@ class AnalystQualificationExecutor(Protocol):
 
 
 @dataclass(frozen=True, slots=True)
+class AnalystQualificationWave:
+    wave_id: str
+    case_order: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class AnalystQualificationAcceptance:
     plan_sha256: str
     case_count: int
     owner_count: int
     invocation_count: int
-    maximum_p95_milliseconds: int
-    synchronized_owner_wave_count: int
+    maximum_normal_p95_milliseconds: int
+    synchronized_wave_count: int
+    owners_per_synchronized_wave: int
+    synchronized_invocation_count: int
+    exact_synchronized_invocation_count: int
+    exact_synchronized_wave_count: int
     complete_count: int
     unavailable_count: int
     failed_count: int
@@ -110,8 +120,8 @@ class AnalystQualificationAcceptance:
     answer_count: int
     citation_count: int
     terminal_mismatch_count: int
-    synchronized_owner_wave_met: bool
-    p95_within_bound: bool
+    warm_provider_repeatability_met: bool
+    normal_p95_within_bound: bool
     server_derived_answer_exact: bool
     server_owned_citations_exact: bool
     unavailable_answer_absent: bool
@@ -120,15 +130,22 @@ class AnalystQualificationAcceptance:
     stale_generation_failed_closed: bool
     invalid_output_failed_closed: bool
     worker_containment_met: bool
+    synchronized_waves: tuple[AnalystQualificationWave, ...] = field(repr=False)
 
     def expected_public_evidence(self) -> dict[str, int | bool]:
         return {
-            "schemaVersion": 1,
+            "schemaVersion": 2,
             "qualified": True,
             "caseCount": self.case_count,
             "ownerCount": self.owner_count,
             "invocationCount": self.invocation_count,
-            "synchronizedOwnerWaveCount": self.synchronized_owner_wave_count,
+            "synchronizedWaveCount": self.synchronized_wave_count,
+            "ownersPerSynchronizedWave": self.owners_per_synchronized_wave,
+            "synchronizedInvocationCount": self.synchronized_invocation_count,
+            "exactSynchronizedInvocationCount": (
+                self.exact_synchronized_invocation_count
+            ),
+            "exactSynchronizedWaveCount": self.exact_synchronized_wave_count,
             "completeCount": self.complete_count,
             "unavailableCount": self.unavailable_count,
             "failedCount": self.failed_count,
@@ -139,8 +156,8 @@ class AnalystQualificationAcceptance:
             "answerCount": self.answer_count,
             "citationCount": self.citation_count,
             "terminalMismatchCount": self.terminal_mismatch_count,
-            "synchronizedOwnerWaveMet": self.synchronized_owner_wave_met,
-            "p95WithinBound": self.p95_within_bound,
+            "warmProviderRepeatabilityMet": self.warm_provider_repeatability_met,
+            "normalP95WithinBound": self.normal_p95_within_bound,
             "serverDerivedAnswerExact": self.server_derived_answer_exact,
             "serverOwnedCitationsExact": self.server_owned_citations_exact,
             "unavailableAnswerAbsent": self.unavailable_answer_absent,
@@ -233,6 +250,9 @@ class AnalystQualificationInvocation:
     case_id: str
     run_id: str
     mode: str
+    expected_view_id: str
+    wave_id: str | None
+    declared_position: int | None
     tenant_id: str
     owner_id: str
     question: str
@@ -272,8 +292,13 @@ def load_analyst_qualification_acceptance(
         "caseCount",
         "ownerCount",
         "invocationCount",
-        "maximumP95Milliseconds",
-        "synchronizedOwnerWaveCount",
+        "maximumNormalP95Milliseconds",
+        "synchronizedWaveCount",
+        "ownersPerSynchronizedWave",
+        "synchronizedInvocationCount",
+        "exactSynchronizedInvocationCount",
+        "exactSynchronizedWaveCount",
+        "synchronizedWaves",
         "completeCount",
         "unavailableCount",
         "failedCount",
@@ -284,8 +309,8 @@ def load_analyst_qualification_acceptance(
         "answerCount",
         "citationCount",
         "terminalMismatchCount",
-        "synchronizedOwnerWaveMet",
-        "p95WithinBound",
+        "warmProviderRepeatabilityMet",
+        "normalP95WithinBound",
         "serverDerivedAnswerExact",
         "serverOwnedCitationsExact",
         "unavailableAnswerAbsent",
@@ -299,72 +324,123 @@ def load_analyst_qualification_acceptance(
         raise ValueError("Analyst qualification acceptance shape differs")
     if (
         type(value["schemaVersion"]) is not int
-        or value["schemaVersion"] != 1
+        or value["schemaVersion"] != 2
         or value["qualificationScope"] != _SCOPE
         or value["qualified"] is not True
     ):
         raise ValueError("Analyst qualification acceptance identity differs")
+    raw_waves = value["synchronizedWaves"]
+    if not isinstance(raw_waves, list):
+        raise ValueError("Analyst qualification waves differ")
+    waves = tuple(_acceptance_wave(item) for item in raw_waves)
     acceptance = AnalystQualificationAcceptance(
-        identity,
-        *(
-            _count(value[field], field)
-            for field in (
-                "caseCount",
-                "ownerCount",
-                "invocationCount",
-                "maximumP95Milliseconds",
-                "synchronizedOwnerWaveCount",
-                "completeCount",
-                "unavailableCount",
-                "failedCount",
-                "cancelledCount",
-                "exactTerminalMatchCount",
-                "exactAnswerMatchCount",
-                "uniqueRequestIdCount",
-                "answerCount",
-                "citationCount",
-                "terminalMismatchCount",
-            )
+        plan_sha256=identity,
+        case_count=_count(value["caseCount"], "caseCount"),
+        owner_count=_count(value["ownerCount"], "ownerCount"),
+        invocation_count=_count(value["invocationCount"], "invocationCount"),
+        maximum_normal_p95_milliseconds=_count(
+            value["maximumNormalP95Milliseconds"],
+            "maximumNormalP95Milliseconds",
         ),
-        *(
-            _flag(value[field], field)
-            for field in (
-                "synchronizedOwnerWaveMet",
-                "p95WithinBound",
-                "serverDerivedAnswerExact",
-                "serverOwnedCitationsExact",
-                "unavailableAnswerAbsent",
-                "cancellationFailedClosed",
-                "deadlineFailedClosed",
-                "staleGenerationFailedClosed",
-                "invalidOutputFailedClosed",
-                "workerContainmentMet",
-            )
+        synchronized_wave_count=_count(
+            value["synchronizedWaveCount"], "synchronizedWaveCount"
         ),
+        owners_per_synchronized_wave=_count(
+            value["ownersPerSynchronizedWave"], "ownersPerSynchronizedWave"
+        ),
+        synchronized_invocation_count=_count(
+            value["synchronizedInvocationCount"], "synchronizedInvocationCount"
+        ),
+        exact_synchronized_invocation_count=_count(
+            value["exactSynchronizedInvocationCount"],
+            "exactSynchronizedInvocationCount",
+        ),
+        exact_synchronized_wave_count=_count(
+            value["exactSynchronizedWaveCount"], "exactSynchronizedWaveCount"
+        ),
+        complete_count=_count(value["completeCount"], "completeCount"),
+        unavailable_count=_count(value["unavailableCount"], "unavailableCount"),
+        failed_count=_count(value["failedCount"], "failedCount"),
+        cancelled_count=_count(value["cancelledCount"], "cancelledCount"),
+        exact_terminal_match_count=_count(
+            value["exactTerminalMatchCount"], "exactTerminalMatchCount"
+        ),
+        exact_answer_match_count=_count(
+            value["exactAnswerMatchCount"], "exactAnswerMatchCount"
+        ),
+        unique_request_id_count=_count(
+            value["uniqueRequestIdCount"], "uniqueRequestIdCount"
+        ),
+        answer_count=_count(value["answerCount"], "answerCount"),
+        citation_count=_count(value["citationCount"], "citationCount"),
+        terminal_mismatch_count=_count(
+            value["terminalMismatchCount"], "terminalMismatchCount"
+        ),
+        warm_provider_repeatability_met=_flag(
+            value["warmProviderRepeatabilityMet"],
+            "warmProviderRepeatabilityMet",
+        ),
+        normal_p95_within_bound=_flag(
+            value["normalP95WithinBound"], "normalP95WithinBound"
+        ),
+        server_derived_answer_exact=_flag(
+            value["serverDerivedAnswerExact"], "serverDerivedAnswerExact"
+        ),
+        server_owned_citations_exact=_flag(
+            value["serverOwnedCitationsExact"], "serverOwnedCitationsExact"
+        ),
+        unavailable_answer_absent=_flag(
+            value["unavailableAnswerAbsent"], "unavailableAnswerAbsent"
+        ),
+        cancellation_failed_closed=_flag(
+            value["cancellationFailedClosed"], "cancellationFailedClosed"
+        ),
+        deadline_failed_closed=_flag(
+            value["deadlineFailedClosed"], "deadlineFailedClosed"
+        ),
+        stale_generation_failed_closed=_flag(
+            value["staleGenerationFailedClosed"], "staleGenerationFailedClosed"
+        ),
+        invalid_output_failed_closed=_flag(
+            value["invalidOutputFailedClosed"], "invalidOutputFailedClosed"
+        ),
+        worker_containment_met=_flag(
+            value["workerContainmentMet"], "workerContainmentMet"
+        ),
+        synchronized_waves=waves,
     )
     if (
         acceptance.case_count != 8
         or acceptance.owner_count != 8
-        or acceptance.invocation_count != 13
-        or acceptance.maximum_p95_milliseconds != 85_000
-        or acceptance.synchronized_owner_wave_count != 8
+        or acceptance.invocation_count != 29
+        or acceptance.maximum_normal_p95_milliseconds != 85_000
+        or acceptance.synchronized_wave_count != 3
+        or acceptance.owners_per_synchronized_wave != 8
+        or acceptance.synchronized_invocation_count != 24
+        or acceptance.exact_synchronized_invocation_count != 24
+        or acceptance.exact_synchronized_wave_count != 3
         or (
             acceptance.complete_count,
             acceptance.unavailable_count,
             acceptance.failed_count,
             acceptance.cancelled_count,
         )
-        != (4, 5, 1, 3)
-        or acceptance.exact_terminal_match_count != 13
-        or acceptance.exact_answer_match_count != 4
-        or acceptance.unique_request_id_count != 13
-        or acceptance.answer_count != 4
-        or acceptance.citation_count != 5
+        != (12, 13, 1, 3)
+        or acceptance.exact_terminal_match_count != 29
+        or acceptance.exact_answer_match_count != 12
+        or acceptance.unique_request_id_count != 29
+        or acceptance.answer_count != 12
+        or acceptance.citation_count != 15
         or acceptance.terminal_mismatch_count != 0
+        or len(waves) != 3
+        or len({item.wave_id for item in waves}) != 3
+        or any(len(item.case_order) != 8 for item in waves)
+        or any(len(set(item.case_order)) != 8 for item in waves)
+        or len({case for item in waves for case in item.case_order}) != 8
         or not all(
             (
-                acceptance.synchronized_owner_wave_met,
-                acceptance.p95_within_bound,
+                acceptance.warm_provider_repeatability_met,
+                acceptance.normal_p95_within_bound,
                 acceptance.server_derived_answer_exact,
                 acceptance.server_owned_citations_exact,
                 acceptance.unavailable_answer_absent,
@@ -378,6 +454,22 @@ def load_analyst_qualification_acceptance(
     ):
         raise ValueError("Analyst qualification acceptance values conflict")
     return acceptance
+
+
+def _acceptance_wave(value: object) -> AnalystQualificationWave:
+    if not isinstance(value, dict) or set(value) != {"waveId", "caseOrder"}:
+        raise ValueError("Analyst qualification wave shape differs")
+    order = value["caseOrder"]
+    if (
+        not isinstance(order, list)
+        or len(order) != len(set(order))
+        or not all(isinstance(item, str) for item in order)
+    ):
+        raise ValueError("Analyst qualification case order differs")
+    return AnalystQualificationWave(
+        _identity(value["waveId"], "wave identity"),
+        tuple(_identity(item, "wave case identity") for item in order),
+    )
 
 
 def load_analyst_qualification_corpus(path: Path) -> AnalystQualificationCorpus:
@@ -819,12 +911,15 @@ def bind_analyst_compiled_corpus(
 
 def build_analyst_qualification_invocations(
     corpus: AnalystQualificationCorpus,
+    acceptance: AnalystQualificationAcceptance,
     *,
     tenant_id: str | None = None,
     generation_sha256s: Mapping[str, str] | None = None,
 ) -> tuple[AnalystQualificationInvocation, ...]:
     if not isinstance(corpus, AnalystQualificationCorpus):
         raise TypeError("Analyst qualification corpus type is invalid")
+    if not isinstance(acceptance, AnalystQualificationAcceptance):
+        raise TypeError("Analyst qualification acceptance type is invalid")
     runtime_tenant = (
         corpus.tenant_id
         if tenant_id is None
@@ -835,22 +930,70 @@ def build_analyst_qualification_invocations(
         if generation_sha256s is None
         else _runtime_generation_sha256s(corpus, generation_sha256s)
     )
-    return tuple(
-        AnalystQualificationInvocation(
-            invocation_id=f"{case.case_id}:{run.run_id}",
-            case_id=case.case_id,
-            run_id=run.run_id,
-            mode=run.mode,
-            tenant_id=runtime_tenant,
-            owner_id=case.owner_id,
-            question=case.request.question,
-            maximum_results=case.request.maximum_results,
-            expected_generation_sha256=runtime_generations[
-                case.request.expected_generation_id
-            ],
+    cases = {item.case_id: item for item in corpus.cases}
+    if any(
+        set(wave.case_order) != set(cases) for wave in acceptance.synchronized_waves
+    ):
+        raise ValueError("Analyst qualification wave cases differ")
+    normal: list[AnalystQualificationInvocation] = []
+    for wave in acceptance.synchronized_waves:
+        for position, case_id in enumerate(wave.case_order, start=1):
+            case = cases[case_id]
+            run = next(item for item in case.runs if item.mode == "normal")
+            normal.append(
+                _invocation(
+                    case,
+                    run,
+                    runtime_tenant=runtime_tenant,
+                    runtime_generations=runtime_generations,
+                    invocation_id=f"wave-{wave.wave_id}:{case_id}:{run.run_id}",
+                    wave_id=wave.wave_id,
+                    declared_position=position,
+                )
+            )
+    controls = [
+        _invocation(
+            case,
+            run,
+            runtime_tenant=runtime_tenant,
+            runtime_generations=runtime_generations,
+            invocation_id=f"control:{case.case_id}:{run.run_id}",
+            wave_id=None,
+            declared_position=None,
         )
+        for mode in _CONTROLLED_MODES
         for case in corpus.cases
         for run in case.runs
+        if run.mode == mode
+    ]
+    return tuple((*normal, *controls))
+
+
+def _invocation(
+    case: AnalystQualificationCase,
+    run: AnalystQualificationRun,
+    *,
+    runtime_tenant: str,
+    runtime_generations: Mapping[str, str],
+    invocation_id: str,
+    wave_id: str | None,
+    declared_position: int | None,
+) -> AnalystQualificationInvocation:
+    return AnalystQualificationInvocation(
+        invocation_id=invocation_id,
+        case_id=case.case_id,
+        run_id=run.run_id,
+        mode=run.mode,
+        expected_view_id=f"{case.case_id}:{run.run_id}",
+        wave_id=wave_id,
+        declared_position=declared_position,
+        tenant_id=runtime_tenant,
+        owner_id=case.owner_id,
+        question=case.request.question,
+        maximum_results=case.request.maximum_results,
+        expected_generation_sha256=runtime_generations[
+            case.request.expected_generation_id
+        ],
     )
 
 
@@ -868,53 +1011,33 @@ def evaluate_analyst_qualification(
         raise TypeError("Analyst qualification corpus is not compiler-bound")
     invocations = build_analyst_qualification_invocations(
         corpus.corpus,
+        acceptance,
         tenant_id=corpus.tenant_id,
         generation_sha256s=corpus.generation_sha256s,
     )
     primary = tuple(item for item in invocations if item.mode == "normal")
     controlled = tuple(item for item in invocations if item.mode != "normal")
+    waves = tuple(
+        tuple(item for item in primary if item.wave_id == wave.wave_id)
+        for wave in acceptance.synchronized_waves
+    )
     if (
-        len(primary) != 8
-        or len({item.owner_id for item in primary}) != 8
+        len(primary) != 24
+        or len(waves) != 3
+        or any(
+            len(wave) != 8
+            or len({item.owner_id for item in wave}) != 8
+            or tuple(item.declared_position for item in wave) != tuple(range(1, 9))
+            for wave in waves
+        )
         or tuple(item.mode for item in controlled) != _CONTROLLED_MODES
     ):
-        raise ValueError("Analyst qualification synchronized wave differs")
-    barrier = threading.Barrier(len(primary))
-    cancellations = {item.invocation_id: threading.Event() for item in primary}
-    pool: ThreadPoolExecutor | None = ThreadPoolExecutor(
-        max_workers=len(primary),
-        thread_name_prefix="analyst-qualification",
-    )
-    try:
-        futures: list[Future[AnalystQualificationObservation]] = [
-            pool.submit(
-                _run_invocation,
-                executor,
-                invocation,
-                corpus.expected_views[invocation.invocation_id],
-                cancellations[invocation.invocation_id],
-                barrier,
-            )
-            for invocation in primary
-        ]
-        _, incomplete = wait(futures, timeout=_PRIMARY_WAVE_TIMEOUT_SECONDS)
-        if incomplete:
-            for cancellation in cancellations.values():
-                cancellation.set()
-            _, uncontained = wait(incomplete, timeout=_WORKER_CONTAINMENT_SECONDS)
-            if uncontained:
-                pool.shutdown(wait=False, cancel_futures=True)
-                pool = None
-                raise RuntimeError(
-                    "Analyst qualification cancellation was not contained"
-                )
-            pool.shutdown(wait=True, cancel_futures=True)
-            pool = None
-            raise TimeoutError("Analyst qualification wave exceeded its timeout")
-        primary_observations = [future.result() for future in futures]
-    finally:
-        if pool is not None:
-            pool.shutdown(wait=True, cancel_futures=True)
+        raise ValueError("Analyst qualification synchronized waves differ")
+    primary_observations: list[AnalystQualificationObservation] = []
+    for wave in waves:
+        primary_observations.extend(
+            _run_synchronized_wave(executor, wave, corpus.expected_views)
+        )
 
     observations = list(primary_observations)
     for invocation in controlled:
@@ -925,7 +1048,7 @@ def evaluate_analyst_qualification(
             _run_invocation(
                 executor,
                 invocation,
-                corpus.expected_views[invocation.invocation_id],
+                corpus.expected_views[invocation.expected_view_id],
                 cancellation,
                 None,
             )
@@ -935,11 +1058,23 @@ def evaluate_analyst_qualification(
     request_ids = [
         item.request_id for item in observations if item.request_id is not None
     ]
-    durations = sorted(item.duration_milliseconds for item in observations)
-    p95_index = max(0, math.ceil(len(durations) * 0.95) - 1)
-    synchronized_owners = {
-        item.invocation.owner_id for item in primary_observations if item.exact_match
+    normal_durations = sorted(
+        item.duration_milliseconds for item in primary_observations
+    )
+    p95_index = max(0, math.ceil(len(normal_durations) * 0.95) - 1)
+    wave_observations = {
+        wave.wave_id: tuple(
+            item
+            for item in primary_observations
+            if item.invocation.wave_id == wave.wave_id
+        )
+        for wave in acceptance.synchronized_waves
     }
+    exact_wave_count = sum(
+        len(items) == acceptance.owners_per_synchronized_wave
+        and all(item.exact_match for item in items)
+        for items in wave_observations.values()
+    )
     answer_observations = tuple(
         item for item in observations if item.expected.answer is not None
     )
@@ -947,16 +1082,25 @@ def evaluate_analyst_qualification(
         item for item in observations if item.expected.status == "evidence-unavailable"
     )
     cancellation_ids = (
-        "exact-single-answer:client-cancelled",
-        "missing-date-unavailable:pre-cancelled",
+        "control:exact-single-answer:client-cancelled",
+        "control:missing-date-unavailable:pre-cancelled",
     )
     public: dict[str, int | bool] = {
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "qualified": False,
         "caseCount": len(corpus.corpus.cases),
         "ownerCount": len({item.owner_id for item in corpus.corpus.cases}),
         "invocationCount": len(observations),
-        "synchronizedOwnerWaveCount": len(synchronized_owners),
+        "synchronizedWaveCount": len(wave_observations),
+        "ownersPerSynchronizedWave": min(
+            len({item.invocation.owner_id for item in items})
+            for items in wave_observations.values()
+        ),
+        "synchronizedInvocationCount": len(primary_observations),
+        "exactSynchronizedInvocationCount": sum(
+            item.exact_match for item in primary_observations
+        ),
+        "exactSynchronizedWaveCount": exact_wave_count,
         "completeCount": sum(
             item.observed is not None and item.observed.status == "complete"
             for item in observations
@@ -987,9 +1131,11 @@ def evaluate_analyst_qualification(
             for item in observations
         ),
         "terminalMismatchCount": sum(not item.exact_match for item in observations),
-        "synchronizedOwnerWaveMet": len(synchronized_owners)
-        == acceptance.synchronized_owner_wave_count,
-        "p95WithinBound": durations[p95_index] <= acceptance.maximum_p95_milliseconds,
+        "warmProviderRepeatabilityMet": (
+            exact_wave_count == acceptance.synchronized_wave_count
+        ),
+        "normalP95WithinBound": normal_durations[p95_index]
+        <= acceptance.maximum_normal_p95_milliseconds,
         "serverDerivedAnswerExact": bool(answer_observations)
         and all(item.exact_match for item in answer_observations),
         "serverOwnedCitationsExact": bool(answer_observations)
@@ -1012,12 +1158,14 @@ def evaluate_analyst_qualification(
             and by_id[item].observed.answer is None
             for item in cancellation_ids
         ),
-        "deadlineFailedClosed": by_id["numeric-unit-answer:deadline"].exact_match,
+        "deadlineFailedClosed": by_id[
+            "control:numeric-unit-answer:deadline"
+        ].exact_match,
         "staleGenerationFailedClosed": by_id[
-            "instruction-as-data-answer:stale-generation"
+            "control:instruction-as-data-answer:stale-generation"
         ].exact_match,
         "invalidOutputFailedClosed": by_id[
-            "ordered-multi-answer:invalid-output"
+            "control:ordered-multi-answer:invalid-output"
         ].exact_match,
         "workerContainmentMet": True,
     }
@@ -1026,6 +1174,49 @@ def evaluate_analyst_qualification(
         public[key] == value for key, value in required.items() if key != "qualified"
     )
     return AnalystQualificationResult(public, tuple(observations))
+
+
+def _run_synchronized_wave(
+    executor: AnalystQualificationExecutor,
+    invocations: tuple[AnalystQualificationInvocation, ...],
+    expected_views: Mapping[str, AnalystExpectedView],
+) -> list[AnalystQualificationObservation]:
+    barrier = threading.Barrier(len(invocations))
+    cancellations = {item.invocation_id: threading.Event() for item in invocations}
+    pool: ThreadPoolExecutor | None = ThreadPoolExecutor(
+        max_workers=len(invocations),
+        thread_name_prefix="analyst-qualification",
+    )
+    try:
+        futures: list[Future[AnalystQualificationObservation]] = [
+            pool.submit(
+                _run_invocation,
+                executor,
+                invocation,
+                expected_views[invocation.expected_view_id],
+                cancellations[invocation.invocation_id],
+                barrier,
+            )
+            for invocation in invocations
+        ]
+        _, incomplete = wait(futures, timeout=_PRIMARY_WAVE_TIMEOUT_SECONDS)
+        if incomplete:
+            for cancellation in cancellations.values():
+                cancellation.set()
+            _, uncontained = wait(incomplete, timeout=_WORKER_CONTAINMENT_SECONDS)
+            if uncontained:
+                pool.shutdown(wait=False, cancel_futures=True)
+                pool = None
+                raise RuntimeError(
+                    "Analyst qualification cancellation was not contained"
+                )
+            pool.shutdown(wait=True, cancel_futures=True)
+            pool = None
+            raise TimeoutError("Analyst qualification wave exceeded its timeout")
+        return [future.result() for future in futures]
+    finally:
+        if pool is not None:
+            pool.shutdown(wait=True, cancel_futures=True)
 
 
 def _run_invocation(
@@ -1196,6 +1387,7 @@ __all__ = [
     "AnalystQualificationResult",
     "AnalystQualificationRun",
     "AnalystQualificationSource",
+    "AnalystQualificationWave",
     "bind_analyst_compiled_corpus",
     "build_analyst_qualification_invocations",
     "evaluate_analyst_qualification",

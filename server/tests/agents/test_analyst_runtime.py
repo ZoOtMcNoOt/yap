@@ -77,7 +77,7 @@ class AnalystRuntimeTests(unittest.TestCase):
         self.assertEqual(runtime.model, "nvidia/Gemma-4-31B-IT-NVFP4")
         self.assertEqual(
             runtime.profile_sha256,
-            "cccc330793d1fb32989cf5822da00f96a02dd198dbb4229cd9f5d1c4ca0c3d1c",
+            "4c5e5da836355e57ec43c6f1270eb9eb5839c6fd91e6dbf73389e37ce4cdf6a8",
         )
         self.assertEqual(
             runtime.candidate_lock_sha256,
@@ -196,7 +196,7 @@ class AnalystRuntimeTests(unittest.TestCase):
         self.assertEqual(runtime_identity.runtime_id, "gemma-vllm-26.06")
         self.assertEqual(
             runtime_identity.profile_sha256,
-            "cccc330793d1fb32989cf5822da00f96a02dd198dbb4229cd9f5d1c4ca0c3d1c",
+            "4c5e5da836355e57ec43c6f1270eb9eb5839c6fd91e6dbf73389e37ce4cdf6a8",
         )
         self.assertEqual(
             runtime_identity.candidate_lock_sha256,

@@ -70,17 +70,25 @@ class CuratorQualificationGateTests(unittest.TestCase):
             "8",
             "--max-num-batched-tokens",
             "8192",
+            "--no-enable-prefix-caching",
         )
-        gate._require_full_complex_profile(8, exact)
-        for sequences, arguments in (
-            (7, exact),
-            (8, tuple("0.60" if item == "0.70" else item for item in exact)),
-            (8, tuple("7" if item == "8" else item for item in exact)),
-            (8, tuple("4096" if item == "8192" else item for item in exact)),
+        gate._require_full_complex_profile(8, True, exact)
+        for sequences, batch_invariant, arguments in (
+            (7, True, exact),
+            (8, False, exact),
+            (8, True, tuple("0.60" if item == "0.70" else item for item in exact)),
+            (8, True, tuple("7" if item == "8" else item for item in exact)),
+            (8, True, tuple("4096" if item == "8192" else item for item in exact)),
         ):
-            with self.subTest(sequences=sequences, arguments=arguments):
+            with self.subTest(
+                sequences=sequences,
+                batch_invariant=batch_invariant,
+                arguments=arguments,
+            ):
                 with self.assertRaisesRegex(ValueError, "full complex profile"):
-                    gate._require_full_complex_profile(sequences, arguments)
+                    gate._require_full_complex_profile(
+                        sequences, batch_invariant, arguments
+                    )
 
     def test_exact_compiled_body_builds_one_source_bound_evidence_item(self) -> None:
         corpus = load_curator_qualification_corpus(
@@ -218,6 +226,7 @@ class CuratorQualificationGateTests(unittest.TestCase):
             candidate_lock_sha256="3" * 64,
             profile_sha256="4" * 64,
             maximum_sequences=8,
+            batch_invariant=True,
             launch_arguments=(
                 "vllm",
                 "serve",
@@ -230,6 +239,7 @@ class CuratorQualificationGateTests(unittest.TestCase):
                 "8",
                 "--max-num-batched-tokens",
                 "8192",
+                "--no-enable-prefix-caching",
             ),
         )
         runtime = mock.Mock(maximum_output_tokens=512, maximum_input_tokens=7_680)
@@ -285,30 +295,70 @@ class CuratorQualificationGateTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             evidence_path = Path(temporary) / "private" / "receipt.json"
             patches = (
-                mock.patch.object(gate.secrets, "token_hex", side_effect=["1" * 16, "2" * 16]),
-                mock.patch.object(gate, "admit_checked_candidate", return_value=Candidate()),
+                mock.patch.object(
+                    gate.secrets, "token_hex", side_effect=["1" * 16, "2" * 16]
+                ),
+                mock.patch.object(
+                    gate, "admit_checked_candidate", return_value=Candidate()
+                ),
                 mock.patch.object(gate, "_candidate_input_paths", return_value=()),
                 mock.patch.object(gate, "_require_private_arm64_host"),
-                mock.patch.object(gate, "load_curator_qualification_acceptance", return_value=acceptance),
-                mock.patch.object(gate, "load_curator_qualification_corpus", return_value=corpus),
-                mock.patch.object(gate, "load_curator_service_profile", return_value=profile),
-                mock.patch.object(gate, "build_checked_admission_broker", return_value="a" * 64),
+                mock.patch.object(
+                    gate,
+                    "load_curator_qualification_acceptance",
+                    return_value=acceptance,
+                ),
+                mock.patch.object(
+                    gate, "load_curator_qualification_corpus", return_value=corpus
+                ),
+                mock.patch.object(
+                    gate, "load_curator_service_profile", return_value=profile
+                ),
+                mock.patch.object(
+                    gate, "build_checked_admission_broker", return_value="a" * 64
+                ),
                 mock.patch.object(
                     gate,
                     "probe_agent_admission_broker_capacity",
                     return_value=capacity,
                 ),
-                mock.patch.object(gate, "load_knowledge_database_runtime_lock", return_value=mock.Mock(lock_sha256="b" * 64)),
+                mock.patch.object(
+                    gate,
+                    "load_knowledge_database_runtime_lock",
+                    return_value=mock.Mock(lock_sha256="b" * 64),
+                ),
                 mock.patch.object(gate, "OwnedPostgresKnowledgeRuntime", Database),
-                mock.patch.object(gate, "_initialize_curator_knowledge", return_value=generation),
-                mock.patch.object(gate, "_expected_curator_evidence", return_value=expected),
-                mock.patch.object(gate, "_read_back_compiled_evidence", return_value=(requests, packs)),
+                mock.patch.object(
+                    gate, "_initialize_curator_knowledge", return_value=generation
+                ),
+                mock.patch.object(
+                    gate, "_expected_curator_evidence", return_value=expected
+                ),
+                mock.patch.object(
+                    gate, "_read_back_compiled_evidence", return_value=(requests, packs)
+                ),
                 mock.patch.object(gate, "_build_runtime", return_value=runtime),
-                mock.patch.object(gate, "_run_cross_owner_hidden", return_value=(cross_request, cross_view)),
-                mock.patch.object(gate, "evaluate_curator_qualification", return_value=result),
-                mock.patch.object(gate, "_curator_persistence_snapshot", return_value=((1,), (2,), (3,))),
-                mock.patch.object(gate, "_verify_replay_conflict_and_owner_isolation", return_value=replay),
-                mock.patch.object(gate, "_verify_curator_database_state", return_value=database_state),
+                mock.patch.object(
+                    gate,
+                    "_run_cross_owner_hidden",
+                    return_value=(cross_request, cross_view),
+                ),
+                mock.patch.object(
+                    gate, "evaluate_curator_qualification", return_value=result
+                ),
+                mock.patch.object(
+                    gate,
+                    "_curator_persistence_snapshot",
+                    return_value=((1,), (2,), (3,)),
+                ),
+                mock.patch.object(
+                    gate,
+                    "_verify_replay_conflict_and_owner_isolation",
+                    return_value=replay,
+                ),
+                mock.patch.object(
+                    gate, "_verify_curator_database_state", return_value=database_state
+                ),
                 mock.patch.object(
                     gate,
                     "bind_checked_candidate_evidence",
@@ -342,6 +392,7 @@ class CuratorQualificationGateTests(unittest.TestCase):
                 ],
             )
             self.assertEqual(receipt["workload"]["maximumInputTokens"], 7_680)
+            self.assertEqual(receipt["workload"]["requestSeed"], 0)
             self.assertEqual(receipt["workload"]["brokerActiveCapacity"], 8)
             self.assertTrue(receipt["knowledge"]["resultRestartReadBackObserved"])
             serialized = str(receipt)
@@ -377,6 +428,7 @@ class _CountConnection:
 
     def fetchone(self):
         return next(self.rows)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -94,6 +94,7 @@ struct ServiceProfileDocument {
     candidate_lock_sha256: String,
     expected_model: String,
     maximum_sequences: u8,
+    batch_invariant: Option<bool>,
 }
 
 pub(crate) fn load_service_profile(
@@ -122,6 +123,10 @@ pub(crate) fn load_service_profile(
         || !valid_model_identity(&document.expected_model)
         || !is_lower_sha256(&document.candidate_lock_sha256)
         || !(1..=64).contains(&document.maximum_sequences)
+        || match expected_service {
+            ProviderService::RapidAutomation => document.batch_invariant.is_some(),
+            ProviderService::ComplexOrchestration => document.batch_invariant != Some(true),
+        }
     {
         return Err(OrchestratorError::new(
             "provider service profile identity differs",

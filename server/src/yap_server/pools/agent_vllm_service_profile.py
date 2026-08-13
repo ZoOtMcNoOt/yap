@@ -23,7 +23,7 @@ RAPID_AUTOMATION_PROFILE_SHA256 = (
     "14712e6951802daaae323a3a7d69e78a8b3d5ac32ad52cbd0f546df327649da8"
 )
 COMPLEX_ORCHESTRATION_PROFILE_SHA256 = (
-    "cccc330793d1fb32989cf5822da00f96a02dd198dbb4229cd9f5d1c4ca0c3d1c"
+    "4c5e5da836355e57ec43c6f1270eb9eb5839c6fd91e6dbf73389e37ce4cdf6a8"
 )
 _COMMON_PROFILE_KEYS = {
     "schemaVersion",
@@ -84,19 +84,24 @@ class AgentVllmServiceProfile:
     image_id: str
     container_port: int
     maximum_sequences: int
+    batch_invariant: bool
     resources: AgentContainerResources
     launch_arguments: tuple[str, ...]
 
     def validate_identity(self) -> None:
         expected = _PROFILE_IDENTITIES.get(self.profile_id)
-        if expected is None or (
-            self.service,
-            self.candidate_id,
-            self.runtime_id,
-            self.expected_model,
-            self.container_name,
-            self.endpoint,
-        ) != expected:
+        if (
+            expected is None
+            or (
+                self.service,
+                self.candidate_id,
+                self.runtime_id,
+                self.expected_model,
+                self.container_name,
+                self.endpoint,
+            )
+            != expected
+        ):
             raise ValueError("agent service profile identity differs")
 
 
@@ -143,7 +148,7 @@ def load_agent_vllm_service_profile(
             "moeBackend",
             "speculativeConfig",
         },
-        "complex-orchestration": {"chatTemplate"},
+        "complex-orchestration": {"chatTemplate", "batchInvariant"},
     }.get(profile_id)
     if variant_keys is None or set(profile) != _COMMON_PROFILE_KEYS | variant_keys:
         raise ValueError("agent service profile shape differs")
@@ -157,8 +162,7 @@ def load_agent_vllm_service_profile(
     candidate_lock_sha256 = _text(profile, "candidateLockSha256")
     if (
         not _SHA256.fullmatch(candidate_lock_sha256)
-        or hashlib.sha256(candidate_lock_bytes).hexdigest()
-        != candidate_lock_sha256
+        or hashlib.sha256(candidate_lock_bytes).hexdigest() != candidate_lock_sha256
     ):
         raise ValueError("agent candidate lock bytes differ")
     lock = _json_object(candidate_lock_bytes, "agent candidate lock")
@@ -227,6 +231,9 @@ def load_agent_vllm_service_profile(
         minimum=1,
         maximum=64,
     )
+    batch_invariant = profile.get("batchInvariant", False)
+    if type(batch_invariant) is not bool:
+        raise ValueError("agent service batch invariance policy differs")
     maximum_batched_tokens = _integer(
         profile,
         "maximumBatchedTokens",
@@ -274,6 +281,7 @@ def load_agent_vllm_service_profile(
         image_id=image_id,
         container_port=container_port,
         maximum_sequences=maximum_sequences,
+        batch_invariant=batch_invariant,
         resources=resources,
         launch_arguments=launch_arguments,
     )

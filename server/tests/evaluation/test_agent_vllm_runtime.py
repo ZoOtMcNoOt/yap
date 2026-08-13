@@ -19,9 +19,7 @@ class AgentVllmRuntimeTests(unittest.TestCase):
         qwen = build_agent_vllm_launch_arguments(
             _candidate("qwen3.6-35b-a3b-nvfp4", reasoning_parser="qwen3")
         )
-        gemma = build_agent_vllm_launch_arguments(
-            _candidate("gemma-4-31b-it-nvfp4")
-        )
+        gemma = build_agent_vllm_launch_arguments(_candidate("gemma-4-31b-it-nvfp4"))
 
         self.assertNotIn("--generation-config", qwen)
         self.assertNotIn("--generation-config", gemma)
@@ -31,14 +29,16 @@ class AgentVllmRuntimeTests(unittest.TestCase):
         self.assertEqual(qwen[qwen.index("--attention-backend") + 1], "flashinfer")
         self.assertEqual(qwen[qwen.index("--load-format") + 1], "fastsafetensors")
         self.assertIn("--speculative-config", qwen)
-        self.assertEqual(
-            gemma[gemma.index("--load-format") + 1], "fastsafetensors"
-        )
+        self.assertIn("--enable-prefix-caching", qwen)
+        self.assertNotIn("--no-enable-prefix-caching", qwen)
+        self.assertEqual(gemma[gemma.index("--load-format") + 1], "fastsafetensors")
         self.assertEqual(
             gemma[gemma.index("--chat-template") + 1],
             "/opt/vllm/vllm-src/examples/tool_chat_template_gemma4.jinja",
         )
         self.assertNotIn("--chat-template", qwen)
+        self.assertIn("--no-enable-prefix-caching", gemma)
+        self.assertNotIn("--enable-prefix-caching", gemma)
         self.assertIn("--language-model-only", qwen)
         self.assertIn("--language-model-only", gemma)
 
@@ -128,14 +128,51 @@ class AgentVllmRuntimeTests(unittest.TestCase):
                 )
 
         self.assertEqual(started.container_id, runner.container_id)
-        launch = next(command for command in runner.commands if command[:2] == ["docker", "run"])
-        self.assertIn(["--pull", "never"], [launch[index : index + 2] for index in range(len(launch) - 1)])
+        launch = next(
+            command for command in runner.commands if command[:2] == ["docker", "run"]
+        )
+        self.assertIn(
+            ["--pull", "never"],
+            [launch[index : index + 2] for index in range(len(launch) - 1)],
+        )
         self.assertNotIn(
             "VLLM_ENFORCE_STRICT_TOOL_CALLING=0",
             launch,
         )
+        self.assertEqual(receipt["schemaVersion"], 2)
+        self.assertFalse(receipt["batchInvariant"])
         self.assertTrue(receipt["toolCallStructuralGuidanceEnabled"])
         self.assertTrue(receipt["teardown"]["sameLabelOwnersAbsent"])  # type: ignore[index]
+
+    def test_complex_runtime_enables_and_reads_back_batch_invariance(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            cgroup = root / "cgroup"
+            cgroup.mkdir()
+            (cgroup / "cgroup.procs").write_text("", encoding="ascii")
+            runner = _AgentDockerRunner(root)
+            runtime = _startable_runtime(root, runner, complex_route=True)
+            with (
+                patch(
+                    "yap_server.evaluation.agent_vllm_runtime._owned_cgroup_path",
+                    return_value=cgroup,
+                ),
+                patch(
+                    "yap_server.evaluation.agent_vllm_runtime._listener_is_absent",
+                    return_value=True,
+                ),
+            ):
+                runtime.start(timeout_seconds=1)
+                receipt = runtime.stop(
+                    timeout_seconds=1, child_evidence_sha256=_children()
+                )
+
+        launch = next(
+            command for command in runner.commands if command[:2] == ["docker", "run"]
+        )
+        self.assertIn("VLLM_BATCH_INVARIANT=1", launch)
+        self.assertEqual(receipt["schemaVersion"], 2)
+        self.assertTrue(receipt["batchInvariant"])
 
     def test_start_rejects_disabled_structural_guidance_policy(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -168,6 +205,13 @@ class AgentVllmRuntimeTests(unittest.TestCase):
     def test_verifies_upstream_manifest_runtime_identity(self) -> None:
         image_id = "sha256:" + "1" * 64
         manifest_digest = "sha256:" + "2" * 64
+        with self.assertRaisesRegex(ValueError, "batch invariance policy differs"):
+            OwnedAgentVllmRuntime(
+                checked_head="a" * 40,
+                runtime={"engine": "vllm"},
+                candidate=_candidate("gemma-4-31b-it-nvfp4"),
+                batch_invariant=False,
+            )
         runtime = OwnedAgentVllmRuntime(
             checked_head="a" * 40,
             runtime={
@@ -182,14 +226,13 @@ class AgentVllmRuntimeTests(unittest.TestCase):
                 "provenance": {"kind": "upstream-manifest"},
             },
             candidate=_candidate("gemma-4-31b-it-nvfp4"),
+            batch_invariant=True,
             runner=_ImageInspectRunner(
                 {
                     "Os": "linux",
                     "Architecture": "arm64",
                     "Id": image_id,
-                    "RepoDigests": [
-                        f"nvcr.io/nvidia/vllm@{manifest_digest}"
-                    ],
+                    "RepoDigests": [f"nvcr.io/nvidia/vllm@{manifest_digest}"],
                     "Config": {"Labels": {}},
                 }
             ),
@@ -226,6 +269,7 @@ class AgentVllmRuntimeTests(unittest.TestCase):
                 },
             },
             candidate=_candidate("qwen3.6-35b-a3b-nvfp4", reasoning_parser="qwen3"),
+            batch_invariant=False,
             runner=_ImageInspectRunner(
                 {
                     "Os": "linux",
@@ -275,6 +319,7 @@ class AgentVllmRuntimeTests(unittest.TestCase):
                 },
             },
             candidate=_candidate("qwen3.6-35b-a3b-nvfp4", reasoning_parser="qwen3"),
+            batch_invariant=False,
             runner=_ImageInspectRunner(
                 {
                     "Os": "linux",
@@ -376,9 +421,7 @@ class AgentVllmRuntimeTests(unittest.TestCase):
                 runtime.start(timeout_seconds=1)
                 runner.replacement_owner = True
                 with self.assertRaisesRegex(RuntimeError, "teardown"):
-                    runtime.stop(
-                        timeout_seconds=1, child_evidence_sha256=_children()
-                    )
+                    runtime.stop(timeout_seconds=1, child_evidence_sha256=_children())
                 runner.replacement_owner = False
                 runtime.contain_failed_run(timeout_seconds=1)
 
@@ -432,11 +475,15 @@ def _runtime(cgroup: Path) -> OwnedAgentVllmRuntime:
         checked_head="a" * 40,
         runtime={"engine": "vllm"},
         candidate={
-            "candidateId": "candidate",
-            "model": "model",
+            "candidateId": "qwen3.6-35b-a3b-nvfp4",
+            "model": "model/qwen",
             "revision": "b" * 40,
             "quantization": "nvfp4",
+            "toolCallParser": "qwen3_xml",
+            "reasoningParser": "qwen3",
+            "finalResponseProtocol": "json-schema",
         },
+        batch_invariant=False,
         runner=runner,
     )
     runtime._started = StartedAgentVllmRuntime(  # type: ignore[attr-defined]
@@ -447,13 +494,19 @@ def _runtime(cgroup: Path) -> OwnedAgentVllmRuntime:
         model_artifact_manifest_sha256="e" * 64,
         launch_arguments_sha256="f" * 64,
         launch_arguments=("vllm", "serve"),
+        batch_invariant=False,
         cgroup_path=cgroup,
         process_id=2_147_483_647,
     )
     return runtime
 
 
-def _startable_runtime(root: Path, runner) -> OwnedAgentVllmRuntime:
+def _startable_runtime(
+    root: Path,
+    runner,
+    *,
+    complex_route: bool = False,
+) -> OwnedAgentVllmRuntime:
     model_root = root / "model"
     snapshot = model_root / "snapshots" / ("b" * 40)
     snapshot.mkdir(parents=True)
@@ -461,15 +514,29 @@ def _startable_runtime(root: Path, runner) -> OwnedAgentVllmRuntime:
         checked_head="a" * 40,
         runtime={"engine": "vllm"},
         candidate={
-            "candidateId": "qwen3.6-35b-a3b-nvfp4",
-            "model": "model/qwen",
+            "candidateId": (
+                "gemma-4-31b-it-nvfp4" if complex_route else "qwen3.6-35b-a3b-nvfp4"
+            ),
+            "model": "model/gemma" if complex_route else "model/qwen",
             "revision": "b" * 40,
             "quantization": "w4afp8",
             "artifactManifestSha256": "e" * 64,
-            "toolCallParser": "qwen3_xml",
-            "reasoningParser": "qwen3",
-            "finalResponseProtocol": "json-schema",
+            "toolCallParser": "gemma4" if complex_route else "qwen3_xml",
+            **(
+                {
+                    "chatTemplate": (
+                        "/opt/vllm/vllm-src/examples/tool_chat_template_gemma4.jinja"
+                    ),
+                    "finalResponseProtocol": "forced-answer-tool",
+                }
+                if complex_route
+                else {
+                    "reasoningParser": "qwen3",
+                    "finalResponseProtocol": "json-schema",
+                }
+            ),
         },
+        batch_invariant=complex_route,
         runner=runner,
     )
     runtime._verified_image_id = lambda: "sha256:" + "d" * 64  # type: ignore[method-assign]
@@ -504,6 +571,7 @@ class _AgentDockerRunner:
         self.user = user
         self.failed_removals = failed_removals
         self.structural_guidance_override = structural_guidance_override
+        self.batch_invariant = False
         self.launched = False
         self.exists = False
         self.replacement_owner = False
@@ -517,6 +585,7 @@ class _AgentDockerRunner:
         if command[:2] == ["docker", "run"]:
             self.launched = True
             self.exists = True
+            self.batch_invariant = "VLLM_BATCH_INVARIANT=1" in command
             stdout = self.returned_identity + "\n"
         elif command[:3] == ["docker", "container", "inspect"]:
             if not self.exists:
@@ -550,6 +619,7 @@ class _AgentDockerRunner:
                 "User": self.user,
                 "Env": [
                     "HOME=/tmp",
+                    *(["VLLM_BATCH_INVARIANT=1"] if self.batch_invariant else []),
                     *(
                         [
                             "VLLM_ENFORCE_STRICT_TOOL_CALLING="

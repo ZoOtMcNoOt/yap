@@ -87,9 +87,7 @@ class AgentModelQualificationTests(unittest.TestCase):
                 candidate=candidate, runs=runs
             )
 
-        self.assertEqual(
-            decision["outcome"], "required-workload-routes-qualified"
-        )
+        self.assertEqual(decision["outcome"], "required-workload-routes-qualified")
         self.assertEqual(decision["schemaVersion"], 2)
         self.assertEqual(
             decision["admittedModelCandidates"],
@@ -101,9 +99,7 @@ class AgentModelQualificationTests(unittest.TestCase):
         candidate = _checked_candidate()
         runs = (
             _candidate_run(candidate, "qwen3.6-35b-a3b-nvfp4", 20, passing=False),
-            _candidate_run(
-                candidate, "gemma-4-31b-it-nvfp4", 20, passing=False
-            ),
+            _candidate_run(candidate, "gemma-4-31b-it-nvfp4", 20, passing=False),
         )
 
         with patch.object(CheckedCandidate, "verify_unchanged"):
@@ -136,6 +132,7 @@ class AgentModelQualificationTests(unittest.TestCase):
             for summary in decision["candidateSummaries"]
             if summary["candidateId"] == "qwen3.6-35b-a3b-nvfp4"
         )
+        self.assertEqual(qwen["requestSeed"], 0)
         self.assertFalse(qwen["routeEvidencePassed"])
 
     def test_rejects_slow_rapid_fixture_when_marker_pressure_is_fast(self) -> None:
@@ -434,9 +431,7 @@ class AgentModelQualificationTests(unittest.TestCase):
         run = _candidate_run(candidate, "qwen3.6-35b-a3b-nvfp4", 20)
         lock = json.loads(
             (
-                REPOSITORY_ROOT
-                / "server"
-                / "agent-reasoning-candidates.lock.json"
+                REPOSITORY_ROOT / "server" / "agent-reasoning-candidates.lock.json"
             ).read_text(encoding="utf-8")
         )
         candidate_lock = next(
@@ -497,7 +492,9 @@ class AgentModelQualificationTests(unittest.TestCase):
             patch.object(CheckedCandidate, "verify_unchanged"),
             self.assertRaisesRegex(ValueError, "candidate evidence"),
         ):
-            evaluate_agent_model_qualification(candidate=candidate, runs=(obsolete, other))
+            evaluate_agent_model_qualification(
+                candidate=candidate, runs=(obsolete, other)
+            )
 
         children = {
             **run.children,
@@ -629,7 +626,7 @@ def _candidate_run(
         runtime["observedImageId"],
     )
     receipt = {
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "checkedHead": candidate.checked_head,
         "candidateId": candidate_id,
         "model": model["model"],
@@ -640,6 +637,7 @@ def _candidate_run(
         "modelArtifactManifestSha256": model["artifactManifestSha256"],
         "launchArguments": launch_arguments,
         "launchArgumentsSha256": launch_sha256,
+        "batchInvariant": candidate_id == "gemma-4-31b-it-nvfp4",
         "toolCallStructuralGuidanceEnabled": True,
         "childEvidenceSha256": {
             name: agent_evidence_sha256(value) for name, value in children.items()
@@ -710,6 +708,7 @@ def _failed_run(
                 "modelArtifactManifestSha256": model["artifactManifestSha256"],
                 "launchArguments": launch_arguments,
                 "launchArgumentsSha256": canonical_evidence_sha256(launch_arguments),
+                "batchInvariant": candidate_id == "gemma-4-31b-it-nvfp4",
                 "teardown": {
                     "containerAbsent": True,
                     "listenerAbsent": True,
@@ -775,12 +774,13 @@ def _children(
             "sampleCount": 10,
         },
         "lifecycle": {
-            "schemaVersion": 1,
+            "schemaVersion": 2,
             "checkedHead": candidate.checked_head,
             "containerId": "8" * 64,
             "imageId": image_id,
             "modelArtifactManifestSha256": model["artifactManifestSha256"],
             "launchArgumentsSha256": launch_sha256,
+            "batchInvariant": model["candidateId"] == "gemma-4-31b-it-nvfp4",
             "endpoint": "http://127.0.0.1:30000",
         },
     }

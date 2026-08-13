@@ -82,7 +82,7 @@ mapfile -d '' -t profile_values < <(
       --model-snapshot "$YAP_AGENT_MODEL_SNAPSHOT" \
       --emit-null
 )
-if [ "${#profile_values[@]}" -lt 18 ]; then
+if [ "${#profile_values[@]}" -lt 19 ]; then
   die "agent vLLM service profile output is incomplete"
 fi
 profile_id="${profile_values[0]}"
@@ -101,13 +101,22 @@ profile_cpu_count="${profile_values[12]}"
 profile_pids_limit="${profile_values[13]}"
 profile_shm_bytes="${profile_values[14]}"
 profile_tmpfs_bytes="${profile_values[15]}"
-profile_argument_count="${profile_values[16]}"
+profile_batch_invariant="${profile_values[16]}"
+profile_argument_count="${profile_values[17]}"
+if [ "$profile_batch_invariant" != "0" ] \
+  && [ "$profile_batch_invariant" != "1" ]; then
+  die "agent vLLM service profile batch invariance policy differs"
+fi
 if [[ ! "$profile_argument_count" =~ ^[0-9]+$ ]] \
   || [ "$profile_argument_count" -lt 1 ] \
-  || [ "${#profile_values[@]}" -ne "$((17 + profile_argument_count))" ]; then
+  || [ "${#profile_values[@]}" -ne "$((18 + profile_argument_count))" ]; then
   die "agent vLLM service profile argument count differs"
 fi
-profile_launch_arguments=("${profile_values[@]:17}")
+profile_launch_arguments=("${profile_values[@]:18}")
+profile_batch_environment=()
+if [ "$profile_batch_invariant" = "1" ]; then
+  profile_batch_environment=(--env VLLM_BATCH_INVARIANT=1)
+fi
 if [ "$profile_id" != "$profile_service" ]; then
   die "agent vLLM service profile identity differs"
 fi
@@ -191,6 +200,7 @@ run_private_container_with_loopback_proxy \
   --env HF_HUB_DISABLE_TELEMETRY=1 \
   --env DO_NOT_TRACK=1 \
   --env HOME=/tmp \
+  "${profile_batch_environment[@]}" \
   --mount "type=bind,src=$model_root_canonical,dst=/model-cache,readonly" \
   "$profile_image_id" \
   "${profile_launch_arguments[@]}"

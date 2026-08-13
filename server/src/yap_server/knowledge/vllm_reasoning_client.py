@@ -98,9 +98,7 @@ class BoundedVllmJsonClient:
         connection = http.client.HTTPConnection(
             self._host, self._port, timeout=self._timeout_seconds
         )
-        outcome: queue.Queue[dict[str, object] | BaseException] = queue.Queue(
-            maxsize=1
-        )
+        outcome: queue.Queue[dict[str, object] | BaseException] = queue.Queue(maxsize=1)
         try:
             body = json.dumps(
                 payload,
@@ -199,13 +197,12 @@ class VllmReasoningClient:
                 {"role": "user", "content": prompt},
             ],
             "temperature": 0,
+            "seed": 0,
             "n": 1,
             "max_tokens": self._maximum_output_tokens,
             "chat_template_kwargs": {"enable_thinking": False},
         }
-        payload.update(
-            governed_answer_request_fields(self._final_response_protocol)
-        )
+        payload.update(governed_answer_request_fields(self._final_response_protocol))
         response = self._transport.request(
             payload,
             cancellation,
