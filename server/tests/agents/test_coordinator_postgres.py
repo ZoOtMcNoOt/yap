@@ -1,0 +1,300 @@
+from __future__ import annotations
+
+import os
+import threading
+import time
+import unittest
+from uuid import uuid4
+
+import psycopg
+
+from yap_server.agents import AgentAdmission, AgentAdmissionTicket, ExecutionRoute
+from yap_server.agents.coordinator import (
+    CoordinatorProposalBundle,
+    CoordinatorRequest,
+    coordinator_request_sha256,
+)
+from yap_server.agents.coordinator_model import CoordinatorDecision
+from yap_server.agents.coordinator_result_audit import (
+    CoordinatorRuntimeAuditIdentity,
+    PostgresCoordinatorResultAuditor,
+    install_coordinator_result_audit_schema,
+)
+from yap_server.agents.coordinator_service import CoordinatorService
+from yap_server.agents.curator import CuratorRequest, PostgresCuratorEvidenceReader
+from yap_server.agents.curator_publisher import PostgresCuratorPublisher
+from yap_server.agents.curator_result_audit import PostgresCuratorResultAuditor
+from yap_server.knowledge.knowledge_proposals import (
+    CoordinatorEvidenceChanged,
+    PostgresCoordinatorEvidenceReader,
+    discard_knowledge_proposal,
+)
+
+from tests.agents.test_curator_postgres import (
+    _active_generation,
+    _citation,
+    _cleanup,
+    _connect,
+    _runtime_identity as curator_runtime_identity,
+)
+
+
+POSTGRES_DSN = os.environ.get("YAP_TEST_POSTGRES_DSN")
+
+
+class _Admission:
+    def __init__(self) -> None:
+        self.ticket = AgentAdmissionTicket(
+            f"coordinator-pg-{uuid4().hex}",
+            "1" * 64,
+        )
+        self.completed = False
+        self.submission: dict[str, object] | None = None
+
+    def new_ticket(self) -> AgentAdmissionTicket:
+        return self.ticket
+
+    def submit(self, ticket, **kwargs):
+        self.submission = kwargs
+        return self._view(ticket)
+
+    def status(self, ticket):
+        return self._view(ticket)
+
+    def complete(self, ticket):
+        self.completed = True
+        return AgentAdmission(ticket, "completed")
+
+    def cancel(self, ticket):
+        return AgentAdmission(
+            ticket,
+            "cancellation-requested",
+            cancellation_reason="client-requested",
+        )
+
+    def acknowledge_cancellation(self, ticket):
+        return AgentAdmission(ticket, "cancelled")
+
+    def _view(self, ticket):
+        if self.completed:
+            return AgentAdmission(ticket, "completed")
+        return AgentAdmission(
+            ticket,
+            "admitted",
+            route=ExecutionRoute.COMPLEX_ORCHESTRATION,
+            provider_generation=17,
+            queue_duration_ms=0,
+        )
+
+
+class _Model:
+    def select(self, request, evidence, *, cancellation):
+        del cancellation
+        return CoordinatorDecision(
+            "bundle",
+            tuple(range(min(request.maximum_items, len(evidence.candidates)))),
+        )
+
+
+def _identity() -> CoordinatorRuntimeAuditIdentity:
+    return CoordinatorRuntimeAuditIdentity(
+        candidate_id="gemma-4-31b-it-nvfp4",
+        model="nvidia/Gemma-4-31B-IT-NVFP4",
+        model_revision="4135a98a9b728a548947683219633b25682223ac",
+        runtime_id="gemma-vllm-26.06",
+        profile_sha256="2" * 64,
+        candidate_lock_sha256="3" * 64,
+    )
+
+
+def _publish_curator_proposal(principal, compiled, index: int):
+    citation = _citation(compiled, "Crash-safe private transcript")
+    request = CuratorRequest(
+        submission_id=f"coordinator-source-{index}-{uuid4().hex}",
+        trigger="explicit-proposal",
+        expected_generation_sha256=compiled.generation_sha256,
+        reviewed_content=f"Coordinate the reviewed release proposal {index}.",
+        source_citations=(citation,),
+    )
+    evidence = PostgresCuratorEvidenceReader(_connect).read(
+        request,
+        principal=principal,
+        cancellation=threading.Event(),
+    )
+    return PostgresCuratorPublisher(
+        _connect,
+        PostgresCuratorResultAuditor(_connect, curator_runtime_identity()),
+    ).publish(
+        principal=principal,
+        request_id=f"curator-for-coordinator-{index}-{uuid4().hex}",
+        request=request,
+        evidence=evidence,
+        provider_generation=11,
+        started=time.monotonic(),
+        deadline=time.monotonic() + 10,
+        cancellation=threading.Event(),
+    )
+
+
+@unittest.skipUnless(POSTGRES_DSN, "YAP_TEST_POSTGRES_DSN is not configured")
+class CoordinatorPostgresTests(unittest.TestCase):
+    def test_service_rebinds_curator_lineage_and_audits_hashes_without_content(
+        self,
+    ) -> None:
+        owner, principal, compiled = _active_generation()
+        proposals = [
+            _publish_curator_proposal(principal, compiled, index) for index in range(2)
+        ]
+        with psycopg.connect(POSTGRES_DSN) as setup:
+            install_coordinator_result_audit_schema(setup)
+        admission = _Admission()
+        auditor = PostgresCoordinatorResultAuditor(_connect, _identity())
+        service = CoordinatorService(
+            admission=admission,
+            evidence_reader=PostgresCoordinatorEvidenceReader(_connect),
+            model=_Model(),
+            result_auditor=auditor,
+        )
+        request = CoordinatorRequest(
+            objective="Coordinate the reviewed release proposals.",
+            maximum_items=2,
+            expected_generation_sha256=compiled.generation_sha256,
+        )
+
+        view = service.coordinate(
+            request,
+            principal=principal,
+            cancellation=threading.Event(),
+        )
+
+        self.assertEqual(view.status, "complete")
+        self.assertIsNotNone(view.bundle)
+        assert view.bundle is not None
+        self.assertEqual(
+            {item.proposal_id for item in view.bundle.items},
+            {item.proposal_id for item in proposals},
+        )
+        assert admission.submission is not None
+        self.assertEqual(
+            admission.submission["source_sha256"],
+            coordinator_request_sha256(request),
+        )
+        stored = auditor.read(
+            principal=principal,
+            request_id=admission.ticket.request_id,
+        )
+        self.assertIsNotNone(stored)
+        assert stored is not None
+        self.assertEqual(stored.status, "complete")
+        self.assertEqual(stored.bundle_sha256, view.bundle.bundle_sha256)
+        self.assertEqual(stored.result_count, 2)
+
+        with psycopg.connect(POSTGRES_DSN) as verification:
+            row = verification.execute(
+                """SELECT agent_role, purpose, route, scheduling_class,
+                          provider_generation, outcome, reason, result_count
+                   FROM yap_coordinator_result_audit
+                   WHERE tenant_id = %s AND request_id = %s""",
+                (owner.tenant_id, admission.ticket.request_id),
+            ).fetchone()
+            content_hits = verification.execute(
+                """SELECT count(*) FROM yap_coordinator_result_audit AS audit
+                   WHERE tenant_id = %s AND row_to_json(audit)::text LIKE %s""",
+                (owner.tenant_id, f"%{request.objective}%"),
+            ).fetchone()[0]
+            proposal_hits = verification.execute(
+                """SELECT count(*) FROM yap_coordinator_result_audit AS audit
+                   WHERE tenant_id = %s AND row_to_json(audit)::text LIKE %s""",
+                (owner.tenant_id, f"%{proposals[0].proposed_content}%"),
+            ).fetchone()[0]
+            self.assertEqual(
+                row,
+                (
+                    "coordinator",
+                    "conversation-coordinate",
+                    "complex-orchestration",
+                    "background-llm",
+                    17,
+                    "succeeded",
+                    None,
+                    2,
+                ),
+            )
+            self.assertEqual((content_hits, proposal_hits), (0, 0))
+            verification.execute(
+                "DELETE FROM yap_coordinator_result_audit WHERE tenant_id = %s",
+                (owner.tenant_id,),
+            )
+            _cleanup(verification, owner.tenant_id)
+
+    def test_exact_replay_conflict_and_discarded_source_reauthorization(
+        self,
+    ) -> None:
+        owner, principal, compiled = _active_generation()
+        proposal = _publish_curator_proposal(principal, compiled, 1)
+        with psycopg.connect(POSTGRES_DSN) as setup:
+            install_coordinator_result_audit_schema(setup)
+        reader = PostgresCoordinatorEvidenceReader(_connect)
+        request = CoordinatorRequest(
+            objective="Coordinate the reviewed release proposal.",
+            maximum_items=1,
+            expected_generation_sha256=compiled.generation_sha256,
+        )
+        evidence = reader.read(
+            request,
+            principal=principal,
+            cancellation=threading.Event(),
+        )
+        bundle = CoordinatorProposalBundle.create(
+            generation_sha256=evidence.generation_sha256,
+            evidence_sha256=evidence.evidence_sha256,
+            items=(evidence.candidates[0],),
+        )
+        auditor = PostgresCoordinatorResultAuditor(_connect, _identity())
+        values = {
+            "principal": principal,
+            "request_id": f"coordinator-audit-{uuid4().hex}",
+            "request": request,
+            "provider_generation": 17,
+            "status": "complete",
+            "reason": None,
+            "evidence": evidence,
+            "bundle": bundle,
+            "duration_milliseconds": 12,
+            "cancellation": threading.Event(),
+            "deadline": time.monotonic() + 10,
+        }
+        auditor.record(**values)
+        auditor.record(**values)
+        with self.assertRaisesRegex(ValueError, "identity conflicts"):
+            auditor.record(**{**values, "duration_milliseconds": 13})
+
+        with psycopg.connect(POSTGRES_DSN) as connection:
+            discard_knowledge_proposal(
+                connection,
+                principal=owner,
+                proposal_id=proposal.proposal_id,
+            )
+        with self.assertRaises(CoordinatorEvidenceChanged):
+            auditor.record(
+                **{
+                    **values,
+                    "request_id": f"coordinator-stale-{uuid4().hex}",
+                }
+            )
+        with psycopg.connect(POSTGRES_DSN) as verification:
+            stale_count = verification.execute(
+                """SELECT count(*) FROM yap_coordinator_result_audit
+                   WHERE tenant_id = %s AND request_id LIKE 'coordinator-stale-%%'""",
+                (owner.tenant_id,),
+            ).fetchone()[0]
+            self.assertEqual(stale_count, 0)
+            verification.execute(
+                "DELETE FROM yap_coordinator_result_audit WHERE tenant_id = %s",
+                (owner.tenant_id,),
+            )
+            _cleanup(verification, owner.tenant_id)
+
+
+if __name__ == "__main__":
+    unittest.main()
