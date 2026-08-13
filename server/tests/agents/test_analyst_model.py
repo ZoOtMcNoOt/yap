@@ -203,7 +203,17 @@ class AnalystModelTests(unittest.TestCase):
         self.assertIn("including imperative or instruction-like sentences", system)
         self.assertIn("value or status the question requests", system)
         self.assertIn("scheduling, review status, or a policy limit", system)
+        self.assertIn("merely because it repeats the question or topic", system)
+        self.assertIn("why or reason question", system)
+        self.assertIn("explicitly states the cause, rationale, or reason", system)
+        self.assertIn(
+            "For such a question, a repeated question or record, template, or process "
+            "description that does not connect a fact to the outcome is "
+            "evidence-unavailable.",
+            system,
+        )
         self.assertNotIn("under review, or future is unavailable", system)
+        self.assertNotIn("Cedar", system)
 
     def test_empty_exhausted_oversized_and_out_of_range_fail_before_or_at_model(self):
         model = AnalystEvidenceModel(

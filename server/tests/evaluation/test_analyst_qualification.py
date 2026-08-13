@@ -88,7 +88,7 @@ class AnalystQualificationTests(unittest.TestCase):
         controlled = tuple(item for item in invocations if item.mode != "normal")
 
         self.assertEqual(len(self.corpus.cases), 8)
-        self.assertEqual(self.corpus.corpus_id, "analyst-public-synthetic-v3")
+        self.assertEqual(self.corpus.corpus_id, "analyst-public-synthetic-v4")
         self.assertEqual(len(invocations), 13)
         self.assertEqual(len(primary), 8)
         self.assertEqual(len({item.owner_id for item in primary}), 8)
@@ -147,11 +147,33 @@ class AnalystQualificationTests(unittest.TestCase):
         assert exact is not None and multi is not None and injected is not None
         self.assertEqual(
             exact.answer,
-            "Atlas handoff requires two reviewers before publication.",
+            "Why does Atlas follow the standard decision template? Atlas follows the "
+            "standard decision template because publication policy requires it.",
+        )
+        self.assertEqual(
+            next(
+                item.request.question
+                for item in self.corpus.cases
+                if item.case_id == "exact-single-answer"
+            ),
+            "Why does Atlas follow the standard decision template?",
+        )
+        cedar = self.expected["unstated-rationale-unavailable:normal"]
+        self.assertEqual(
+            (cedar.status, cedar.reason, cedar.answer),
+            ("evidence-unavailable", "model-evidence-unavailable", None),
         )
         self.assertEqual(
             tuple(item.concept_id for item in multi.citations),
             ("release/nimbus-1-security", "release/nimbus-2-approvers"),
+        )
+        self.assertEqual(
+            next(
+                item.request.question
+                for item in self.corpus.cases
+                if item.case_id == "ordered-multi-answer"
+            ),
+            "Nimbus publication checks",
         )
         self.assertEqual(
             multi.answer, "\n\n".join(item.text for item in multi.citations)

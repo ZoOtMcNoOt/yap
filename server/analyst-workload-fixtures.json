@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "qualificationScope": "analyst-grounded-cited-answers",
-  "corpusId": "analyst-public-synthetic-v3",
+  "corpusId": "analyst-public-synthetic-v4",
   "tenantId": "analyst-qualification",
   "generations": [
     {
@@ -24,10 +24,10 @@
       "generationSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
       "sources": [
         {
-          "conceptId": "meetings/atlas-handoff",
+          "conceptId": "process/atlas-template",
           "sourceRevision": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
-          "body": "Atlas handoff requires two reviewers before publication.",
-          "evidenceQuote": "Atlas handoff requires two reviewers before publication.",
+          "body": "Why does Atlas follow the standard decision template? Atlas follows the standard decision template because publication policy requires it.",
+          "evidenceQuote": "Why does Atlas follow the standard decision template? Atlas follows the standard decision template because publication policy requires it.",
           "visibleToOwnerIds": ["owner-atlas"],
           "linkedConceptIds": [],
           "retrievalRank": 1
@@ -112,10 +112,10 @@
       "caseId": "exact-single-answer",
       "ownerId": "owner-atlas",
       "activeGenerationId": "successor",
-      "request": {"question": "Atlas handoff", "maximumResults": 3, "expectedGenerationId": "successor"},
+      "request": {"question": "Why does Atlas follow the standard decision template?", "maximumResults": 3, "expectedGenerationId": "successor"},
       "runs": [
-        {"runId": "normal", "mode": "normal", "expectedStatus": "complete", "expectedReason": null, "expectedEvidence": [{"conceptId": "meetings/atlas-handoff", "quote": "Atlas handoff requires two reviewers before publication."}], "expectedAnswerEvidenceIndexes": [0]},
-        {"runId": "client-cancelled", "mode": "client-cancelled", "expectedStatus": "cancelled", "expectedReason": "client-cancelled", "expectedEvidence": [{"conceptId": "meetings/atlas-handoff", "quote": "Atlas handoff requires two reviewers before publication."}], "expectedAnswerEvidenceIndexes": []}
+        {"runId": "normal", "mode": "normal", "expectedStatus": "complete", "expectedReason": null, "expectedEvidence": [{"conceptId": "process/atlas-template", "quote": "Why does Atlas follow the standard decision template? Atlas follows the standard decision template because publication policy requires it."}], "expectedAnswerEvidenceIndexes": [0]},
+        {"runId": "client-cancelled", "mode": "client-cancelled", "expectedStatus": "cancelled", "expectedReason": "client-cancelled", "expectedEvidence": [{"conceptId": "process/atlas-template", "quote": "Why does Atlas follow the standard decision template? Atlas follows the standard decision template because publication policy requires it."}], "expectedAnswerEvidenceIndexes": []}
       ]
     },
     {
