@@ -100,6 +100,7 @@ def _tool_response(decision: object = "propose") -> dict[str, object]:
         "choices": [
             {
                 "message": {
+                    "content": None,
                     "tool_calls": [
                         {
                             "id": "curator-decision-1",
@@ -488,10 +489,28 @@ class CuratorTests(unittest.TestCase):
         )
         self.assertNotIn("sourceCitations", visible)
 
+        empty_content = _tool_response()
+        empty_content["choices"][0]["message"]["content"] = ""
+        self.assertEqual(
+            parse_curator_decision(empty_content),
+            CuratorDecision("propose"),
+        )
+
     def test_model_rejects_wrong_or_ambiguous_tool_responses(self) -> None:
         invalid = (
             {},
             {"choices": []},
+            {
+                "choices": [
+                    {
+                        "message": {
+                            "tool_calls": _tool_response()["choices"][0]["message"][
+                                "tool_calls"
+                            ],
+                        }
+                    }
+                ]
+            },
             {
                 "choices": [
                     {
@@ -512,6 +531,18 @@ class CuratorTests(unittest.TestCase):
             _tool_response([]),
             _tool_response({}),
             _tool_response(None),
+            {
+                "choices": [
+                    {
+                        "message": {
+                            "content": " ",
+                            "tool_calls": _tool_response()["choices"][0]["message"][
+                                "tool_calls"
+                            ],
+                        }
+                    }
+                ]
+            },
             {
                 "choices": [
                     {

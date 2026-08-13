@@ -181,7 +181,7 @@ def parse_curator_decision(response: object) -> CuratorDecision:
     message = choices[0].get("message")
     if not isinstance(message, dict):
         raise ValueError("curator model message is invalid")
-    if message.get("content") is not None:
+    if "content" not in message or message["content"] not in (None, ""):
         raise ValueError("curator model message content is invalid")
     calls = message.get("tool_calls")
     if not isinstance(calls, list) or len(calls) != 1 or not isinstance(calls[0], dict):

@@ -135,7 +135,7 @@ Each line contains up to two independent entries in the form
   470 POOLS                server/src/yap_server/pools/nemotron_nemo_pipeline.py ||   488 POOLS                server/src/yap_server/pools/nemotron_nemo_service.py
   418 POOLS                server/src/yap_server/pools/nemotron_nemo_streaming.py ||   378 POOLS                server/src/yap_server/pools/provider_worker_factory.py
   513 POOLS                server/src/yap_server/pools/utterance_plan.py ||   577 POOLS                server/src/yap_server/pools/vllm_transcription_client.py
-  423 SERVER-CONTRACT      server/tests/agents/test_curator_postgres.py ||  1024 SERVER-CONTRACT      server/tests/agents/test_curator.py
+  423 SERVER-CONTRACT      server/tests/agents/test_curator_postgres.py ||  1055 SERVER-CONTRACT      server/tests/agents/test_curator.py
   380 SERVER-CONTRACT      server/tests/agents/test_student_postgres.py ||   842 SERVER-CONTRACT      server/tests/agents/test_student.py
   563 SERVER-CONTRACT      server/tests/agents/test_transcript_correction_model.py ||   778 SERVER-CONTRACT      server/tests/agents/test_transcript_correction_service.py
   605 SERVER-CONTRACT      server/tests/agents/test_transcript_correction.py ||   426 TEST-AUTH-CONTRACT   server/tests/auth/test_oidc_access_tokens.py
