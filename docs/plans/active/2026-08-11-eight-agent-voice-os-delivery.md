@@ -14,16 +14,17 @@ open. Hosted head `7505247e...` merged Librarian through PR #169 as
 `d7a7e003...`. Exact executable `0665c486...` privately qualified Analyst; lock-
 only `8fee7a5c...` publishes the matching batch-invariant route lock. Hosted head
 `da1127f8...` merged Analyst through PR #170 as `52c45d22...`. Exact
-`fed729b3...` privately qualified Coordinator; Coordinator hosted review/merge
-and product exposure remain open, and Auditor remains the final later slice.
+`fed729b3...` privately qualified Coordinator; hosted head `53ee0152...` passed
+all 12 checks and PR #171 merged it as `67d836da...`. Exact `08b06f6d...`
+privately qualified Auditor; hosted review/merge and product exposure remain
+open.
 
-**Current branch:** `agent/phase10-coordinator` contains exact privately
-qualified Coordinator candidate `fed729b3...`. Hosted review/merge and product
-exposure are not claimed. The final Auditor slice uses a focused branch and
-merges only after its exact head is reviewed and hosted-green.
+**Current branch:** `agent/phase10-auditor` contains exact privately qualified
+Auditor candidate `08b06f6d...`. Hosted review/merge and product exposure are
+not claimed. It merges only after its exact head is reviewed and hosted-green.
 
-**Base:** merged Analyst internal core at `52c45d22...` from hosted head
-`da1127f8...` and PR #170.
+**Base:** merged Coordinator internal core at `67d836da...` from hosted head
+`53ee0152...` and PR #171.
 
 **Applied decisions:** [ADR 0031](../../adr/0031-eight-agent-voice-os-roster.md),
 [ADR 0030](../../adr/0030-rust-supervised-provider-service-lifecycle.md),
@@ -381,6 +382,15 @@ synchronized eight-owner service waves, 24 of 24 normal matches, all 29
 terminal matches, 15 server-derived noncanonical review-required bundles, 18
 selected proposals, 18 citations, one lease per invocation, exact Curator
 lineage/current authority, two PostgreSQL restart/read-backs, and teardown.
+Hosted head `53ee0152...` passed all 12 checks and PR #171 merged Coordinator
+as `67d836da...`.
+
+Exact executable `08b06f6d...` privately qualified Auditor with three exact
+synchronized eight-owner idle-only service waves, 24 of 24 normal matches, all
+29 terminal matches, 12 server-derived noncanonical review-required reports,
+15 potential-contradiction findings, 30 citations, one lease per invocation,
+active/pending non-idle blocking with post-terminal resumption, two PostgreSQL
+restart/read-backs, zero proposal writes, and teardown.
 
 ## Slice E — knowledge and coordination agents
 
@@ -391,8 +401,9 @@ lineage/current authority, two PostgreSQL restart/read-backs, and teardown.
 - [x] Coordinator produces only a server-derived source-cited noncanonical
   review-required bundle from the caller's current open Curator proposals and
   never performs autonomous mutations.
-- [ ] Auditor runs only by authorized manual trigger or bounded schedule while
-  idle, publishes source-cited findings, and never mutates authority.
+- [x] Auditor's current internal core runs only by explicit authenticated manual
+  request while idle, returns source-cited review findings, and never mutates
+  authority. Bounded scheduled invocation remains a later product surface.
 - [x] Prove Librarian revocation, hidden-before-limit/link suppression, hidden-
   only equivalence, stale generation, cancellation/deadline, Server-IO queue
   containment, exact audits, restart/read-back, and teardown behavior.
@@ -400,8 +411,9 @@ lineage/current authority, two PostgreSQL restart/read-backs, and teardown.
   behavior in its private qualification slice.
 - [x] Prove Coordinator role-specific authority, selection, failure, audit,
   restart, admission, and teardown behavior in its private qualification slice.
-- [ ] Prove Auditor role-specific failure and publication behavior in its later
-  slice.
+- [x] Prove Auditor role-specific authority, evidence, failure, citation,
+  idle-only admission, audit, restart, and teardown behavior in its private
+  qualification slice.
 
 ## Slice F — product integration and promotion evidence
 

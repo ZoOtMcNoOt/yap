@@ -1143,9 +1143,9 @@ sensitive runtime and is not reused. See the
 
 ### 33. Coordinator source-cited proposal-bundle core
 
-- **Status:** privately qualified unmerged internal candidate at exact
-  executable head `fed729b3...`. Hosted review/merge and all product surfaces
-  remain pending.
+- **Status:** privately qualified merged internal core at exact executable head
+  `fed729b3...`. Hosted head `53ee0152...` passed all 12 checks, and PR #171
+  merged it as `67d836da...`. All product surfaces remain pending.
 - **Entry point:** `yap_server/agents/coordinator_service.py` owns one bounded
   authenticated background complex-route request composed through
   `coordinator_runtime.py`. It submits no nested role-service request.
@@ -1176,6 +1176,43 @@ terminal no-receipt evidence from the superseded deadline-lifecycle verifier
 and is not reused. See the
 [Coordinator verification record](../../evidence/coordinator-proposal-bundles/VERIFICATION.md).
 
+### 34. Auditor source-cited review-findings core
+
+- **Status:** privately qualified unmerged internal candidate at exact
+  executable head `08b06f6d...`. Hosted review/merge and all product surfaces
+  remain pending.
+- **Entry point:** `yap_server/agents/auditor_service.py` owns one bounded
+  authenticated idle-only complex-route request composed through
+  `auditor_runtime.py`. It submits no nested role-service request.
+- **Authoritative owner:** `PostgresAuditorEvidenceReader` pins the active
+  generation, derives the fixed `knowledge.read` authority from the principal,
+  and returns only bounded current owner-visible source evidence. The model may
+  select evidence-index pairs only; server-owned Auditor code canonicalizes
+  those pairs and derives all finding text, source identities, and citations.
+- **Persisted state:** the immutable Auditor result-audit ledger records bounded
+  content-free request, evidence, report, citation, authority, model, provider,
+  and terminal identities. Auditor does not publish a proposal, source, task,
+  action, finding body, or knowledge activation.
+- **Failure/recovery:** insufficient/hidden/stale evidence, invalid model output,
+  cross-owner access, replay conflict, provider loss, cancellation, deadline,
+  and audit failure return typed fail-closed outcomes with no report. Success
+  re-reads and exact-compares current evidence in the terminal audit transaction
+  before returning.
+- **Admission owner:** the broker alone owns idle-only dispatch. Active or
+  queued non-idle work blocks Auditor admission; Auditor does not cancel,
+  preempt, throttle, or replace accepted non-idle work.
+- **Duplicate owner:** none. The knowledge ledger owns source truth; the Auditor
+  reader owns current authorization; `AuditorService` owns one workflow lease
+  and termination; the Auditor result-audit ledger owns durable terminal
+  identity; the broker owns admission.
+
+Three synchronized repeat waves matched 24 of 24 normal service calls, all 29
+terminals matched, and 12 server-derived noncanonical review-required reports
+contained 15 findings and 30 citations. The active/pending non-idle block and
+post-terminal resumption contract was observed without changing provider or
+broker identity. See the
+[Auditor verification record](../../evidence/auditor-source-cited-review-findings/VERIFICATION.md).
+
 ## Persistent-state owners
 
 | State | Owner | Projection/consumer |
@@ -1194,7 +1231,7 @@ and is not reused. See the
 | Knowledge builds, active pointer, permissions, embeddings, and activation history | Postgres generation ledger | permission view and retrieval |
 | Permission-safe cited retrieval | Postgres permission/retrieval owners | governed tools, RAG, MCP |
 | Governed proposals and tool audit identities | proposal and audit ledgers | review workflow and generation retention |
-| Librarian, Analyst, and Coordinator terminal identities | immutable role result-audit ledgers | permission-safe evidence, grounded cited-answer, and proposal-bundle replay; no evidence/answer/bundle bytes |
+| Librarian, Analyst, Coordinator, and Auditor terminal identities | immutable role result-audit ledgers | permission-safe evidence, grounded cited-answer, proposal-bundle, and review-findings replay; no evidence/answer/bundle/report bytes |
 | Agent workload route selection | explicit server route selector | governed RAG invocation |
 | Private route and aggregate gate evidence | evaluation lifecycle and gate owners | public-safe hashes/outcomes only |
 | Boot-scoped provider lifecycle snapshot | one Rust provider supervisor | systemd/operators; not durable application truth |
@@ -1205,6 +1242,7 @@ and is not reused. See the
 | Librarian workflow outcomes | immutable Librarian result-audit ledger | typed permission-safe evidence result; evidence text is not durable audit state |
 | Analyst workflow outcomes | immutable Analyst result-audit ledger | typed grounded cited-answer result; answer/evidence text is not durable audit state |
 | Coordinator workflow outcomes | immutable Coordinator result-audit ledger | typed proposal-bundle result; objective/proposal/citation bytes are not durable audit state |
+| Auditor workflow outcomes | immutable Auditor result-audit ledger | typed source-cited review result; focus/evidence/finding/citation bytes are not durable audit state |
 | Presentation preferences/drafts | feature-specific frontend storage/state | React only |
 
 ## No-multiple-owner invariant

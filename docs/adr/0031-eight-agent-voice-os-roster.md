@@ -1,6 +1,6 @@
 # ADR 0031: Eight-agent Voice OS roster and execution boundaries
 
-**Status:** Accepted target; six role cores merged through PR #170; Coordinator privately qualified as an unmerged internal candidate; Auditor plus product exposure and promotion remain open
+**Status:** Accepted target; seven role cores merged through PR #171; Auditor privately qualified as an unmerged internal candidate; product exposure and promotion remain open
 **Date:** 2026-08-11
 **Deciders:** Yap product and engineering owner
 **Amends:** [ADR 0006](0006-silero-agents-state-machine.md),
@@ -64,8 +64,15 @@ and the 12 answers contained 15 server-owned citations. Hosted head
 Coordinator's selection-only proposal-bundle core with public-safe evidence
 SHA-256 `1bce03b6...`: three synchronized eight-owner waves matched all 24
 normal calls, all 29 terminals matched, and 15 noncanonical review-required
-bundles contained 18 selected proposals and 18 server-owned citations. Auditor
-remains pending.
+bundles contained 18 selected proposals and 18 server-owned citations. Hosted
+head `53ee0152...` passed all 12 checks, and PR #171 merged Coordinator as
+`67d836da...`. Exact executable `08b06f6d...` then privately qualified
+Auditor's idle-only review-findings core with public-safe evidence SHA-256
+`2c1dbc05...`: three synchronized eight-owner waves matched all 24 normal
+calls, all 29 terminals matched, and 12 noncanonical review-required reports
+contained 15 potential-contradiction findings and 30 server-owned citations.
+Active and queued non-idle work blocked admission; Auditor resumed only after
+the non-idle work became terminal. Hosted review/merge remains pending.
 
 The current protected successor still derives four rapid and eight complex
 active limits from the immutable full profiles while retaining one active
@@ -265,6 +272,14 @@ one lease per invocation, two PostgreSQL restart/read-backs, and teardown. Exact
 `11f325bb...` failed closed before receipt publication on the superseded
 deadline-lifecycle verifier and is not reused.
 
+Hosted head `53ee0152...` passed all 12 checks and PR #171 merged Coordinator
+as `67d836da...`. Exact `08b06f6d...` privately qualified Auditor with public-
+safe evidence SHA-256 `2c1dbc05...`: three exact synchronized repeat waves, 24
+of 24 normal matches, 29 exact terminals, 12 server-derived reports, 15
+potential-contradiction findings, 30 citations, one lease per invocation,
+active/pending non-idle blocking with post-terminal resumption, two PostgreSQL
+restart/read-backs, zero proposal writes, and exact teardown.
+
 Exact Student candidate `452c8b76...` originally returned
 `student-learning-questions-qualified` with public-safe semantic evidence
 SHA-256 `3e1ddc61...`. It recorded one synchronized eight-owner wave, unchanged
@@ -303,9 +318,10 @@ head `b03c6e79...` passed all 12 checks and PR #166 merged the internal core as
 qualification at `7cd24deb...`/`7f896b34...`; hosted-green head `593e627b...`
 passed all 12 checks, and PR #168 merged it as `284ab96b...`. Hosted head
 `7505247e...` then merged Librarian through PR #169 as `d7a7e003...`; hosted
-head `da1127f8...` merged Analyst through PR #170 as `52c45d22...`. Student,
-Curator, Librarian, and Analyst product exposure, warm simultaneous two-route
-residency, Coordinator hosted review/merge, the final Auditor workflow,
+head `da1127f8...` merged Analyst through PR #170 as `52c45d22...`; hosted head
+`53ee0152...` merged Coordinator through PR #171 as `67d836da...`. Student,
+Curator, Librarian, Analyst, and Coordinator product exposure, warm simultaneous
+two-route residency, Auditor hosted review/merge and product exposure,
 sustained multi-owner capacity, and production promotion remain open.
 One Spark cannot retain the
 unchanged `0.40` Qwen and `0.70` Gemma

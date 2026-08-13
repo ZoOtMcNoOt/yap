@@ -119,6 +119,7 @@ instructions. Detailed historical task reports live under
 ## Verification evidence
 
 - [Evidence policy and index](evidence/README.md)
+- [Auditor source-cited review-findings verification](evidence/auditor-source-cited-review-findings/VERIFICATION.md)
 - [Coordinator proposal-bundle verification](evidence/coordinator-proposal-bundles/VERIFICATION.md)
 - [Executable ownership findings](evidence/executable-ownership-review/FINDINGS.md)
 - [Reviewed file inventory](evidence/executable-ownership-review/FILE-INVENTORY.md)
