@@ -5,9 +5,11 @@ import hashlib
 import json
 import re
 import threading
+import time
 from typing import TYPE_CHECKING
 
 from psycopg import Connection
+from psycopg.errors import QueryCanceled
 from psycopg.pq import TransactionStatus
 from psycopg.types.json import Jsonb
 
@@ -15,8 +17,12 @@ from yap_server.auth.principal import AuthenticatedPrincipal, PrincipalKey
 from yap_server.private_postgres_connection import PrivatePostgresConnectionFactory
 
 from .cancellable_database_operation import run_cancellable_database_operation
+from .knowledge_tool_audit import record_knowledge_tool_audit
 from .postgres_permission_view import _authorize_knowledge_query
 from .knowledge_tool_contract import (
+    KnowledgeToolCancellationFailed,
+    KnowledgeToolCancelled,
+    KnowledgeToolTimedOut,
     MAX_PROPOSAL_CHARACTERS,
     MAX_PROPOSAL_CITATIONS,
     ProposalCitation,
@@ -71,16 +77,76 @@ class PostgresCoordinatorEvidenceReader:
             or not isinstance(cancellation, threading.Event)
         ):
             raise TypeError("coordinator evidence read is invalid")
+        started = time.monotonic()
         with self._connection_factory() as connection:
-            return run_cancellable_database_operation(
-                connection,
-                cancellation,
-                lambda: self._read_in_transaction(
-                    connection,
-                    request,
-                    principal=principal,
-                ),
-            )
+            try:
+                with connection.transaction():
+                    evidence = run_cancellable_database_operation(
+                        connection,
+                        cancellation,
+                        lambda: read_coordinator_evidence_in_transaction(
+                            connection,
+                            request,
+                            principal=principal,
+                        ),
+                    )
+                    record_knowledge_tool_audit(
+                        connection,
+                        principal=principal.key,
+                        agent_id="coordinator",
+                        operation="open-proposal-evidence",
+                        outcome="succeeded",
+                        result_count=len(evidence.candidates),
+                        generation_sha256=evidence.generation_sha256,
+                        permission_hash=evidence.permission_hash,
+                        authorization_hash=evidence.authorization_hash,
+                        duration_milliseconds=_duration(started),
+                    )
+                return evidence
+            except KnowledgeToolCancelled:
+                _record_coordinator_evidence_failure(
+                    self._connection_factory,
+                    principal,
+                    "cancelled",
+                    started,
+                )
+                raise
+            except KnowledgeToolCancellationFailed:
+                _record_coordinator_evidence_failure(
+                    self._connection_factory,
+                    principal,
+                    "failed",
+                    started,
+                )
+                raise
+            except QueryCanceled as error:
+                if cancellation.is_set():
+                    _record_coordinator_evidence_failure(
+                        self._connection_factory,
+                        principal,
+                        "cancelled",
+                        started,
+                    )
+                    raise KnowledgeToolCancelled(
+                        "coordinator evidence read was cancelled"
+                    ) from error
+                _record_coordinator_evidence_failure(
+                    self._connection_factory,
+                    principal,
+                    "timed_out",
+                    started,
+                )
+                raise KnowledgeToolTimedOut(
+                    "coordinator evidence read timed out"
+                ) from error
+            except Exception:
+                _record_coordinator_evidence_failure(
+                    self._connection_factory,
+                    principal,
+                    "failed",
+                    started,
+                )
+                raise
 
     def verify(
         self,
@@ -98,20 +164,6 @@ class PostgresCoordinatorEvidenceReader:
         if current != evidence:
             raise CoordinatorEvidenceChanged(
                 "coordinator evidence changed before result publication"
-            )
-
-    @staticmethod
-    def _read_in_transaction(
-        connection: Connection[object],
-        request: CoordinatorRequest,
-        *,
-        principal: AuthenticatedPrincipal,
-    ) -> CoordinatorEvidencePack:
-        with connection.transaction():
-            return read_coordinator_evidence_in_transaction(
-                connection,
-                request,
-                principal=principal,
             )
 
 
@@ -657,6 +709,28 @@ def _lexical_tokens(value: str) -> frozenset[str]:
     return frozenset(token.casefold() for token in _LEXICAL_TOKEN.findall(value))
 
 
+def _record_coordinator_evidence_failure(
+    connection_factory: PrivatePostgresConnectionFactory,
+    principal: AuthenticatedPrincipal,
+    outcome: str,
+    started: float,
+) -> None:
+    with connection_factory() as connection:
+        with connection.transaction():
+            record_knowledge_tool_audit(
+                connection,
+                principal=principal.key,
+                agent_id="coordinator",
+                operation="open-proposal-evidence",
+                outcome=outcome,
+                result_count=0,
+                generation_sha256=None,
+                permission_hash=None,
+                authorization_hash=None,
+                duration_milliseconds=_duration(started),
+            )
+
+
 def _stored_proposal_citations(value: object) -> tuple[ProposalCitation, ...]:
     if not isinstance(value, list) or not value or len(value) > MAX_PROPOSAL_CITATIONS:
         raise ValueError("coordinator proposal citations are invalid")
@@ -810,6 +884,10 @@ def _bounded_ascii(value: object, maximum: int) -> bool:
         and value.isascii()
         and value.isprintable()
     )
+
+
+def _duration(started: float) -> int:
+    return max(0, round((time.monotonic() - started) * 1_000))
 
 
 __all__ = [

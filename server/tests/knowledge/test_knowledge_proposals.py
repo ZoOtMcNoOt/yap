@@ -30,8 +30,8 @@ def _sha256(value: object) -> str:
 
 
 class _Cursor:
-    def __init__(self, rows: list[tuple[object, ...]]) -> None:
-        self._rows = rows
+    def __init__(self, rows: list[tuple[object, ...]] | None = None) -> None:
+        self._rows = rows or []
 
     def fetchall(self) -> list[tuple[object, ...]]:
         return self._rows
@@ -59,6 +59,7 @@ class _Connection(AbstractContextManager["_Connection"]):
         self.proposal_rows = proposal_rows
         self.concept_rows = concept_rows
         self.executions: list[tuple[str, tuple[object, ...]]] = []
+        self.tool_audits: list[tuple[object, ...]] = []
 
     def __enter__(self) -> _Connection:
         return self
@@ -86,6 +87,9 @@ class _Connection(AbstractContextManager["_Connection"]):
             return _Cursor(self.proposal_rows)
         if "FROM yap_knowledge_concepts c" in normalized:
             return _Cursor(self.concept_rows)
+        if normalized.startswith("INSERT INTO yap_knowledge_tool_audit"):
+            self.tool_audits.append(values)
+            return _Cursor()
         raise AssertionError(f"unexpected SQL: {normalized}")
 
 
@@ -359,6 +363,15 @@ class CoordinatorKnowledgeProposalTests(unittest.TestCase):
             evidence = reader.read(
                 _request(), principal=_principal(), cancellation=threading.Event()
             )
+        self.assertEqual(len(connection.tool_audits), 2)
+        self.assertEqual(
+            connection.tool_audits[0][2:6],
+            ("coordinator", "open-proposal-evidence", "cancelled", 0),
+        )
+        self.assertEqual(
+            connection.tool_audits[1][2:6],
+            ("coordinator", "open-proposal-evidence", "succeeded", 1),
+        )
         connection.proposal_rows = []
         with (
             patch(
