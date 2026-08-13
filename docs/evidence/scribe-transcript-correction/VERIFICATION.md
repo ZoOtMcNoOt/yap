@@ -5,8 +5,8 @@ merged the Scribe slice; this evidence does not promote a production service or
 by itself close any other Voice OS role.
 
 The later profile-capacity successor was freshly requalified at exact head
-`7cd24deb1131ecf89258ddb821c6bffae8e0cd25`; PR #168 remains draft, so that
-successor is not yet hosted-green or merged.
+`7cd24deb1131ecf89258ddb821c6bffae8e0cd25`; hosted-green head `593e627b...`
+passed all 12 checks, and PR #168 merged it as `284ab96b...`.
 
 ## Exact candidate
 
@@ -77,8 +77,8 @@ route used the unchanged full profile and the shared broker; no request-time
 model launch, swap, substitution, or profile reduction was introduced.
 
 This exact-head rerun qualifies Scribe against the protected profile-capacity
-successor. It does not retroactively change PR #164's historical receipt or
-claim PR #168 hosted review/merge. See the
+successor. Its later PR #168 merge does not retroactively change PR #164's
+historical receipt. See the
 [profile-capacity evidence](../agent-admission-profile-capacity/VERIFICATION.md).
 
 ## Deliberate limits

@@ -16,13 +16,16 @@ head `428d6e48...` passed its private qualification on the unchanged full Qwen
 rapid profile with public-safe evidence SHA-256 `f597cca7...`; hosted-green
 head `b03c6e79...` passed all 12 checks and PR #166 merged the internal core as
 `2254605e...`. Student product exposure remains open; exact predecessor
-`0970d74c...` remains terminal `deterministic-no-student` evidence. The current
-profile-capacity successor and Curator are privately qualified internal
-candidates under draft PR #168, not part of the merged or product-promoted
-baseline. Exact route head `dab19fe...` qualified the unchanged Qwen/Gemma
+`0970d74c...` remains terminal `deterministic-no-student` evidence. Exact route
+head `dab19fe...` qualified the unchanged Qwen/Gemma
 profiles sequentially, exact workflow head `7cd24deb...` qualified Scribe,
 Student, and Curator, and public-lock/aggregate head `7f896b34...` passed the
-governed gate. Later Phase 10 roles and capacity/operations layers remain open.
+governed gate. Hosted-green head `593e627b...` passed all 12 checks, and PR #168
+merged the profile-capacity successor and Curator internal core as
+`284ab96b...`. Curator has no HTTP/native/UI product surface. Exact
+`56b7f5d0...` privately qualified the no-LLM Librarian core as an unmerged
+internal candidate. Librarian product/merge promotion, Analyst, Coordinator,
+Auditor, and capacity/operations layers remain open.
 Phase 7
 implements provider-neutral
 OIDC verification with Entra policy, fail-closed authentication, tenant-scoped
@@ -1086,14 +1089,27 @@ head `7f896b34...` returned `governed-knowledge-gate-passed` with public-safe
 evidence SHA-256 `fd197b98...`.
 
 Exact workflow head `7cd24deb...` requalified Scribe and Student against the
-successor and qualified the explicit-submission-only Curator candidate. The
+successor and qualified the explicit-submission-only Curator core. The
 rapid workflow gate held four active distinct owners and queued the fifth; the
 complex gate held eight and queued the ninth. Curator may publish only a
 noncanonical proposal and cannot activate knowledge or mutate source truth.
 See the [profile-capacity evidence](../evidence/agent-admission-profile-capacity/VERIFICATION.md)
 and [Curator evidence](../evidence/curator-knowledge-proposals/VERIFICATION.md).
-PR #168 remains draft, so hosted review/merge and every Curator product surface
-remain open.
+Hosted-green head `593e627b...` passed all 12 checks, and PR #168 merged the
+slice as `284ab96b...`. Every Curator product surface remains open.
+
+Exact candidate `56b7f5d0...` qualifies Librarian as a no-LLM Server-IO read
+workflow, not as a merged or exposed product. The server pins retrieval to the
+authenticated permission view and active generation, suppresses hidden nodes
+and links before limiting, and records content-free terminal audits. Its actual
+eight-normal-owner wave entered the broker; the Server-IO capacity probe held
+one and queued the second, then cancelled/acknowledged and contained both with
+no model-route lease. Ten exact invocations, two PostgreSQL restart read-backs,
+zero proposal writes, exact audits, and six-part teardown passed. Exact
+predecessor `ecdcb8ee...` is terminal/inadmissible because only seven owners
+entered broker submission. See the
+[Librarian evidence](../evidence/librarian-permission-safe-evidence/VERIFICATION.md).
+Hosted review, merge, endpoints, UI, and production operation remain pending.
 
 A fresh post-aggregate observation on 2026-08-12 found Qwen rapid warm and the
 broker active against exact rapid profile hash `14712e69...`; the observed

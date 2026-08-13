@@ -1,10 +1,13 @@
 # Governed Knowledge Maintainability Verification
 
 This record separates inherited merged evidence, focused repair checks, the
-completed and hosted-merged Phase 9 checkpoint gate, and the current Phase 10
-public read-back. The Curator/profile-capacity successor is privately qualified
-at exact protected heads and has a public-lock/aggregate result, but PR #168
-remains draft: hosted review/merge and product exposure are not complete.
+completed and hosted-merged Phase 9 checkpoint gate, historical Phase 10 public
+read-backs, and the current Librarian successor. The Curator/profile-capacity
+successor is privately qualified
+at exact protected heads and has a public-lock/aggregate result. Hosted-green
+head `593e627b...` passed all 12 checks, and PR #168 merged it as `284ab96b...`.
+Product exposure remains open. Historical inventories remain labeled at their
+exact heads; the final section recomputes the current Librarian candidate tree.
 
 ## Inherited Phase 9 evidence
 
@@ -497,9 +500,9 @@ CodeQL lane. PR #153 merged it as
 simultaneous model residency, sustained mixed-owner capacity/SLOs, enterprise
 networking, and deployment remain Phase 10 or explicit IT/security handoffs.
 
-## Current Phase 10 Curator/profile-capacity candidate public read-back
+## Pre-merge Phase 10 Curator/profile-capacity public read-back
 
-The current candidate has the following bounded exact-head evidence:
+The frozen pre-merge candidate has the following bounded exact-head evidence:
 
 - Route head `dab19fe7563a9d596cbe7d861460a5c6fed7025c` returned
   `required-workload-routes-qualified` with public-safe evidence SHA-256
@@ -537,5 +540,36 @@ complex-eight profile-derived broker limits, one active request per owner, and
 the live qualification probes that hold the selected route at its limit, queue
 one additional owner, contain every probe lease, and require unchanged provider
 and broker identities. They do not demonstrate simultaneous Qwen/Gemma
-residency, sustained multi-user throughput, a production SLO, hosted review or
-merge, product exposure, or deployment. PR #168 remains draft.
+residency, sustained multi-user throughput, a production SLO, product exposure,
+or deployment. PR #168 merged as `284ab96b...`.
+
+## Phase 10 Librarian successor public read-back
+
+Exact candidate `56b7f5d06f70f02cce79a422dd75b15c0a0bff10` returned
+`librarian-permission-safe-evidence-qualified` with public-safe evidence
+SHA-256 `def8e6483bfcd0883d2e081362381fb0e0c7ec99379aeee89eaf050e0b0517e0`.
+The acceptance and corpus SHA-256 values are respectively
+`06a4e62af58b8903b564d0872b3a44017ff0bc11b0d7b35ecd262ba5b9845360`
+and `928c4053d2237e1ca64e990402520e296b27ef1d8378747083fb622f6d031ffe`.
+Eight cases/eight owners produced ten exact unique invocations: four complete,
+three unavailable, one stale failed, and two cancelled. The corrected actual
+eight-normal-owner wave entered the broker. Hidden-data filtering/equivalence,
+revocation, deadline/cancellation, Server-IO one-active/second-queued
+containment, two PostgreSQL restart read-backs, exact audits, zero proposals,
+retained generations/admissions, owner-private receipt read-back, and all six
+teardown assertions passed. No model-route lease was acquired. Exact
+predecessor `ecdcb8ee...` is terminal/inadmissible because only seven owners
+entered broker submission; its receipt is not reused.
+
+- The complete portable server command ran 1,330 tests: 1,290 passed and 40
+  were declared skips.
+- The governed fixed set ran 172 tests: 168 passed and four were declared skips.
+- The focused Librarian command ran 50 tests: 45 passed and five were expected
+  skips. Ruff and diff checks were clean.
+- The 250-line inventory enumerated 552 surfaces: 308 at or above 350 lines and
+  244 from 250 through 349. The exact 308 path/line/disposition tuples are in
+  [THRESHOLD-DISPOSITION.md](THRESHOLD-DISPOSITION.md).
+
+These checks do not merge or product-promote Librarian and do not prove
+sustained capacity, production SLOs, simultaneous model residency, availability,
+enterprise networking, or deployment. Hosted review and merge remain pending.

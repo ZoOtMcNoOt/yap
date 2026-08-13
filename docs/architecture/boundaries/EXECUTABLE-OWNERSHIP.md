@@ -922,7 +922,8 @@ evidence SHA-256 `96228914...`; exact workflow head `7cd24deb...` then qualified
 Scribe, Student, and Curator, and aggregate/public-lock head `7f896b34...`
 passed with evidence SHA-256 `fd197b98...`. The exact one-slot evidence above
 remains historical and authoritative for its merged head; it is no longer the
-current candidate boundary. PR #168 remains draft. Selected-route capacity is
+current merged boundary. Hosted-green head `593e627b...` passed all 12 checks,
+and PR #168 merged the successor as `284ab96b...`. Selected-route capacity is
 not sustained-throughput, simultaneous-residency, or production-SLO evidence.
 
 ### 27. Scribe transcript correction
@@ -1043,12 +1044,12 @@ full Qwen rapid profile, with public-safe evidence SHA-256 `f597cca7...`.
 Hosted-green head `b03c6e79...` passed all 12 required checks and PR #166 merged
 the internal core as `2254605e...`. An HTTP/native/UI surface remains open.
 
-### 30. Curator knowledge-proposal candidate
+### 30. Curator knowledge-proposal core
 
-- **Status:** privately qualified internal candidate at exact head
-  `7cd24deb...` with public-safe evidence SHA-256 `b60df1e2...`; PR #168 is
-  draft, and no hosted merge, HTTP/native/UI surface, or production promotion
-  exists.
+- **Status:** privately qualified internal core at exact head `7cd24deb...` with
+  public-safe evidence SHA-256 `b60df1e2...`; hosted-green head `593e627b...`
+  passed all 12 checks, and PR #168 merged it as `284ab96b...`. No HTTP, native,
+  renderer/UI surface, active-knowledge promotion, or production promotion exists.
 - **Entry point:** `yap_server/agents/curator_service.py` owns an internal
   complex-route workflow for only `explicit-proposal` and
   `reviewed-student-answer` submissions.
@@ -1077,6 +1078,28 @@ admissible Curator success evidence, and remains terminal; no teardown result is
 attributed to it. See the
 [Curator verification record](../../evidence/curator-knowledge-proposals/VERIFICATION.md).
 
+### 31. Librarian permission-safe evidence core
+
+- **Status:** privately qualified unmerged internal candidate at exact head
+  `56b7f5d0...`; hosted review/merge and all product surfaces remain pending.
+- **Entry point:** `yap_server/agents/librarian_service.py` owns one bounded
+  authenticated Server-IO read. It acquires no model-route lease.
+- **Authoritative owner:** the Postgres permission-safe retrieval owner pins the
+  active generation and derives citations; Librarian cannot accept caller-owned
+  evidence authority or expose hidden nodes or links.
+- **Persisted state:** the immutable Librarian result-audit ledger records only
+  bounded identities and terminal outcomes. Librarian writes no knowledge
+  proposal and activates no generation.
+- **Failure/recovery:** stale generation, revocation, unavailable evidence,
+  deadline, cancellation, audit failure, and admission failure return typed
+  fail-closed outcomes. Exact predecessor `ecdcb8ee...` is terminal and not
+  reused because its nominal eight-owner wave produced seven broker submissions.
+- **Duplicate owner:** none. The broker owns the Server-IO lease; permission-safe
+  retrieval owns evidence; `LibrarianService` owns workflow termination; the
+  result-audit ledger owns durable outcome identity.
+
+See the [Librarian verification record](../../evidence/librarian-permission-safe-evidence/VERIFICATION.md).
+
 ## Persistent-state owners
 
 | State | Owner | Projection/consumer |
@@ -1102,6 +1125,7 @@ attributed to it. See the
 | Accepted transcript-correction revisions | native Scribe revision owner | React diff/history projection; raw transcript remains authoritative |
 | Archivist ingestion outcomes | reviewed-capture, source-admission, and generation ledgers | typed staged-generation result; no activation |
 | Student workflow outcomes | immutable Student result-audit ledger | typed source-supported question result; question text is not durable audit state |
+| Librarian workflow outcomes | immutable Librarian result-audit ledger | typed permission-safe evidence result; evidence text is not durable audit state |
 | Presentation preferences/drafts | feature-specific frontend storage/state | React only |
 
 ## No-multiple-owner invariant

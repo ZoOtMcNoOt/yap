@@ -2,9 +2,12 @@
 
 **Status:** Exact protected route qualification and the aggregate governed-
 knowledge gate passed for the profile-derived admission successor. The public
-lock is committed at `7f896b341c31fcabb3f894a8d693764c8bc30600`. PR #168 is
-draft; hosted review, merge, simultaneous two-route residency, sustained
-capacity/SLO evidence, product promotion, and deployment remain open.
+lock is committed at `7f896b341c31fcabb3f894a8d693764c8bc30600`. Hosted-green
+head `593e627b5b7aef10db082913c3e68fbaa872a942` passed all 12 required
+checks, and PR #168 merged the successor as
+`284ab96b58af0fdf1e939dbb8b1b075808b6b5b8` on 2026-08-13. Simultaneous
+two-route residency, sustained capacity/SLO evidence, product promotion, and
+deployment remain open.
 
 ## Qualified route evidence
 
@@ -53,8 +56,9 @@ broker identities.
 The aggregate admitted the matching route lock, ran the fixed public suite and
 lint, exercised the required real-PostgreSQL tests and process restart,
 preserved the local/offline product boundary, and completed exact teardown.
-The current complete portable server read-back is 1,282 tests: 1,245 passed and
-37 declared platform/capability skips. The governed fixed set is 172 tests.
+The current complete portable server read-back is 1,330 tests: 1,290 passed and
+40 declared platform/capability skips. The governed fixed set is 172 tests:
+168 passed and four were declared skips.
 
 ## Terminal route evidence
 

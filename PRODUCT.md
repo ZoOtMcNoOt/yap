@@ -22,7 +22,7 @@ Current production navigation:
 - **Transcribe** — the workbench: drop zone, queue, progress, and live transcript preview
 - **Correct** — manual source-bound transcript correction with original/corrected review and explicit revision publication
 
-Transcript history currently lives on Home; there is no separate Transcripts navigation item or dedicated export command yet. Correct uses the merged authenticated Scribe route on a connected organization server. It preserves raw ASR, shows the original and proposed correction together, and publishes only an explicitly accepted separate revision. Remote failure leaves the raw transcript unchanged. The internal Student core is merged; Curator is a privately qualified internal candidate under draft PR #168. Neither has a current desktop product surface.
+Transcript history currently lives on Home; there is no separate Transcripts navigation item or dedicated export command yet. Correct uses the merged authenticated Scribe route on a connected organization server. It preserves raw ASR, shows the original and proposed correction together, and publishes only an explicitly accepted separate revision. Remote failure leaves the raw transcript unchanged. The internal Student and Curator cores are merged. Neither has a current HTTP, native, renderer, or desktop product surface. The no-LLM Librarian permission-safe evidence core is privately qualified only as an internal candidate; it is not merged and has no current product surface.
 
 This is not live-only dictation or a Wispr Flow clone. Batch recordings remain the target core loop once the trusted server route exists; live capture is the implemented compact, explicit companion path.
 

@@ -1,13 +1,13 @@
 # Current Status
 
-**As of:** 2026-08-12
+**As of:** 2026-08-13
 
-**Most recent merged closure:** [PR #166](https://github.com/mcnatg1/yap/pull/166)
-merged the Student learning-question core as
-`2254605ed19a592d2db1747d576762ccf11a5cc0` from exact hosted-green head
-`b03c6e79f19bad451437c3f0c495daa67bb7171f`; all 12 required hosted checks
-passed. The earlier admission, Scribe, and Archivist merges retain their exact
-evidence. The broker admits authenticated work
+**Most recent merged closure:** [PR #168](https://github.com/mcnatg1/yap/pull/168)
+merged the qualified profile-capacity successor and Curator internal core as
+`284ab96b58af0fdf1e939dbb8b1b075808b6b5b8` from exact hosted-green head
+`593e627b5b7aef10db082913c3e68fbaa872a942`; all 12 required hosted checks
+passed. The earlier admission, Scribe, Archivist, and Student merges retain
+their exact evidence. The broker admits authenticated work
 only to already-warm Qwen/Gemma services with bounded owner-fair queues; it does
 not start, swap, or silently substitute a model.
 
@@ -40,7 +40,8 @@ inheriting that historical receipt. Exact head `7cd24deb...` returned
 `scribe-transcript-correction-qualified` with public-safe evidence SHA-256
 `9c3c44c...`: all 24 cases, eight owners, 16 distinct real-ASR English/Spanish
 audio inputs, acceptance checks, and teardown passed with zero terminal
-failures. PR #168 remains draft; this is not a new hosted merge.
+failures. Hosted-green head `593e627b...` later merged this protected successor
+through PR #168 as `284ab96b...`; the historical PR #164 receipt is unchanged.
 
 Student's current topic-copy prompt repair is complete-portable-test green and
 privately qualified. It preserves the
@@ -72,7 +73,8 @@ At exact protected successor `7cd24deb...`, Student separately returned
 terminal failures; the rapid route admitted four distinct active owners, queued
 the fifth, retained the unchanged warm provider/broker identities, and passed
 PostgreSQL restart/read-back and exact teardown. This does not relabel the PR
-#166 receipt or claim PR #168 hosted closure.
+#166 receipt; hosted-green head `593e627b...` later merged the successor through
+PR #168 as `284ab96b...`.
 
 Exact head `0970d74c...` returned terminal `deterministic-no-student` with
 public-safe evidence SHA-256 `316631d5...`. Seven of eight cases completed and
@@ -97,10 +99,11 @@ question in caller-controlled focus text. That receipt and predecessor
 `ffe90885...` are terminal and inadmissible. Exact `428d6e48...` supplies the
 replacement qualification; hosted-green head `b03c6e79...` merged through PR
 #166 as `2254605e...`. Simultaneous full-profile Qwen/Gemma residency,
-sustained mixed-route capacity, production SLOs, Curator hosted merge/product
-exposure, and the four later role workflows remain open.
+sustained mixed-route capacity, production SLOs, Curator/Librarian product
+exposure, and the three later role workflows remain open.
 
-The current profile-capacity admission successor is now privately qualified.
+The merged profile-capacity admission successor retains its exact private
+qualification.
 Exact route head `dab19fe7563a9d596cbe7d861460a5c6fed7025c` returned
 `required-workload-routes-qualified` with public-safe evidence SHA-256
 `962289148143174073b99fcc62ddd240ea0dae9f36fef09a9449a8022a4a3d13`.
@@ -109,8 +112,9 @@ completed exact teardown. Public lock and aggregate head
 `7f896b341c31fcabb3f894a8d693764c8bc30600` returned
 `governed-knowledge-gate-passed` with public-safe evidence SHA-256
 `fd197b9883d8e3b96e7abd9c8e994b416ac20ed2dafc0bca20c114c54258a3bb`.
-The complete portable server read-back is 1,282 tests: 1,245 passed and 37
-declared skips; the governed fixed set is 172. A fresh post-aggregate
+The current complete portable server read-back is 1,330 tests: 1,290 passed and
+40 declared skips; the governed fixed set is 172 (168 passed and four declared
+skips). A fresh post-aggregate
 operational observation on 2026-08-12 found Qwen rapid warm and the broker active
 against exact rapid-profile SHA-256 `14712e69...`; rapid admission was four
 active distinct owners rather than one. This is a transient read-back, not an
@@ -123,7 +127,8 @@ Exact route heads `9551532d...` and `98fb89f9...` remain terminal
 field-ownership ambiguities, respectively. Neither receipt is reused, and no
 raw output or private measurement is published.
 
-Curator is also privately qualified as an internal candidate. Exact head
+Curator is a merged internal core with no HTTP, native, renderer, or user-facing
+product surface. Exact head
 `7cd24deb1131ecf89258ddb821c6bffae8e0cd25` returned
 `curator-knowledge-proposals-qualified` with public-safe evidence SHA-256
 `b60df1e2c044b0f4771038830fb086413239555345893f6e863697d7e4b3cf03`:
@@ -135,9 +140,32 @@ noncanonical proposal, and cannot activate knowledge or mutate source truth.
 Earlier candidate `7ba4e45c...` failed closed on an empty forced-tool content-
 envelope mismatch, wrote no Curator qualification receipt, and established no
 admissible Curator success evidence. It is terminal, and no teardown result is
-attributed to it. PR #168 remains draft; hosted review, merge, and product
-exposure remain pending. Three role cores are merged; Curator is the additional
-privately qualified candidate. Auditor, Librarian, Analyst, and Coordinator remain.
+attributed to it. Exact hosted head `593e627b...` passed all 12 checks, and PR
+#168 merged the repaired internal core as `284ab96b...` on 2026-08-13. Four role
+cores are merged: Scribe, Archivist, Student, and Curator.
+
+Librarian is a privately qualified internal candidate at exact head
+`56b7f5d06f70f02cce79a422dd75b15c0a0bff10`. It returned
+`librarian-permission-safe-evidence-qualified` with public-safe evidence
+SHA-256 `def8e6483bfcd0883d2e081362381fb0e0c7ec99379aeee89eaf050e0b0517e0`.
+Eight cases/eight owners produced ten exact unique invocations: four complete,
+three unavailable, one stale failure, and two cancellations. The actual
+synchronized wave admitted all eight normal owners through the broker; the
+Server-IO probe admitted one, queued the second, completed cancellation and
+acknowledgement, retained broker identity, and acquired no model lease. Hidden
+results/links, revocation, stale generation, deadline, cancellation, exact
+audits, two PostgreSQL restart read-backs, zero proposals, retained generation/
+admission identities, and all six teardown assertions held. The p95 stayed
+within the frozen 16-second bound. Exact predecessor `ecdcb8ee...` and evidence
+SHA-256 `83f618c6...` are terminal/inadmissible because adversarial review found
+only seven broker submissions behind eight owner labels; that receipt is not
+reused. An earlier publication attempt minted no receipt after its destination
+parent failed the owner-private check. No private path, content, identifier,
+envelope hash, or individual latency is published. Hosted review, merge, and
+every product surface remain pending. See the
+[Librarian evidence](evidence/librarian-permission-safe-evidence/VERIFICATION.md).
+The roster is four merged roles plus Librarian as the fifth qualified candidate;
+Analyst, Coordinator, and Auditor remain later workflows.
 
 These results do not prove simultaneous Qwen/Gemma residency, sustained
 capacity/fairness, a production SLO, or deployment. The unchanged `0.40` and
@@ -418,7 +446,7 @@ rewrite that target; this status document distinguishes what currently executes.
 | Meeting-transcription maintainability checkpoint | Merged and closed | The [ownership review](plans/completed/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md) keeps server result adapters independent from worker admission, accepts only current persisted contracts, excludes evaluation code from the request-time image, linearizes native publication/cancellation, and bounds selected History speaker detail. Historical candidate `fb0985e...` passed before documentation successor `e22368fc...` exposed `GHSA-mwp4-54f8-5fhr`. Patched candidate `393710999b53a4bd1b00639e30c0fec88b152530` then passed the canonical build, receipt-bound image preflight, real History/cancellation lifecycle with teardown, single 18-child matrix, receipt validation, and required CI/CodeQL jobs. PR #143 merged as `8fb511ad2fd7217a87e95ddba31d74dfa474fac2`. This did not change model-quality, capacity, or production-promotion qualification. Private evidence remains outside Git and hosted artifacts. |
 | Phase 9 | Merged and gated | Pinned OKF compilation, immutable terminology snapshots, Postgres/pgvector generation and permission-safe retrieval, governed agents/RAG/MCP, explicit no-fallback routing, and private Qwen rapid/Gemma complex workload qualification execute. Exact candidate `a4f34678...` passed the complete Phase 9 gate with real Postgres restart/recovery and exact teardown. Exact hosted-green head `fa26caaf...` merged through PR #152 as `ae81ff06...`. Production service integration and Phase 10 capacity remain unproved. |
 | Post-Phase-9 maintainability checkpoint | Merged and closed | The [governed-knowledge ownership and maintainability review](plans/completed/2026-08-10-governed-knowledge-ownership-and-maintainability-review.md) resolved its accepted public findings at reviewed executable head `a76ed9b0...`, including bounded final structural decoding without tool replay, one exact cited-proposal fixture contract, candidate-specific Qwen 26.07+XGrammar 0.2.1 / Gemma 26.06 runtimes, and separate common/proposal rapid-route qualification bounds. The fresh exact-head route qualification returned `required-workload-routes-qualified`; schema-3 public lock commit `2cf1e92c...` passed semantic admission; exact aggregate candidate `22c3f369...` passed the checkpoint gate. Final hosted head `84c22ec9...` passed every required CI and CodeQL lane and merged through PR #153 as `ca151b1b...`. No Phase 10 behavior was added. |
-| Phase 10 | Three role cores merged; Curator and profile-capacity successor privately qualified under draft PR #168 | The merged baseline owns supervised exact Qwen/Gemma lifecycles plus authenticated bounded owner-fair admission. PRs #164/#165/#166 merged Scribe, Archivist, and Student. Exact route head `dab19fe...` qualified the unchanged Qwen/Gemma profiles sequentially; exact `7cd24deb...` qualified Scribe, Student, and Curator against rapid-four/complex-eight selected-route admission; exact public-lock/aggregate head `7f896b34...` passed the governed gate. Curator remains an internal candidate with no product surface, and PR #168 has not completed hosted review or merge. Auditor, Librarian, Analyst, and Coordinator, simultaneous full-profile residency, sustained capacity/SLOs, production operations, and explicit IT/security handoffs remain open. |
+| Phase 10 | Four role cores merged; Librarian qualified candidate; three workflows later | The merged baseline owns supervised exact Qwen/Gemma lifecycles plus authenticated bounded owner-fair admission. PRs #164/#165/#166 merged Scribe, Archivist, and Student. Exact route head `dab19fe...` qualified the unchanged Qwen/Gemma profiles sequentially; exact `7cd24deb...` qualified Scribe, Student, and Curator; exact public-lock/aggregate head `7f896b34...` passed. Hosted-green head `593e627b...` passed all 12 checks, and PR #168 merged Curator/profile-capacity as `284ab96b...`. Exact `56b7f5d0...` privately qualified the no-LLM Librarian candidate; hosted review/merge/product exposure remain pending. Analyst, Coordinator, Auditor, simultaneous full-profile residency, sustained capacity/SLOs, production operations, and explicit IT/security handoffs remain open. |
 
 Admitted checkpoint head `4ab13497b19ef74ff54e3bc96b9718058f3b1e11`
 is failed historical evidence and cannot be retried or relabeled. Its exact
@@ -1202,12 +1230,12 @@ The concise
 is the ordered closeout checklist: validate the complete workflow before broad
 provider optimization or non-blocking architecture work.
 
-1. Complete exact-head hosted review and merge for draft PR #168 without
-   relabeling the successful route/workflow/aggregate evidence as sustained
-   capacity, simultaneous residency, or production promotion.
-2. Preserve Curator's qualified internal-only boundary through hosted review
-   and merge without claiming a product surface or knowledge activation. Then
-   deliver Librarian, Analyst, Coordinator, and Auditor as
+1. Preserve the merged Curator internal-only boundary without claiming a
+   product surface, knowledge activation, sustained capacity, simultaneous
+   residency, or production promotion.
+2. Obtain hosted review and merge for the qualified internal Librarian slice;
+   no Librarian product surface exists yet. Then deliver Analyst, Coordinator,
+   and Auditor as
    bounded workflows; do not substitute an eight-prompt facade for their
    source, permission, persistence, and failure owners.
 3. Provision a second full-strength owned GPU node and IT-controlled private

@@ -8,10 +8,12 @@ public-safe evidence SHA-256 `f597cca7...`; hosted-green head `b03c6e79...`
 passed all 12 checks and PR #166 merged the internal core as `2254605e...`.
 Exact `0970d74c...` remains terminal `deterministic-no-student`. Exact route
 head `dab19fe...`, workflow head `7cd24deb...`, and aggregate/public-lock head
-`7f896b34...` privately qualify the Curator/profile-capacity successor under
-draft PR #168. Student/Curator product exposure, hosted merge, four later
-workflows, simultaneous full-profile capacity, and production promotion remain
-open.
+`7f896b34...` privately qualified the Curator/profile-capacity successor.
+Hosted-green head `593e627b...` passed all 12 checks, and PR #168 merged it as
+`284ab96b...`. Exact `56b7f5d0...` privately qualified Librarian as an unmerged
+no-LLM internal candidate. Student/Curator/Librarian product exposure,
+Librarian hosted review/merge, Analyst, Coordinator, Auditor, simultaneous
+full-profile capacity, and production promotion remain open.
 
 **Base:** merged post-Phase-9 maintainability closure
 `fc8a16510fa27514db244eb641dea582918a940b` from
@@ -138,7 +140,8 @@ returned `required-workload-routes-qualified` with public-safe evidence SHA-256
 held. Exact workflow head `7cd24deb...` requalified Scribe/Student and qualified
 Curator with live rapid-four/fifth-queued and complex-eight/ninth-queued broker
 probes. Exact aggregate/public-lock head `7f896b34...` passed with public-safe
-evidence SHA-256 `fd197b98...`. PR #168 remains draft. The one-slot evidence
+evidence SHA-256 `fd197b98...`. Hosted-green head `593e627b...` passed all 12
+checks, and PR #168 merged the successor as `284ab96b...`. The one-slot evidence
 above remains exact historical evidence for its merged head; current selected-
 route capacity is not simultaneous-residency, sustained-capacity, or production-
 SLO evidence.

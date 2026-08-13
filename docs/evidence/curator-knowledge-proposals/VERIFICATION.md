@@ -1,9 +1,12 @@
 # Curator knowledge-proposal verification
 
-**Status:** The explicit-submission-only internal Curator candidate is privately
+**Status:** The explicit-submission-only internal Curator core is privately
 qualified at exact head `7cd24deb1131ecf89258ddb821c6bffae8e0cd25`.
-PR #168 is draft. Hosted review, merge, HTTP/native/UI exposure, active-knowledge
-promotion, production operation, and deployment remain open.
+Hosted-green head `593e627b5b7aef10db082913c3e68fbaa872a942` passed all 12
+required checks, and PR #168 merged it as
+`284ab96b58af0fdf1e939dbb8b1b075808b6b5b8` on 2026-08-13.
+HTTP/native/renderer/UI exposure, active-knowledge promotion, production
+operation, and deployment remain open.
 
 ## Exact qualified candidate
 
@@ -68,10 +71,11 @@ local/offline boundary, and completed exact teardown.
 
 ## Deliberate limits
 
-Curator is a qualified internal candidate, not a merged or user-facing product
-workflow. The result does not prove simultaneous Qwen/Gemma residency,
+Curator is a merged internal core, not a user-facing product workflow. The
+result does not prove simultaneous Qwen/Gemma residency,
 sustained multi-user capacity, p50/p95/p99 or production SLOs, active-knowledge
-publication, enterprise networking, deployment, or the four later roles:
-Auditor, Librarian, Analyst, and Coordinator. Raw model output, private case
+publication, enterprise networking, or deployment. Librarian is a privately
+qualified unmerged internal candidate; Analyst, Coordinator, and Auditor remain
+later roles. Raw model output, private case
 content, measurements, database content, credentials, and private locations
 remain outside Git.

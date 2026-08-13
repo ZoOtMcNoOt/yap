@@ -8,12 +8,17 @@ Phases 1–9 and the post-phase architecture checkpoints are merged. Phase 10 ha
 also merged the Rust-owned supervised-provider lifecycle, immutable Qwen/Gemma
 profiles, bounded already-warm admission, Scribe transcript correction, the
 no-LLM Archivist core, and the internal Student learning-question core through
-PR #166. Student has no HTTP, native, or renderer surface. The current
-profile-capacity successor and explicit-submission-only Curator are privately
-qualified internal candidates under draft PR #168, not part of the merged or
-product-promoted boundary. Production identity, simultaneous full-profile
+PR #166. Student has no HTTP, native, or renderer surface. Hosted-green head
+`593e627b...` passed all 12 required checks, and PR #168 merged the qualified
+profile-capacity successor and explicit-submission-only Curator internal core as
+`284ab96b...`. Curator has no HTTP, native, renderer, or user-facing product
+surface. Production identity, simultaneous full-profile
 residency, sustained capacity, enterprise deployment, and the remaining role
 workflows stay explicitly gated.
+
+Exact head `56b7f5d0...` privately qualified the no-LLM Librarian
+permission-safe evidence core as an internal candidate. It is not merged or
+product-exposed; hosted review and merge remain pending.
 
 Start with [current status](docs/CURRENT-STATUS.md). It states what executes,
 what is verified, what is still absent, and what happens next.
@@ -47,10 +52,10 @@ what is verified, what is still absent, and what happens next.
   either ASR provider.
 - The merged team agent plane uses hash-locked Qwen rapid-automation and Gemma
   complex-orchestration vLLM routes with no cross-route fallback. Scribe is the
-  only current desktop-facing LLM workflow. Archivist and Student are bounded
-  merged internal cores. Curator is the fourth implemented role and is a
-  privately qualified internal candidate under draft PR #168; Auditor,
-  Librarian, Analyst, and Coordinator remain unimplemented. The qualified
+  only current desktop-facing LLM workflow. Archivist, Student, and Curator are
+  bounded merged internal cores. Four roles are merged; Librarian is a fifth
+  privately qualified internal candidate, while Analyst, Coordinator, and
+  Auditor remain unimplemented. The qualified
   profile-capacity successor admits four rapid or eight complex active distinct
   owners on the selected already-warm route, while preserving one active request
   per owner; this is not simultaneous-residency or sustained-capacity evidence.

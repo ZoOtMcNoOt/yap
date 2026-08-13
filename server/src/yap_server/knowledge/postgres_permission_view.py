@@ -8,6 +8,7 @@ from psycopg import Connection
 from psycopg.pq import TransactionStatus
 
 from yap_server.auth.principal import PrincipalKey
+from yap_server.knowledge.knowledge_tool_contract import KnowledgeGenerationStale
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,7 +56,7 @@ def _authorize_knowledge_query(
         expected_generation_sha256 is not None
         and expected_generation_sha256 != generation_sha256
     ):
-        raise ValueError("knowledge generation is stale")
+        raise KnowledgeGenerationStale("knowledge generation is stale")
     rows = connection.execute(
         """SELECT c.concept_id, p.permission_sha256
            FROM yap_knowledge_concepts c

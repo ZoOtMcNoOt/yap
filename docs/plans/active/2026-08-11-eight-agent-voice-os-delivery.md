@@ -7,18 +7,21 @@ topic-copy prompt repair is privately qualified on the unchanged full Qwen
 rapid profile; hosted-green head `b03c6e79...` passed all 12 checks and PR #166
 merged the internal core as `2254605e...`. Exact route head `dab19fe...`,
 workflow head `7cd24deb...`, and aggregate/public-lock head `7f896b34...`
-privately qualify the Curator/profile-capacity successor under draft PR #168.
-Student/Curator product integration, hosted merge, simultaneous-capacity
-evidence, and four later role slices remain open.
+privately qualified the Curator/profile-capacity successor. Hosted-green head
+`593e627b...` passed all 12 checks, and PR #168 merged it as `284ab96b...`.
+Student/Curator product integration and simultaneous-capacity evidence remain
+open. Librarian is privately qualified as an unmerged internal candidate;
+Analyst, Coordinator, and Auditor remain later role slices.
 
-**Current branch:** `agent/phase10-curator` for the final Slice D workflow and
-its profile-capacity admission successor.
-Later slices use focused branches and merge only after their exact heads are
-reviewed and hosted-green.
+**Current branch:** `agent/phase10-librarian` contains exact privately qualified
+Librarian candidate `56b7f5d0...`. Hosted review/merge and product exposure are
+not claimed. Later slices use
+focused branches and merge only after their exact heads are reviewed and
+hosted-green.
 
-**Base:** merged Student slice at
-`2254605ed19a592d2db1747d576762ccf11a5cc0` from hosted-green head
-`b03c6e79f19bad451437c3f0c495daa67bb7171f` and PR #166.
+**Base:** merged Curator/profile-capacity slice at
+`284ab96b58af0fdf1e939dbb8b1b075808b6b5b8` from hosted-green head
+`593e627b5b7aef10db082913c3e68fbaa872a942` and PR #168.
 
 **Applied decisions:** [ADR 0031](../../adr/0031-eight-agent-voice-os-roster.md),
 [ADR 0030](../../adr/0030-rust-supervised-provider-service-lifecycle.md),
@@ -29,8 +32,8 @@ reviewed and hosted-green.
 
 ## Objective
 
-Ship Scribe, Archivist, Student, Curator, Auditor, Librarian, Analyst, and
-Coordinator as complete bounded product workflows through the amended
+Ship Scribe, Archivist, Student, Curator, Librarian, Analyst, Coordinator, and
+Auditor as complete bounded product workflows through the amended
 private-server architecture, while preserving raw/local operation and keeping
 production, capacity, and enterprise claims evidence-gated.
 
@@ -343,8 +346,8 @@ Hosted-green head `b03c6e79f19bad451437c3f0c495daa67bb7171f` then passed all
 12 required checks and PR #166 merged the internal Student core as
 `2254605ed19a592d2db1747d576762ccf11a5cc0`.
 
-The current branch contains a privately qualified explicit-submission-only
-Curator candidate and profile-capacity admission successor. Curator may append
+The merged baseline contains the privately qualified explicit-submission-only
+Curator core and profile-capacity admission successor. Curator may append
 only a governed noncanonical proposal and cannot activate knowledge or mutate
 source truth. Exact route head `dab19fe...` qualified unchanged full Qwen and
 Gemma profiles sequentially at rapid-four/complex-eight selected-route limits.
@@ -353,13 +356,17 @@ Exact workflow head `7cd24deb...` returned
 proposals, four rejections, zero terminal failures, complex eight/ninth queued,
 exact PostgreSQL lifecycle/read-back, and teardown. Exact aggregate/public-lock
 head `7f896b34...` passed. Historical one-slot, Scribe, and Student receipts
-were not reused for these protected changes. PR #168 remains draft; hosted
-merge and product exposure remain open. This evidence does not prove sustained
-capacity, simultaneous Qwen/Gemma residency, production SLOs, or deployment.
+were not reused for these protected changes. Hosted-green head `593e627b...`
+passed all 12 checks, and PR #168 merged the slice as `284ab96b...`. Curator
+product exposure remains open. This evidence does not prove sustained capacity,
+simultaneous Qwen/Gemma residency, production SLOs, or deployment. The current
+Exact `56b7f5d0...` privately qualified Librarian across the corrected actual
+eight-owner broker wave. It remains an unmerged internal candidate; exact
+predecessor `ecdcb8ee...` is terminal/inadmissible and is not reused.
 
 ## Slice E — knowledge and coordination agents
 
-- [ ] Librarian returns a permission-safe evidence pack pinned to one active
+- [x] Librarian returns a permission-safe evidence pack pinned to one active
   generation for the transaction lifetime and never invokes an LLM.
 - [ ] Analyst produces a bounded cited answer from that frozen pack or an exact
   evidence-unavailable response.
@@ -367,8 +374,11 @@ capacity, simultaneous Qwen/Gemma residency, production SLOs, or deployment.
   cross-conversation inputs and never performs autonomous mutations.
 - [ ] Auditor runs only by authorized manual trigger or bounded schedule while
   idle, publishes source-cited findings, and never mutates authority.
-- [ ] Prove revocation, hidden-node/link rejection, stale generation,
-  cancellation, overload, idle admission, and audit/publication behavior.
+- [x] Prove Librarian revocation, hidden-before-limit/link suppression, hidden-
+  only equivalence, stale generation, cancellation/deadline, Server-IO queue
+  containment, exact audits, restart/read-back, and teardown behavior.
+- [ ] Prove Analyst/Coordinator/Auditor role-specific failure and publication
+  behavior in their later slices.
 
 ## Slice F — product integration and promotion evidence
 

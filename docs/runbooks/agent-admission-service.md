@@ -15,8 +15,9 @@ service profiles (four rapid, eight complex) while retaining Server IO at one
 and one active request per owner globally. Exact route head `dab19fe...`
 qualified both unchanged full profiles sequentially; exact workflow head
 `7cd24deb...` qualified Scribe, Student, and Curator; and replacement public-
-lock/aggregate head `7f896b34...` passed. PR #168 remains draft, so hosted
-review/merge and production enablement remain open. The earlier one-slot
+lock/aggregate head `7f896b34...` passed. Hosted-green head `593e627b...` passed
+all 12 checks, and PR #168 merged the successor as `284ab96b...`. Production
+enablement remains open. The earlier one-slot
 contract below is retained as historical exact-head evidence. Do not use the
 selected-route limits as sustained-capacity, simultaneous-residency, or
 production-SLO evidence.
@@ -147,16 +148,23 @@ Exact aggregate/public-lock head `7f896b34...` returned
 `governed-knowledge-gate-passed` with public-safe evidence SHA-256
 `fd197b98...`. See the
 [profile-capacity evidence](../evidence/agent-admission-profile-capacity/VERIFICATION.md).
-PR #168 remains draft; none of these facts is a sustained-load or production
-availability claim.
+PR #168 merged as `284ab96b...`; none of these facts is a sustained-load or
+production-availability claim.
+
+Exact `56b7f5d0...` separately qualified the no-LLM Librarian candidate on the
+Server-IO route: one owner was active, the second queued, cancellation and
+acknowledgement completed, every probe lease was contained, and broker identity
+remained unchanged. The actual synchronized normal-owner wave submitted all
+eight owners. Librarian acquired no model-route lease. This is workflow
+qualification, not sustained-capacity or production evidence; hosted review and
+merge remain pending. See the
+[Librarian evidence](../evidence/librarian-permission-safe-evidence/VERIFICATION.md).
 
 ## Later enablement and recovery
 
 Do not enable or start the admission unit until all of these are true:
 
-1. PR #158 has passed hosted exact-head review and merged (complete), while the
-   profile-capacity successor in draft PR #168 must still complete hosted review
-   and merge;
+1. PRs #158 and #168 have passed hosted exact-head review and merged (complete);
 2. the selected provider topology has passed simultaneous-residency evidence;
 3. the authenticated Python workflow owns cancellation through final worker
    termination and can prove no work survives a released lease; and

@@ -1,6 +1,6 @@
 # ADR 0031: Eight-agent Voice OS roster and execution boundaries
 
-**Status:** Accepted target; three role cores merged; the Curator/profile-capacity successor is privately qualified under draft PR #168; four later workflows, hosted merge, product exposure, and promotion remain open
+**Status:** Accepted target; four role cores merged through PR #168; Librarian privately qualified as an unmerged internal candidate; Analyst, Coordinator, and Auditor plus product exposure and promotion remain open
 **Date:** 2026-08-11
 **Deciders:** Yap product and engineering owner
 **Amends:** [ADR 0006](0006-silero-agents-state-machine.md),
@@ -40,14 +40,21 @@ rapid route. Exact `428d6e48...` returned
 `deterministic-no-student`. Hosted-green head `b03c6e79...` passed all 12 checks
 and PR #166 merged the internal core as `2254605e...`; product exposure remains
 open. Exact workflow head `7cd24deb...` then privately requalified Scribe and
-Student and qualified the explicit-submission-only Curator candidate. Curator
+Student and qualified the explicit-submission-only Curator core. Curator
 returned `curator-knowledge-proposals-qualified` with public-safe evidence
 SHA-256 `b60df1e2...`: eight cases/eight owners, four proposals, four
 rejections, zero terminal failures, complex capacity eight with a ninth owner
 queued, exact PostgreSQL lifecycle/read-back, and teardown. Curator may append
-only a noncanonical proposal; it cannot activate or mutate source truth. PR
-#168 remains draft, so hosted merge and product exposure remain open. The four
-later workflows—Auditor, Librarian, Analyst, and Coordinator—remain pending.
+only a noncanonical proposal; it cannot activate or mutate source truth.
+Hosted-green head `593e627b...` passed all 12 checks, and PR #168 merged the
+Curator/profile-capacity slice as `284ab96b...` on 2026-08-13. Curator product
+exposure remains open. Exact head `56b7f5d0...` privately qualified the no-LLM
+Librarian permission-safe evidence core across an actual eight-owner broker
+wave, ten exact invocations, Server-IO one-active/second-queued containment,
+PostgreSQL restart/read-back, and exact teardown. It remains an unmerged
+internal candidate with no product surface. Exact predecessor `ecdcb8ee...` is
+terminal/inadmissible because only seven owners entered broker submission.
+Analyst, Coordinator, and Auditor remain pending.
 
 The current protected profile-capacity successor derives four rapid and eight
 complex active limits from the immutable full profiles while retaining one
@@ -261,12 +268,13 @@ does not prove product exposure or sustained capacity. Exact
 evidence SHA-256 `9c2f68ff...`; six of eight cases completed while the warm
 provider/broker, queue wave, database boundaries, and teardown held. Hosted
 head `b03c6e79...` passed all 12 checks and PR #166 merged the internal core as
-`2254605e...`. The current Curator/profile-capacity successor is privately
-qualified at exact `7cd24deb...`/`7f896b34...` under draft PR #168. Hosted
-review/merge, Student and Curator product exposure, warm simultaneous two-route
-residency, the four later workflows (Auditor, Librarian, Analyst, and
-Coordinator), sustained multi-owner capacity, and production promotion remain
-open. One Spark cannot retain the unchanged `0.40` Qwen and `0.70` Gemma
+`2254605e...`. The Curator/profile-capacity successor retained exact
+qualification at `7cd24deb...`/`7f896b34...`; hosted-green head `593e627b...`
+passed all 12 checks, and PR #168 merged it as `284ab96b...`. Student and Curator
+product exposure, warm simultaneous two-route residency, Librarian hosted
+review/merge, the three remaining workflows (Analyst, Coordinator, and Auditor), sustained multi-owner
+capacity, and production promotion remain open. One Spark cannot retain the
+unchanged `0.40` Qwen and `0.70` Gemma
 profiles simultaneously; a second owned GPU node/private route remains
 required for the intended two-route topology.
 
