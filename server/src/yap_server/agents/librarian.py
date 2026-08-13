@@ -36,10 +36,6 @@ _MAXIMUM_SOURCE_REVISION_CHARACTERS = 512
 _MAXIMUM_CITATION_OFFSET = 2**63 - 1
 
 
-class LibrarianStaleGeneration(ValueError):
-    pass
-
-
 @dataclass(frozen=True, slots=True)
 class LibrarianRequest:
     search_text: str
@@ -280,27 +276,18 @@ class PostgresLibrarianEvidenceReader:
         if not isinstance(cancellation, threading.Event):
             raise TypeError("librarian cancellation type is invalid")
         with self._connection_factory() as connection:
-            try:
-                response = self._tools.execute(
-                    connection,
-                    principal=principal.key,
-                    agent_id=LIBRARIAN_AGENT_ID,
-                    request=SearchKnowledgeRequest(
-                        purpose=LIBRARIAN_KNOWLEDGE_PURPOSE,
-                        search_text=request.search_text,
-                        maximum_results=request.maximum_results,
-                        expected_generation_sha256=(
-                            request.expected_generation_sha256
-                        ),
-                    ),
-                    cancellation=cancellation,
-                )
-            except ValueError as error:
-                if str(error) == "knowledge generation is stale":
-                    raise LibrarianStaleGeneration(
-                        "librarian generation is stale"
-                    ) from error
-                raise
+            response = self._tools.execute(
+                connection,
+                principal=principal.key,
+                agent_id=LIBRARIAN_AGENT_ID,
+                request=SearchKnowledgeRequest(
+                    purpose=LIBRARIAN_KNOWLEDGE_PURPOSE,
+                    search_text=request.search_text,
+                    maximum_results=request.maximum_results,
+                    expected_generation_sha256=request.expected_generation_sha256,
+                ),
+                cancellation=cancellation,
+            )
         evidence = LibrarianEvidencePack.from_tool_response(response)
         validate_librarian_evidence(request, evidence)
         return evidence
@@ -433,7 +420,6 @@ __all__ = [
     "LibrarianEvidenceItem",
     "LibrarianEvidencePack",
     "LibrarianRequest",
-    "LibrarianStaleGeneration",
     "PostgresLibrarianEvidenceReader",
     "librarian_evidence_sha256",
     "librarian_request_sha256",

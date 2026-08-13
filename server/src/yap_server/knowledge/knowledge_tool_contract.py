@@ -58,6 +58,10 @@ class KnowledgeToolTimedOut(TimeoutError):
     pass
 
 
+class KnowledgeGenerationStale(ValueError):
+    pass
+
+
 class ProposalCitation(BaseModel):
     """One strict immutable citation shared by model input and persistence."""
 
@@ -484,6 +488,7 @@ __all__ = [
     "ProposalCitations",
     "KnowledgeToolCancellationFailed",
     "KnowledgeToolCancelled",
+    "KnowledgeGenerationStale",
     "KnowledgeToolCitation",
     "KnowledgeToolItem",
     "KnowledgeToolRequest",

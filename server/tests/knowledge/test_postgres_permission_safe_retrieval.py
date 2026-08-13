@@ -23,6 +23,7 @@ from yap_server.knowledge.generation_ledger import (
 from yap_server.knowledge.knowledge_source_admission import (
     admit_curated_knowledge_generation,
 )
+from yap_server.knowledge.knowledge_tool_contract import KnowledgeGenerationStale
 from yap_server.knowledge.okf_compiler import compile_okf_bundle
 from yap_server.knowledge.postgres_knowledge_retrieval import (
     list_postgres_knowledge_tree,
@@ -159,7 +160,7 @@ class PostgresPermissionSafeRetrievalTests(unittest.TestCase):
                 query_embedding=(1.0,) + (0.0,) * 767,
                 maximum_results=1,
             )
-            with self.assertRaisesRegex(ValueError, "stale"):
+            with self.assertRaisesRegex(KnowledgeGenerationStale, "stale"):
                 search_postgres_knowledge_lexical(
                     connection,
                     principal=alice,

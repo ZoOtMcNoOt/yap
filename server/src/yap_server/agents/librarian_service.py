@@ -19,6 +19,7 @@ from yap_server.agents.admission_protocol import (
 )
 from yap_server.auth import AuthenticatedPrincipal
 from yap_server.knowledge.knowledge_tool_contract import (
+    KnowledgeGenerationStale,
     KnowledgeToolCancellationFailed,
     KnowledgeToolCancelled,
     KnowledgeToolTimedOut,
@@ -28,7 +29,6 @@ from .librarian import (
     LibrarianEvidenceItem,
     LibrarianEvidencePack,
     LibrarianRequest,
-    LibrarianStaleGeneration,
     librarian_request_sha256,
     librarian_work_sha256,
     validate_librarian_evidence,
@@ -349,7 +349,7 @@ class LibrarianService:
                     "unavailable",
                     "evidence-unavailable",
                 )
-            except LibrarianStaleGeneration:
+            except KnowledgeGenerationStale:
                 failure = ("failed", "unavailable", "stale-generation")
             except ValueError as error:
                 raise LibrarianContainmentError(

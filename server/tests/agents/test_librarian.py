@@ -21,7 +21,6 @@ from yap_server.agents.librarian import (
     LibrarianEvidenceItem,
     LibrarianEvidencePack,
     LibrarianRequest,
-    LibrarianStaleGeneration,
     librarian_request_sha256,
     librarian_work_sha256,
     validate_librarian_evidence,
@@ -32,6 +31,7 @@ from yap_server.agents.librarian_service import (
     LibrarianService,
 )
 from yap_server.knowledge.knowledge_tool_contract import (
+    KnowledgeGenerationStale,
     KnowledgeToolCancelled,
     KnowledgeToolCitation,
     KnowledgeToolItem,
@@ -439,7 +439,7 @@ class LibrarianServiceTests(unittest.TestCase):
             (QueryCanceled("timeout"), "storage-timeout", "failed"),
             (PermissionError("private"), "unauthorized", "failed"),
             (LookupError("hidden"), "evidence-unavailable", "evidence-unavailable"),
-            (LibrarianStaleGeneration("stale"), "stale-generation", "failed"),
+            (KnowledgeGenerationStale("stale"), "stale-generation", "failed"),
             (OSError("private"), "storage-unavailable", "failed"),
         )
         for error, reason, status in cases:
