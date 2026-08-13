@@ -361,18 +361,22 @@ class CoordinatorQualificationGateTests(unittest.TestCase):
 
             def cancel(self, ticket):
                 self.cancel_count += 1
-                outcome = (
-                    "cancellation-requested"
+                reason = (
+                    "client-requested"
                     if self.cancel_count == 1
                     else "deadline-exceeded"
                 )
-                self.outcomes[ticket.request_id] = outcome
-                return gate.AgentAdmission(ticket, outcome)
+                self.outcomes[ticket.request_id] = reason
+                return gate.AgentAdmission(
+                    ticket,
+                    "cancellation-requested",
+                    cancellation_reason=reason,
+                )
 
             def acknowledge_cancellation(self, ticket):
                 outcome = (
                     "cancelled"
-                    if self.outcomes[ticket.request_id] == "cancellation-requested"
+                    if self.outcomes[ticket.request_id] == "client-requested"
                     else "deadline-exceeded"
                 )
                 self.outcomes[ticket.request_id] = outcome
@@ -430,6 +434,21 @@ class CoordinatorQualificationGateTests(unittest.TestCase):
             ),
             (29, 28, 26, 2, 1, 1, 1),
         )
+        client_cancelled_id = next(
+            request_id
+            for request_id, mode in invocation_modes.items()
+            if mode == "client-cancelled"
+        )
+        deadline_id = next(
+            request_id
+            for request_id, mode in invocation_modes.items()
+            if mode == "deadline"
+        )
+        swapped_modes = dict(invocation_modes)
+        swapped_modes[client_cancelled_id] = "deadline"
+        swapped_modes[deadline_id] = "client-cancelled"
+        with self.assertRaisesRegex(RuntimeError, "lifecycle evidence differs"):
+            observed.require_exact_lifecycle(invocation_modes=swapped_modes)
         extra = observed.new_ticket()
         observed.submit(
             extra,

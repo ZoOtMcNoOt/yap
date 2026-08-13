@@ -205,6 +205,7 @@ class _AdmissionExchange:
     request_id: str
     outcome: str
     work: AgentWorkSpec | None = None
+    cancellation_reason: str | None = None
 
 
 class _ObservedCoordinatorAdmission:
@@ -321,7 +322,7 @@ class _ObservedCoordinatorAdmission:
         expected_completed_ids = (
             set(invocation_modes) - expected_unsubmitted_ids - expected_cancelled_ids
         )
-        cancel_outcomes = {item.request_id: item.outcome for item in cancels}
+        cancel_by_id = {item.request_id: item for item in cancels}
         acknowledgement_outcomes = {
             item.request_id: item.outcome for item in acknowledgements
         }
@@ -348,12 +349,16 @@ class _ObservedCoordinatorAdmission:
             and len(cancels) == len(cancelled_ids) == 2
             and len(acknowledgements) == len(acknowledged_ids) == 2
             and all(
-                cancel_outcomes.get(request_id) == "cancellation-requested"
+                request_id in cancel_by_id
+                and cancel_by_id[request_id].outcome == "cancellation-requested"
+                and cancel_by_id[request_id].cancellation_reason == "client-requested"
                 and acknowledgement_outcomes.get(request_id) == "cancelled"
                 for request_id in expected_client_cancelled_ids
             )
             and all(
-                cancel_outcomes.get(request_id) == "deadline-exceeded"
+                request_id in cancel_by_id
+                and cancel_by_id[request_id].outcome == "cancellation-requested"
+                and cancel_by_id[request_id].cancellation_reason == "deadline-exceeded"
                 and acknowledgement_outcomes.get(request_id) == "deadline-exceeded"
                 for request_id in expected_deadline_ids
             )
@@ -392,7 +397,13 @@ class _ObservedCoordinatorAdmission:
     ) -> None:
         with self._lock:
             self._exchanges.append(
-                _AdmissionExchange(command, ticket.request_id, result.outcome, work)
+                _AdmissionExchange(
+                    command,
+                    ticket.request_id,
+                    result.outcome,
+                    work,
+                    result.cancellation_reason,
+                )
             )
 
 
