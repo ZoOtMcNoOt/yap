@@ -268,6 +268,8 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
                 "replacing a required tool call.",
                 prompt,
             )
+            self.assertIn("citationConceptIds", prompt)
+            self.assertIn("never append citation labels or IDs to answer", prompt)
             self.assertIn("answer exactly Evidence is unavailable.", prompt)
             self.assertIn(
                 "answer exactly I cannot query the raw repository or filesystem or bypass permissions.",
