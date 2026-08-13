@@ -1,0 +1,338 @@
+{
+  "schemaVersion": 1,
+  "qualificationScope": "librarian-permission-safe-evidence",
+  "corpusId": "librarian-public-synthetic-v1",
+  "tenantId": "librarian-qualification",
+  "generations": [
+    {
+      "generationId": "predecessor",
+      "generationSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "sources": [
+        {
+          "conceptId": "policies/cedar-revocation",
+          "sourceRevision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "body": "The Cedar archive permits successor access.",
+          "evidenceQuote": "The Cedar archive permits successor access.",
+          "visibleToOwnerIds": [
+            "owner-revoked"
+          ],
+          "linkedConceptIds": [],
+          "retrievalRank": 1
+        }
+      ]
+    },
+    {
+      "generationId": "successor",
+      "generationSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "sources": [
+        {
+          "conceptId": "meetings/atlas-visible",
+          "sourceRevision": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "body": "The Atlas handoff requires two reviewers before publication.",
+          "evidenceQuote": "The Atlas handoff requires two reviewers before publication.",
+          "visibleToOwnerIds": [
+            "owner-visible"
+          ],
+          "linkedConceptIds": [],
+          "retrievalRank": 1
+        },
+        {
+          "conceptId": "vaults/cobalt-hidden",
+          "sourceRevision": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "body": "The cobalt vault contains HIDDEN-ONLY-MARKER-7419.",
+          "evidenceQuote": "The cobalt vault contains HIDDEN-ONLY-MARKER-7419.",
+          "visibleToOwnerIds": [
+            "owner-hidden-control"
+          ],
+          "linkedConceptIds": [],
+          "retrievalRank": 1
+        },
+        {
+          "conceptId": "indexes/orion-restricted-link",
+          "sourceRevision": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "body": "The Orion index points to HIDDEN-LINK-MARKER-2087 in the Mercury annex.",
+          "evidenceQuote": "The Orion index points to HIDDEN-LINK-MARKER-2087 in the Mercury annex.",
+          "visibleToOwnerIds": [
+            "owner-hidden-link"
+          ],
+          "linkedConceptIds": [
+            "annexes/mercury-hidden"
+          ],
+          "retrievalRank": 1
+        },
+        {
+          "conceptId": "annexes/mercury-hidden",
+          "sourceRevision": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "body": "The Mercury annex contains HIDDEN-TARGET-MARKER-6321.",
+          "evidenceQuote": "The Mercury annex contains HIDDEN-TARGET-MARKER-6321.",
+          "visibleToOwnerIds": [
+            "owner-hidden-control"
+          ],
+          "linkedConceptIds": [],
+          "retrievalRank": 1
+        },
+        {
+          "conceptId": "indexes/orion-public",
+          "sourceRevision": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "body": "The Orion index lists the approved public release checklist.",
+          "evidenceQuote": "The Orion index lists the approved public release checklist.",
+          "visibleToOwnerIds": [
+            "owner-hidden-link"
+          ],
+          "linkedConceptIds": [],
+          "retrievalRank": 2
+        },
+        {
+          "conceptId": "retention/nimbus-hidden",
+          "sourceRevision": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "body": "Nimbus retention is one day for HIDDEN-LIMIT-MARKER-9563.",
+          "evidenceQuote": "Nimbus retention is one day for HIDDEN-LIMIT-MARKER-9563.",
+          "visibleToOwnerIds": [
+            "owner-hidden-control"
+          ],
+          "linkedConceptIds": [],
+          "retrievalRank": 1
+        },
+        {
+          "conceptId": "retention/nimbus-a-reviewed",
+          "sourceRevision": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "body": "Nimbus retention is seven days for reviewed notes.",
+          "evidenceQuote": "Nimbus retention is seven days for reviewed notes.",
+          "visibleToOwnerIds": [
+            "owner-result-limit"
+          ],
+          "linkedConceptIds": [],
+          "retrievalRank": 2
+        },
+        {
+          "conceptId": "retention/nimbus-b-draft",
+          "sourceRevision": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "body": "Nimbus retention is fourteen days for draft notes.",
+          "evidenceQuote": "Nimbus retention is fourteen days for draft notes.",
+          "visibleToOwnerIds": [
+            "owner-result-limit"
+          ],
+          "linkedConceptIds": [],
+          "retrievalRank": 3
+        },
+        {
+          "conceptId": "operations/maple-current",
+          "sourceRevision": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "body": "The Maple rotation is current in the successor generation.",
+          "evidenceQuote": "The Maple rotation is current in the successor generation.",
+          "visibleToOwnerIds": [
+            "owner-stale"
+          ],
+          "linkedConceptIds": [],
+          "retrievalRank": 1
+        },
+        {
+          "conceptId": "policies/cedar-revocation",
+          "sourceRevision": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "body": "The Cedar archive permits successor access.",
+          "evidenceQuote": "The Cedar archive permits successor access.",
+          "visibleToOwnerIds": [
+            "owner-successor-control"
+          ],
+          "linkedConceptIds": [],
+          "retrievalRank": 1
+        },
+        {
+          "conceptId": "operations/zephyr-terminal",
+          "sourceRevision": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "body": "Zephyr cancellation preserves the previously published evidence pack.",
+          "evidenceQuote": "Zephyr cancellation preserves the previously published evidence pack.",
+          "visibleToOwnerIds": [
+            "owner-terminal"
+          ],
+          "linkedConceptIds": [],
+          "retrievalRank": 1
+        }
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "caseId": "visible-exact",
+      "ownerId": "owner-visible",
+      "activeGenerationId": "successor",
+      "request": {
+        "purpose": "knowledge.read",
+        "searchText": "Atlas handoff",
+        "maximumResults": 3,
+        "expectedGenerationId": "successor"
+      },
+      "runs": [
+        {
+          "runId": "normal",
+          "mode": "normal",
+          "expectedStatus": "complete",
+          "expectedReason": null,
+          "expectedEvidence": [
+            {
+              "conceptId": "meetings/atlas-visible",
+              "quote": "The Atlas handoff requires two reviewers before publication."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "caseId": "hidden-only-unavailable",
+      "ownerId": "owner-hidden",
+      "activeGenerationId": "successor",
+      "request": {
+        "purpose": "knowledge.read",
+        "searchText": "cobalt vault",
+        "maximumResults": 3,
+        "expectedGenerationId": "successor"
+      },
+      "runs": [
+        {
+          "runId": "normal",
+          "mode": "normal",
+          "expectedStatus": "evidence-unavailable",
+          "expectedReason": "empty-result",
+          "expectedEvidence": []
+        }
+      ]
+    },
+    {
+      "caseId": "absent-unavailable",
+      "ownerId": "owner-absent",
+      "activeGenerationId": "successor",
+      "request": {
+        "purpose": "knowledge.read",
+        "searchText": "quartz evidence absent",
+        "maximumResults": 3,
+        "expectedGenerationId": "successor"
+      },
+      "runs": [
+        {
+          "runId": "normal",
+          "mode": "normal",
+          "expectedStatus": "evidence-unavailable",
+          "expectedReason": "empty-result",
+          "expectedEvidence": []
+        }
+      ]
+    },
+    {
+      "caseId": "hidden-link-suppression",
+      "ownerId": "owner-hidden-link",
+      "activeGenerationId": "successor",
+      "request": {
+        "purpose": "knowledge.read",
+        "searchText": "Orion index",
+        "maximumResults": 3,
+        "expectedGenerationId": "successor"
+      },
+      "runs": [
+        {
+          "runId": "normal",
+          "mode": "normal",
+          "expectedStatus": "complete",
+          "expectedReason": null,
+          "expectedEvidence": [
+            {
+              "conceptId": "indexes/orion-public",
+              "quote": "The Orion index lists the approved public release checklist."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "caseId": "hidden-filter-before-limit",
+      "ownerId": "owner-result-limit",
+      "activeGenerationId": "successor",
+      "request": {
+        "purpose": "knowledge.read",
+        "searchText": "Nimbus retention",
+        "maximumResults": 1,
+        "expectedGenerationId": "successor"
+      },
+      "runs": [
+        {
+          "runId": "normal",
+          "mode": "normal",
+          "expectedStatus": "complete",
+          "expectedReason": null,
+          "expectedEvidence": [
+            {
+              "conceptId": "retention/nimbus-a-reviewed",
+              "quote": "Nimbus retention is seven days for reviewed notes."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "caseId": "expected-generation-stale",
+      "ownerId": "owner-stale",
+      "activeGenerationId": "successor",
+      "request": {
+        "purpose": "knowledge.read",
+        "searchText": "Maple rotation",
+        "maximumResults": 3,
+        "expectedGenerationId": "predecessor"
+      },
+      "runs": [
+        {
+          "runId": "normal",
+          "mode": "normal",
+          "expectedStatus": "failed",
+          "expectedReason": "stale-generation",
+          "expectedEvidence": []
+        }
+      ]
+    },
+    {
+      "caseId": "successor-revocation",
+      "ownerId": "owner-revoked",
+      "activeGenerationId": "successor",
+      "request": {
+        "purpose": "knowledge.read",
+        "searchText": "Cedar archive",
+        "maximumResults": 3,
+        "expectedGenerationId": "successor"
+      },
+      "runs": [
+        {
+          "runId": "normal",
+          "mode": "normal",
+          "expectedStatus": "evidence-unavailable",
+          "expectedReason": "empty-result",
+          "expectedEvidence": []
+        }
+      ]
+    },
+    {
+      "caseId": "terminal-cutover",
+      "ownerId": "owner-terminal",
+      "activeGenerationId": "successor",
+      "request": {
+        "purpose": "knowledge.read",
+        "searchText": "Zephyr cancellation",
+        "maximumResults": 3,
+        "expectedGenerationId": "successor"
+      },
+      "runs": [
+        {
+          "runId": "client-cancelled",
+          "mode": "pre-cancelled",
+          "expectedStatus": "cancelled",
+          "expectedReason": "client-cancelled",
+          "expectedEvidence": []
+        },
+        {
+          "runId": "deadline-exceeded",
+          "mode": "deadline",
+          "expectedStatus": "cancelled",
+          "expectedReason": "deadline-exceeded",
+          "expectedEvidence": []
+        }
+      ]
+    }
+  ]
+}
