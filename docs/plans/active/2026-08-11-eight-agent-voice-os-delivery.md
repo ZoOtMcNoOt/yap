@@ -10,18 +10,20 @@ workflow head `7cd24deb...`, and aggregate/public-lock head `7f896b34...`
 privately qualified the Curator/profile-capacity successor. Hosted-green head
 `593e627b...` passed all 12 checks, and PR #168 merged it as `284ab96b...`.
 Student/Curator product integration and simultaneous-capacity evidence remain
-open. Librarian is privately qualified as an unmerged internal candidate;
-Analyst, Coordinator, and Auditor remain later role slices.
+open. Hosted head `7505247e...` merged Librarian through PR #169 as
+`d7a7e003...`. Exact executable `0665c486...` privately qualified Analyst; lock-
+only `8fee7a5c...` publishes the matching batch-invariant route lock. Analyst
+hosted review/merge and product exposure remain open; Coordinator and Auditor
+remain later role slices.
 
-**Current branch:** `agent/phase10-librarian` contains exact privately qualified
-Librarian candidate `56b7f5d0...`. Hosted review/merge and product exposure are
-not claimed. Later slices use
+**Current branch:** `agent/phase10-analyst` contains exact privately qualified
+Analyst candidate `0665c486...` and lock-only successor `8fee7a5c...`. Hosted
+review/merge and product exposure are not claimed. Later slices use
 focused branches and merge only after their exact heads are reviewed and
 hosted-green.
 
-**Base:** merged Curator/profile-capacity slice at
-`284ab96b58af0fdf1e939dbb8b1b075808b6b5b8` from hosted-green head
-`593e627b5b7aef10db082913c3e68fbaa872a942` and PR #168.
+**Base:** merged Librarian internal core at `d7a7e003...` from hosted head
+`7505247e...` and PR #169.
 
 **Applied decisions:** [ADR 0031](../../adr/0031-eight-agent-voice-os-roster.md),
 [ADR 0030](../../adr/0030-rust-supervised-provider-service-lifecycle.md),
@@ -361,14 +363,23 @@ passed all 12 checks, and PR #168 merged the slice as `284ab96b...`. Curator
 product exposure remains open. This evidence does not prove sustained capacity,
 simultaneous Qwen/Gemma residency, production SLOs, or deployment. The current
 Exact `56b7f5d0...` privately qualified Librarian across the corrected actual
-eight-owner broker wave. It remains an unmerged internal candidate; exact
-predecessor `ecdcb8ee...` is terminal/inadmissible and is not reused.
+eight-owner broker wave. Hosted head `7505247e...` merged it through PR #169 as
+`d7a7e003...`; exact predecessor `ecdcb8ee...` remains terminal/inadmissible and
+is not reused.
+
+Exact executable `0665c486...` privately qualified Analyst with three exact
+synchronized repeat waves, 24 of 24 normal matches, all 29 terminal matches, 12
+answers, and 15 server-owned citations. Lock-only `8fee7a5c...` publishes the
+matching batch-invariant route lock. Exact `63c3d9fd...` remains terminal no-
+receipt evidence from the superseded schedule-sensitive runtime and is not
+reused. Same-warm-process repeatability does not prove cross-start/global
+determinism, simultaneous residency, sustained capacity, or a production SLO.
 
 ## Slice E — knowledge and coordination agents
 
 - [x] Librarian returns a permission-safe evidence pack pinned to one active
   generation for the transaction lifetime and never invokes an LLM.
-- [ ] Analyst produces a bounded cited answer from that frozen pack or an exact
+- [x] Analyst produces a bounded cited answer from that frozen pack or an exact
   evidence-unavailable response.
 - [ ] Coordinator produces source-cited plans/proposals from authorized
   cross-conversation inputs and never performs autonomous mutations.
@@ -377,8 +388,10 @@ predecessor `ecdcb8ee...` is terminal/inadmissible and is not reused.
 - [x] Prove Librarian revocation, hidden-before-limit/link suppression, hidden-
   only equivalence, stale generation, cancellation/deadline, Server-IO queue
   containment, exact audits, restart/read-back, and teardown behavior.
-- [ ] Prove Analyst/Coordinator/Auditor role-specific failure and publication
-  behavior in their later slices.
+- [x] Prove Analyst role-specific failure, audit, citation, restart, and teardown
+  behavior in its private qualification slice.
+- [ ] Prove Coordinator/Auditor role-specific failure and publication behavior
+  in their later slices.
 
 ## Slice F — product integration and promotion evidence
 

@@ -2,12 +2,13 @@
 
 This record separates inherited merged evidence, focused repair checks, the
 completed and hosted-merged Phase 9 checkpoint gate, historical Phase 10 public
-read-backs, and the current Librarian successor. The Curator/profile-capacity
+read-backs, the frozen Librarian successor, and the current Analyst successor. The Curator/profile-capacity
 successor is privately qualified
 at exact protected heads and has a public-lock/aggregate result. Hosted-green
 head `593e627b...` passed all 12 checks, and PR #168 merged it as `284ab96b...`.
 Product exposure remains open. Historical inventories remain labeled at their
-exact heads; the final section recomputes the current Librarian candidate tree.
+exact heads. The final section records the exact current Analyst successor
+threshold read-back.
 
 ## Inherited Phase 9 evidence
 
@@ -543,7 +544,7 @@ and broker identities. They do not demonstrate simultaneous Qwen/Gemma
 residency, sustained multi-user throughput, a production SLO, product exposure,
 or deployment. PR #168 merged as `284ab96b...`.
 
-## Phase 10 Librarian successor public read-back
+## Frozen pre-Analyst Librarian successor public read-back
 
 Exact candidate `56b7f5d06f70f02cce79a422dd75b15c0a0bff10` returned
 `librarian-permission-safe-evidence-qualified` with public-safe evidence
@@ -561,15 +562,53 @@ teardown assertions passed. No model-route lease was acquired. Exact
 predecessor `ecdcb8ee...` is terminal/inadmissible because only seven owners
 entered broker submission; its receipt is not reused.
 
-- The complete portable server command ran 1,330 tests: 1,290 passed and 40
+- The then-current portable server command ran 1,330 tests: 1,290 passed and 40
   were declared skips.
 - The governed fixed set ran 172 tests: 168 passed and four were declared skips.
 - The focused Librarian command ran 50 tests: 45 passed and five were expected
   skips. Ruff and diff checks were clean.
 - The 250-line inventory enumerated 552 surfaces: 308 at or above 350 lines and
-  244 from 250 through 349. The exact 308 path/line/disposition tuples are in
-  [THRESHOLD-DISPOSITION.md](THRESHOLD-DISPOSITION.md).
+  244 from 250 through 349. Those counts remain the frozen snapshot; the
+  appendix now records the current Analyst successor instead.
 
-These checks do not merge or product-promote Librarian and do not prove
-sustained capacity, production SLOs, simultaneous model residency, availability,
-enterprise networking, or deployment. Hosted review and merge remain pending.
+These checks did not product-promote Librarian and do not prove sustained
+capacity, production SLOs, simultaneous model residency, availability,
+enterprise networking, or deployment. Hosted head `7505247e...` later merged
+Librarian through PR #169 as `d7a7e003...`; that merge does not alter this
+frozen numerical snapshot.
+
+## Phase 10 Analyst successor public read-back
+
+Exact executable candidate `0665c486398d2803ba33ebbb6e6dedddcd844dbd`
+returned `analyst-grounded-cited-answers-qualified` with public-safe evidence
+SHA-256 `940fd7c6c275018c721c54dd2cf8a832e64007907248b2a88a39d928ce891305`.
+Lock-only successor `8fee7a5c4969d482e5248b72013935e3f6f83b3c`
+publishes the matching route lock. The acceptance and corpus-v4 SHA-256 values
+are `559d9a988d6e79ef5847015fed4443fbe79449bc1d010ce7fa580d84476d4b45`
+and `275f8d889dd1d5aae6f981081c24f80cb74860bdf7f784313d8b327b2c254011`.
+Three synchronized repeat waves exactly matched 24 of 24 normal invocations;
+all 29 terminals matched, including 12 answers with 15 server-owned citations.
+The changed complex profile is batch invariant with seed `0` and prefix caching
+disabled. Same-warm-process repeatability is not cross-start/global
+determinism.
+
+The successor's sequential lifecycle, route, Curator, Scribe, Student,
+Librarian, and aggregate public-safe evidence SHA-256 values are respectively
+`7cc016f493ab4f14c3b6474e21f59ca33228d66dcc816699282ed31cea3d94d8`,
+`06277bd938314eb86cf5e516e6e6cfda7982652fbe3e1baa4586b6bb88cd5b51`,
+`330ddab8219b7f59e733440f21ba6ee85b28698753631f66de5f7b059165806f`,
+`7ef51c6db3f6632d59b28da08155c581810c47a168c1fefd84aa1117e3c12d80`,
+`5c2525b306aa6660936a288a69d7d02c8a571643fa36ed01d2092e071bff5dab`,
+`ca7ead2a0b8ac282e3c832350421ce4c534b36b00202fba2c46b453518f62ff4`,
+and `5d4b6e107f8e1f833c3ba007521e233c504feca1f4f83ef8e6889bb7a64cc5d2`.
+The public portable server suite ran 1,384
+tests: 1,342 passed and 42 were declared skips. The governed fixed membership
+ran 173 tests: 169 passed and four were declared skips. The current 250-line
+inventory enumerates 565 surfaces: 318 at or above 350 lines and 247 from 250
+through 349. The exact 318 path/line/disposition tuples are reproduced in
+[THRESHOLD-DISPOSITION.md](THRESHOLD-DISPOSITION.md).
+
+This is internal qualification, not hosted merge or product exposure. It does
+not prove simultaneous Qwen/Gemma residency, sustained capacity/fairness,
+production p50/p95/p99 or an SLO, cross-start/global determinism, enterprise
+networking, or deployment.

@@ -3,15 +3,30 @@
 This changelog records product/architecture milestones. Exact test counts and
 immutable evidence belong in phase/checkpoint evidence records.
 
-## 2026-08-13 — Phase 10 Librarian qualified candidate
+## 2026-08-13 — Phase 10 Analyst qualified candidate
+
+- Exact executable candidate `0665c486...` privately qualified the internal
+  Analyst grounded cited-answer core. Three synchronized eight-owner waves
+  matched 24 of 24 normal results; all 29 terminals matched, including 12
+  answers with 15 server-owned citations.
+- The replacement complex profile is batch invariant with request seed `0` and
+  prefix caching disabled. The live complex admission probe held eight owners
+  and queued the ninth without changing the warm provider or broker identity.
+- Lock-only successor `8fee7a5c...` publishes the matching route lock. Analyst
+  remains unmerged and has no HTTP, native, renderer, UI, or product surface.
+  Same-warm-process repeatability is not cross-start/global determinism,
+  simultaneous residency, sustained capacity, a production SLO, or deployment.
+
+## 2026-08-13 — Phase 10 Librarian merged internal core
 
 - Exact head `56b7f5d0...` privately qualified a no-LLM, permission-safe
   Librarian read core across eight authenticated owners with exact hidden-data,
   revocation, stale-generation, cancellation, audit, restart, admission, and
   teardown boundaries.
-- Librarian remains an unmerged internal candidate. Hosted review/merge and all
-  HTTP, native, renderer, user-facing, capacity, and production claims remain
-  pending. The merged role count remains four.
+- Hosted head `7505247e...` merged through PR #169 as `d7a7e003...`. Librarian
+  remains an internal core with no HTTP, native, renderer, or user-facing
+  product surface. Capacity and production claims remain pending. The merged
+  role count is five.
 
 ## 2026-08-13 — Phase 10 Curator and admission-capacity successor
 

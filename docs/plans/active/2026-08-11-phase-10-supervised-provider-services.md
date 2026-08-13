@@ -10,10 +10,12 @@ Exact `0970d74c...` remains terminal `deterministic-no-student`. Exact route
 head `dab19fe...`, workflow head `7cd24deb...`, and aggregate/public-lock head
 `7f896b34...` privately qualified the Curator/profile-capacity successor.
 Hosted-green head `593e627b...` passed all 12 checks, and PR #168 merged it as
-`284ab96b...`. Exact `56b7f5d0...` privately qualified Librarian as an unmerged
-no-LLM internal candidate. Student/Curator/Librarian product exposure,
-Librarian hosted review/merge, Analyst, Coordinator, Auditor, simultaneous
-full-profile capacity, and production promotion remain open.
+`284ab96b...`. Exact `56b7f5d0...` qualified Librarian, and hosted head
+`7505247e...` merged it through PR #169 as `d7a7e003...`. Exact executable
+`0665c486...` privately qualified Analyst; lock-only `8fee7a5c...` publishes the
+matching batch-invariant route lock. Student/Curator/Librarian product exposure,
+Analyst hosted review/merge and product exposure, Coordinator, Auditor,
+simultaneous full-profile capacity, and production promotion remain open.
 
 **Base:** merged post-Phase-9 maintainability closure
 `fc8a16510fa27514db244eb641dea582918a940b` from
@@ -145,6 +147,15 @@ checks, and PR #168 merged the successor as `284ab96b...`. The one-slot evidence
 above remains exact historical evidence for its merged head; current selected-
 route capacity is not simultaneous-residency, sustained-capacity, or production-
 SLO evidence.
+
+The batch-invariant successor has a separate evidence chain. Exact executable
+`0665c486...` passed sequential lifecycle evidence `7cc016f4...` and route
+evidence `06277bd9...`; lock-only `8fee7a5c...` publishes the matching lock. The
+complex profile uses seed `0`, disables prefix caching, and retains its full c8/
+8,192-token/`0.70` boundary. At the lock-only successor, affected workflow and
+aggregate gates freshly passed. Analyst's three exact repeat waves establish
+same-warm-process repeatability only, not cross-start/global determinism or a
+production SLO.
 
 The merged exact-qualified Scribe workflow is the first consumer of that admission
 owner. Native code acquires one authenticated connector lease, submits bounded

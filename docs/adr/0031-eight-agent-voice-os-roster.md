@@ -1,6 +1,6 @@
 # ADR 0031: Eight-agent Voice OS roster and execution boundaries
 
-**Status:** Accepted target; four role cores merged through PR #168; Librarian privately qualified as an unmerged internal candidate; Analyst, Coordinator, and Auditor plus product exposure and promotion remain open
+**Status:** Accepted target; five role cores merged through PR #169; Analyst privately qualified as an unmerged internal candidate; Coordinator and Auditor plus product exposure and promotion remain open
 **Date:** 2026-08-11
 **Deciders:** Yap product and engineering owner
 **Amends:** [ADR 0006](0006-silero-agents-state-machine.md),
@@ -48,25 +48,30 @@ queued, exact PostgreSQL lifecycle/read-back, and teardown. Curator may append
 only a noncanonical proposal; it cannot activate or mutate source truth.
 Hosted-green head `593e627b...` passed all 12 checks, and PR #168 merged the
 Curator/profile-capacity slice as `284ab96b...` on 2026-08-13. Curator product
-exposure remains open. Exact head `56b7f5d0...` privately qualified the no-LLM
+  exposure remains open. Exact head `56b7f5d0...` privately qualified the no-LLM
 Librarian permission-safe evidence core across an actual eight-owner broker
 wave, ten exact invocations, Server-IO one-active/second-queued containment,
-PostgreSQL restart/read-back, and exact teardown. It remains an unmerged
-internal candidate with no product surface. Exact predecessor `ecdcb8ee...` is
+  PostgreSQL restart/read-back, and exact teardown. Hosted head `7505247e...`
+  merged the internal core through PR #169 as `d7a7e003...`; it has no product
+  surface. Exact predecessor `ecdcb8ee...` is
 terminal/inadmissible because only seven owners entered broker submission.
-Analyst, Coordinator, and Auditor remain pending.
+Exact executable `0665c486...` then privately qualified Analyst as an internal
+candidate with public-safe evidence SHA-256 `940fd7c6...`: three synchronized
+eight-owner waves matched 24 of 24 normal results, all 29 terminals matched,
+and the 12 answers contained 15 server-owned citations. Coordinator and Auditor
+remain pending.
 
-The current protected profile-capacity successor derives four rapid and eight
-complex active limits from the immutable full profiles while retaining one
-active request per owner. Exact route head `dab19fe...` returned
-`required-workload-routes-qualified` with public-safe evidence SHA-256
-`96228914...`; Qwen and Gemma were admitted sequentially on unchanged full
-profiles and completed exact teardown. Exact public-lock/aggregate head
-`7f896b34...` returned `governed-knowledge-gate-passed` with public-safe
-evidence SHA-256 `fd197b98...`. The merged one-slot evidence remains historical
-authority for its exact head, not the current candidate boundary. These
-selected-route limits are not proof of simultaneous Qwen/Gemma residency,
-sustained capacity/fairness, production SLOs, or deployment.
+The current protected successor still derives four rapid and eight complex
+active limits from the immutable full profiles while retaining one active
+request per owner. Exact executable `0665c486...` passed the sequential
+lifecycle and `required-workload-routes-qualified`; lock-only `8fee7a5c...`
+publishes the matching route lock. The complex profile now owns batch-invariant
+execution with seed `0` and prefix caching disabled. Its live probe held eight
+and queued the ninth without changing provider/broker identity. The three exact
+Analyst repeats prove same-warm-process repeatability, not cross-start/global
+determinism. Older route/admission receipts remain historical authority for
+their exact heads. None proves simultaneous Qwen/Gemma residency, sustained
+capacity/fairness, production SLOs, or deployment.
 
 Calling the foundations "the agent team" would be incorrect. Conversely,
 implementing eight unrelated prompts would duplicate authority, bypass
@@ -234,6 +239,18 @@ safe evidence SHA-256 `b60df1e2...`. Exact public-lock/aggregate head
 `7f896b34...` then returned `governed-knowledge-gate-passed` with public-safe
 evidence SHA-256 `fd197b98...`.
 
+The batch-invariant successor has a separate exact evidence chain. Executable
+candidate `0665c486...` passed the sequential lifecycle with public-safe
+evidence SHA-256 `7cc016f4...` and route qualification with public-safe evidence
+SHA-256 `06277bd9...`; lock-only `8fee7a5c...` publishes the matching route lock.
+At that lock-only successor, Curator, Scribe, Student, and Librarian freshly
+qualified with public-safe evidence SHA-256 values `330ddab8...`, `7ef51c6d...`,
+`5c2525b3...`, and `ca7ead2a...`; the aggregate gate passed with `5d4b6e10...`.
+Analyst qualified at the executable candidate with `940fd7c6...`, three exact
+synchronized repeat waves, 24 of 24 normal matches, 29 exact terminals, 12
+answers, and 15 server-owned citations. Exact `63c3d9fd...` remains terminal
+no-receipt evidence from the prior schedule-sensitive runtime and is not reused.
+
 Exact Student candidate `452c8b76...` originally returned
 `student-learning-questions-qualified` with public-safe semantic evidence
 SHA-256 `3e1ddc61...`. It recorded one synchronized eight-owner wave, unchanged
@@ -270,10 +287,12 @@ provider/broker, queue wave, database boundaries, and teardown held. Hosted
 head `b03c6e79...` passed all 12 checks and PR #166 merged the internal core as
 `2254605e...`. The Curator/profile-capacity successor retained exact
 qualification at `7cd24deb...`/`7f896b34...`; hosted-green head `593e627b...`
-passed all 12 checks, and PR #168 merged it as `284ab96b...`. Student and Curator
-product exposure, warm simultaneous two-route residency, Librarian hosted
-review/merge, the three remaining workflows (Analyst, Coordinator, and Auditor), sustained multi-owner
-capacity, and production promotion remain open. One Spark cannot retain the
+passed all 12 checks, and PR #168 merged it as `284ab96b...`. Hosted head
+`7505247e...` then merged Librarian through PR #169 as `d7a7e003...`. Student,
+Curator, and Librarian product exposure, warm simultaneous two-route residency,
+Analyst hosted review/merge, the two remaining workflows (Coordinator and
+Auditor), sustained multi-owner capacity, and production promotion remain open.
+One Spark cannot retain the
 unchanged `0.40` Qwen and `0.70` Gemma
 profiles simultaneously; a second owned GPU node/private route remains
 required for the intended two-route topology.

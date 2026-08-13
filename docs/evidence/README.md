@@ -8,6 +8,7 @@ Current architecture-review evidence:
 
 - [Archivist ingestion verification](archivist-ingestion/VERIFICATION.md)
 - [Agent admission profile-capacity verification](agent-admission-profile-capacity/VERIFICATION.md)
+- [Analyst grounded cited-answer verification](analyst-grounded-cited-answers/VERIFICATION.md)
 - [Curator knowledge-proposal verification](curator-knowledge-proposals/VERIFICATION.md)
 - [Librarian permission-safe evidence verification](librarian-permission-safe-evidence/VERIFICATION.md)
 - [Student learning-question verification](student-learning/VERIFICATION.md)

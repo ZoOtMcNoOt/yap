@@ -81,6 +81,15 @@ successor. Its later PR #168 merge does not retroactively change PR #164's
 historical receipt. See the
 [profile-capacity evidence](../agent-admission-profile-capacity/VERIFICATION.md).
 
+At lock-only successor `8fee7a5c4969d482e5248b72013935e3f6f83b3c`,
+the unchanged executable inputs freshly returned
+`scribe-transcript-correction-qualified` with public-safe
+evidence SHA-256
+`7ef51c6db3f6632d59b28da08155c581810c47a168c1fefd84aa1117e3c12d80`.
+The complete frozen Scribe workload and teardown passed against the changed
+route/runtime. This successor receipt does not relabel either merged Scribe
+receipt above.
+
 ## Deliberate limits
 
 These gates prove a bounded manual finalized-transcript correction workflow.

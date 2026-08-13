@@ -8,6 +8,15 @@ required checks, and PR #168 merged it as
 HTTP/native/renderer/UI exposure, active-knowledge promotion, production
 operation, and deployment remain open.
 
+At lock-only successor
+`8fee7a5c4969d482e5248b72013935e3f6f83b3c`, the unchanged executable
+inputs freshly returned
+`curator-knowledge-proposals-qualified` with public-safe evidence SHA-256
+`330ddab8219b7f59e733440f21ba6ee85b28698753631f66de5f7b059165806f`.
+It re-proved Curator's frozen cases, publication boundary, owned PostgreSQL
+read-back, unchanged warm-provider/broker identity, and teardown against the
+changed complex profile/runtime. This does not relabel the merged receipt below.
+
 ## Exact qualified candidate
 
 - Outcome: `curator-knowledge-proposals-qualified`
@@ -75,7 +84,7 @@ Curator is a merged internal core, not a user-facing product workflow. The
 result does not prove simultaneous Qwen/Gemma residency,
 sustained multi-user capacity, p50/p95/p99 or production SLOs, active-knowledge
 publication, enterprise networking, or deployment. Librarian is a privately
-qualified unmerged internal candidate; Analyst, Coordinator, and Auditor remain
-later roles. Raw model output, private case
+merged internal core; Analyst is a privately qualified internal candidate, and
+Coordinator and Auditor remain later roles. Raw model output, private case
 content, measurements, database content, credentials, and private locations
 remain outside Git.

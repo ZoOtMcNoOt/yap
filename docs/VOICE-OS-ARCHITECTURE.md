@@ -79,7 +79,7 @@ For implementation truth rather than decision intent, use the living [ADR implem
 | Target | Individual users with local live fallback | Org teams on a shared GB-class server node |
 | STT (live) | Local Nemotron INT8 (`sherpa-onnx`) | Server streaming ASR pool (WSS) |
 | STT (batch) | Queue/block when offline; official larger recordings use the server path | Current Cohere batch route plus evidence-gated Cohere/vLLM and Nemotron/NeMo candidates |
-| LLM | No shipped local LLM; raw ASR remains the correction fallback | Supervised Qwen/Gemma profiles, owner-fair admission, and the qualified Scribe consumer are merged; simultaneous full-profile residency needs a second owned GPU node/private routing, and sustained multi-user capacity remains open |
+| LLM | No shipped local LLM; raw ASR remains the correction fallback | Supervised Qwen/Gemma profiles, owner-fair admission, and five role cores are merged; Analyst is a qualified internal candidate. The complex route is batch invariant with prefix caching disabled. Simultaneous full-profile residency needs a second owned GPU node/private routing, and sustained multi-user capacity remains open. |
 | Diarization | Optional local `Unknown` / `Speaker N`; no durable profiles | One Tiron joint speaker-attributed server route with source-time epoch reconciliation; evidence-gated promotion (ADR 0020/0027) |
 | Identity | Per-transcript contact labels only; no biometric matching | Provider-neutral OIDC verification with Entra policy; approved native token adapter and explicit voice enrollment remain gated (ADR 0016/0020) |
 | Knowledge base | Transcript History remains local; no local knowledge service ships | The merged monorepo baseline has deterministic Google OKF compilation, Postgres permissions/relationships, pgvector retrieval, and governed RAG/MCP. Separate `yap-knowledge` Git hosting and production operations remain Phase 10; Neo4j requires a measured baseline gap. |
@@ -204,8 +204,11 @@ sequentially at selected-route capacities four/eight, exact workflow head
 core, and exact aggregate head `7f896b34...` passed. Hosted-green head
 `593e627b...` passed all 12 checks, and PR #168 merged the slice as
 `284ab96b...`. Curator is not product-exposed. Exact `56b7f5d0...` privately
-qualified Librarian as an unmerged internal candidate. Librarian hosted review/
-merge and product exposure, Analyst, Coordinator, and Auditor remain open. The
+qualified Librarian; hosted head `7505247e...` merged it through PR #169 as
+`d7a7e003...`. Exact executable `0665c486...` privately qualified Analyst, and
+lock-only `8fee7a5c...` publishes the matching batch-invariant route lock.
+Analyst hosted review/merge and product exposure, Coordinator, and Auditor remain
+open. The
 accepted performance topology is provider-specific: Cohere batch
 uses a digest-pinned vLLM candidate, Nemotron keeps a Transformers correctness
 reference and evaluates NeMo for server streaming. Under ADR 0029, vLLM serves
@@ -324,7 +327,7 @@ flowchart TB
         Router["Orchestration\ncurrent Python reference seam\ntarget Rust session + flow control"]
         ASR["Nemotron server streaming\nTransformers reference · NeMo candidate"]
         Batch["Cohere batch\ntransient reference · vLLM candidate"]
-        LLM["TARGET vLLM agent/LLM plane\nprefix cache + structured outputs"]
+        LLM["TARGET vLLM agent/LLM plane\nroute-specific cache policy + structured outputs"]
         Diar["Diarization service\nserver reconciliation · ADR 0020"]
         KB["Google OKF compiler + permission-safe relationship/vector views\n(Postgres/pgvector baseline · ADR 0017/0022)"]
     end
@@ -537,7 +540,7 @@ Everything from the original 7-layer flowchart and master spec is represented be
 | **Failure states** (Scribe, Archivist, …) | ✅ | § Failure states | Full spec below |
 | **Bottleneck / resource caps** | ✅ | § Resource profiling | Bounded sinks, bounded session clusters, benchmarked CPU/RSS/latency gates |
 | **Silero VAD (L2 + segments → L3)** | ✅ | [ADR 0006](adr/0006-silero-agents-state-machine.md) | Imported-file path executes through pinned `sherpa-onnx`; live path remains a separate target; reprocessing may re-VAD retained source |
-| **Eight bounded role workflows** | ✅ Reconciled | [ADR 0031](adr/0031-eight-agent-voice-os-roster.md) | Shared authenticated bounded admission and four role cores—Scribe, Archivist, Student, and Curator—are merged through PR #168. Librarian is a privately qualified unmerged internal candidate; Analyst, Coordinator, and Auditor remain. Historical one-slot evidence and local-mutex context remain scoped to their exact heads. |
+| **Eight bounded role workflows** | ✅ Reconciled | [ADR 0031](adr/0031-eight-agent-voice-os-roster.md) | Shared authenticated bounded admission and five role cores—Scribe, Archivist, Student, Curator, and Librarian—are merged through PR #169. Analyst is a privately qualified unmerged internal candidate; Coordinator and Auditor remain. Historical one-slot and pre-batch-invariant evidence remain scoped to their exact heads. |
 | **Runtime state machine** | ✅ | [ADR 0006](adr/0006-silero-agents-state-machine.md) | One client-local Nemotron session; server pools schedule independently; bounded LLM queue |
 | **16 GB RAM budget** | ✅ Reconciled | ADR 0020 | No diarization model is promoted without measured CPU, RSS, and latency evidence |
 | **Recordings / file drop (Yap)** | ✅ | ADR 0001, 0003, 0014 | Server batch only; queue/block during disconnects; never use local Nemotron |
@@ -978,7 +981,7 @@ timeline
 | **7** | Merged and gated | Phase 7 merged as `66d314d7`; its adversarial checkpoint closed at `ef6d977`. The merged work has a provider-neutral OIDC verifier with Entra policy, fail-closed defaults, token-derived `(tid, oid)` ownership, owner-scoped jobs/LID, authenticated bounded private WebSocket admission, and a qualified native lower handshake. The desktop has only a narrow native token-provider seam; no production adapter is approved. Exact application/runtime candidate `dc6359162fb16909d38f410cdb75c2729d83972f` passed the one complete private 25-cell matrix and independent receipt validation. Hosted CI exposed only runner-portability defects. Reviewed repairs through `c1d81fc085218cf91a4e370087bcc5927e5b1f70` change hosted/gate tooling, its contracts, and documentation—not shipped product/runtime or candidate-manifest behavior—so the passed candidate matrix remains authoritative. Purpose grants, revocation, and their audit records are implemented and unit-tested but reachable only from tests: nothing calls `IdentityAuthorizationService`, so `access_disabled` and grants can be changed only by editing `identity.sqlite` directly. The layer is not a shipped capability; a future purpose-authorized speaker reconciliation/naming workflow must expose or remove it under review. Real IT-provided Entra policy conformance remains open. |
 | **8** | Closed as unadvertised baseline | ADR 0020, ADR 0027, and the source-aware design are canonical. PR #144 merged exact 30-second Tiron epochs, request-scoped reuse of its ECAPA encoder, an eight-slot decode-window boundary, a 32-speaker session target, a 64-speaker ceiling, strict `Unknown`, and clean one-speaker History projection. The server has one meeting-inference path and no ASR-plus-diarization fallback. Exact candidate `3ddb930...` recorded `unadvertised-baseline` because the independent private holdout was unconfigured; Tiron remains explicit Preview and absent from the default catalog. |
 | **9** | Merged and gated | Google OKF conformance, deterministic compilation, immutable terminology snapshots, Postgres permission/relationship generations, pgvector retrieval, governed agents/RAG/MCP, explicit no-fallback routing, and privately qualified Qwen rapid/Gemma complex vLLM routes execute. Exact candidate `a4f34678...` passed the complete Phase 9 gate with real Postgres restart/recovery and exact teardown. Exact hosted-green head `fa26caaf...` merged through PR #152 as `ae81ff06...`. The separate maintainability checkpoint gate passed at exact head `22c3f369...`; final hosted head `84c22ec9...` merged through PR #153 as `ca151b1b...`. Postgres remains the sole projection because no measured gap justified Neo4j. Production supervision, simultaneous residency, sustained mixed-user capacity, and external serving remain Phase 10. |
-| **10** | Four role cores merged; Librarian qualified candidate; three workflows later | The merged baseline includes lifecycle, profiles, bounded admission, Scribe, Archivist, Student, and Curator through PR #168. Exact `56b7f5d0...` privately qualified the no-LLM Librarian core as an unmerged internal candidate. Librarian hosted review/merge/product exposure, Analyst, Coordinator, Auditor, simultaneous residency, sustained capacity, observability, enterprise access, secure-edge promotion, publication governance, and repo split remain later slices or IT handoffs. |
+| **10** | Five role cores merged; Analyst qualified candidate; two workflows later | The merged baseline includes Scribe, Archivist, Student, Curator, and Librarian through PR #169. Exact executable `0665c486...` privately qualified Analyst as an unmerged internal candidate; lock-only `8fee7a5c...` publishes the matching route lock. Analyst hosted review/merge/product exposure, Coordinator, Auditor, simultaneous residency, sustained capacity, observability, enterprise access, secure-edge promotion, publication governance, and repo split remain later slices or IT handoffs. |
 
 The client-convergence PR was an MVP prerequisite merged separately before this
 server-node change; it does not rename canonical Phase 4 or imply that the
@@ -1049,8 +1052,8 @@ PR #166 merged the internal core as `2254605e...`. Exact route head
 `dab19fe...`, workflow head `7cd24deb...`, and aggregate head `7f896b34...`
 privately qualified the profile-capacity/Curator slice. Hosted-green head
 `593e627b...` passed all 12 checks, and PR #168 merged it as `284ab96b...`.
-Student/Curator product integration remains open. Librarian is a privately
-qualified unmerged internal candidate; Analyst, Coordinator, and Auditor are
+Student/Curator/Librarian product integration remains open. Analyst is a
+privately qualified unmerged internal candidate; Coordinator and Auditor are
 next, alongside the separate full-strength
 second-node capacity topology.
 Live ASR,
@@ -1078,7 +1081,7 @@ Each phase ships **code + doc/product sync** together, so positioning never lags
 | **7** Identity/access | Provider-neutral OIDC validation with Entra policy, fail-closed native token-provider seam, replacement of the fixed development owner, purpose grants that are implemented but called by nothing, tenant-scoped identity DB, and authenticated private live admission; production adapter and enterprise conformance require separate approval | [ADR 0016](adr/0016-auth-identity-bridge.md); sign-in/access UX |
 | **8** Meeting evidence | Anonymous local labels, pinned Tiron eight-window/eight-global baseline, one integrated source-time epoch route with request-scoped reconciliation, frozen messy-meeting public/independent evidence, attendance/window/global-roster pressure, timestamped result revisions, server reconciliation, deliberate voice-enrollment UX and profile lifecycle | [ADR 0020](adr/0020-meeting-capture-diarization-authority.md); [ADR 0027](adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md); [source-aware design](specs/source-aware-diarization.md) |
 | **9** Knowledge/agents | Google OKF profile, immutable terminology, deterministic compiler, Postgres/pgvector relationship/vector baseline, governed RAG/MCP, and qualified Qwen/Gemma vLLM workload routes | Complete zero-skip Postgres/restart/private-route-evidence gate passed at `a4f34678...`; PR #152 merged the reviewed exact head as `ae81ff067...`. The post-phase maintainability checkpoint gate passed at `22c3f369...`; hosted head `84c22ec9...` merged through PR #153 as `ca151b1b...`. Production supervision/capacity remains Phase 10, and another projection requires a measured baseline gap. |
-| **10** Enterprise/release | Four role cores are merged through PR #168. Exact `56b7f5d0...` privately qualified Librarian as an unmerged internal candidate. Librarian hosted review/merge, Analyst, Coordinator, Auditor, product exposure, second-node simultaneous full-profile residency, sustained mixed-load capacity promotion, observability, enterprise access, secure-edge evidence, packaging, and repo split remain open. | [ADRs 0030](adr/0030-rust-supervised-provider-service-lifecycle.md) and [0031](adr/0031-eight-agent-voice-os-roster.md), the active Phase 10/roster plans, role evidence including [Librarian](evidence/librarian-permission-safe-evidence/VERIFICATION.md), route-specific sustained capacity/SLO evidence, CI/CD migration, and cross-repo link update. |
+| **10** Enterprise/release | Five role cores are merged through PR #169. Exact executable `0665c486...` privately qualified Analyst as an unmerged internal candidate; lock-only `8fee7a5c...` publishes the matching route lock. Analyst hosted review/merge, Coordinator, Auditor, product exposure, second-node simultaneous full-profile residency, sustained mixed-load capacity promotion, observability, enterprise access, secure-edge evidence, packaging, and repo split remain open. | [ADRs 0030](adr/0030-rust-supervised-provider-service-lifecycle.md) and [0031](adr/0031-eight-agent-voice-os-roster.md), the active Phase 10/roster plans, role evidence including [Librarian](evidence/librarian-permission-safe-evidence/VERIFICATION.md) and [Analyst](evidence/analyst-grounded-cited-answers/VERIFICATION.md), route-specific sustained capacity/SLO evidence, CI/CD migration, and cross-repo link update. |
 
 ---
 

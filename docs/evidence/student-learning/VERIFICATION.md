@@ -155,9 +155,13 @@ protected broker/model-client inputs and therefore received its own exact-head
 route and affected-workflow qualifications; the historical PR #166 receipt is
 not relabeled. Current evidence does not prove sustained multi-owner throughput,
 route p95/p99 SLOs, simultaneous full Qwen/Gemma residency, or a two-node warm
-topology. Curator is a merged internal core without product exposure; Librarian
-is a privately qualified unmerged candidate; the remaining workflows (Analyst,
-Coordinator, and Auditor), and
+topology. At lock-only successor `8fee7a5c...`, the unchanged executable inputs
+freshly returned
+`student-learning-questions-qualified` with public-safe evidence SHA-256
+`5c2525b306aa6660936a288a69d7d02c8a571643fa36ed01d2092e071bff5dab`;
+this does not relabel the merged receipt. Curator and Librarian are merged
+internal cores without product exposure; Analyst is a privately qualified
+internal candidate. Coordinator, Auditor, and
 aggregate Phase 10 completion remain open. A fresh post-aggregate observation
 on 2026-08-12 found the unchanged full Qwen rapid route warm on the current
 single Spark. Full-strength two-route promotion requires a second owned GPU
