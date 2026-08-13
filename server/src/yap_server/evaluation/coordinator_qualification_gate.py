@@ -307,14 +307,24 @@ class _ObservedCoordinatorAdmission:
             for request_id, mode in invocation_modes.items()
             if mode == "pre-cancelled"
         }
-        expected_cancelled_ids = {
+        expected_client_cancelled_ids = {
             request_id
             for request_id, mode in invocation_modes.items()
-            if mode in {"client-cancelled", "deadline"}
+            if mode == "client-cancelled"
         }
+        expected_deadline_ids = {
+            request_id
+            for request_id, mode in invocation_modes.items()
+            if mode == "deadline"
+        }
+        expected_cancelled_ids = expected_client_cancelled_ids | expected_deadline_ids
         expected_completed_ids = (
             set(invocation_modes) - expected_unsubmitted_ids - expected_cancelled_ids
         )
+        cancel_outcomes = {item.request_id: item.outcome for item in cancels}
+        acknowledgement_outcomes = {
+            item.request_id: item.outcome for item in acknowledgements
+        }
         exact = (
             len(invocation_modes) == 29
             and set(invocation_modes.values()) <= expected_modes
@@ -336,9 +346,17 @@ class _ObservedCoordinatorAdmission:
             and len(completes) == len(completed_ids) == 26
             and all(item.outcome == "completed" for item in completes)
             and len(cancels) == len(cancelled_ids) == 2
-            and all(item.outcome == "cancellation-requested" for item in cancels)
             and len(acknowledgements) == len(acknowledged_ids) == 2
-            and all(item.outcome == "cancelled" for item in acknowledgements)
+            and all(
+                cancel_outcomes.get(request_id) == "cancellation-requested"
+                and acknowledgement_outcomes.get(request_id) == "cancelled"
+                for request_id in expected_client_cancelled_ids
+            )
+            and all(
+                cancel_outcomes.get(request_id) == "deadline-exceeded"
+                and acknowledgement_outcomes.get(request_id) == "deadline-exceeded"
+                for request_id in expected_deadline_ids
+            )
             and completed_ids.isdisjoint(cancelled_ids)
             and cancelled_ids == acknowledged_ids
             and completed_ids | cancelled_ids == submitted_ids
@@ -346,7 +364,9 @@ class _ObservedCoordinatorAdmission:
             and completed_ids == expected_completed_ids
             and cancelled_ids == expected_cancelled_ids
             and sum(outcome == "completed" for outcome in terminal.values()) == 26
-            and sum(outcome == "cancelled" for outcome in terminal.values()) == 2
+            and sum(outcome == "cancelled" for outcome in terminal.values()) == 1
+            and sum(outcome == "deadline-exceeded" for outcome in terminal.values())
+            == 1
         )
         if not exact:
             raise RuntimeError("Coordinator admission lifecycle evidence differs")
@@ -355,6 +375,8 @@ class _ObservedCoordinatorAdmission:
             "submittedTicketCount": len(submits),
             "completedTicketCount": len(completes),
             "cancelledTicketCount": len(cancels),
+            "clientCancelledTicketCount": len(expected_client_cancelled_ids),
+            "deadlineExpiredTicketCount": len(expected_deadline_ids),
             "preCancelledUnsubmittedTicketCount": 1,
             "singleLeasePerInvocationExact": True,
             "allSubmittedTicketsTerminal": True,

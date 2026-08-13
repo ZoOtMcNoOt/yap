@@ -335,6 +335,7 @@ class CoordinatorQualificationGateTests(unittest.TestCase):
             def __init__(self) -> None:
                 self.next_id = 0
                 self.outcomes: dict[str, str] = {}
+                self.cancel_count = 0
 
             def new_ticket(self):
                 self.next_id += 1
@@ -359,12 +360,23 @@ class CoordinatorQualificationGateTests(unittest.TestCase):
                 return gate.AgentAdmission(ticket, "completed")
 
             def cancel(self, ticket):
-                self.outcomes[ticket.request_id] = "cancellation-requested"
-                return gate.AgentAdmission(ticket, "cancellation-requested")
+                self.cancel_count += 1
+                outcome = (
+                    "cancellation-requested"
+                    if self.cancel_count == 1
+                    else "deadline-exceeded"
+                )
+                self.outcomes[ticket.request_id] = outcome
+                return gate.AgentAdmission(ticket, outcome)
 
             def acknowledge_cancellation(self, ticket):
-                self.outcomes[ticket.request_id] = "cancelled"
-                return gate.AgentAdmission(ticket, "cancelled")
+                outcome = (
+                    "cancelled"
+                    if self.outcomes[ticket.request_id] == "cancellation-requested"
+                    else "deadline-exceeded"
+                )
+                self.outcomes[ticket.request_id] = outcome
+                return gate.AgentAdmission(ticket, outcome)
 
             def status(self, ticket):
                 return gate.AgentAdmission(ticket, self.outcomes[ticket.request_id])
@@ -412,9 +424,11 @@ class CoordinatorQualificationGateTests(unittest.TestCase):
                 evidence["submittedTicketCount"],
                 evidence["completedTicketCount"],
                 evidence["cancelledTicketCount"],
+                evidence["clientCancelledTicketCount"],
+                evidence["deadlineExpiredTicketCount"],
                 evidence["preCancelledUnsubmittedTicketCount"],
             ),
-            (29, 28, 26, 2, 1),
+            (29, 28, 26, 2, 1, 1, 1),
         )
         extra = observed.new_ticket()
         observed.submit(
