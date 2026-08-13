@@ -38,9 +38,7 @@ class _Handler(BaseHTTPRequestHandler):
         type(self).observed_paths.append(self.path)
         time.sleep(type(self).delay_seconds)
         if self.path == "/v1/chat/completions/render":
-            body = json.dumps(
-                {"token_ids": type(self).rendered_token_ids}
-            ).encode()
+            body = json.dumps({"token_ids": type(self).rendered_token_ids}).encode()
             self.send_response(type(self).status)
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(body)))
@@ -161,6 +159,7 @@ class VllmReasoningClientTests(unittest.TestCase):
         )
         self.assertEqual(_Handler.observed["model"], "selected/model")
         self.assertEqual(_Handler.observed["max_tokens"], 100)
+        self.assertEqual(_Handler.observed["seed"], 0)
         self.assertEqual(_Handler.observed["n"], 1)
         self.assertEqual(
             _Handler.observed["chat_template_kwargs"], {"enable_thinking": False}

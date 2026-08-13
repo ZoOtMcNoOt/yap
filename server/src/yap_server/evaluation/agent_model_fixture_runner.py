@@ -205,6 +205,7 @@ def warm_agent_model_fixture_runtime(
             "tool_choice": "required",
             "parallel_tool_calls": False,
             "temperature": 0,
+            "seed": 0,
             "n": 1,
             "max_tokens": warmup_output_tokens,
             "chat_template_kwargs": {"enable_thinking": False},
@@ -223,13 +224,12 @@ def warm_agent_model_fixture_runtime(
             },
         ],
         "temperature": 0,
+        "seed": 0,
         "n": 1,
         "max_tokens": warmup_output_tokens,
         "chat_template_kwargs": {"enable_thinking": False},
     }
-    final_payload.update(
-        governed_answer_request_fields(final_response_protocol)
-    )
+    final_payload.update(governed_answer_request_fields(final_response_protocol))
     request_json(final_payload)
 
 
@@ -264,9 +264,7 @@ def _run_case_safely(
     except RuntimeError as error:
         if not isinstance(case, dict) or not isinstance(case.get("caseId"), str):
             raise
-        raise RuntimeError(
-            f"agent workload case {case['caseId']} failed"
-        ) from error
+        raise RuntimeError(f"agent workload case {case['caseId']} failed") from error
     except _InvalidModelToolResponse:
         if not isinstance(case, dict) or not isinstance(case.get("caseId"), str):
             raise
@@ -336,6 +334,7 @@ def _run_case(
                 "tool_choice": "required",
                 "parallel_tool_calls": False,
                 "temperature": 0,
+                "seed": 0,
                 "n": 1,
                 "max_tokens": case_output_tokens,
                 "chat_template_kwargs": {"enable_thinking": False},
@@ -386,19 +385,16 @@ def _run_case(
         "model": model,
         "messages": messages,
         "temperature": 0,
+        "seed": 0,
         "n": 1,
         "max_tokens": case_output_tokens,
         "chat_template_kwargs": {"enable_thinking": False},
     }
-    final_payload.update(
-        governed_answer_request_fields(final_response_protocol)
-    )
+    final_payload.update(governed_answer_request_fields(final_response_protocol))
     for attempt in range(maximum_final_response_attempts):
         final = request_json(final_payload)
         try:
-            answer, citations = read_governed_answer(
-                final, final_response_protocol
-            )
+            answer, citations = read_governed_answer(final, final_response_protocol)
         except ValueError:
             if attempt + 1 < maximum_final_response_attempts:
                 continue

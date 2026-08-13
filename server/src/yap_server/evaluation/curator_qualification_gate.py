@@ -165,6 +165,7 @@ def run_curator_qualification_gate(
     profile = load_curator_service_profile(profile_path, candidate_lock_path)
     _require_full_complex_profile(
         profile.maximum_sequences,
+        profile.batch_invariant,
         profile.launch_arguments,
     )
     if (
@@ -366,14 +367,13 @@ def run_curator_qualification_gate(
         "maximumModelLength": 8_192,
         "maximumSequences": profile.maximum_sequences,
         "maximumBatchedTokens": 8_192,
+        "batchInvariant": profile.batch_invariant,
+        "prefixCachingEnabled": False,
+        "requestSeed": 0,
         "brokerActiveCapacity": capacity_evidence["admittedOwnerCount"],
         "admissionBrokerBinarySha256": expected_broker_sha256,
-        "brokerComplexProfileObserved": capacity_evidence[
-            "expectedRouteObserved"
-        ],
-        "brokerExpectedCapacityObserved": capacity_evidence[
-            "expectedCapacityObserved"
-        ],
+        "brokerComplexProfileObserved": capacity_evidence["expectedRouteObserved"],
+        "brokerExpectedCapacityObserved": capacity_evidence["expectedCapacityObserved"],
         "ninthOwnerQueued": capacity_evidence["overflowOwnerQueued"],
         "capacityProbeContained": capacity_evidence["contained"],
         "capacityProbeProviderIdentityUnchanged": capacity_evidence[
@@ -564,9 +564,7 @@ def _expected_curator_evidence(
             if chunk.concept_id == case.concept_id
             and chunk.char_start <= start
             and end <= chunk.char_end
-            and chunk.text[
-                start - chunk.char_start : end - chunk.char_start
-            ]
+            and chunk.text[start - chunk.char_start : end - chunk.char_start]
             == case.body
         )
         if len(covering) != 1:
@@ -743,9 +741,7 @@ def _verify_replay_conflict_and_owner_isolation(
             request_id=_required_request_id(item.get("requestId")),
             submission_id=requests[case.case_id].submission_id,
             status=str(item["status"]),
-            generation_sha256=requests[
-                case.case_id
-            ].expected_generation_sha256,
+            generation_sha256=requests[case.case_id].expected_generation_sha256,
             evidence_sha256=_required_sha256(item.get("evidenceSha256")),
             proposal_id=(
                 _required_sha256(item.get("proposalId"))
@@ -1026,9 +1022,7 @@ def _verify_curator_database_state(
         result_audits = _result_audit_rows(connection, tenant_id=tenant_id)
     proposal_owners = {str(row[0]) for row in proposals}
     successful_propose_owners = {
-        str(row[0])
-        for row in tool_audits
-        if row[1:4] == ("propose", "succeeded", 1)
+        str(row[0]) for row in tool_audits if row[1:4] == ("propose", "succeeded", 1)
     }
     checks = {
         "activeGenerationUnchanged": active == [(generation_sha256,)],
@@ -1224,6 +1218,7 @@ denials: {{users: []}}
 
 def _require_full_complex_profile(
     maximum_sequences: int,
+    batch_invariant: bool,
     launch_arguments: tuple[str, ...],
 ) -> None:
     arguments = {
@@ -1234,10 +1229,13 @@ def _require_full_complex_profile(
     }
     if (
         maximum_sequences != _BROKER_ACTIVE_CAPACITY
+        or batch_invariant is not True
         or arguments.get("--gpu-memory-utilization") != "0.70"
         or arguments.get("--max-model-len") != "8192"
         or arguments.get("--max-num-seqs") != "8"
         or arguments.get("--max-num-batched-tokens") != "8192"
+        or "--no-enable-prefix-caching" not in launch_arguments
+        or "--enable-prefix-caching" in launch_arguments
     ):
         raise ValueError("Curator qualification requires the full complex profile")
 
@@ -1292,6 +1290,7 @@ def _candidate_input_paths(repository_root: Path) -> tuple[Path, ...]:
         server / "src/yap_server/knowledge/vllm_reasoning_client.py",
         server / "src/yap_server/pools/agent_vllm_launch_contract.py",
         server / "src/yap_server/pools/agent_vllm_service_profile.py",
+        server / "src/yap_server/pools/agent_vllm_service_profile_cli.py",
         server / "src/yap_server/pools/numeric_loopback_endpoint.py",
         server / "tests/agents/test_agent_admission_client.py",
         server / "tests/agents/test_curator.py",
@@ -1303,6 +1302,7 @@ def _candidate_input_paths(repository_root: Path) -> tuple[Path, ...]:
         server / "tests/evaluation/test_curator_qualification.py",
         server / "tests/evaluation/test_curator_qualification_gate.py",
         server / "tests/evaluation/test_owned_postgres_knowledge_runtime.py",
+        server / "tests/infra/test_agent_vllm_server.py",
         server / "tests/evaluation/test_private_json_evidence.py",
         server / "tests/pools/test_agent_vllm_service_profile.py",
         server / "orchestrator/Cargo.toml",
@@ -1310,6 +1310,7 @@ def _candidate_input_paths(repository_root: Path) -> tuple[Path, ...]:
         server / "orchestrator/src/lib.rs",
         server / "orchestrator/src/service_profile.rs",
         server / "orchestrator/tests/supervised_service.rs",
+        repository_root / "infra/yap-server-node/agent-vllm-server.sh",
         server / "orchestrator/tests/support/mod.rs",
     )
     broker_sources = tuple(
@@ -1317,9 +1318,7 @@ def _candidate_input_paths(repository_root: Path) -> tuple[Path, ...]:
             (
                 *server.glob("orchestrator/src/agent_admission*.rs"),
                 *server.glob("orchestrator/src/agent_admission/**/*.rs"),
-                *server.glob(
-                    "orchestrator/src/bin/yap-agent-admission-broker.rs"
-                ),
+                *server.glob("orchestrator/src/bin/yap-agent-admission-broker.rs"),
                 *server.glob("orchestrator/tests/agent_admission*.rs"),
             ),
             key=lambda path: path.as_posix(),
@@ -1364,7 +1363,13 @@ def _new_private_evidence_destination(
 
 
 def _write_new_private_text(path: Path, value: str) -> None:
-    if path.exists() or path.is_symlink() or not value or "\n" in value or "\r" in value:
+    if (
+        path.exists()
+        or path.is_symlink()
+        or not value
+        or "\n" in value
+        or "\r" in value
+    ):
         raise ValueError("Curator private runtime credential is invalid")
     descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     with os.fdopen(descriptor, "w", encoding="utf-8", newline="\n") as output:

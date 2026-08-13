@@ -28,7 +28,7 @@ class AgentVllmServerContractTests(unittest.TestCase):
             "yap_server.pools.agent_vllm_service_profile_cli",
             "--emit-null",
             "--model-snapshot",
-            "PYTHONPATH=\"$script_dir/python\"",
+            'PYTHONPATH="$script_dir/python"',
             "owned and immutable",
             "canonical portable path",
             "^/[A-Za-z0-9_./:-]+$",
@@ -66,9 +66,10 @@ class AgentVllmServerContractTests(unittest.TestCase):
             "no-new-privileges",
             "HF_HUB_OFFLINE=1",
             "TRANSFORMERS_OFFLINE=1",
+            "VLLM_BATCH_INVARIANT=1",
             "HOME=/tmp",
             "model_root_canonical",
-            'snapshots/$profile_model_revision',
+            "snapshots/$profile_model_revision",
             "dst=/model-cache,readonly",
         ):
             self.assertIn(expected, self.script)
@@ -88,7 +89,9 @@ class AgentVllmServerContractTests(unittest.TestCase):
             self.script.index(proxy_source),
         )
 
-    def test_launcher_keeps_provider_credentials_out_of_arguments_and_files(self) -> None:
+    def test_launcher_keeps_provider_credentials_out_of_arguments_and_files(
+        self,
+    ) -> None:
         for forbidden in (
             "--api-key",
             "VLLM_API_KEY",

@@ -1,15 +1,39 @@
 # Agent admission profile-capacity verification
 
-**Status:** Exact protected route qualification and the aggregate governed-
-knowledge gate passed for the profile-derived admission successor. The public
-lock is committed at `7f896b341c31fcabb3f894a8d693764c8bc30600`. Hosted-green
-head `593e627b5b7aef10db082913c3e68fbaa872a942` passed all 12 required
-checks, and PR #168 merged the successor as
-`284ab96b58af0fdf1e939dbb8b1b075808b6b5b8` on 2026-08-13. Simultaneous
-two-route residency, sustained capacity/SLO evidence, product promotion, and
-deployment remain open.
+**Status:** Exact executable candidate
+`0665c486398d2803ba33ebbb6e6dedddcd844dbd` passed the replacement
+batch-invariant route qualification.
+Lock-only successor `8fee7a5c4969d482e5248b72013935e3f6f83b3c`
+publishes the matching route lock and passed the aggregate governed-knowledge
+gate. Hosted review/merge, simultaneous two-route
+residency, sustained capacity/SLO evidence, product promotion, and deployment
+remain open. The prior profile-capacity successor remains merged through PR
+#168; its historical receipt is not relabeled.
 
-## Qualified route evidence
+## Current batch-invariant successor
+
+- Sequential lifecycle public-safe evidence SHA-256:
+  `7cc016f493ab4f14c3b6474e21f59ca33228d66dcc816699282ed31cea3d94d8`.
+- Outcome: `required-workload-routes-qualified`.
+- Public-safe route evidence SHA-256:
+  `06277bd938314eb86cf5e516e6e6cfda7982652fbe3e1baa4586b6bb88cd5b51`.
+- Public route-lock SHA-256:
+  `3b16aa134c6af6a6bdc56afe64bbffeead593fa9c11e6db4512be95102c9f19f`.
+- Rapid-profile SHA-256:
+  `14712e6951802daaae323a3a7d69e78a8b3d5ac32ad52cbd0f546df327649da8`.
+- Complex-profile SHA-256:
+  `4c5e5da836355e57ec43c6f1270eb9eb5839c6fd91e6dbf73389e37ce4cdf6a8`.
+
+The unchanged full models were admitted sequentially with exact teardown. The
+complex profile retains eight maximum sequences, 8,192 maximum batched tokens,
+and `0.70` GPU-memory utilization while adding batch-invariant execution,
+request seed `0`, and disabled prefix caching. The live complex probe held eight
+owners, queued the ninth, contained every lease, and preserved provider/broker
+identity. Analyst then matched three synchronized eight-owner repeat waves
+inside the same warm provider process. This is not cross-start/global
+determinism, sustained capacity, or a production SLO.
+
+## Prior merged profile-capacity evidence
 
 - Exact route-qualification head:
   `dab19fe7563a9d596cbe7d861460a5c6fed7025c`
@@ -34,7 +58,26 @@ held their selected route at its full limit, observed a fifth or ninth distinct
 owner queued, contained every probe lease, and required unchanged provider and
 broker identities.
 
-## Affected workflow and aggregate read-back
+## Current affected-workflow and aggregate read-back
+
+- Curator public-safe evidence SHA-256:
+  `330ddab8219b7f59e733440f21ba6ee85b28698753631f66de5f7b059165806f`.
+- Scribe public-safe evidence SHA-256:
+  `7ef51c6db3f6632d59b28da08155c581810c47a168c1fefd84aa1117e3c12d80`.
+- Student public-safe evidence SHA-256:
+  `5c2525b306aa6660936a288a69d7d02c8a571643fa36ed01d2092e071bff5dab`.
+- Librarian public-safe evidence SHA-256:
+  `ca7ead2a0b8ac282e3c832350421ce4c534b36b00202fba2c46b453518f62ff4`.
+- Analyst public-safe evidence SHA-256:
+  `940fd7c6c275018c721c54dd2cf8a832e64007907248b2a88a39d928ce891305`.
+- Aggregate public-safe evidence SHA-256:
+  `5d4b6e107f8e1f833c3ba007521e233c504feca1f4f83ef8e6889bb7a64cc5d2`.
+
+The current portable server read-back is 1,384 tests: 1,342 passed and 42
+declared platform/capability skips. The governed fixed membership is 173 tests:
+169 passed and four were declared skips.
+
+## Historical affected-workflow and aggregate read-back
 
 - Exact Scribe/Student/Curator workflow head:
   `7cd24deb1131ecf89258ddb821c6bffae8e0cd25`
@@ -56,9 +99,9 @@ broker identities.
 The aggregate admitted the matching route lock, ran the fixed public suite and
 lint, exercised the required real-PostgreSQL tests and process restart,
 preserved the local/offline product boundary, and completed exact teardown.
-The current complete portable server read-back is 1,330 tests: 1,290 passed and
-40 declared platform/capability skips. The governed fixed set is 172 tests:
-168 passed and four were declared skips.
+That frozen pre-Analyst read-back ran 1,330 portable tests: 1,290 passed and 40
+declared platform/capability skips. Its governed fixed set was 172 tests: 168
+passed and four were declared skips.
 
 ## Terminal route evidence
 
@@ -74,9 +117,9 @@ terminal and inadmissible; neither is resumed, relabeled, or reused. Raw model
 output, private measurements, logs, credentials, and private locations remain
 outside Git.
 
-## Current operational boundary and limits
+## Operational boundary and limits
 
-A fresh post-aggregate operational observation on 2026-08-12 found the Qwen
+A post-aggregate operational observation on 2026-08-12 found the Qwen
 rapid service warm and the admission broker active against the exact rapid
 profile above. Its configured and qualification-probed limit is four active
 distinct owners; it was not throttled to one. This transient read-back is not a

@@ -1,9 +1,19 @@
 # Librarian permission-safe evidence verification
 
-**Status:** The no-LLM Librarian core is a privately qualified internal
-candidate at exact head
-`56b7f5d06f70f02cce79a422dd75b15c0a0bff10`. Hosted review, merge, HTTP/native/
-renderer exposure, production operation, and deployment remain pending.
+**Status:** The no-LLM Librarian internal core qualified at exact head
+`56b7f5d06f70f02cce79a422dd75b15c0a0bff10`; hosted head
+`7505247e120a4008aa4245840b424961dbe62796` merged through PR #169 as
+`d7a7e0033c976838ab1d28982da2c3f94eaf8e3e`. HTTP/native/renderer exposure,
+production operation, and deployment remain pending.
+
+At lock-only successor
+`8fee7a5c4969d482e5248b72013935e3f6f83b3c`, the unchanged executable
+inputs freshly returned
+`librarian-permission-safe-evidence-qualified` with public-safe evidence SHA-256
+`ca7ead2a0b8ac282e3c832350421ce4c534b36b00202fba2c46b453518f62ff4`.
+The frozen permission, failure, database, audit, admission, and teardown
+boundaries passed against the changed route/runtime. This does not relabel the
+PR #169 merge receipt below.
 
 ## Exact qualified candidate
 
@@ -35,10 +45,12 @@ renderer exposure, production operation, and deployment remain pending.
   one link beneath a mode-0700 parent. Private paths, identifiers, envelope
   hashes, content, and individual latency measurements remain outside Git.
 
-The current public read-back ran 1,330 portable server tests: 1,290 passed and
-40 were declared skips. The governed fixed set ran 172 tests: 168 passed and
-four were declared skips. The focused Librarian command ran 50 tests: 45 passed
-and five were expected skips. Ruff and diff checks were clean.
+The frozen pre-Analyst public read-back ran 1,330 portable server tests: 1,290
+passed and 40 were declared skips. Its governed fixed set ran 172 tests: 168
+passed and four were declared skips. The focused Librarian command ran 50
+tests: 45 passed and five were expected skips. Ruff and diff checks were clean.
+The current successor-wide public counts are recorded in the
+[profile-capacity evidence](../agent-admission-profile-capacity/VERIFICATION.md).
 
 ## Terminal predecessor
 
@@ -54,9 +66,9 @@ published.
 
 ## Deliberate limits
 
-This is qualification of one internal permission-safe read workflow, not a
-merged or user-facing product capability. It is not sustained capacity,
+This is a merged internal permission-safe read workflow, not a user-facing
+product capability. It is not sustained capacity,
 production p95/p99, availability, enterprise-networking, or deployment
-evidence. The merged baseline remains Scribe, Archivist, Student, and Curator;
-Librarian is the fifth qualified candidate. Analyst, Coordinator, and Auditor
-remain later bounded workflows.
+evidence. The merged baseline is Scribe, Archivist, Student, Curator, and
+Librarian. Analyst is a privately qualified internal candidate; Coordinator and
+Auditor remain later bounded workflows.

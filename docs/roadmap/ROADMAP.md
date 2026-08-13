@@ -254,9 +254,12 @@ SHA-256 `b60df1e2...`; exact aggregate/public-lock head `7f896b34...` passed wit
 public-safe evidence SHA-256 `fd197b98...`. Hosted-green head `593e627b...`
 passed all 12 checks, and PR #168 merged the slice as `284ab96b...`. Student and
 Curator product exposure remain open. Exact `56b7f5d0...` privately qualified
-Librarian as an unmerged internal candidate; its hosted review/merge and product
-surface remain open. Analyst, Coordinator, and Auditor remain unimplemented. Proven
-selected-route limits of four rapid/eight complex are not simultaneous-model,
+Librarian; hosted head `7505247e...` merged it through PR #169 as `d7a7e003...`.
+Exact executable `0665c486...` then privately qualified Analyst's grounded
+cited-answer internal core; lock-only `8fee7a5c...` publishes the matching
+batch-invariant route lock. Analyst hosted review/merge and product exposure,
+plus Coordinator and Auditor implementation, remain open. Proven selected-route
+limits of four rapid/eight complex are not simultaneous-model,
 sustained-capacity, or production-SLO evidence. One Spark cannot retain both
 unchanged full profiles simultaneously, so warm two-route promotion requires a
 second owned GPU node/private routing rather than throttling or model swapping.
@@ -265,6 +268,12 @@ observability, rollback, external serving, and IT-owned deployment remain later
 gates or handoffs. If one node cannot satisfy simultaneous evidence, the routes
 use separate owned nodes rather than model fallback or per-request swapping. No
 generic TPS or production promotion follows from the sequential lifecycle gate.
+
+Analyst's three exact synchronized repeat waves prove repeatability only inside
+the same warm provider process; they do not prove cross-start/global
+determinism. The current public server read-back is 1,384 tests: 1,342 passed and
+42 declared skips. The governed fixed membership is 173 tests: 169 passed and
+four declared skips.
 
 ## Prior merged phase: tenant-scoped identity and access (Phase 7)
 

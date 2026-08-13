@@ -110,6 +110,44 @@ fn command_line_rejects_a_rehashed_profile_with_reduced_sequence_capacity() {
 }
 
 #[test]
+fn command_line_rejects_rehashed_profiles_with_changed_batch_invariance() {
+    for (name, argument, profile, value) in [
+        (
+            "rapid-profile-batch-invariant.json",
+            "--rapid-profile",
+            rapid_profile_path(),
+            serde_json::json!(true),
+        ),
+        (
+            "complex-profile-batch-variant.json",
+            "--complex-profile",
+            complex_profile_path(),
+            serde_json::json!(false),
+        ),
+    ] {
+        let changed_path = runtime_path(name);
+        let mut document: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(profile).unwrap()).unwrap();
+        document["batchInvariant"] = value;
+        std::fs::write(&changed_path, serde_json::to_vec(&document).unwrap()).unwrap();
+        let changed_path = changed_path.canonicalize().unwrap();
+
+        let mut values = arguments();
+        let profile_position = values.iter().position(|item| item == argument).unwrap();
+        values[profile_position + 1] = changed_path.clone().into_os_string();
+        let digest_argument = format!("{argument}-sha256");
+        let digest_position = values
+            .iter()
+            .position(|item| item == digest_argument.as_str())
+            .unwrap();
+        values[digest_position + 1] = OsString::from(profile_sha256(&changed_path));
+
+        assert!(parse_agent_admission_arguments(values).is_err());
+        std::fs::remove_file(changed_path).unwrap();
+    }
+}
+
+#[test]
 fn command_line_rejects_relative_noncanonical_and_colliding_runtime_paths() {
     let complete = arguments();
     let socket_position = complete

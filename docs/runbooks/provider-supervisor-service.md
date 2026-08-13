@@ -162,6 +162,16 @@ head `0471b158...` passed. Hosted-green head `6d1400cc...` merged through PR
 Neither lane is simultaneous-residency, provider quality, capacity,
 latency-SLO, application-route, or production-deployment evidence.
 
+The current batch-invariant successor reran this same sequential lifecycle gate
+at exact executable `0665c486...` with public-safe evidence SHA-256
+`7cc016f4...`. It then passed route qualification with evidence SHA-256
+`06277bd9...`; lock-only `8fee7a5c...` publishes the matching route lock. The
+Gemma profile change enables batch-invariant execution and disables prefix
+caching while retaining its full c8/8,192-token/`0.70` limits. This new receipt
+does not relabel the historical Slice 10.2 evidence and still makes no
+simultaneous-residency, cross-start/global-determinism, capacity, SLO, or
+deployment claim.
+
 Run that Slice 10.2 gate only from the exact clean ARM64 private-node checkout.
 The evidence directory must be a new empty owner-private directory outside the
 repository. The gate builds the locked Rust supervisor from that checkout,

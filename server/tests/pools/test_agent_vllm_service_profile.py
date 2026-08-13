@@ -24,7 +24,9 @@ PROFILE_PATHS = (
 
 
 class AgentVllmServiceProfileTests(unittest.TestCase):
-    def test_profiles_bind_the_two_qualified_routes_without_shared_identity(self) -> None:
+    def test_profiles_bind_the_two_qualified_routes_without_shared_identity(
+        self,
+    ) -> None:
         rapid, complex_route = tuple(self._load(path) for path in PROFILE_PATHS)
 
         self.assertEqual(rapid.profile_id, "rapid-automation")
@@ -37,6 +39,7 @@ class AgentVllmServiceProfileTests(unittest.TestCase):
         self.assertIn("qwen3_xml", rapid.launch_arguments)
         self.assertIn("0.40", rapid.launch_arguments)
         self.assertEqual(rapid.maximum_sequences, 4)
+        self.assertFalse(rapid.batch_invariant)
 
         self.assertEqual(complex_route.profile_id, "complex-orchestration")
         self.assertEqual(complex_route.candidate_id, "gemma-4-31b-it-nvfp4")
@@ -54,6 +57,7 @@ class AgentVllmServiceProfileTests(unittest.TestCase):
         )
         self.assertIn("0.70", complex_route.launch_arguments)
         self.assertEqual(complex_route.maximum_sequences, 8)
+        self.assertTrue(complex_route.batch_invariant)
 
         self.assertNotEqual(rapid.endpoint, complex_route.endpoint)
         self.assertNotEqual(rapid.container_name, complex_route.container_name)
@@ -90,17 +94,20 @@ class AgentVllmServiceProfileTests(unittest.TestCase):
                     _option(arguments, "--max-num-seqs"),
                     str(profile.maximum_sequences),
                 )
-                self.assertEqual(
-                    _option(arguments, "--max-num-batched-tokens"), "8192"
-                )
+                self.assertEqual(_option(arguments, "--max-num-batched-tokens"), "8192")
                 for flag in (
                     "--enable-auto-tool-choice",
-                    "--enable-prefix-caching",
                     "--enable-chunked-prefill",
                     "--async-scheduling",
                     "--language-model-only",
                 ):
                     self.assertIn(flag, arguments)
+                if profile.batch_invariant:
+                    self.assertIn("--no-enable-prefix-caching", arguments)
+                    self.assertNotIn("--enable-prefix-caching", arguments)
+                else:
+                    self.assertIn("--enable-prefix-caching", arguments)
+                    self.assertNotIn("--no-enable-prefix-caching", arguments)
 
                 self.assertGreater(profile.resources.memory_bytes, 0)
                 self.assertEqual(
@@ -161,7 +168,9 @@ class AgentVllmServiceProfileTests(unittest.TestCase):
                     expected_profile_sha256=_sha256(oversized_path),
                 )
 
-    def test_profile_semantic_mutations_fail_even_with_a_matching_new_hash(self) -> None:
+    def test_profile_semantic_mutations_fail_even_with_a_matching_new_hash(
+        self,
+    ) -> None:
         original = json.loads(PROFILE_PATHS[0].read_text(encoding="utf-8"))
         mutations = (
             ("service", "complex-orchestration"),
@@ -196,6 +205,39 @@ class AgentVllmServiceProfileTests(unittest.TestCase):
         self.assertNotEqual(relabelled.service, profile.service)
         with self.assertRaisesRegex(ValueError, "profile identity differs"):
             relabelled.validate_identity()
+
+    def test_batch_invariance_is_complex_only_and_profile_bound(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for source, value in ((PROFILE_PATHS[0], True), (PROFILE_PATHS[1], False)):
+                with self.subTest(profile=source.name, value=value):
+                    profile = json.loads(source.read_text(encoding="utf-8"))
+                    profile["batchInvariant"] = value
+                    path = root / source.name
+                    path.write_text(
+                        json.dumps(profile, separators=(",", ":")),
+                        encoding="utf-8",
+                    )
+                    with self.assertRaises(ValueError):
+                        load_agent_vllm_service_profile(
+                            path,
+                            CANDIDATE_LOCK,
+                            expected_profile_sha256=_sha256(path),
+                        )
+
+            complex_profile = json.loads(PROFILE_PATHS[1].read_text(encoding="utf-8"))
+            complex_profile["batchInvariant"] = 1
+            path = root / "non-boolean-complex.json"
+            path.write_text(
+                json.dumps(complex_profile, separators=(",", ":")),
+                encoding="utf-8",
+            )
+            with self.assertRaises(ValueError):
+                load_agent_vllm_service_profile(
+                    path,
+                    CANDIDATE_LOCK,
+                    expected_profile_sha256=_sha256(path),
+                )
 
     def test_model_snapshot_is_recomputed_before_a_profile_can_launch(self) -> None:
         profile = self._load(PROFILE_PATHS[0])
@@ -254,9 +296,7 @@ class AgentVllmServiceProfileTests(unittest.TestCase):
             verify_agent_model_snapshot(
                 expected_model=synthetic.expected_model,
                 model_revision=synthetic.model_revision,
-                expected_manifest_sha256=(
-                    synthetic.model_artifact_manifest_sha256
-                ),
+                expected_manifest_sha256=(synthetic.model_artifact_manifest_sha256),
                 snapshot_path=snapshot,
             )
 
@@ -268,9 +308,7 @@ class AgentVllmServiceProfileTests(unittest.TestCase):
                 verify_agent_model_snapshot(
                     expected_model=synthetic.expected_model,
                     model_revision=synthetic.model_revision,
-                    expected_manifest_sha256=(
-                        synthetic.model_artifact_manifest_sha256
-                    ),
+                    expected_manifest_sha256=(synthetic.model_artifact_manifest_sha256),
                     snapshot_path=snapshot,
                 )
 

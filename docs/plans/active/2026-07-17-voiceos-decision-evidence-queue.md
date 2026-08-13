@@ -907,9 +907,11 @@ unconfigured.
   `7cd24deb...`, and aggregate/public-lock head `7f896b34...` privately qualified
   the Curator/profile-capacity successor. Hosted-green head `593e627b...` passed
   all 12 checks, and PR #168 merged it as `284ab96b...`. Exact `56b7f5d0...`
-  privately qualified Librarian as an unmerged internal candidate. Librarian
-  hosted review/merge, Analyst, Coordinator, Auditor, and product exposure
-  remain open. Proven selected-
+  qualified Librarian; hosted head `7505247e...` merged it through PR #169 as
+  `d7a7e003...`. Exact executable `0665c486...` privately qualified Analyst, and
+  lock-only `8fee7a5c...` publishes the matching batch-invariant route lock.
+  Analyst hosted review/merge, Coordinator, Auditor, and non-Scribe product
+  exposure remain open. Proven selected-
   route capacity four/eight is
   not simultaneous-model residency, sustained capacity/SLO, or production
   evidence.

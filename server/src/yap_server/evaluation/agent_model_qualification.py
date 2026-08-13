@@ -27,6 +27,9 @@ from .agent_model_candidate_runner import (
 from .private_json_evidence import write_new_private_json_evidence
 from .agent_model_scoring import score_agent_model_results
 from .agent_vllm_runtime import build_agent_vllm_launch_arguments
+from yap_server.pools.agent_vllm_launch_contract import (
+    qualified_agent_vllm_batch_invariant,
+)
 from .checked_candidate import (
     CheckedCandidate,
     admit_checked_candidate,
@@ -92,9 +95,7 @@ def evaluate_agent_model_qualification(
                 str(models[candidate_id]["workloadClass"])
             ],
             proposal_fixture_case_ids=tuple(
-                acceptance.route_evidence["rapid-automation"][
-                    "proposalFixtureCaseIds"
-                ]
+                acceptance.route_evidence["rapid-automation"]["proposalFixtureCaseIds"]
             ),
         )
         for candidate_id in acceptance.candidate_ids
@@ -236,6 +237,7 @@ def _candidate_summary(
     return {
         "candidateId": expected["candidateId"],
         "workloadClass": expected["workloadClass"],
+        "requestSeed": 0,
         "artifactSha256": agent_evidence_sha256(evidence),
         "eligible": eligible,
         "routeEvidencePassed": route_evidence_passed,
@@ -273,8 +275,7 @@ def _route_evidence_passed(
         raise ValueError("agent route evidence policy is invalid")
     if workload_class == "rapid-automation":
         return (
-            common_fixture_p95
-            <= policy["maximumCommonFixtureP95LatencyMilliseconds"]
+            common_fixture_p95 <= policy["maximumCommonFixtureP95LatencyMilliseconds"]
             and proposal_fixture_p95
             <= policy["maximumProposalFixtureP95LatencyMilliseconds"]
             and proposal_samples_passed
@@ -287,7 +288,9 @@ def _route_evidence_passed(
             isinstance(result, dict)
             and result.get("caseId") == required
             and [
-                call.get("name") for call in result["toolCalls"] if isinstance(call, dict)
+                call.get("name")
+                for call in result["toolCalls"]
+                if isinstance(call, dict)
             ]
             == ["search_knowledge", "traverse_knowledge", "propose_knowledge"]
             for result in results
@@ -337,9 +340,7 @@ def _proposal_latency_evidence(
             workload_class=workload_class,
         )
         semantics_passed = (
-            semantics_passed
-            and score.passed
-            and score.route_specific_evidence_passed
+            semantics_passed and score.passed and score.route_specific_evidence_passed
         )
         latency = sample.get("latencyMilliseconds")
         if not _nonnegative_int(latency):
@@ -409,8 +410,9 @@ def _failed_candidate_summary(
         raise ValueError("failed agent runtime containment differs")
     if (
         runtime.get("modelArtifactManifestSha256") != expected["artifactManifestSha256"]
-        or runtime.get("launchArguments")
-        != build_agent_vllm_launch_arguments(expected)
+        or runtime.get("launchArguments") != build_agent_vllm_launch_arguments(expected)
+        or runtime.get("batchInvariant")
+        is not qualified_agent_vllm_batch_invariant(expected)
         or canonical_evidence_sha256(runtime.get("launchArguments"))
         != runtime.get("launchArgumentsSha256")
         or runtime.get("imageId") != expected_runtime.get("observedImageId")
@@ -507,11 +509,12 @@ def _validate_runtime_receipt(
         "modelArtifactManifestSha256",
         "launchArguments",
         "launchArgumentsSha256",
+        "batchInvariant",
         "toolCallStructuralGuidanceEnabled",
         "childEvidenceSha256",
         "teardown",
     }
-    if set(value) != required or value["schemaVersion"] != 1:
+    if set(value) != required or value["schemaVersion"] != 2:
         raise ValueError("agent runtime receipt differs from the contract")
     expected_runtime = expected.get("_runtime")
     if not isinstance(expected_runtime, dict):
@@ -529,6 +532,7 @@ def _validate_runtime_receipt(
         or canonical_evidence_sha256(value["launchArguments"])
         != value["launchArgumentsSha256"]
         or not _SHA256.fullmatch(str(value["launchArgumentsSha256"]))
+        or value["batchInvariant"] is not qualified_agent_vllm_batch_invariant(expected)
         or value["toolCallStructuralGuidanceEnabled"] is not True
         or not isinstance(value["childEvidenceSha256"], dict)
         or set(value["childEvidenceSha256"])
@@ -556,6 +560,7 @@ def _validate_runtime_receipt(
         or lifecycle.get("modelArtifactManifestSha256")
         != value["modelArtifactManifestSha256"]
         or lifecycle.get("launchArgumentsSha256") != value["launchArgumentsSha256"]
+        or lifecycle.get("batchInvariant") is not value["batchInvariant"]
     ):
         raise ValueError("agent runtime lifecycle binding differs")
 
@@ -665,13 +670,15 @@ def _verify_runtime_children(
             "imageId",
             "modelArtifactManifestSha256",
             "launchArgumentsSha256",
+            "batchInvariant",
             "endpoint",
         }
-        or lifecycle["schemaVersion"] != 1
+        or lifecycle["schemaVersion"] != 2
         or not re.fullmatch(r"[0-9a-f]{64}", str(lifecycle["containerId"]))
         or not re.fullmatch(r"sha256:[0-9a-f]{64}", str(lifecycle["imageId"]))
         or not _SHA256.fullmatch(str(lifecycle["modelArtifactManifestSha256"]))
         or not _SHA256.fullmatch(str(lifecycle["launchArgumentsSha256"]))
+        or type(lifecycle["batchInvariant"]) is not bool
         or lifecycle["endpoint"] != "http://127.0.0.1:30000"
     ):
         raise ValueError("agent runtime child evidence differs from the contract")

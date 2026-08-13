@@ -72,6 +72,7 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
 
         self.assertEqual(len(requests), 2)
         self.assertEqual([item["max_tokens"] for item in requests], [64, 64])
+        self.assertEqual([item["seed"] for item in requests], [0, 0])
         self.assertEqual([item["n"] for item in requests], [1, 1])
         self.assertIn("tools", requests[0])
         self.assertIs(requests[0]["parallel_tool_calls"], False)
@@ -477,9 +478,7 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
             if case["caseId"] == "complex-governed-orchestration":
                 complex_tool_requests += 1
             sequence = case.get("expectedToolSequence", [case["expectedTool"]])
-            prior_calls = sum(
-                message.get("role") == "tool" for message in messages
-            )
+            prior_calls = sum(message.get("role") == "tool" for message in messages)
             if "expectedToolSequence" not in case:
                 prior_calls = 0
             name = sequence[prior_calls]
@@ -590,25 +589,19 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
                 "function": {"name": "return_governed_answer"},
             }:
                 assert active is not None
-                self.assertEqual(
-                    payload["max_tokens"], expected_output_tokens(active)
-                )
+                self.assertEqual(payload["max_tokens"], expected_output_tokens(active))
                 answer = {
                     "answer": active.get(
                         "expectedAnswer",
                         " ".join(active.get("requiredTerms", [])),
                     ),
-                    "citationConceptIds": active.get(
-                        "requiredCitationConceptIds", []
-                    ),
+                    "citationConceptIds": active.get("requiredCitationConceptIds", []),
                 }
                 active = None
                 return _tool_response("return_governed_answer", answer)
             if "tools" in payload:
                 active = next(cases)
-                self.assertEqual(
-                    payload["max_tokens"], expected_output_tokens(active)
-                )
+                self.assertEqual(payload["max_tokens"], expected_output_tokens(active))
                 arguments = {
                     "purpose": "knowledge.read",
                     **active.get("expectedArguments", {}),
@@ -658,9 +651,7 @@ class AgentModelFixtureRunnerTests(unittest.TestCase):
                     ]
                 }
             assert active is not None
-            self.assertEqual(
-                payload["max_tokens"], expected_output_tokens(active)
-            )
+            self.assertEqual(payload["max_tokens"], expected_output_tokens(active))
             return {
                 "choices": [
                     {
@@ -841,9 +832,7 @@ def _answer_response(answer: str = "unavailable") -> dict[str, object]:
             {
                 "message": {
                     "role": "assistant",
-                    "content": json.dumps(
-                        {"answer": answer, "citationConceptIds": []}
-                    ),
+                    "content": json.dumps({"answer": answer, "citationConceptIds": []}),
                 }
             }
         ]

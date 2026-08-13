@@ -926,6 +926,16 @@ current merged boundary. Hosted-green head `593e627b...` passed all 12 checks,
 and PR #168 merged the successor as `284ab96b...`. Selected-route capacity is
 not sustained-throughput, simultaneous-residency, or production-SLO evidence.
 
+Exact executable successor `0665c486...` changed the complex runtime/profile to
+batch-invariant request execution with seed `0` and prefix caching disabled. It
+passed sequential lifecycle evidence `7cc016f4...` and route evidence
+`06277bd9...`; lock-only `8fee7a5c...` publishes the matching lock. At that
+lock-only successor, the affected Curator, Scribe, Student, and Librarian gates
+and the aggregate gate passed. The complex probe held eight owners and queued
+the ninth without changing provider/broker identity. This is selected-route and
+same-warm-process evidence, not cross-start/global determinism, simultaneous
+residency, sustained capacity, or a production SLO.
+
 ### 27. Scribe transcript correction
 
 - **Entry point:** native commands in `desktop/src-tauri/src/transcript_correction/`
@@ -1080,8 +1090,9 @@ attributed to it. See the
 
 ### 31. Librarian permission-safe evidence core
 
-- **Status:** privately qualified unmerged internal candidate at exact head
-  `56b7f5d0...`; hosted review/merge and all product surfaces remain pending.
+- **Status:** privately qualified at exact head `56b7f5d0...`; hosted head
+  `7505247e...` merged through PR #169 as `d7a7e003...`. All product surfaces
+  remain pending.
 - **Entry point:** `yap_server/agents/librarian_service.py` owns one bounded
   authenticated Server-IO read. It acquires no model-route lease.
 - **Authoritative owner:** the Postgres permission-safe retrieval owner pins the
@@ -1099,6 +1110,35 @@ attributed to it. See the
   result-audit ledger owns durable outcome identity.
 
 See the [Librarian verification record](../../evidence/librarian-permission-safe-evidence/VERIFICATION.md).
+
+### 32. Analyst grounded cited-answer core
+
+- **Status:** privately qualified unmerged internal candidate at exact executable
+  head `0665c486...`; lock-only `8fee7a5c...` publishes the matching route lock.
+  Hosted review/merge and all product surfaces remain pending.
+- **Entry point:** `yap_server/agents/analyst_service.py` owns one bounded
+  authenticated interactive complex-route request composed through
+  `analyst_runtime.py`.
+- **Authoritative owner:** `LibrarianService` owns permission-safe retrieval;
+  the PostgreSQL Analyst evidence verifier reauthorizes the exact succeeded
+  Librarian pack and current generation in transaction. The model selects only
+  whole evidence-item indexes. Server-owned Analyst code derives answer and
+  citation identities from the frozen pack.
+- **Persisted state:** the immutable Analyst result-audit ledger records bounded
+  identities and terminal outcomes. It does not persist answer or evidence bytes,
+  publish a knowledge proposal, or activate a generation.
+- **Failure/recovery:** empty or unavailable evidence, stale generation, invalid
+  output, cross-owner access, replay conflict, provider loss, cancellation, and
+  deadline return typed fail-closed outcomes with no answer.
+- **Duplicate owner:** none. Librarian owns retrieval; the verifier owns current
+  authorization; `AnalystService` owns workflow termination; the Analyst result-
+  audit ledger owns durable outcome identity; the broker owns admission.
+
+Three synchronized repeat waves matched 24 of 24 normal invocations, all 29
+terminals matched, and 12 answers contained 15 server-owned citations. Exact
+`63c3d9fd...` remains terminal no-receipt evidence from the superseded schedule-
+sensitive runtime and is not reused. See the
+[Analyst verification record](../../evidence/analyst-grounded-cited-answers/VERIFICATION.md).
 
 ## Persistent-state owners
 
@@ -1118,6 +1158,7 @@ See the [Librarian verification record](../../evidence/librarian-permission-safe
 | Knowledge builds, active pointer, permissions, embeddings, and activation history | Postgres generation ledger | permission view and retrieval |
 | Permission-safe cited retrieval | Postgres permission/retrieval owners | governed tools, RAG, MCP |
 | Governed proposals and tool audit identities | proposal and audit ledgers | review workflow and generation retention |
+| Librarian and Analyst terminal identities | immutable role result-audit ledgers | permission-safe evidence and grounded cited-answer replay; no evidence/answer bytes |
 | Agent workload route selection | explicit server route selector | governed RAG invocation |
 | Private route and aggregate gate evidence | evaluation lifecycle and gate owners | public-safe hashes/outcomes only |
 | Boot-scoped provider lifecycle snapshot | one Rust provider supervisor | systemd/operators; not durable application truth |

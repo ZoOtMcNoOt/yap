@@ -23,10 +23,10 @@ from yap_server.pools.agent_vllm_service_profile import (
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 CANDIDATE_LOCK = REPOSITORY_ROOT / "server" / "agent-reasoning-candidates.lock.json"
 PROFILE_PATH = (
-    REPOSITORY_ROOT
-    / "server"
-    / "agent-service-profiles"
-    / "rapid-automation.json"
+    REPOSITORY_ROOT / "server" / "agent-service-profiles" / "rapid-automation.json"
+)
+COMPLEX_PROFILE_PATH = (
+    REPOSITORY_ROOT / "server" / "agent-service-profiles" / "complex-orchestration.json"
 )
 CHECKED_HEAD = "a" * 40
 OWNER_TOKEN = "b" * 64
@@ -39,10 +39,21 @@ class AgentServiceLifecycleObservationTests(unittest.TestCase):
         cls.profile = load_agent_vllm_service_profile(
             PROFILE_PATH,
             CANDIDATE_LOCK,
-            expected_profile_sha256=hashlib.sha256(PROFILE_PATH.read_bytes()).hexdigest(),
+            expected_profile_sha256=hashlib.sha256(
+                PROFILE_PATH.read_bytes()
+            ).hexdigest(),
+        )
+        cls.complex_profile = load_agent_vllm_service_profile(
+            COMPLEX_PROFILE_PATH,
+            CANDIDATE_LOCK,
+            expected_profile_sha256=hashlib.sha256(
+                COMPLEX_PROFILE_PATH.read_bytes()
+            ).hexdigest(),
         )
 
-    def test_container_policy_requires_exact_identity_resources_and_attachment(self) -> None:
+    def test_container_policy_requires_exact_identity_resources_and_attachment(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             model_root = Path(temporary) / "models--nvidia--Qwen"
             snapshot = model_root / "snapshots" / self.profile.model_revision
@@ -108,6 +119,52 @@ class AgentServiceLifecycleObservationTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     validate_state_identity(mutation, self.profile)
 
+    def test_complex_container_requires_exact_batch_invariant_environment(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            model_root = Path(temporary) / "models--nvidia--Gemma"
+            snapshot = model_root / "snapshots" / self.complex_profile.model_revision
+            snapshot.mkdir(parents=True)
+            inspection = _inspection(self.complex_profile, snapshot)
+            with (
+                patch.object(os, "getuid", create=True, return_value=1000),
+                patch.object(os, "getgid", create=True, return_value=1000),
+            ):
+                validate_container_policy(
+                    inspection,
+                    profile=self.complex_profile,
+                    checked_head=CHECKED_HEAD,
+                    owner_token=OWNER_TOKEN,
+                    network_name=NETWORK_NAME,
+                    model_snapshot=snapshot,
+                )
+                for environment in (
+                    [
+                        item
+                        for item in inspection["Config"]["Env"]
+                        if item != "VLLM_BATCH_INVARIANT=1"
+                    ],
+                    [
+                        *inspection["Config"]["Env"],
+                        "VLLM_BATCH_INVARIANT=0",
+                    ],
+                    [
+                        *inspection["Config"]["Env"],
+                        "VLLM_BATCH_INVARIANT=1",
+                    ],
+                ):
+                    with self.subTest(environment=environment):
+                        changed = copy.deepcopy(inspection)
+                        changed["Config"]["Env"] = environment
+                        with self.assertRaises(RuntimeError):
+                            validate_container_policy(
+                                changed,
+                                profile=self.complex_profile,
+                                checked_head=CHECKED_HEAD,
+                                owner_token=OWNER_TOKEN,
+                                network_name=NETWORK_NAME,
+                                model_snapshot=snapshot,
+                            )
+
     def test_state_reader_rejects_duplicate_json_keys(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             state_path = Path(temporary) / "state.json"
@@ -140,6 +197,7 @@ def _inspection(
                 "HF_HUB_DISABLE_TELEMETRY=1",
                 "DO_NOT_TRACK=1",
                 "HOME=/tmp",
+                *(["VLLM_BATCH_INVARIANT=1"] if profile.batch_invariant else []),
             ],
             "Labels": {
                 "io.yap.owner": "private-inference",

@@ -13,6 +13,7 @@
   "toolCallParser": "gemma4",
   "finalResponseProtocol": "forced-answer-tool",
   "chatTemplate": "/opt/vllm/vllm-src/examples/tool_chat_template_gemma4.jinja",
+  "batchInvariant": true,
   "containerPort": 8000,
   "maximumModelLength": 8192,
   "maximumSequences": 8,

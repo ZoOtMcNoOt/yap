@@ -7,6 +7,17 @@ import re
 _GIT_SHA = re.compile(r"^[0-9a-f]{40}$")
 
 
+def qualified_agent_vllm_batch_invariant(candidate: dict[str, object]) -> bool:
+    """Return the exact batch-invariance policy for one locked route."""
+
+    candidate_id = candidate.get("candidateId")
+    if candidate_id == "qwen3.6-35b-a3b-nvfp4":
+        return False
+    if candidate_id == "gemma-4-31b-it-nvfp4":
+        return True
+    raise ValueError("agent vLLM launch candidate is invalid")
+
+
 def validate_qualified_agent_vllm_route_policy(
     profile: dict[str, object],
     candidate: dict[str, object],
@@ -34,11 +45,16 @@ def validate_qualified_agent_vllm_route_policy(
         and pids_limit == 4096
         and shm_bytes == 17_179_869_184
         and tmpfs_bytes == 8_589_934_592
+        and profile.get("batchInvariant", False)
+        is qualified_agent_vllm_batch_invariant(candidate)
     )
     if profile["profileId"] == "rapid-automation":
         valid = (
             common_valid
-            and candidate.get("reasoningParser") == profile.get("reasoningParser") == "qwen3"
+            and "batchInvariant" not in profile
+            and candidate.get("reasoningParser")
+            == profile.get("reasoningParser")
+            == "qwen3"
             and "chatTemplate" not in candidate
             and profile.get("attentionBackend") == "flashinfer"
             and profile.get("moeBackend") == "marlin"
@@ -55,6 +71,7 @@ def validate_qualified_agent_vllm_route_policy(
     else:
         valid = (
             common_valid
+            and profile.get("batchInvariant") is True
             and "reasoningParser" not in candidate
             and candidate.get("chatTemplate")
             == profile.get("chatTemplate")
@@ -82,8 +99,7 @@ def build_qualified_agent_vllm_launch_arguments(
     tool_parser = candidate.get("toolCallParser")
     final_response_protocol = candidate.get("finalResponseProtocol")
     if (
-        candidate_id
-        not in {"qwen3.6-35b-a3b-nvfp4", "gemma-4-31b-it-nvfp4"}
+        candidate_id not in {"qwen3.6-35b-a3b-nvfp4", "gemma-4-31b-it-nvfp4"}
         or not isinstance(model, str)
         or not model
         or not isinstance(revision, str)
@@ -139,7 +155,11 @@ def build_qualified_agent_vllm_launch_arguments(
             "1",
             "--kv-cache-dtype",
             "fp8",
-            "--enable-prefix-caching",
+            *(
+                ["--enable-prefix-caching"]
+                if candidate_id == "qwen3.6-35b-a3b-nvfp4"
+                else ["--no-enable-prefix-caching"]
+            ),
             "--enable-chunked-prefill",
             "--async-scheduling",
             "--language-model-only",
@@ -190,5 +210,6 @@ def build_qualified_agent_vllm_launch_arguments(
 
 __all__ = [
     "build_qualified_agent_vllm_launch_arguments",
+    "qualified_agent_vllm_batch_invariant",
     "validate_qualified_agent_vllm_route_policy",
 ]

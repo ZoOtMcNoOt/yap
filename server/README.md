@@ -628,6 +628,16 @@ Selected-route limits do not prove simultaneous Qwen/Gemma residency, sustained
 capacity/fairness, production p95/p99, or deployment. See the
 [profile-capacity record](../docs/evidence/agent-admission-profile-capacity/VERIFICATION.md).
 
+The next protected successor changes the complex runtime/profile rather than
+reusing that receipt. Exact executable `0665c486...` passed sequential lifecycle
+evidence SHA-256 `7cc016f4...` and `required-workload-routes-qualified` evidence
+SHA-256 `06277bd9...`; lock-only `8fee7a5c...` publishes the matching route lock.
+The full complex profile is batch invariant with seed `0` and prefix caching
+disabled. It retains c8, 8,192 maximum batched tokens, and `0.70` GPU-memory
+utilization. The live probe held eight owners and queued the ninth without
+changing the provider/broker identity. Affected workflow and aggregate gates
+received fresh exact-head evidence; older merged receipts are not relabeled.
+
 ## Scribe transcript correction
 
 The first merged product consumer of the broker is the authenticated
@@ -867,8 +877,8 @@ open.
 
 ## Librarian permission-safe evidence core
 
-The server now contains a privately qualified, unmerged no-LLM Librarian
-candidate. `LibrarianService` admits one authenticated interactive Server-IO
+The server contains a privately qualified, merged no-LLM Librarian internal
+core. `LibrarianService` admits one authenticated interactive Server-IO
 read, pins the permission-safe active generation, filters hidden nodes and links
 before limiting, and returns a bounded evidence pack or typed terminal result.
 It writes no proposal, activates no generation, and acquires no model lease.
@@ -881,8 +891,35 @@ PostgreSQL restart/read-backs, exact tool/result audits, zero proposals, and
 six-part teardown passed. Exact predecessor `ecdcb8ee...` is terminal and
 inadmissible because adversarial review found only seven broker submissions.
 See the [Librarian verification record](../docs/evidence/librarian-permission-safe-evidence/VERIFICATION.md).
-Hosted review/merge, HTTP/native/renderer exposure, sustained capacity, and
-production operation remain pending.
+Hosted head `7505247e...` merged through PR #169 as `d7a7e003...`. HTTP/native/
+renderer exposure, sustained capacity, and production operation remain pending.
+
+## Analyst grounded cited-answer core
+
+The server also contains a privately qualified, unmerged internal Analyst
+candidate. `AnalystService` asks Librarian for one permission-safe evidence pack,
+reauthorizes the exact succeeded pack and current generation in PostgreSQL, and
+uses the already-warm complex route only to select whole evidence-item indexes.
+Server-owned code derives the bounded answer and citation identities. Empty or
+unavailable evidence, stale generation, invalid output, cross-owner access,
+replay conflict, cancellation, and deadline publish no answer.
+
+Exact executable `0665c486...` returned
+`analyst-grounded-cited-answers-qualified` with public-safe evidence SHA-256
+`940fd7c6...`. Three synchronized repeat waves matched all 24 normal
+invocations; all 29 terminals matched, and 12 answers contained 15 server-owned
+citations. Exact database/audit read-back, zero proposals, warm provider/broker
+identity, complex c8/ninth-queued containment, and teardown held. Lock-only
+`8fee7a5c...` publishes the matching route lock.
+
+Exact `63c3d9fd...` failed the official gate and emitted no receipt. Its later
+same-head diagnostic replay was deliberately inadmissible; conflicting outcomes
+under the earlier concurrent online runtime made both attempts terminal and
+nonreusable. The replacement's three repeats prove only same-warm-process
+repeatability, not cross-start/global determinism. See the
+[Analyst verification record](../docs/evidence/analyst-grounded-cited-answers/VERIFICATION.md).
+Hosted review/merge, HTTP/native/renderer/UI exposure, simultaneous residency,
+sustained capacity, a production SLO, and deployment remain pending.
 
 ## Local checks
 

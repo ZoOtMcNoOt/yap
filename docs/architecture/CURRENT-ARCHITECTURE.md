@@ -1,8 +1,9 @@
 # Current Architecture
 
-This document describes the merged executable Phase 1–9 system plus Phase 10
-Slices 10.1–10.3: the supervised-provider lifecycle, immutable Qwen/Gemma
-profiles, and bounded owner-fair admission for already-warm services. Their
+This document describes the merged executable Phase 1–9 system plus the Phase
+10 supervised-provider lifecycle, immutable Qwen/Gemma profiles, bounded owner-
+fair admission, and five merged role cores, together with the privately
+qualified Analyst internal candidate. The lifecycle/admission
 hosted closures merged through PRs #155, #157, and #158; the admission merge is
 `84d95842950860e3f8d5cc70895aaae9243abe9c`. Exact Scribe head
 `e585842485a7cd38b2935cc8f79314b19b37f7fd` is the first authenticated
@@ -23,9 +24,12 @@ Student, and Curator, and public-lock/aggregate head `7f896b34...` passed the
 governed gate. Hosted-green head `593e627b...` passed all 12 checks, and PR #168
 merged the profile-capacity successor and Curator internal core as
 `284ab96b...`. Curator has no HTTP/native/UI product surface. Exact
-`56b7f5d0...` privately qualified the no-LLM Librarian core as an unmerged
-internal candidate. Librarian product/merge promotion, Analyst, Coordinator,
-Auditor, and capacity/operations layers remain open.
+`56b7f5d0...` qualified the no-LLM Librarian core; hosted head `7505247e...`
+merged it through PR #169 as `d7a7e003...`. Exact executable `0665c486...`
+privately qualified Analyst as an internal candidate, and lock-only
+`8fee7a5c...` publishes its matching batch-invariant route lock. Analyst merge/
+product promotion, Coordinator, Auditor, and capacity/operations layers remain
+open.
 Phase 7
 implements provider-neutral
 OIDC verification with Entra policy, fail-closed authentication, tenant-scoped
@@ -1098,8 +1102,18 @@ and [Curator evidence](../evidence/curator-knowledge-proposals/VERIFICATION.md).
 Hosted-green head `593e627b...` passed all 12 checks, and PR #168 merged the
 slice as `284ab96b...`. Every Curator product surface remains open.
 
-Exact candidate `56b7f5d0...` qualifies Librarian as a no-LLM Server-IO read
-workflow, not as a merged or exposed product. The server pins retrieval to the
+The batch-invariant successor has separate evidence. Executable candidate
+`0665c486...` passed sequential lifecycle evidence `7cc016f4...` and route
+evidence `06277bd9...`; lock-only `8fee7a5c...` publishes the matching lock.
+The changed complex profile uses seed `0`, disables prefix caching, retains the
+full c8/8,192-token/`0.70` boundary, and held eight live owners with the ninth
+queued. At the lock-only successor, Curator, Scribe, Student, and Librarian
+freshly requalified and the aggregate governed gate passed. These exact-head
+records do not relabel the older merged receipts.
+
+Exact candidate `56b7f5d0...` qualified Librarian as a no-LLM Server-IO read
+workflow; hosted head `7505247e...` merged it through PR #169 as `d7a7e003...`.
+It remains unexposed. The server pins retrieval to the
 authenticated permission view and active generation, suppresses hidden nodes
 and links before limiting, and records content-free terminal audits. Its actual
 eight-normal-owner wave entered the broker; the Server-IO capacity probe held
@@ -1109,9 +1123,22 @@ zero proposal writes, exact audits, and six-part teardown passed. Exact
 predecessor `ecdcb8ee...` is terminal/inadmissible because only seven owners
 entered broker submission. See the
 [Librarian evidence](../evidence/librarian-permission-safe-evidence/VERIFICATION.md).
-Hosted review, merge, endpoints, UI, and production operation remain pending.
+Endpoints, UI, and production operation remain pending.
 
-A fresh post-aggregate observation on 2026-08-12 found Qwen rapid warm and the
+Exact executable candidate `0665c486...` privately qualifies Analyst as an
+internal complex-route workflow. Analyst first obtains a permission-safe
+Librarian pack, reauthorizes its exact current generation in transaction, and
+accepts only model-selected whole evidence-item indexes. The server derives the
+bounded answer and citations; unavailable, stale, invalid, cancellation,
+deadline, replay-conflict, and cross-owner paths publish no answer. Three
+synchronized repeat waves matched 24 of 24 normals, all 29 terminals matched,
+and 12 answers contained 15 server-owned citations. Lock-only `8fee7a5c...`
+publishes the matching route lock. See the
+[Analyst evidence](../evidence/analyst-grounded-cited-answers/VERIFICATION.md).
+Hosted review/merge, every endpoint/UI surface, and production operation remain
+pending.
+
+A post-aggregate observation on 2026-08-12 found Qwen rapid warm and the
 broker active against exact rapid profile hash `14712e69...`; the observed
 rapid limit was four active distinct owners rather than one. That transient
 read-back is not an availability claim. Gemma's complex limit of eight was

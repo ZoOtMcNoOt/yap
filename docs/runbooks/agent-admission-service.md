@@ -10,7 +10,7 @@ native/server workflow merged through PR #164 as `ec3af506...`. Simultaneous
 full-profile residency, sustained capacity, later workflows, and production
 operations evidence remain open.
 
-The current protected successor derives active route limits from the immutable
+The merged profile-capacity successor derives active route limits from the immutable
 service profiles (four rapid, eight complex) while retaining Server IO at one
 and one active request per owner globally. Exact route head `dab19fe...`
 qualified both unchanged full profiles sequentially; exact workflow head
@@ -21,6 +21,16 @@ enablement remains open. The earlier one-slot
 contract below is retained as historical exact-head evidence. Do not use the
 selected-route limits as sustained-capacity, simultaneous-residency, or
 production-SLO evidence.
+
+The current batch-invariant successor has separate evidence. Exact executable
+`0665c486...` passed sequential lifecycle evidence `7cc016f4...` and route
+evidence `06277bd9...`; lock-only `8fee7a5c...` publishes the matching lock. The
+full complex profile uses seed `0`, disables prefix caching, and retains its c8/
+8,192-token/`0.70` boundary. Its live probe held eight and queued the ninth
+without changing provider/broker identity. At the lock-only successor, affected
+workflow and aggregate gates freshly passed. This remains internal selected-
+route and same-warm-process evidence, not cross-start/global determinism,
+sustained capacity, or production enablement.
 
 ## Ownership and safety boundary
 
@@ -137,8 +147,8 @@ and exact teardown. These are admission-contract checks. They are not
 simultaneous-model, capacity, production-availability, endpoint, or deployment
 evidence.
 
-That paragraph is historical evidence for the merged one-slot head. The current
-successor's exact route head `dab19fe...` returned
+That paragraph is historical evidence for the merged one-slot head. The merged
+profile-capacity successor's exact route head `dab19fe...` returned
 `required-workload-routes-qualified` with public-safe evidence SHA-256
 `96228914...`; it admitted Qwen and Gemma sequentially on unchanged full
 profiles and completed exact teardown. Exact `7cd24deb...` workflow gates held
@@ -151,20 +161,29 @@ Exact aggregate/public-lock head `7f896b34...` returned
 PR #168 merged as `284ab96b...`; none of these facts is a sustained-load or
 production-availability claim.
 
-Exact `56b7f5d0...` separately qualified the no-LLM Librarian candidate on the
+Exact `56b7f5d0...` separately qualified the no-LLM Librarian core on the
 Server-IO route: one owner was active, the second queued, cancellation and
 acknowledgement completed, every probe lease was contained, and broker identity
 remained unchanged. The actual synchronized normal-owner wave submitted all
 eight owners. Librarian acquired no model-route lease. This is workflow
-qualification, not sustained-capacity or production evidence; hosted review and
-merge remain pending. See the
+qualification, not sustained-capacity or production evidence. Hosted head
+`7505247e...` merged it through PR #169 as `d7a7e003...`. See the
 [Librarian evidence](../evidence/librarian-permission-safe-evidence/VERIFICATION.md).
+
+Exact executable `0665c486...` privately qualified Analyst on the complex route;
+lock-only `8fee7a5c...` publishes the matching route lock. Three synchronized
+repeat waves matched 24 of 24 normal invocations and all 29 terminal outcomes.
+This qualifies an unmerged internal workflow, not a product endpoint or
+production service. See the
+[Analyst evidence](../evidence/analyst-grounded-cited-answers/VERIFICATION.md).
 
 ## Later enablement and recovery
 
 Do not enable or start the admission unit until all of these are true:
 
-1. PRs #158 and #168 have passed hosted exact-head review and merged (complete);
+1. PRs #158, #168, and #169 have passed hosted exact-head review and merged
+   (complete); Analyst hosted review/merge remains separate from service
+   enablement;
 2. the selected provider topology has passed simultaneous-residency evidence;
 3. the authenticated Python workflow owns cancellation through final worker
    termination and can prove no work survives a released lease; and

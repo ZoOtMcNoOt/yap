@@ -112,6 +112,15 @@ than adding a second container owner. This option is selected.
   product consumer; exact head `e5858424...` passed its private gate with
   public-safe semantic evidence SHA-256 `5e187ed4...`, and hosted-green head
   `bc9a88bc...` merged through PR #164 as `ec3af506...`.
+- Exact batch-invariant executable candidate `0665c486...` reran the two full
+  service lifecycles sequentially with public-safe evidence SHA-256
+  `7cc016f4...`, then returned `required-workload-routes-qualified` with
+  public-safe evidence SHA-256 `06277bd9...`. Lock-only successor `8fee7a5c...`
+  publishes the matching route lock. The Gemma profile now owns batch-invariant
+  request execution with prefix caching disabled; its exact warm identity held
+  through the affected workflow gates. This remains sequential lifecycle and
+  same-warm-process evidence, not simultaneous residency, cross-start/global
+  determinism, sustained capacity, or a production SLO.
 
 ## Action items
 

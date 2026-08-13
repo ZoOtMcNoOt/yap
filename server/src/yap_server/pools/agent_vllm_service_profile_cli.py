@@ -55,10 +55,13 @@ def main(arguments: list[str] | None = None) -> int:
         str(profile.resources.pids_limit),
         str(profile.resources.shm_bytes),
         str(profile.resources.tmpfs_bytes),
+        "1" if profile.batch_invariant else "0",
         str(len(profile.launch_arguments)),
         *profile.launch_arguments,
     ]
-    sys.stdout.buffer.write(b"\0".join(value.encode("utf-8") for value in values) + b"\0")
+    sys.stdout.buffer.write(
+        b"\0".join(value.encode("utf-8") for value in values) + b"\0"
+    )
     return 0
 
 
