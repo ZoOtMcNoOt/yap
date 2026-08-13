@@ -24,6 +24,10 @@ from yap_server.agents.coordinator_service import (
     CoordinatorContainmentError,
     CoordinatorService,
 )
+from yap_server.knowledge.vllm_reasoning_client import (
+    VllmRequestRejected,
+    VllmTransportNotContained,
+)
 from yap_server.agents.librarian import LibrarianEvidenceItem
 from yap_server.auth import AuthenticatedPrincipal
 from yap_server.knowledge.knowledge_proposals import CoordinatorEvidenceChanged
@@ -357,6 +361,62 @@ class CoordinatorServiceTests(unittest.TestCase):
         self.assertIsNone(view.bundle)
         self.assertLess(events.index("complete"), events.index("audit"))
         self.assertIsNone(auditor.records[-1]["bundle"])
+
+    def test_out_of_range_decision_is_audited_before_lease_completion(self) -> None:
+        events: list[str] = []
+        model = _Model(events, decision=CoordinatorDecision("bundle", (7,)))
+        service, admission, _, _, auditor, events = self._service(
+            events=events,
+            model=model,
+        )
+
+        view = service.coordinate(
+            _request(), principal=_principal(), cancellation=threading.Event()
+        )
+
+        self.assertEqual(view.status, "failed")
+        self.assertEqual(view.reason, "invalid-output")
+        self.assertEqual(admission.outcome, "completed")
+        self.assertLess(events.index("model"), events.index("complete"))
+        self.assertEqual(auditor.records[-1]["status"], "failed")
+        self.assertIsNone(auditor.records[-1]["bundle"])
+
+    def test_contained_model_rejection_is_audited_as_runtime_unavailable(self) -> None:
+        events: list[str] = []
+        model = _Model(events, error=VllmRequestRejected("rejected"))
+        service, admission, _, _, auditor, events = self._service(
+            events=events,
+            model=model,
+        )
+
+        view = service.coordinate(
+            _request(), principal=_principal(), cancellation=threading.Event()
+        )
+
+        self.assertEqual(view.status, "failed")
+        self.assertEqual(view.reason, "runtime-unavailable")
+        self.assertEqual(admission.outcome, "completed")
+        self.assertLess(events.index("complete"), events.index("audit"))
+        self.assertEqual(auditor.records[-1]["status"], "failed")
+
+    def test_uncontained_model_transport_fences_without_terminal_audit(self) -> None:
+        events: list[str] = []
+        model = _Model(events, error=VllmTransportNotContained("worker alive"))
+        service, admission, _, _, auditor, _ = self._service(
+            events=events,
+            model=model,
+        )
+
+        with self.assertRaisesRegex(
+            CoordinatorContainmentError,
+            "model transport was not contained",
+        ):
+            service.coordinate(
+                _request(), principal=_principal(), cancellation=threading.Event()
+            )
+
+        self.assertNotEqual(admission.outcome, "completed")
+        self.assertEqual(auditor.records, [])
 
     def test_model_can_abstain_without_a_bundle(self) -> None:
         events: list[str] = []

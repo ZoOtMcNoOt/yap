@@ -500,6 +500,15 @@ def read_coordinator_evidence_in_transaction(
         required_capability="knowledge.read",
         expected_generation_sha256=request.expected_generation_sha256,
     )
+    connection.execute(
+        "SELECT pg_advisory_xact_lock_shared(hashtextextended(%s, 1))",
+        (
+            json.dumps(
+                [principal.tenant_id, principal.subject_id],
+                separators=(",", ":"),
+            ),
+        ),
+    )
     rows = connection.execute(
         """SELECT p.proposal_id, p.generation_sha256, p.proposal_type,
                   p.proposed_content, p.source_citations, p.inherited_policy,
@@ -528,8 +537,9 @@ def read_coordinator_evidence_in_transaction(
                LIMIT 1
            ) a ON TRUE
            WHERE p.tenant_id = %s AND p.proposer_subject_id = %s
-             AND p.proposer_agent_id = 'curator' AND p.status = 'proposed'
-             AND p.generation_sha256 = %s
+              AND p.proposer_agent_id = 'curator' AND p.status = 'proposed'
+              AND p.proposal_type = 'summary'
+              AND p.generation_sha256 = %s
            ORDER BY p.proposal_id
            LIMIT %s""",
         (
@@ -640,7 +650,7 @@ def read_coordinator_evidence_in_transaction(
             row[1] != authorized.generation_sha256
             or row[4] != citation_wire
             or row[0] != _sha256(proposal_identity)
-            or row[2] not in {"summary", "relationship"}
+            or row[2] != "summary"
             or not isinstance(row[3], str)
             or not _valid_curator_lineage(
                 row[7:],

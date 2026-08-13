@@ -64,7 +64,7 @@ def _candidate(index: int) -> CoordinatorProposalCandidate:
             f"curator-evidence-{index}".encode()
         ).hexdigest(),
         generation_sha256="a" * 64,
-        proposal_type="summary" if index % 2 == 0 else "relationship",
+        proposal_type="summary",
         proposed_content=f"Reviewed proposal content {index}.",
         inherited_permission_sha256=hashlib.sha256(
             f"inherited-{index}".encode()
@@ -189,6 +189,7 @@ class CoordinatorContractTests(unittest.TestCase):
 
         for changes in (
             {"proposed_content": "Changed content."},
+            {"proposal_type": "relationship"},
             {"curator_request_sha256": "f" * 64},
             {"citation_sha256": "f" * 64},
             {"candidate_sha256": "f" * 64},

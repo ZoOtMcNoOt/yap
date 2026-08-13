@@ -17,6 +17,10 @@ from yap_server.knowledge.knowledge_tool_contract import (
     KnowledgeToolCancelled,
     KnowledgeToolTimedOut,
 )
+from yap_server.knowledge.vllm_reasoning_client import (
+    VllmRequestRejected,
+    VllmTransportNotContained,
+)
 
 from .admission_protocol import (
     AgentAdmission,
@@ -375,6 +379,7 @@ class CoordinatorService:
                 return view
 
             decision: CoordinatorDecision | None = None
+            bundle: CoordinatorProposalBundle | None = None
             model_reason: str | None = None
             try:
                 decision = self._model.select(
@@ -384,6 +389,9 @@ class CoordinatorService:
                 )
                 if not isinstance(decision, CoordinatorDecision):
                     raise ValueError("coordinator model decision type is invalid")
+                bundle = build_coordinator_proposal_bundle(request, evidence, decision)
+                if decision.outcome == "bundle" and bundle is None:
+                    raise ValueError("coordinator bundle decision produced no bundle")
             except KnowledgeToolCancelled:
                 view = self._cancelled_view(
                     ticket,
@@ -397,13 +405,17 @@ class CoordinatorService:
                 )
                 ticket_open = False
                 return view
-            except ReasoningRetryableError:
+            except (ReasoningRetryableError, VllmRequestRejected):
                 model_reason = "runtime-unavailable"
             except ValueError:
                 model_reason = "invalid-output"
-            except RuntimeError as error:
+            except VllmTransportNotContained as error:
                 raise CoordinatorContainmentError(
                     "coordinator model transport was not contained"
+                ) from error
+            except RuntimeError as error:
+                raise CoordinatorContainmentError(
+                    "coordinator model failed outside the bounded transport contract"
                 ) from error
 
             current = self._admission.status(ticket)
@@ -501,7 +513,6 @@ class CoordinatorService:
                     audit_deadline=audit_deadline,
                 )
 
-            bundle = build_coordinator_proposal_bundle(request, evidence, decision)
             if bundle is None:
                 raise CoordinatorContainmentError(
                     "coordinator bundle decision produced no bundle"

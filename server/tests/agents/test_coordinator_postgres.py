@@ -10,6 +10,7 @@ import psycopg
 
 from yap_server.agents import AgentAdmission, AgentAdmissionTicket, ExecutionRoute
 from yap_server.agents.coordinator import (
+    CoordinatorEvidencePack,
     CoordinatorProposalBundle,
     CoordinatorRequest,
     coordinator_request_sha256,
@@ -28,6 +29,7 @@ from yap_server.knowledge.knowledge_proposals import (
     CoordinatorEvidenceChanged,
     PostgresCoordinatorEvidenceReader,
     discard_knowledge_proposal,
+    read_coordinator_evidence_in_transaction,
 )
 
 from tests.agents.test_curator_postgres import (
@@ -312,6 +314,123 @@ class CoordinatorPostgresTests(unittest.TestCase):
                 "DELETE FROM yap_coordinator_result_audit WHERE tenant_id = %s",
                 (owner.tenant_id,),
             )
+            _cleanup(verification, owner.tenant_id)
+
+    def test_terminal_reauthorization_serializes_concurrent_owner_publication(
+        self,
+    ) -> None:
+        owner, principal, compiled = _active_generation()
+        _publish_curator_proposal(principal, compiled, 1)
+        citation = _citation(compiled, "Crash-safe private transcript")
+        second_request = CuratorRequest(
+            submission_id=f"coordinator-source-lock-{uuid4().hex}",
+            trigger="explicit-proposal",
+            expected_generation_sha256=compiled.generation_sha256,
+            reviewed_content="Coordinate the second reviewed release proposal.",
+            source_citations=(citation,),
+        )
+        second_evidence = PostgresCuratorEvidenceReader(_connect).read(
+            second_request,
+            principal=principal,
+            cancellation=threading.Event(),
+        )
+        request = CoordinatorRequest(
+            objective="Coordinate the reviewed release proposals.",
+            maximum_items=2,
+            expected_generation_sha256=compiled.generation_sha256,
+        )
+        reader_locked = threading.Event()
+        release_reader = threading.Event()
+        held_evidence: list[CoordinatorEvidencePack] = []
+
+        def hold_terminal_read() -> None:
+            with psycopg.connect(POSTGRES_DSN) as connection:
+                with connection.transaction():
+                    held_evidence.append(
+                        read_coordinator_evidence_in_transaction(
+                            connection,
+                            request,
+                            principal=principal,
+                        )
+                    )
+                    reader_locked.set()
+                    if not release_reader.wait(timeout=10):
+                        raise RuntimeError("coordinator lock test timed out")
+
+        publisher_connection = psycopg.connect(POSTGRES_DSN)
+        publisher_pid = publisher_connection.info.backend_pid
+
+        def publisher_factory():
+            return publisher_connection
+
+        publication: list[object] = []
+        publication_errors: list[BaseException] = []
+
+        def publish() -> None:
+            try:
+                publication.append(
+                    PostgresCuratorPublisher(
+                        publisher_factory,
+                        PostgresCuratorResultAuditor(
+                            publisher_factory,
+                            curator_runtime_identity(),
+                        ),
+                    ).publish(
+                        principal=principal,
+                        request_id=f"curator-for-coordinator-lock-{uuid4().hex}",
+                        request=second_request,
+                        evidence=second_evidence,
+                        provider_generation=11,
+                        started=time.monotonic(),
+                        deadline=time.monotonic() + 10,
+                        cancellation=threading.Event(),
+                    )
+                )
+            except BaseException as error:
+                publication_errors.append(error)
+
+        reader_thread = threading.Thread(target=hold_terminal_read)
+        publisher_thread = threading.Thread(target=publish)
+        try:
+            reader_thread.start()
+            self.assertTrue(reader_locked.wait(timeout=10))
+            publisher_thread.start()
+            waiting = False
+            deadline = time.monotonic() + 5
+            with psycopg.connect(POSTGRES_DSN) as observer:
+                while time.monotonic() < deadline:
+                    waiting = bool(
+                        observer.execute(
+                            """SELECT EXISTS (
+                                   SELECT 1 FROM pg_locks
+                                   WHERE pid = %s AND locktype = 'advisory'
+                                     AND NOT granted
+                               )""",
+                            (publisher_pid,),
+                        ).fetchone()[0]
+                    )
+                    if waiting:
+                        break
+                    time.sleep(0.02)
+            self.assertTrue(waiting)
+        finally:
+            release_reader.set()
+            reader_thread.join(timeout=10)
+            publisher_thread.join(timeout=10)
+        self.assertFalse(reader_thread.is_alive())
+        self.assertFalse(publisher_thread.is_alive())
+        self.assertEqual(publication_errors, [])
+        self.assertEqual(len(publication), 1)
+        self.assertEqual(len(held_evidence[0].candidates), 1)
+        current = PostgresCoordinatorEvidenceReader(_connect).read(
+            request,
+            principal=principal,
+            cancellation=threading.Event(),
+        )
+        self.assertEqual(len(current.candidates), 2)
+        self.assertNotEqual(held_evidence[0], current)
+
+        with psycopg.connect(POSTGRES_DSN) as verification:
             _cleanup(verification, owner.tenant_id)
 
 

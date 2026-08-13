@@ -29,7 +29,7 @@ COORDINATOR_MAXIMUM_EVIDENCE_WIRE_BYTES = 131_072
 
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _REQUEST_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
-_PROPOSAL_TYPES = {"summary", "relationship"}
+_PROPOSAL_TYPES = {"summary"}
 
 
 @dataclass(frozen=True, slots=True)

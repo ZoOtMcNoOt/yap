@@ -87,6 +87,8 @@ class _Connection(AbstractContextManager["_Connection"]):
             return _Cursor(self.proposal_rows)
         if "FROM yap_knowledge_concepts c" in normalized:
             return _Cursor(self.concept_rows)
+        if normalized.startswith("SELECT pg_advisory_xact_lock_shared"):
+            return _Cursor()
         if normalized.startswith("INSERT INTO yap_knowledge_tool_audit"):
             self.tool_audits.append(values)
             return _Cursor()
@@ -233,10 +235,14 @@ class CoordinatorKnowledgeProposalTests(unittest.TestCase):
             required_capability="knowledge.read",
             expected_generation_sha256="a" * 64,
         )
-        proposal_query = connection.executions[0]
+        owner_lock = connection.executions[0]
+        self.assertIn("pg_advisory_xact_lock_shared", owner_lock[0])
+        self.assertEqual(owner_lock[1], ('["tenant-1","owner-1"]',))
+        proposal_query = connection.executions[1]
         self.assertIn("p.proposer_subject_id = %s", proposal_query[0])
         self.assertIn("p.proposer_agent_id = 'curator'", proposal_query[0])
         self.assertIn("p.status = 'proposed'", proposal_query[0])
+        self.assertIn("p.proposal_type = 'summary'", proposal_query[0])
         self.assertEqual(proposal_query[1][0:3], ("tenant-1", "owner-1", "a" * 64))
 
     def test_reader_fails_closed_on_forged_proposal_or_curator_lineage(self) -> None:
