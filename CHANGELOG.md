@@ -3,6 +3,26 @@
 This changelog records product/architecture milestones. Exact test counts and
 immutable evidence belong in phase/checkpoint evidence records.
 
+## Unreleased — Archivist product vertical candidate
+
+- Exact executable `a2e9b551...` adds authenticated asynchronous Archivist
+  staging endpoints, native Tauri job/result ownership, bounded terminal
+  cancellation/quit reconciliation, and one explicit **Stage for knowledge**
+  action for completed server-batch transcripts. The server owns reviewed-source
+  derivation and stages a deterministic non-embedding generation without
+  activation.
+- Its owner-private ARM64 database/broker/HTTP gate returned
+  `archivist-authenticated-product-vertical-qualified` with public-safe evidence
+  SHA-256 `9ec9e373...`: 10/10 exact terminals, 9 staged requests, 1 queued
+  cancellation, 8 source admissions/staged generations, 0 active generations,
+  exact replay, two PostgreSQL restart/read-backs, and complete teardown.
+- Public server, renderer, native Rust, Playwright, production build, Ruff,
+  Clippy, and orchestrator checks are green; the exact-head required native WDIO
+  matrix passed 15/15. The private gate does not include a
+  native-to-renderer round trip or live enterprise identity provider. Hosted
+  exact-head review and merge remain pending, with no production-SLO,
+  simultaneous-residency, deployment, or knowledge-activation claim.
+
 ## 2026-08-13 — Librarian Knowledge product vertical merged
 
 - Exact candidate `e2ba1864...` adds authenticated asynchronous Librarian query

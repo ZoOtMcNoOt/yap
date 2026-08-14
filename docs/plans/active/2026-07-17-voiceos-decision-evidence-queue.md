@@ -918,8 +918,10 @@ unconfigured.
   internal role cores are merged. Exact `e2ba1864...` privately qualified the
   Librarian authenticated HTTP server boundary; hosted head `67a79ce2...`
   passed all 12 checks and PR #174 merged its HTTP/native/Knowledge surface as
-  `98af78c9...`. Archivist, Student, Curator, Analyst, Coordinator, and Auditor
-  product surfaces remain open. Proven
+  `98af78c9...`. Exact `a2e9b551...` privately qualified the unmerged Archivist
+  authenticated staging candidate with 10/10 exact server-side terminals, zero
+  activation, and exact teardown. Hosted Archivist merge plus Student, Curator,
+  Analyst, Coordinator, and Auditor product surfaces remain open. Proven
   selected-route capacity four/eight is
   not simultaneous-model residency, sustained capacity/SLO, or production
   evidence.

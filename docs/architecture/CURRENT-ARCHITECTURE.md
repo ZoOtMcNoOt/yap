@@ -40,9 +40,15 @@ complete teardown; its native/renderer path is exact-head public-test green.
 Hosted head `67a79ce2...` passed all 12 required checks, and PR #174 merged the
 vertical as `98af78c9...`. The private receipt does not qualify a native/renderer
 round trip or live enterprise identity-provider exchange.
-Archivist, Student, Curator, Analyst,
-Coordinator, and Auditor product exposure and the capacity/operations layers
-remain open.
+Exact executable `a2e9b551...` now adds and privately qualifies an unmerged
+Archivist product candidate: authenticated staging jobs, native-owned bearer and
+recording/result resolution, bounded terminal cancellation/quit reconciliation,
+and one renderer **Stage for knowledge** action.
+Its private gate matched 10/10 server-side terminals and left zero active
+generations with exact teardown. The native/renderer contract is exact-head
+public-test green rather than part of the private client run. Hosted Archivist
+review/merge, Student/Curator/Analyst/Coordinator/Auditor product exposure, and
+the capacity/operations layers remain open.
 Phase 7
 implements provider-neutral
 OIDC verification with Entra policy, fail-closed authentication, tenant-scoped
@@ -1048,7 +1054,20 @@ idempotent only when the durable admission and complete persisted non-embedding
 generation still match. Exact source candidate `3ec9885e...` passed the complete
 portable server suite plus real PostgreSQL retry/restart/cross-owner/cancel and
 zero-residue checks; hosted-green head `e1899db7...` passed all 12 checks and PR
-#165 merged the core as `2a7ec819...`. It has no HTTP/native/UI exposure.
+#165 merged the core as `2a7ec819...`.
+
+Exact product candidate `a2e9b551...` composes that unchanged core behind
+authenticated `POST /v1/archivist-ingestions` and owner-scoped `GET`/`DELETE`
+status/cancellation. The request carries only schema version, durable recording
+job ID, and expected result SHA-256; the server derives the reviewed capture and
+never accepts renderer-authored transcript bytes or activation authority. Native
+Rust owns bearer transport, recording-job/result resolution, lease lifecycle,
+restart recovery, and quit containment. React sends only a local recording ID
+and exposes one explicit **Stage for knowledge** action on a completed
+server-batch transcript. Its private ARM64 gate qualified the authenticated
+HTTP/database/broker boundary with 10/10 exact terminals, 9 staged requests, 1
+queued cancellation, 0 active generations, and exact teardown. Native/renderer
+behavior is public-test green; hosted review/merge remains pending.
 
 The merged internal Student core is a separate BACKGROUND_LLM workflow on the rapid
 route. It reads one authenticated owner-scoped permission-safe conversation

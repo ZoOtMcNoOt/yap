@@ -430,6 +430,7 @@ describe("Yap desktop shell", () => {
       );
       expect(connection.state).toBe("ready");
       expect(connection.capabilities).toEqual({
+        archivistIngestions: false,
         batchJobs: false,
         librarianQueries: false,
         liveStreaming: false,

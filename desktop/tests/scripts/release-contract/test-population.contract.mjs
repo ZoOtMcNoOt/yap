@@ -37,6 +37,7 @@ const MINIMUM_TESTS_PER_SPEC = Object.freeze({
   "app-queue.spec.ts": 1,
   "app-shortcuts.spec.ts": 1,
   "app.spec.ts": 6,
+  "archivist-ingestion.spec.ts": 1,
   "history-recoverable-actions.spec.ts": 1,
   "live-overlay.spec.ts": 13,
   "local-server-offer.spec.ts": 3,

@@ -42,6 +42,7 @@ fn stale_batch_connection_lease_cannot_commit_after_configuration_changes() {
                 job_status: true,
                 transcript_correction: false,
                 librarian_queries: false,
+                archivist_ingestions: false,
             },
         },
         |_| {},
@@ -85,6 +86,7 @@ fn transcript_correction_lease_requires_capability_and_cannot_commit_after_chang
                 job_status: false,
                 transcript_correction: false,
                 librarian_queries: false,
+                archivist_ingestions: false,
             },
         },
         |_| {},
@@ -116,6 +118,7 @@ fn transcript_correction_lease_requires_capability_and_cannot_commit_after_chang
                 job_status: false,
                 transcript_correction: true,
                 librarian_queries: false,
+                archivist_ingestions: false,
             },
         },
         |_| {},
@@ -158,6 +161,7 @@ fn librarian_lease_requires_capability_and_cannot_commit_after_change() {
                 job_status: false,
                 transcript_correction: false,
                 librarian_queries: false,
+                archivist_ingestions: false,
             },
         },
         |_| {},
@@ -186,6 +190,7 @@ fn librarian_lease_requires_capability_and_cannot_commit_after_change() {
                 job_status: false,
                 transcript_correction: false,
                 librarian_queries: true,
+                archivist_ingestions: false,
             },
         },
         |_| {},
@@ -199,6 +204,49 @@ fn librarian_lease_requires_capability_and_cannot_commit_after_change() {
     let committed = AtomicBool::new(false);
     assert!(connector
         .with_current_librarian_lease(&lease, || {
+            committed.store(true, Ordering::SeqCst);
+        })
+        .is_err());
+    assert!(!committed.load(Ordering::SeqCst));
+}
+
+#[test]
+fn archivist_lease_requires_capability_and_cannot_commit_after_change() {
+    let connector = ServerConnector::default();
+    connector.synchronize_settings_with(
+        &config::ServerSettings {
+            schema_version: config::CURRENT_SCHEMA_VERSION,
+            enabled: true,
+            base_url: Some("http://127.0.0.1:18765".into()),
+            authentication: None,
+        },
+        |_| {},
+    );
+    let (generation, _) = connector.begin_health_request_with(|_| {}).unwrap();
+    connector.accept_health_result_with(
+        generation,
+        client::HealthCheckResult::Ready {
+            api_version: "1".into(),
+            capabilities: ServerCapabilities {
+                batch_jobs: false,
+                live_streaming: false,
+                job_status: false,
+                transcript_correction: false,
+                librarian_queries: false,
+                archivist_ingestions: true,
+            },
+        },
+        |_| {},
+        |_, _, _| tauri::async_runtime::spawn(async {}),
+    );
+    let lease = connector
+        .archivist_connection_lease()
+        .unwrap()
+        .expect("ready Archivist-capable connector yields a lease");
+    connector.invalidate();
+    let committed = AtomicBool::new(false);
+    assert!(connector
+        .with_current_archivist_lease(&lease, || {
             committed.store(true, Ordering::SeqCst);
         })
         .is_err());
@@ -606,6 +654,7 @@ fn ready_batch_connector(origin: &str) -> ServerConnector {
                 job_status: true,
                 transcript_correction: false,
                 librarian_queries: false,
+                archivist_ingestions: false,
             },
         },
         |_| {},
@@ -656,7 +705,7 @@ fn delayed_health_response_cannot_mutate_a_new_settings_generation() {
         assert!(read > 0);
         request_started_tx.send(()).unwrap();
         release_response_rx.recv().unwrap();
-        let body = br#"{"service":"yap-server","status":"ok","apiVersion":"1","auth":"not_configured","capabilities":{"batchJobs":true,"liveStreaming":true,"jobStatus":true,"transcriptCorrection":true,"librarianQueries":true}}"#;
+        let body = br#"{"service":"yap-server","status":"ok","apiVersion":"1","auth":"not_configured","capabilities":{"batchJobs":true,"liveStreaming":true,"jobStatus":true,"transcriptCorrection":true,"librarianQueries":true,"archivistIngestions":true}}"#;
         write!(
             stream,
             "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",

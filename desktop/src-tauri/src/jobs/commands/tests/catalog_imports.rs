@@ -399,6 +399,16 @@ fn completed_remote_catalog_revalidates_the_immutable_result_before_history_proj
         .unwrap();
     let jobs = RecordingJobs::from_ledger(ledger, &dir);
 
+    let expected_result_sha256 = remote::read_published_remote_result_bundle(&output, &remote_jobs)
+        .unwrap()
+        .result_sha256;
+    let archivist_source = jobs
+        .archivist_ingestion_source("job-completed-catalog")
+        .unwrap();
+    assert_eq!(archivist_source.server_job_id, server_job_id);
+    assert_eq!(archivist_source.server_base_url, "http://127.0.0.1:18765");
+    assert_eq!(archivist_source.result_sha256, expected_result_sha256);
+
     let catalog = jobs.published_remote_transcript_catalog().unwrap();
     assert_eq!(catalog.sessions.len(), 1);
     assert_eq!(
@@ -447,6 +457,9 @@ fn completed_remote_catalog_revalidates_the_immutable_result_before_history_proj
     let mismatched_status = jobs.published_remote_transcript_catalog().unwrap();
     assert!(mismatched_status.sessions.is_empty());
     assert_eq!(mismatched_status.maintenance_warnings.len(), 1);
+    assert!(jobs
+        .archivist_ingestion_source("job-completed-catalog")
+        .is_err());
     let restored_status = rusqlite::Connection::open(&database).unwrap();
     restored_status
         .execute(
@@ -514,6 +527,9 @@ fn completed_remote_catalog_revalidates_the_immutable_result_before_history_proj
     let rejected = jobs.published_remote_transcript_catalog().unwrap();
     assert!(rejected.sessions.is_empty());
     assert_eq!(rejected.maintenance_warnings.len(), 1);
+    assert!(jobs
+        .archivist_ingestion_source("job-completed-catalog")
+        .is_err());
 
     assert!(jobs
         .snapshot(&MediaOwner::new(), 1_722_592_000_000)

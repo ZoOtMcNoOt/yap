@@ -3,15 +3,17 @@
 This record separates inherited merged evidence, focused repair checks, the
 completed and hosted-merged Phase 9 checkpoint gate, historical Phase 10 public
 read-backs, the frozen Librarian, Analyst, Coordinator, and Auditor successors,
-and the current post-Auditor-merge documentation closure. The Curator/profile-capacity successor is privately
+the merged Librarian product boundary, and the current privately qualified
+Archivist product candidate. The Curator/profile-capacity successor is privately
 qualified at exact protected heads and has a public-lock/aggregate result.
 Hosted-green head `593e627b...` passed all 12 checks, and PR #168 merged it as
 `284ab96b...`; hosted head `da1127f8...` later merged Analyst through PR #170 as
 `52c45d22...`, hosted head `53ee0152...` merged Coordinator through PR #171 as
 `67d836da...`, and hosted head `937a4129...` merged Auditor through PR #172 as
-`1b255e9a...`. Product exposure remains open. Historical inventories remain
-labeled at their exact heads. The final section records the exact current
-post-Auditor-merge threshold read-back.
+`1b255e9a...`. PR #174 later merged Librarian's product vertical. Archivist is a
+qualified unmerged candidate; five role product surfaces remain internal-only.
+Historical inventories remain labeled at their exact heads. The final section
+records the exact current Archivist-candidate threshold read-back.
 
 ## Inherited Phase 9 evidence
 
@@ -745,3 +747,52 @@ sustained capacity/fairness, production p50/p95/p99 or an SLO,
 simultaneous Qwen/Gemma residency, enterprise networking, and deployment remain
 open. Owner-private tenants, subjects, queries, evidence, database rows, paths,
 credentials, and individual measurements remain outside Git.
+
+## Phase 10 Archivist product-vertical successor public read-back
+
+Exact executable candidate `a2e9b55157799749ffc4eca32a92feabe63fba8e`
+returned `archivist-authenticated-product-vertical-qualified` with public-safe
+evidence SHA-256
+`9ec9e37353c2c89198f374efe0f474b8284e077455b4168eb345d6a1e7a76a4f`.
+The frozen acceptance-plan SHA-256 is
+`ebac7e6ecf35d73ab9d6f6c554e3f6dfb0aad00858fe89d1ac5d614a65f64b0a`.
+Eight synchronized authenticated owner calls plus exact replay and one queued
+cancellation matched all 10 terminals: nine staged and one cancelled. The gate
+proved strict bearer and owner isolation, source-drift failure, exact server-
+derived reviewed captures, source-bound single Server-IO leases, two owned
+PostgreSQL restart/read-backs, recording-job restart read-back, eight source
+admissions/staged generations, zero active generations, no model-route request,
+worker containment, and six-part database plus provider/broker teardown.
+
+At exact clean `163a409c...`, the portable server suite ran 1,548 tests: 1,501
+passed and 47 were declared skips. The governed fixed membership ran 173 tests:
+169 passed and four were declared skips. Whole-server Ruff, desktop 59-file/
+374-test unit coverage, TypeScript/production Vite, Playwright 42/42, desktop
+Rust 1,244 unit tests (1,233 passed and 11 expected ignored) plus all integration
+groups, strict desktop/orchestrator Clippy, orchestrator tests, focused gate 8/8,
+and `git diff --check` were green. Protected successor `e78746b5...` registered
+the existing Archivist E2E spec in the explicit population contract; that
+contract passed 3/3 and Playwright again passed 42/42. Exact executable
+`a2e9b551...` additionally closes native cancellation/quit ownership through
+terminal reconciliation and refreshes the complete native capability assertion.
+At that head, the portable server suite again passed 1,548 tests (1,501 + 47
+declared skips), the governed set passed 173 (169 + 4), whole-server Ruff was
+clean, desktop Vitest passed 59 files/374 tests, Playwright passed 42/42,
+desktop Rust passed 1,247 unit tests (1,236 passed and 11 expected ignored) plus
+all integration groups, strict Clippy/formatting, the focused Archivist gate
+passed 8/8, and required native WDIO passed 15/15.
+Against that executable successor, with this
+public documentation reconciliation applied, the current 250-line inventory
+enumerates 605 surfaces: 354 at or above 350 lines and 251 from 250 through 349.
+The exact 354 high-band path/line/disposition tuples are reproduced in
+[THRESHOLD-DISPOSITION.md](THRESHOLD-DISPOSITION.md).
+
+This record qualifies only the authenticated Archivist HTTP/database/broker
+boundary. Native/renderer behavior is exact-head public-test evidence and was
+not a private end-to-end client run. Archivist stages but does not embed or
+activate knowledge. Hosted exact-head review/merge, a live enterprise identity-
+provider exchange, sustained capacity/fairness, production p50/p95/p99 or an
+SLO, simultaneous Qwen/Gemma residency, enterprise networking, and deployment
+remain open. Owner-private tenants, subjects, source/review bytes, request and
+run identities, database rows, paths, credentials, and individual measurements
+remain outside Git.

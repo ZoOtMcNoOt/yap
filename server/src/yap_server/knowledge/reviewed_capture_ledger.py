@@ -145,6 +145,30 @@ def read_reviewed_capture(
     return _validated_capture_row(row)
 
 
+def read_reviewed_capture_for_result(
+    connection: Connection[object],
+    *,
+    principal: PrincipalKey,
+    job_id: str,
+    result_sha256: str,
+) -> ReviewedCaptureDescriptor | None:
+    row = connection.execute(
+        """SELECT tenant_id, owner_id, job_id, capture_sha256, result_sha256,
+                  review_sha256, normalized_okf_sha256, normalized_okf,
+                  result_payload
+           FROM yap_knowledge_reviewed_captures
+           WHERE tenant_id = %s AND owner_id = %s AND job_id = %s
+             AND result_sha256 = %s""",
+        (
+            principal.tenant_id,
+            principal.subject_id,
+            job_id,
+            result_sha256,
+        ),
+    ).fetchone()
+    return None if row is None else _validated_capture_row(row)
+
+
 def _validated_capture_row(row: tuple[object, ...]) -> ReviewedCaptureDescriptor:
     descriptor = ReviewedCaptureDescriptor(*row[:8])
     result_payload = row[8]
@@ -202,4 +226,5 @@ __all__ = [
     "append_reviewed_meeting_capture",
     "install_reviewed_capture_schema",
     "read_reviewed_capture",
+    "read_reviewed_capture_for_result",
 ]

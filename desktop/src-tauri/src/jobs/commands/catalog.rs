@@ -1,8 +1,8 @@
 use super::super::remote;
 use super::{
-    JobCommandError, PublishedRemoteTranscriptCatalog, PublishedRemoteTranscriptSummary,
-    PublishedSpeakerTranscript, PublishedSpeakerTranscriptTurn, RecordingJobs,
-    TranscriptLanguageStatus, TranscriptResultSummary, TranscriptTimingStatus,
+    ArchivistIngestionSource, JobCommandError, PublishedRemoteTranscriptCatalog,
+    PublishedRemoteTranscriptSummary, PublishedSpeakerTranscript, PublishedSpeakerTranscriptTurn,
+    RecordingJobs, TranscriptLanguageStatus, TranscriptResultSummary, TranscriptTimingStatus,
 };
 use crate::{
     jobs::{LanguageLabelReview, RecordingJobRecord, RecordingJobStatus, RecordingRoute},
@@ -49,6 +49,48 @@ fn summarize_result(
 }
 
 impl RecordingJobs {
+    pub(crate) fn archivist_ingestion_source(
+        &self,
+        job_id: &str,
+    ) -> Result<ArchivistIngestionSource, String> {
+        let record = self
+            .ledger()
+            .get_job(job_id)
+            .map_err(|_| "The recording job ledger is unavailable.".to_string())?
+            .ok_or_else(|| "The selected recording no longer exists.".to_string())?;
+        if !matches!(
+            (record.route, record.status),
+            (
+                Some(RecordingRoute::ServerBatch),
+                RecordingJobStatus::Complete | RecordingJobStatus::Partial
+            )
+        ) {
+            return Err(
+                "Only a finished organization-server transcript can be staged for knowledge."
+                    .into(),
+            );
+        }
+        let published = self
+            .load_source_bound_published_result(&record)
+            .map_err(|_| "The selected server transcript is no longer source-bound.".to_string())?;
+        let prepared = self
+            .ledger()
+            .get_prepared_remote_job(job_id)
+            .map_err(|_| "The recording job ledger is unavailable.".to_string())?
+            .ok_or_else(|| "The selected server transcript has no remote identity.".to_string())?;
+        let server_job_id = prepared.server_job_id.ok_or_else(|| {
+            "The selected server transcript has no server job identity.".to_string()
+        })?;
+        let server_base_url = prepared
+            .server_base_url
+            .ok_or_else(|| "The selected server transcript has no server origin.".to_string())?;
+        Ok(ArchivistIngestionSource {
+            server_job_id,
+            server_base_url,
+            result_sha256: published.bundle.result_sha256,
+        })
+    }
+
     pub(crate) fn published_remote_transcript_catalog(
         &self,
     ) -> Result<PublishedRemoteTranscriptCatalog, JobCommandError> {

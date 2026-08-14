@@ -32,6 +32,20 @@ class LiveRuntimeWiringTests(unittest.TestCase):
         close_runtime.assert_called_once_with(runtime)
         authorization_runtime.close.assert_called_once_with()
 
+    def test_archivist_cleanup_preserves_its_worker_containment_bound(self) -> None:
+        runtime = SimpleNamespace(close=Mock())
+        with patch.object(
+            server_main,
+            "run_cleanup_before_deadline",
+        ) as run_cleanup:
+            server_main._close_archivist_runtime_or_fail_stop(runtime)
+
+        run_cleanup.assert_called_once_with(
+            runtime.close,
+            timeout_seconds=server_main._ARCHIVIST_RUNTIME_CLEANUP_TIMEOUT_SECONDS,
+            thread_name="yap-server-archivist-cleanup",
+        )
+
     def test_main_keeps_authenticated_application_transport_on_loopback(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             settings = ServerSettings(
@@ -160,6 +174,7 @@ class LiveRuntimeWiringTests(unittest.TestCase):
             lid_preflight_service=None,
             asr_capabilities=None,
             librarian_query_service=librarian_runtime.service,
+            archivist_ingestion_service=None,
             transcript_correction_service=None,
         )
 
@@ -195,6 +210,100 @@ class LiveRuntimeWiringTests(unittest.TestCase):
 
         live_server.assert_not_called()
         authorization_runtime.close.assert_called_once_with()
+
+    def test_archivist_runtime_reuses_the_authoritative_recording_job_service(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            settings = ServerSettings(
+                authentication=ServerAuthenticationSettings(
+                    mode="entra",
+                    tenant_id=TENANT_ID,
+                    audience=AUDIENCE,
+                    required_scope="access_as_user",
+                    allowed_client_ids=(CLIENT_ID,),
+                    allowed_roles=("Yap.IdentityAdministrator",),
+                    identity_storage_dir=Path(temporary),
+                )
+            )
+            authorization_runtime = SimpleNamespace(
+                authenticator=Mock(),
+                close=Mock(),
+            )
+            jobs = object()
+            batch_runtime = SimpleNamespace(
+                service=jobs,
+                lid_preflight_service=object(),
+                asr_capabilities={"schemaVersion": 1, "providers": []},
+                close=Mock(),
+            )
+            archivist_runtime = SimpleNamespace(service=object(), close=Mock())
+            live_transport = Mock()
+            live_transport.start.return_value = live_transport
+
+            with (
+                patch.object(server_main.signal, "signal"),
+                patch.object(
+                    server_main.ServerSettings,
+                    "from_env",
+                    return_value=settings,
+                ),
+                patch.object(server_main, "build_request_authenticator"),
+                patch.object(
+                    server_main,
+                    "build_request_authorization_runtime",
+                    return_value=authorization_runtime,
+                ),
+                patch.object(
+                    server_main,
+                    "build_transcript_correction_runtime",
+                    return_value=None,
+                ),
+                patch.object(
+                    server_main,
+                    "build_librarian_runtime",
+                    return_value=None,
+                ),
+                patch.object(
+                    server_main,
+                    "build_batch_runtime",
+                    return_value=batch_runtime,
+                ),
+                patch.object(
+                    server_main,
+                    "build_archivist_runtime",
+                    return_value=archivist_runtime,
+                ) as build_archivist,
+                patch.object(
+                    server_main,
+                    "PrivateLiveWebSocketServer",
+                    return_value=live_transport,
+                ),
+                patch.object(
+                    server_main,
+                    "serve",
+                    side_effect=KeyboardInterrupt,
+                ) as serve,
+            ):
+                server_main.main()
+
+        build_archivist.assert_called_once_with(
+            server_main.os.environ,
+            authenticated_team_mode=True,
+            jobs=jobs,
+        )
+        serve.assert_called_once_with(
+            settings,
+            request_authenticator=authorization_runtime.authenticator,
+            job_service=jobs,
+            lid_preflight_service=batch_runtime.lid_preflight_service,
+            asr_capabilities=batch_runtime.asr_capabilities,
+            transcript_correction_service=None,
+            librarian_query_service=None,
+            archivist_ingestion_service=archivist_runtime.service,
+        )
+        archivist_runtime.close.assert_called_once_with()
+        batch_runtime.close.assert_called_once_with()
 
 
 if __name__ == "__main__":

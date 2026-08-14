@@ -6,6 +6,7 @@ import {
   projectHistorySearchDisplay,
 } from "@/components/history/history-search";
 import { visibleTranscriptChange } from "@/components/transcript-correction/transcript-correction-preview";
+import { archivistIngestionIsActive } from "@/archivist";
 import { transcriptCorrectionIsActive } from "@/transcript-correction";
 
 function cspSources(csp: string, directive: string) {
@@ -54,6 +55,15 @@ describe("product surface contracts", () => {
     expect(transcriptCorrectionIsActive("cancelled")).toBe(false);
     expect(transcriptCorrectionIsActive("complete")).toBe(false);
     expect(transcriptCorrectionIsActive("failed")).toBe(false);
+  });
+
+  it("classifies only server-owned in-flight Archivist states as active", () => {
+    expect(archivistIngestionIsActive("queued")).toBe(true);
+    expect(archivistIngestionIsActive("running")).toBe(true);
+    expect(archivistIngestionIsActive("cancellation-requested")).toBe(true);
+    expect(archivistIngestionIsActive("staged")).toBe(false);
+    expect(archivistIngestionIsActive("cancelled")).toBe(false);
+    expect(archivistIngestionIsActive("failed")).toBe(false);
   });
 
   it("marks the exact changed region while preserving shared source text", () => {

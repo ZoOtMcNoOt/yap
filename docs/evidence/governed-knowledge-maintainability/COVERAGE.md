@@ -12,13 +12,16 @@ Phase 9. Earlier phase and checkpoint acceptance is evidence, not an exemption.
 The Phase 9 delta receives deeper inspection, but it is not the coverage limit.
 
 The current read-back below extends the navigation and cohesion inventory
-through exact Librarian product candidate `e2ba1864...`. Its authenticated HTTP
-server boundary is privately qualified; hosted head `67a79ce2...` passed all 12
-checks and PR #174 merged its HTTP/native/Knowledge surface as `98af78c9...`. The numerical
-inventory is recomputed from this candidate with the public documentation
-reconciliation applied. This document does not claim a privately qualified
-native/renderer round trip, sustained capacity, simultaneous full-profile
-residency, production SLOs, deployment, or production promotion.
+through exact Archivist product candidate `a2e9b551...`. Its authenticated
+HTTP/server boundary is privately qualified; the native/renderer path is
+exact-head public-test green, and hosted review/merge remains pending. The
+threshold inventory is recomputed against that executable candidate with this
+public documentation reconciliation applied. The tracked-path and physical-line
+tables below remain the labeled merged Phase 9 inventory anchor; they are not
+silently relabeled as current. This document does not claim a privately
+qualified native/renderer round trip, knowledge activation, sustained capacity,
+simultaneous full-profile residency, production SLOs, deployment, or production
+promotion.
 
 ## Method and exclusions
 
@@ -168,12 +171,14 @@ The previously recorded Phase 10 Student candidate snapshot remains historical:
 527 in-scope surfaces at or above 250 physical lines, comprising 287 at or above
 350 and 240 from 250 through 349. It is not recomputed against this successor.
 
-At the current Librarian product-candidate documentation-successor tree, the inventory contains 598
+At the current Archivist product-candidate documentation-successor tree, the inventory contains 605
 in-scope tracked source, text, policy, and provenance surfaces at or above 250
-physical lines: 344 at or above 350 and 254 from 250 through 349. The completed
+physical lines: 354 at or above 350 and 251 from 250 through 349. The completed
 checkpoint reviews remain the authority for their historical exact heads. This
-freeze-time public read-back adds the Librarian HTTP, native query owner, native
-connector, UI, product gate, and affected shared server/desktop owners. The mutually exclusive rows below classify every one of the 344
+freeze-time public read-back adds the Archivist authenticated HTTP runner,
+native ingestion/connector owners, renderer action, product gate, OpenAPI
+contracts, and affected shared server/desktop owners. The mutually exclusive
+rows below classify every one of the 354
 decomposition-triggering surfaces. The exact path/line/disposition read-back is
 recorded in [THRESHOLD-DISPOSITION.md](THRESHOLD-DISPOSITION.md); generated
 OpenAPI, the package lock, dependency-inventory JSON, media, model artifacts,
@@ -184,33 +189,33 @@ decisions.
 | --- | ---: | --- |
 | `.github/workflows/*` | 2 | Retain the CI and release dependency DAGs as the two hosted policy owners. Jobs are already named by functional gate; extracting YAML fragments would hide exact-head ordering without removing authority. |
 | `desktop/src-tauri/migrations/*` | 1 | Retain the single current job-ledger schema as one atomic durable-state definition; obsolete migration branches are forbidden and were removed where found. |
-| `desktop/src-tauri/src/**` | 85 | Retain along existing functional module boundaries: app activation, audio session/coordinator, commands, job drain/ledger/remote state, language/live runtime, connector/auth, model adapters, trusted-source/correction revision, and the Librarian query/HTTP owners each own one state machine or transaction family. Inline tests remain beside their private Rust owners. The Librarian vertical adds no second credential or knowledge authority. |
+| `desktop/src-tauri/src/**` | 88 | Retain along existing functional module boundaries: app activation, audio session/coordinator, commands, job drain/ledger/remote state, language/live runtime, connector/auth, model adapters, trusted-source/correction revision, Librarian query/HTTP, and Archivist ingestion/HTTP owners each own one state machine or transaction family. Inline tests remain beside their private Rust owners. The product verticals add no second credential or knowledge authority. |
 | `desktop/src-tauri/tests/*` | 2 | Retain the two integration owners for audio foundation and model-download lifecycle; each crosses native components deliberately and owns no production state. |
-| `desktop/src/*` | 4 | Retain the application composer, live-overlay views, shared sidebar primitive, and settings-control hook as separate UI owners; native projected state remains authoritative. |
+| `desktop/src/*` | 5 | Retain the application composer, live-overlay views, shared sidebar primitive, settings-control hook, and bounded Archivist action owner as separate UI owners; native projected state remains authoritative. |
 | `desktop/tests/**` | 16 | Retain each functional E2E, WDIO, release-contract, inventory, or runner configuration owner, including the hand-written dependency-inventory script rather than its generated JSON products. These are scenario/gate compositions, not production authority; the mixed gate contracts already use named child boundaries. |
-| Current/normative `docs/**` excluding completed/archived plans and research | 20 | Retain each ADR, current architecture/status, active decision queue, active delivery plan, runbook, spec, and Voice OS document by taxonomy/decision owner. Stale current-state claims are repaired; these files are not executable modules. |
+| Current/normative `docs/**` excluding completed/archived plans and research | 21 | Retain each ADR, current architecture/status, active decision queue, active delivery plan, runbook, spec, evidence/coverage record, and Voice OS document by taxonomy/decision owner. Stale current-state claims are repaired; these files are not executable modules. |
 | `docs/plans/{archived,completed}/**` and `docs/research/**` | 11 | Retain as immutable historical delivery/evidence records. Rewriting or splitting them would damage provenance; current truth lives in current/normative documents. |
 | `infra/**` | 5 | Retain each process-group, supervisor, loopback proxy, resident lifecycle, and setup owner because containment must remain end to end within its script/process boundary. |
 | `server/librarian-workload-fixtures.json` | 1 | Retain the one frozen synthetic Librarian qualification corpus as a hand-maintained executable contract; it contains no private qualification output. |
 | `server/README.md` | 1 | Retain the server runbook as the single operator navigation surface; executable gates and source modules remain authoritative. |
 | `server/orchestrator/**` | 3 | Retain the supervisor as the provider-lifecycle owner, the admission scheduler as the bounded multi-user lease/fairness/capacity owner, and the hardware-independent integration suite as the end-to-end lifecycle contract. The frozen candidate derives rapid/complex active limits from immutable service profiles while preserving one active request per owner; configuration, protocol, dispatch, queue, terminal, and readiness concerns remain split across functional Rust modules. This is an ownership disposition, not capacity qualification. |
 | `server/src/yap_server/auth/**` | 3 | Retain identity repository, token validation, and OIDC metadata as separate trust-boundary owners. The obsolete identity migration was deleted; no caller-chosen tenant/subject path remains. |
-| `server/src/yap_server/evaluation/**` | 52 | Retain each named acceptance, corpus/review, scorer, runtime observation, lifecycle, qualification, and aggregate-decision owner. Librarian, Analyst, Coordinator, and Auditor keep their deterministic evaluation and exact-head gate owners separate; the Librarian product gate separately owns the authenticated HTTP composition proof. Public decisions, database lifecycle, broker probes, and publication boundaries do not become request-time owners. |
+| `server/src/yap_server/evaluation/**` | 53 | Retain each named acceptance, corpus/review, scorer, runtime observation, lifecycle, qualification, and aggregate-decision owner. Librarian, Analyst, Coordinator, and Auditor keep their deterministic evaluation and exact-head gate owners separate; the Librarian and Archivist product gates separately own their authenticated HTTP composition proofs. Public decisions, database lifecycle, broker probes, and publication boundaries do not become request-time owners. |
 | `server/src/yap_server/jobs/**` | 5 | Retain completion/store/runtime plus the single locked service aggregate. The 1,401-line service owns one `RLock`; pure policies may move only when they do not create a second job-state authority. |
 | `server/src/yap_server/knowledge/**` | 6 | Retain generation ledger, source admission, tool contract, compiler, proposal, and Postgres retrieval by transaction/protocol boundary. The proposal owner enforces unresolved capacity, transaction-owned Curator publication, and Coordinator's owner-scoped current-lineage projection while remaining noncanonical; activation stays outside it. Individual high-change surfaces are itemized below. |
 | `server/src/yap_server/lid/**` | 5 | Retain component lock, runtime/materialization, policy, and worker contract as the bounded acoustic-LID artifact/runtime decision family; selection and durable job state remain outside it. |
 | `server/src/yap_server/live/**` | 2 | Retain protocol and WebSocket server as separate contract/admission owners; neither owns ASR jobs, identity, or external production transport. |
 | `server/src/yap_server/meeting_transcription/**` | 3 | Retain container worker, immutable result-revision authority, and runtime provenance as distinct meeting execution/evidence owners; speaker naming remains outside scope. |
 | `server/src/yap_server/pools/**` | 13 | Retain provider-neutral pool contracts, the exact agent-service profile reader, and provider-specific engine/client/service/scheduler boundaries. Each large file owns one runtime or request protocol; no universal fallback/router was reintroduced. |
-| Other `server/src/yap_server/**` | 23 | Retain the HTTP application plus Archivist and the eight role semantic/lifecycle/audit owners as separate routing, validation, transport, persistence, and workflow boundaries. Librarian query jobs compose the existing core without moving identity, evidence, or knowledge authority into HTTP. |
+| Other `server/src/yap_server/**` | 24 | Retain the HTTP application plus Archivist and the eight role semantic/lifecycle/audit owners as separate routing, validation, transport, persistence, and workflow boundaries. Librarian query and Archivist ingestion jobs compose existing cores without moving identity, evidence, recording-result, or knowledge authority into HTTP. |
 | `server/tests/{auth,capabilities,contract}/**` | 6 | Retain by trust/contract owner; these suites intentionally enumerate adversarial token, metadata, catalog, public-contract, and OpenAPI cases. |
-| `server/tests/evaluation/**` | 25 | Retain one suite per corpus/runtime/qualification/evidence owner. Librarian, Analyst, Coordinator, and Auditor decision tests remain separate from their exact gates because only each gate owns subprocess, database, broker, HTTP composition, publication, and teardown orchestration. |
+| `server/tests/evaluation/**` | 26 | Retain one suite per corpus/runtime/qualification/evidence owner. Librarian, Analyst, Coordinator, Auditor, and Archivist product decision tests remain separate from their exact gates because only each gate owns subprocess, database, broker, HTTP composition, publication, and teardown orchestration. |
 | `server/tests/infra/**` | 4 | Retain end-to-end process/proxy/lifecycle harnesses because their failure cases span subprocess boundaries while production owners stay in `infra/`. |
 | `server/tests/jobs/**` | 8 | Retain suites by runtime, commit admission, contract, meeting result, processing, restart, recovery, and retention workflow. They share fixtures, not production state. |
 | `server/tests/knowledge/**` | 5 | Retain the compiler, proposal-authority contract, and three real-Postgres integration owners. Each is itemized below and the database lane requires every test with zero skips. |
 | `server/tests/{lid,live,model_pools,pools}/**` | 8 | Retain by component/runtime owner; these are bounded lifecycle, protocol, scheduler, and client integration suites inherited from reviewed earlier phases. |
-| Other `server/tests/**` | 17 | Retain Scribe, Student, Curator, Librarian, Analyst, Coordinator, and Auditor semantic/lifecycle/PostgreSQL suites beside their production owners. Auditor separates report/citation semantics, result-audit invariants, idle-only service containment, and real-Postgres authority behavior. |
-| `verification/**` | 8 | Retain each functional aggregate runner, hosted-closure, private-evidence, product-checkpoint, meeting-evidence, OIDC-owner, and checkout verifier. They compose existing children and publish no product state. |
+| Other `server/tests/**` | 18 | Retain Scribe, Archivist, Student, Curator, Librarian, Analyst, Coordinator, and Auditor semantic/lifecycle/PostgreSQL suites beside their production owners. Archivist separates reviewed-source semantics, product job composition, and real-Postgres authority behavior. |
+| `verification/**` | 9 | Retain each functional aggregate runner, hosted-closure, private-evidence, product-checkpoint, meeting-evidence, OIDC-owner/flow, and checkout verifier. They compose existing children and publish no product state. |
 
 This grouped inventory is exhaustive for the threshold at this tree, while the
 following individual decisions make the most coupled or changed owners directly
@@ -218,9 +223,22 @@ navigable.
 
 | Surface | Lines after remediation | Concrete owner justification |
 | --- | ---: | --- |
+| `desktop/src-tauri/src/archivist_ingestion.rs` | 408 | One native Archivist product aggregate binds a local recording identity to the durable remote job/result, owns one connector lease, monotonic staging state, cancellation, terminal retention, restart read-back, and quit containment; React never gains bearer or source-path authority. |
+| `desktop/src-tauri/src/server_connector/archivist.rs` | 430 | One strict authenticated HTTP client owns the bounded Archivist create/status/cancel wire, response-size and identity validation, and typed error projection; token acquisition, durable recording truth, and UI state remain separate owners. |
+| `desktop/src-tauri/src/jobs/commands/catalog.rs` | 389 | One native recording-catalog command owner projects durable jobs/results and local source identity to the UI and Archivist owner. It does not stage knowledge or acquire credentials. |
+| `desktop/src/components/panels/transcript-panel.tsx` | 365 | One transcript presentation owner renders playback/copy/reveal plus the bounded knowledge-staging state supplied by the Archivist hook; native projections remain authoritative and the panel performs no transport. |
+| `server/src/yap_server/agents/archivist_service.py` | 424 | One internal BACKGROUND_IO workflow owns the source-bound Server-IO lease, deterministic compile/stage lifecycle, typed failures, cancellation, and containment without accepting raw caller bytes or activating knowledge. |
+| `server/src/yap_server/agents/archivist_ingestion_service.py` | 464 | One bounded asynchronous product-job owner resolves authenticated durable recording results into reviewed captures, owns create/status/cancel and terminal retention, and delegates compilation to the existing Archivist core without creating a second source or knowledge authority. |
+| `server/src/yap_server/evaluation/archivist_product_qualification_gate.py` | 2,128 | One exact-head private product gate owns clean candidate admission, authenticated threaded HTTP composition, source-bound Server-IO lease evidence, owned PostgreSQL restart/read-back, replay/isolation/drift/cancellation proofs, public-safe create-once evidence, and exact teardown. |
+| `server/tests/agents/test_archivist.py` | 380 | One internal semantic/lifecycle suite protects reviewed-capture identity, deterministic compilation/staging, idempotent replay, cancellation, and no-activation behavior without duplicating product HTTP orchestration. |
+| `server/tests/evaluation/test_archivist_product_qualification_gate.py` | 566 | One gate suite protects acceptance/candidate closure, HTTP auth/isolation, exact canonical source derivation, source-bound lease/cardinality evidence, private/public receipt shape, restart read-back, and teardown. |
+| `server/tests/contract/contract_http_values.py` | 437 | One public HTTP contract registry enumerates operation IDs, capability fields, examples, runtime modes, schema names, and route paths for generated/spec drift detection; it owns no request execution. |
+| `server/tests/contract/test_examples_contract.py` | 370 | One OpenAPI/example contract suite proves capabilities, errors, examples, and schemas stay mutually consistent, including the Archivist feature flag and strict request/result shapes. |
+| `server/tests/jobs/test_runtime.py` | 1,051 | One runtime-composition suite spans the existing server modes and their fail-closed configuration matrices; service semantics remain in their dedicated owners and the suite creates no runtime fallback. |
+| `verification/mock-oidc-owner-flow.py` | 378 | One standalone synthetic OIDC owner-flow verifier exercises the existing mock-provider token lifecycle without becoming a production identity adapter or storing credentials. |
 | `desktop/src-tauri/src/librarian_query.rs` | 393 | One native Librarian request owner binds authenticated connector leases, monotonic query state, cancellation, terminal retention, capability/generation fencing, and shutdown containment without moving bearer or evidence authority into React. |
 | `desktop/src-tauri/src/server_connector/librarian.rs` | 516 | One strict native HTTP client owns the bounded Librarian request/result wire, response-size limit, span/content validation, and independent evidence-hash recomputation; credential acquisition and UI state remain separate owners. |
-| `server/src/yap_server/api/app.py` | 361 | One HTTP application composition root installs authenticated job, correction, capability, and Librarian request routes and owns startup/shutdown ordering; each protocol handler and runtime remains in its functional module. |
+| `server/src/yap_server/api/app.py` | 393 | One HTTP application composition root installs authenticated job, correction, capability, Librarian query, and Archivist ingestion routes and owns startup/shutdown ordering; each protocol handler and runtime remains in its functional module. |
 | `server/src/yap_server/jobs/service.py` | 1,401 | One `RLock` protects the server job aggregate: scheduling, cancellation, result publication, and recovery must not acquire a second state owner. Extract only pure policies if a future change establishes a real seam. |
 | `desktop/src-tauri/src/server_connector/transcript_correction.rs` | 498 | One strict authenticated HTTP client owns the bounded correction wire request/status/error projection. Credential acquisition remains in the connector dispatcher and source/publication authority remains in native Scribe owners. |
 | `desktop/src-tauri/src/transcript_correction/mod.rs` | 446 | One native request aggregate owns trusted-source admission, connector lease lifetime, monotonic server-state projection, cancellation, bounded terminal retention, and explicit publication dispatch. Source and revision mechanics are already separate modules. |

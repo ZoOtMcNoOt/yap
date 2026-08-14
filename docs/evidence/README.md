@@ -7,6 +7,7 @@ development checks from a one-time phase/checkpoint gate.
 Current architecture-review evidence:
 
 - [Archivist ingestion verification](archivist-ingestion/VERIFICATION.md)
+- [Archivist product-vertical verification](archivist-product-vertical/VERIFICATION.md)
 - [Agent admission profile-capacity verification](agent-admission-profile-capacity/VERIFICATION.md)
 - [Analyst grounded cited-answer verification](analyst-grounded-cited-answers/VERIFICATION.md)
 - [Auditor source-cited review-findings verification](auditor-source-cited-review-findings/VERIFICATION.md)

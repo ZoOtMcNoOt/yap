@@ -16,6 +16,7 @@ import { TranscriptPanel } from "@/components/panels/transcript-panel";
 import { WorkspaceHeader } from "@/components/panels/workspace-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useHistoryActions } from "@/hooks/use-history-actions";
+import { useArchivistIngestion } from "@/components/archivist/use-archivist-ingestion";
 import { useRecordingJobs } from "@/hooks/use-imported-recording-queue";
 import { useHistoryCatalogSync } from "@/hooks/use-history-catalog-sync";
 import { useHistorySpeakerTranscript } from "@/hooks/use-history-speaker-transcript";
@@ -88,6 +89,8 @@ export default function App() {
     selectedItem,
   } = useRecordingSelection({ history, queue });
   const speakerTranscript = useHistorySpeakerTranscript(displayedHistoryEntry);
+  const archivistEligible = selectedItem?.route === "serverBatch"
+    && isRecordingFinished(selectedItem.status);
   const {
     activeRail,
     closeDetails,
@@ -134,6 +137,11 @@ export default function App() {
     onStatusChange: setStatus,
   });
   const localServer = useLocalServerOffer({ serverState: settings.serverState });
+  const archivist = useArchivistIngestion({
+    available: settings.serverSnapshot.state === "ready"
+      && settings.serverSnapshot.capabilities.archivistIngestions,
+    recordingId: archivistEligible ? selectedItem?.id : undefined,
+  });
   const languageCatalog = settings.language.status?.capabilityCatalog;
   const languageOptions = useMemo(
     () => fixedBatchLanguageOptions(languageCatalog),
@@ -291,6 +299,16 @@ export default function App() {
       <TranscriptPanel
         elapsedSeconds={0}
         item={selectedItem}
+        knowledgeStaging={archivistEligible
+          ? {
+              active: archivist.active,
+              canStage: archivist.canStage,
+              error: archivist.error,
+              onStage: () => void archivist.stage(),
+              staged: archivist.view?.status === "staged",
+              statusLine: archivist.statusLine,
+            }
+          : undefined}
         onCopy={copyTranscript}
         onOpen={(path) => void openAppPath(path)}
         onOpenHelp={() => openWorkspace("help")}

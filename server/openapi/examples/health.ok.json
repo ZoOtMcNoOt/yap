@@ -8,6 +8,7 @@
     "liveStreaming": false,
     "jobStatus": false,
     "transcriptCorrection": false,
-    "librarianQueries": false
+    "librarianQueries": false,
+    "archivistIngestions": false
   }
 }

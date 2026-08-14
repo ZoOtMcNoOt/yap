@@ -338,7 +338,25 @@ fn finalize_owned_work_before_quit(app: &tauri::AppHandle) -> Result<(), String>
             "knowledge query shutdown cancellation was incomplete: {error}"
         ));
     }
+    let archivist_owner = app.state::<crate::archivist_ingestion::ArchivistIngestionOwner>();
+    if let Err(error) = cancel_archivist_ingestions_before_quit(&archivist_owner) {
+        crate::diagnostics::log(&format!(
+            "knowledge staging shutdown cancellation was incomplete: {error}"
+        ));
+    }
     Ok(())
+}
+
+pub(super) fn cancel_archivist_ingestions_before_quit(
+    owner: &crate::archivist_ingestion::ArchivistIngestionOwner,
+) -> Result<usize, String> {
+    tauri::async_runtime::block_on(async {
+        tokio::time::timeout(Duration::from_secs(5), owner.cancel_active_requests())
+            .await
+            .map_err(|_| {
+                "knowledge staging shutdown cancellation exceeded its bounded wait".to_string()
+            })?
+    })
 }
 
 pub(super) fn cancel_librarian_queries_before_quit(

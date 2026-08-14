@@ -1,4 +1,5 @@
 mod app;
+mod archivist_ingestion;
 mod atomic_file;
 mod atomic_text;
 pub mod audio;

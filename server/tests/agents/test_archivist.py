@@ -18,7 +18,10 @@ from yap_server.agents.archivist import (
     ArchivistRequest,
     compile_reviewed_capture_generation,
 )
-from yap_server.agents.archivist_service import ArchivistService
+from yap_server.agents.archivist_service import (
+    ArchivistContainmentError,
+    ArchivistService,
+)
 from yap_server.auth import AuthenticatedPrincipal
 from yap_server.knowledge.generation_ledger import KnowledgeGenerationDescriptor
 from yap_server.knowledge.knowledge_tool_contract import KnowledgeToolCancelled
@@ -109,6 +112,18 @@ class _Admission:
         return AgentAdmission(ticket, self.outcome)
 
 
+class _LostSubmitAdmission(_Admission):
+    def submit(self, ticket, **kwargs):
+        self.calls.append(("submit", ticket.request_id))
+        self.submission = kwargs
+        self.outcome = "not-found-or-unauthorized"
+        raise RuntimeError("admission response was lost")
+
+    def cancel(self, ticket):
+        self.calls.append(("cancel", ticket.request_id))
+        return AgentAdmission(ticket, "not-found-or-unauthorized")
+
+
 class _Processor:
     def __init__(self, *, error: BaseException | None = None) -> None:
         self.error = error
@@ -139,9 +154,7 @@ class _BlockingProcessor:
 class ArchivistTests(unittest.TestCase):
     def test_request_accepts_only_one_durable_capture_identity(self) -> None:
         self.assertEqual(
-            ArchivistRequest.from_wire(
-                {"schemaVersion": 1, "captureSha256": "a" * 64}
-            ),
+            ArchivistRequest.from_wire({"schemaVersion": 1, "captureSha256": "a" * 64}),
             _request(),
         )
         for value in (
@@ -311,6 +324,25 @@ class ArchivistTests(unittest.TestCase):
         self.assertEqual(
             [operation for operation, _ in admission.calls[-2:]],
             ["cancel", "acknowledge-cancellation"],
+        )
+
+    def test_lost_submit_response_requires_proven_ticket_containment(self) -> None:
+        admission = _LostSubmitAdmission()
+        service = ArchivistService(admission=admission, processor=_Processor())
+
+        with self.assertRaisesRegex(
+            ArchivistContainmentError,
+            "admission could not be contained",
+        ):
+            service.ingest(
+                _request(),
+                principal=_principal(),
+                cancellation=threading.Event(),
+            )
+
+        self.assertEqual(
+            [operation for operation, _ in admission.calls],
+            ["submit", "cancel"],
         )
 
 

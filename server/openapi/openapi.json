@@ -697,6 +697,144 @@
         }
       }
     },
+    "/v1/archivist-ingestions": {
+      "post": {
+        "tags": [
+          "agents"
+        ],
+        "summary": "Stage one reviewed server transcript for knowledge",
+        "description": "Starts one owner-bound Archivist ingestion from an immutable server recording result. The request carries only the server job identity and expected result hash; title, transcript, reviewer, tenant, subject, route, and activation authority remain server-owned.",
+        "operationId": "submitArchivistIngestion",
+        "x-yap-runtime-status": "Implemented only when the authenticated Archivist runtime verifies",
+        "x-yap-runtime-owner": "Archivist reviewed-source staging",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArchivistIngestionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "The owner-bound reviewed source was accepted for staging.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchivistIngestionJobView"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          }
+        }
+      }
+    },
+    "/v1/archivist-ingestions/{requestId}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ArchivistIngestionRequestId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "agents"
+        ],
+        "summary": "Read one owner-bound knowledge staging request",
+        "operationId": "getArchivistIngestion",
+        "x-yap-runtime-status": "Implemented only when the authenticated Archivist runtime verifies",
+        "x-yap-runtime-owner": "Archivist reviewed-source staging",
+        "responses": {
+          "200": {
+            "description": "The current bounded knowledge-staging lifecycle projection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchivistIngestionJobView"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/AuthenticationUnavailableResponse"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "agents"
+        ],
+        "summary": "Request cancellation of one owner-bound knowledge staging request",
+        "description": "Signals the in-flight reviewed-source staging operation and returns its cancellation-requested projection; status polling observes terminal acknowledgement.",
+        "operationId": "cancelArchivistIngestion",
+        "x-yap-runtime-status": "Implemented only when the authenticated Archivist runtime verifies",
+        "x-yap-runtime-owner": "Archivist reviewed-source staging",
+        "responses": {
+          "202": {
+            "description": "Cancellation was requested for the owned staging request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchivistIngestionJobView"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          }
+        }
+      }
+    },
     "/v1/jobs": {
       "post": {
         "tags": [
@@ -1446,6 +1584,18 @@
           "maxLength": 48,
           "pattern": "^librarian-query-[0-9a-f]{32}$"
         }
+      },
+      "ArchivistIngestionRequestId": {
+        "name": "requestId",
+        "in": "path",
+        "required": true,
+        "description": "Opaque Archivist product request identity scoped to the authenticated owner.",
+        "schema": {
+          "type": "string",
+          "minLength": 52,
+          "maxLength": 52,
+          "pattern": "^archivist-ingestion-[0-9a-f]{32}$"
+        }
       }
     },
     "responses": {
@@ -1834,6 +1984,90 @@
           },
           "evidencePack": {
             "$ref": "#/components/schemas/LibrarianEvidencePack"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+          }
+        }
+      },
+      "ArchivistIngestionRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "jobId",
+          "expectedResultSha256"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "jobId": {
+            "$ref": "#/components/schemas/JobId"
+          },
+          "expectedResultSha256": {
+            "$ref": "#/components/schemas/Sha256"
+          }
+        }
+      },
+      "ArchivistIngestionJobView": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "requestId",
+          "status",
+          "jobId",
+          "resultSha256"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "requestId": {
+            "type": "string",
+            "minLength": 52,
+            "maxLength": 52,
+            "pattern": "^archivist-ingestion-[0-9a-f]{32}$"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "cancellation-requested",
+              "staged",
+              "cancelled",
+              "failed"
+            ]
+          },
+          "jobId": {
+            "$ref": "#/components/schemas/JobId"
+          },
+          "resultSha256": {
+            "$ref": "#/components/schemas/Sha256"
+          },
+          "captureSha256": {
+            "$ref": "#/components/schemas/Sha256"
+          },
+          "sourceAdmissionSha256": {
+            "$ref": "#/components/schemas/Sha256"
+          },
+          "generationSha256": {
+            "$ref": "#/components/schemas/Sha256"
+          },
+          "conceptCount": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "permissionCount": {
+            "type": "integer",
+            "minimum": 1
           },
           "reason": {
             "type": "string",
@@ -4499,7 +4733,8 @@
           "liveStreaming",
           "jobStatus",
           "transcriptCorrection",
-          "librarianQueries"
+          "librarianQueries",
+          "archivistIngestions"
         ],
         "properties": {
           "batchJobs": {
@@ -4521,6 +4756,10 @@
           "librarianQueries": {
             "type": "boolean",
             "description": "True only when authenticated permission-safe Librarian queries are configured."
+          },
+          "archivistIngestions": {
+            "type": "boolean",
+            "description": "True only when authenticated reviewed-source Archivist staging is configured."
           }
         }
       },

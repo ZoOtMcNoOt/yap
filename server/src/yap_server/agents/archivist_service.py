@@ -286,9 +286,7 @@ class ArchivistService:
         cancelled = self._admission.cancel(ticket)
         expected = _expected_cancellation_outcome(cancelled)
         if expected is None:
-            raise ArchivistContainmentError(
-                "archivist cancellation was not admitted"
-            )
+            raise ArchivistContainmentError("archivist cancellation was not admitted")
         terminal = self._admission.acknowledge_cancellation(ticket)
         if terminal.outcome != expected:
             raise ArchivistContainmentError(
@@ -339,7 +337,7 @@ class ArchivistService:
                     "cancelled",
                     "completed",
                     "deadline-exceeded",
-                    "not-found-or-unauthorized",
+                    "provider-unavailable",
                 }
         except BaseException:
             contained = False

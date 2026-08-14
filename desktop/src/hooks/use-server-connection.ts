@@ -22,6 +22,7 @@ const initialServerSnapshot: ServerConnectionSnapshot = {
     jobStatus: false,
     transcriptCorrection: false,
     librarianQueries: false,
+    archivistIngestions: false,
   },
   errorCode: null,
 };
