@@ -253,8 +253,8 @@ and qualified the nonmutating Curator core with public-safe evidence
 SHA-256 `b60df1e2...`; exact aggregate/public-lock head `7f896b34...` passed with
 public-safe evidence SHA-256 `fd197b98...`. Hosted-green head `593e627b...`
 passed all 12 checks, and PR #168 merged the slice as `284ab96b...`. Student
-product exposure later merged through PR #178; Curator product qualification
-and merge remain open. Exact `56b7f5d0...` privately qualified
+product exposure later merged through PR #178 and Curator product exposure
+through PR #179. Exact `56b7f5d0...` privately qualified
 Librarian; hosted head `7505247e...` merged it through PR #169 as `d7a7e003...`.
 Exact executable `0665c486...` then privately qualified Analyst's grounded
 cited-answer internal core; lock-only `8fee7a5c...` publishes the matching
@@ -279,9 +279,14 @@ qualified Student with 11/11 exact server-side
 terminals, authenticated question endpoints, native-owned transport/validation,
 and a source-bound renderer action. Hosted head `53ce570b...` passed all 12
 checks and PR #178 merged it as `6546970b...`. Exact `6aa33e4d...` privately
-qualifies the current Curator product server boundary with 10/10 exact terminals
-and public-safe evidence SHA-256 `328f6640...`; Curator hosted merge plus
-Analyst, Coordinator, and Auditor product exposure remain open. Proven selected-route
+qualified the Curator product server boundary with 10/10 exact terminals and
+public-safe evidence SHA-256 `328f6640...`; hosted head `b983adb7...` passed all
+12 checks and PR #179 merged it as `70303872...`. Exact `78b2c638...` now
+privately qualifies Analyst's authenticated product server boundary with 10/10
+exact terminals, 4 exact cited answers, 5 unavailable results, 1 cancelled
+request, two PostgreSQL restart/read-backs, complex-c8/ninth-owner-queued
+containment, and public-safe evidence SHA-256 `f26adfc0...`. Analyst hosted
+merge plus Coordinator and Auditor product exposure remain open. Proven selected-route
 limits of four rapid/eight complex are not simultaneous-model,
 sustained-capacity, or production-SLO evidence. One Spark cannot retain both
 unchanged full profiles simultaneously, so warm two-route promotion requires a
@@ -300,7 +305,7 @@ citations, exact audit/restart read-back, and teardown—not autonomous action o
 product readiness. Auditor additionally proves idle-only blocking/resumption,
 one lease per invocation, server-owned finding/citation derivation, exact
 audit/restart read-back, and teardown—not scheduled autonomy or product
-readiness. The current public server read-back is 1,501 tests: 1,454 passed and
+readiness. The current public server read-back is 1,603 tests: 1,556 passed and
 47 declared skips. The governed fixed membership is 173 tests: 169 passed and
 four declared skips.
 

@@ -1,6 +1,6 @@
 # ADR 0031: Eight-agent Voice OS roster and execution boundaries
 
-**Status:** Accepted target; all eight bounded role cores and the Scribe/Librarian/Archivist/Student product surfaces are merged; Curator has a privately qualified unmerged successor; three product surfaces and promotion remain open
+**Status:** Accepted target; all eight bounded role cores and five product surfaces are merged; Analyst has a privately qualified unmerged product successor; Coordinator/Auditor product surfaces and promotion remain open
 **Date:** 2026-08-11
 **Deciders:** Yap product and engineering owner
 **Amends:** [ADR 0006](0006-silero-agents-state-machine.md),
@@ -13,7 +13,7 @@
 ## Context
 
 The product architecture names eight agents, and the merged system now delivers
-all eight as bounded internal role cores. Scribe, Librarian, Archivist, and Student have current
+all eight as bounded internal role cores. Scribe, Librarian, Archivist, Student, and Curator have current
 product surfaces in the merged product. Exact `e2ba1864...` privately qualified
 Librarian's authenticated HTTP server boundary; hosted head `67a79ce2...` passed
 all 12 checks, and PR #174 merged the HTTP/native/Knowledge vertical as
@@ -25,10 +25,14 @@ qualified Student with authenticated question
 jobs, native-owned transport/validation, and a source-bound renderer action;
 its private gate covers the authenticated server boundary rather than a live
 native/renderer run. Hosted head `53ce570b...` passed all 12 checks, and PR #178
-merged the vertical as `6546970b...`. Exact `6aa33e4d...` privately qualifies
-the current Curator successor's authenticated server boundary with 10/10 exact
-terminals and public-safe evidence SHA-256 `328f6640...`; its HTTP/native/
-renderer candidate remains unmerged pending hosted review. Phase 9 merged the
+merged the vertical as `6546970b...`. Exact `6aa33e4d...` privately qualified
+Curator's authenticated server boundary with 10/10 exact terminals and public-
+safe evidence SHA-256 `328f6640...`; hosted head `b983adb7...` passed all 12
+checks and PR #179 merged the vertical as `70303872...`. Exact `78b2c638...`
+now privately qualifies Analyst's authenticated cited-answer server boundary
+with 10/10 exact product terminals and public-safe evidence SHA-256
+`f26adfc0...`; its HTTP/native/renderer successor remains unmerged pending
+hosted review. Phase 9 merged the
 governed knowledge, tool, retrieval, terminology,
 and two qualified reasoning-route foundations. Phase 10
 Slices 10.1 and 10.2 merged the Rust-supervised lifecycle and exact Qwen rapid/
@@ -64,7 +68,8 @@ queued, exact PostgreSQL lifecycle/read-back, and teardown. Curator may append
 only a noncanonical proposal; it cannot activate or mutate source truth.
 Hosted-green head `593e627b...` passed all 12 checks, and PR #168 merged the
 Curator/profile-capacity slice as `284ab96b...` on 2026-08-13. Curator product
-qualification and merge remain open. Exact head `56b7f5d0...` privately qualified the no-LLM
+qualification later passed at `6aa33e4d...`, and PR #179 merged that vertical.
+Exact head `56b7f5d0...` privately qualified the no-LLM
 Librarian permission-safe evidence core across an actual eight-owner broker
 wave, ten exact invocations, Server-IO one-active/second-queued containment,
   PostgreSQL restart/read-back, and exact teardown. Hosted head `7505247e...`
@@ -353,9 +358,12 @@ head `da1127f8...` merged Analyst through PR #170 as `52c45d22...`; hosted head
 product vertical later merged through PR #174; Archivist's product vertical
 merged through PR #177. Exact `778a7545...` privately qualified Student, and
 hosted head `53ce570b...` merged the product vertical through PR #178 as
-`6546970b...`. Exact `6aa33e4d...` privately qualifies Curator's product
-successor with public-safe evidence SHA-256 `328f6640...`; Analyst, Coordinator,
-and Auditor product exposure, Curator hosted merge, warm
+`6546970b...`. Exact `6aa33e4d...` privately qualified Curator's product
+successor with public-safe evidence SHA-256 `328f6640...`; hosted head
+`b983adb7...` passed all 12 checks and PR #179 merged it as `70303872...`.
+Exact `78b2c638...` privately qualifies Analyst's product server boundary with
+public-safe evidence SHA-256 `f26adfc0...`; Analyst hosted merge plus Coordinator
+and Auditor product exposure, warm
 simultaneous two-route residency, sustained multi-owner capacity, and production
 promotion remain open.
 One Spark cannot retain the

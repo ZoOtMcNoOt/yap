@@ -22,10 +22,10 @@ profiles sequentially, exact workflow head `7cd24deb...` qualified Scribe,
 Student, and Curator, and public-lock/aggregate head `7f896b34...` passed the
 governed gate. Hosted-green head `593e627b...` passed all 12 checks, and PR #168
 merged the profile-capacity successor and Curator internal core as
-`284ab96b...`. Exact successor `6aa33e4d...` privately qualifies the current
-HTTP/native/renderer Curator product candidate's authenticated server boundary
-with 10/10 exact terminals and public-safe evidence SHA-256 `328f6640...`; the
-product vertical remains unmerged pending hosted review. Exact
+`284ab96b...`. Exact successor `6aa33e4d...` privately qualified the Curator
+product vertical's authenticated server boundary with 10/10 exact terminals and
+public-safe evidence SHA-256 `328f6640...`; hosted head `b983adb7...` passed all
+12 checks, and PR #179 merged it as `70303872...`. Exact
 `56b7f5d0...` qualified the no-LLM Librarian core; hosted head `7505247e...`
 merged it through PR #169 as `d7a7e003...`. Exact executable `0665c486...`
 privately qualified Analyst, and lock-only `8fee7a5c...` publishes its matching
@@ -57,9 +57,12 @@ native-owned bearer/response validation, and a source-bound renderer action
 beside permission-safe Librarian evidence. Its private gate proves the
 authenticated server boundary, not a live native/renderer round trip. Hosted
 head `53ce570b...` passed all 12 required checks, and PR #178 merged it as
-`6546970b...`. Curator's public-green candidate still requires private
-qualification and hosted merge; Analyst/Coordinator/Auditor product exposure
-and the capacity/operations layers remain open.
+`6546970b...`. Exact product successor `78b2c638...` privately qualifies
+Analyst's authenticated cited-answer server boundary with 10/10 exact terminals
+and public-safe evidence SHA-256 `f26adfc0...`; its native/renderer composition
+is public-test green, but the candidate remains unmerged pending hosted review.
+Coordinator/Auditor product exposure and the capacity/operations layers remain
+open.
 Phase 7
 implements provider-neutral
 OIDC verification with Entra policy, fail-closed authentication, tenant-scoped
@@ -1171,10 +1174,10 @@ proposal jobs, native-owned transport/lifecycle validation, and one reviewed
 renderer action. Its owner-private ARM64 gate qualified the authenticated
 server boundary with 10/10 exact terminals, exact source-truth preservation,
 two PostgreSQL restart/read-backs, complex c8/ninth-owner-queued containment,
-and complete teardown; public-safe evidence SHA-256 is `328f6640...`. The
-product candidate is admitted at that exact head but remains unmerged pending
-hosted review. The private receipt does not qualify a native/renderer round trip
-or live enterprise identity-provider exchange. See the
+and complete teardown; public-safe evidence SHA-256 is `328f6640...`. Hosted
+head `b983adb7...` passed all 12 required checks, and PR #179 merged the product
+vertical as `70303872...`. The private receipt does not qualify a native/
+renderer round trip or live enterprise identity-provider exchange. See the
 [Curator product record](../evidence/curator-product-vertical/VERIFICATION.md).
 
 The batch-invariant successor has separate evidence. Executable candidate
@@ -1199,7 +1202,7 @@ zero proposal writes, exact audits, and six-part teardown passed. Exact
 predecessor `ecdcb8ee...` is terminal/inadmissible because only seven owners
 entered broker submission. See the
 [Librarian evidence](../evidence/librarian-permission-safe-evidence/VERIFICATION.md).
-Endpoints, UI, and production operation remain pending.
+Production operation and live enterprise identity integration remain pending.
 
 Exact executable candidate `0665c486...` privately qualified Analyst as an
 internal complex-route workflow. Analyst first obtains a permission-safe
@@ -1212,8 +1215,16 @@ and 12 answers contained 15 server-owned citations. Lock-only `8fee7a5c...`
 publishes the matching route lock. See the
 [Analyst evidence](../evidence/analyst-grounded-cited-answers/VERIFICATION.md).
 Hosted head `da1127f8...` passed all 12 checks, and PR #170 merged the core as
-`52c45d22...`. Every endpoint/UI surface and production operation remain
-pending.
+`52c45d22...`. Exact successor `78b2c638...` composes this core into
+authenticated create/status/cancel answer jobs, native-owned bearer and strict
+citation/result validation, and an explicit cited-answer renderer beside
+Librarian evidence. Its private gate matched all 10 product terminals across 8
+owners, including 4 exact server-derived answers, 5 unavailable results, and 1
+fail-closed cancellation; it completed two PostgreSQL restart/read-backs,
+complex-c8/ninth-owner-queued containment, and exact teardown. The candidate is
+unmerged pending hosted review; the private receipt does not qualify a native/
+renderer round trip or live enterprise identity-provider exchange. See the
+[Analyst product record](../evidence/analyst-product-vertical/VERIFICATION.md).
 
 Exact executable candidate `fed729b3...` privately qualified Coordinator as an
 internal background complex-route workflow. One explicit authenticated request

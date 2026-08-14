@@ -943,9 +943,10 @@ authority. Exact executable `6aa33e4d...` privately qualified the authenticated
 server boundary with 10/10 exact terminals across 8 owners, exact owner
 isolation, source-truth preservation, two PostgreSQL restart/read-backs,
 complex-c8/ninth-owner-queued containment, and complete teardown. Public-safe
-evidence SHA-256 is `328f6640...`. The HTTP/native/renderer candidate remains
-unmerged pending hosted review, and the private receipt does not qualify a
-native/renderer round trip or live enterprise identity-provider exchange. See the
+evidence SHA-256 is `328f6640...`. Hosted head `b983adb7...` passed all 12
+required checks, and PR #179 merged the HTTP/native/renderer vertical as
+`70303872...`. The private receipt does not qualify a native/renderer round trip
+or live enterprise identity-provider exchange. See the
 [Curator product record](../docs/evidence/curator-product-vertical/VERIFICATION.md).
 Active-knowledge promotion and production operation remain open.
 
@@ -1019,8 +1020,33 @@ nonreusable. The replacement's three repeats prove only same-warm-process
 repeatability, not cross-start/global determinism. See the
 [Analyst verification record](../docs/evidence/analyst-grounded-cited-answers/VERIFICATION.md).
 Hosted head `da1127f8...` passed all 12 checks, and PR #170 merged the core as
-`52c45d22...`. HTTP/native/renderer/UI exposure, simultaneous residency,
-sustained capacity, a production SLO, and deployment remain pending.
+`52c45d22...`.
+
+Exact successor `78b2c638...` composes the core into one product vertical. In
+authenticated team mode it exposes:
+
+- `POST /v1/analyst-answers` to create one bounded cited-answer request;
+- `GET /v1/analyst-answers/{requestId}` to read only the authenticated owner's
+  state; and
+- `DELETE /v1/analyst-answers/{requestId}` to request cancellation.
+
+Enable it explicitly with `YAP_ANALYST_RUNTIME=warm_gemma`, absolute
+`YAP_ANALYST_ADMISSION_SOCKET`, `YAP_ANALYST_PROFILE`,
+`YAP_ANALYST_CANDIDATE_LOCK`, and `YAP_ANALYST_KNOWLEDGE_DSN_FILE` paths.
+Incomplete or non-authenticated configuration fails closed. Native
+Rust owns bearer exchange, one connection lease, request/result/citation
+validation, cancellation, and quit containment; React receives only validated
+answer state. The owner-private product gate matched 10/10 terminals across 8
+owners: 4 exact server-derived cited answers, 5 unavailable results, 0 failures,
+and 1 fail-closed cancellation. It also proved owner isolation, hidden/absent
+equivalence, two PostgreSQL restart/read-backs, exact Analyst/Librarian/tool
+audits, zero proposal writes, complex c8/ninth-owner-queued containment, and
+complete teardown. Public-safe evidence SHA-256 is `f26adfc0...`. See the
+[Analyst product record](../docs/evidence/analyst-product-vertical/VERIFICATION.md).
+The candidate remains unmerged pending hosted review. Its private gate does not
+qualify a native/renderer round trip or live enterprise identity-provider
+exchange. Simultaneous residency, sustained capacity, a production SLO, and
+deployment remain pending.
 
 ## Coordinator source-cited proposal-bundle core
 

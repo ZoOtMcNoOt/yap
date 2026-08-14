@@ -174,9 +174,15 @@ Exact executable `0665c486...` privately qualified Analyst on the complex route;
 lock-only `8fee7a5c...` publishes the matching route lock. Three synchronized
 repeat waves matched 24 of 24 normal invocations and all 29 terminal outcomes.
 Hosted head `da1127f8...` merged the internal core through PR #170 as
-`52c45d22...`. This qualifies a merged internal workflow, not a product endpoint
-or production service. See the
+`52c45d22...`. Exact product successor `78b2c638...` then privately qualified
+the authenticated Analyst server boundary across 10 exact product jobs. Its
+independent live probe held eight complex leases and queued the ninth; the
+product workload itself claims eight synchronized owner calls, not eight
+simultaneous inferences. The product successor remains unmerged pending hosted
+review, and neither receipt is production-service evidence. See the
 [Analyst evidence](../evidence/analyst-grounded-cited-answers/VERIFICATION.md).
+See also the
+[Analyst product record](../evidence/analyst-product-vertical/VERIFICATION.md).
 
 Exact executable `fed729b3...` privately qualified Coordinator on the complex
 route. Three synchronized repeat waves matched 24 of 24 normal service calls

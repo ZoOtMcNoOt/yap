@@ -21,7 +21,7 @@ Auditor's idle-only, source-cited review-findings internal core. Hosted head
 `937a4129...` passed all 12 required checks, and PR #172 merged Auditor as
 `1b255e9a...`. All eight bounded internal role cores are now merged.
 
-Scribe, Librarian, Archivist, and Student are the four merged product surfaces. Exact
+Scribe, Librarian, Archivist, Student, and Curator are the five merged product surfaces. Exact
 executable
 `e2ba1864...` privately qualified Librarian's authenticated HTTP server boundary;
 hosted head `67a79ce2...` passed all 12 required checks, and PR #174 merged the
@@ -41,11 +41,15 @@ a source-bound learning-question action beside permission-safe Librarian
 evidence. Hosted head `53ce570b...` passed all 12 required checks, and PR #178
 merged the vertical as `6546970b...`. Exact executable `6aa33e4d...` then
 privately qualified the authenticated Curator proposal server boundary across
-10/10 exact terminals with public-safe evidence SHA-256 `328f6640...`. Its
-HTTP/native/renderer candidate remains unmerged until unchanged-head hosted
-review completes. Production identity,
+10/10 exact terminals with public-safe evidence SHA-256 `328f6640...`. Hosted
+head `b983adb7...` passed all 12 checks, and PR #179 merged the vertical as
+`70303872...`. Exact executable `78b2c638...` now privately qualifies the
+authenticated Analyst cited-answer server boundary across 10/10 exact product
+terminals with public-safe evidence SHA-256 `f26adfc0...`; its HTTP/native/
+renderer successor remains unmerged pending unchanged-head hosted review.
+Production identity,
 simultaneous full-profile residency, sustained capacity, enterprise deployment,
-and the remaining Curator/Analyst/Coordinator/Auditor product promotion work
+and the remaining Analyst/Coordinator/Auditor product promotion work
 stay explicitly gated.
 
 Start with [current status](docs/CURRENT-STATUS.md). It states what executes,
@@ -79,17 +83,18 @@ what is verified, what is still absent, and what happens next.
   port or external egress. Candidate-safety evidence does not itself promote
   either ASR provider.
 - The merged team agent plane uses hash-locked Qwen rapid-automation and Gemma
-  complex-orchestration vLLM routes with no cross-route fallback. Scribe is the
-  only merged desktop-facing LLM workflow, and Librarian owns the merged
-  Knowledge workspace. Archivist adds no model call: it
+  complex-orchestration vLLM routes with no cross-route fallback. Scribe,
+  Student, and Curator are merged desktop-facing LLM workflows, and Librarian
+  owns the merged Knowledge workspace. Archivist adds no model call: it
   resolves a completed server-batch recording natively and asks the authenticated
   server to stage its reviewed transcript without activating knowledge. The
   merged Student surface adds authenticated question jobs and a source-bound
-  learning-question action. Exact `6aa33e4d...` privately qualified the current
-  Curator successor's explicit reviewed proposal submission, owner-scoped
-  status/cancellation, and review-required noncanonical server result. The
-  product candidate remains unmerged; Analyst, Coordinator, and Auditor remain
-  internal-only. The qualified
+  learning-question action. PR #179 merged Curator's explicit reviewed proposal
+  submission, owner-scoped status/cancellation, and review-required
+  noncanonical result. Exact `78b2c638...` privately qualifies Analyst's
+  authenticated cited-answer server boundary; its native/renderer candidate is
+  public-test green but unmerged. Coordinator and Auditor remain internal-only.
+  The qualified
   profile-capacity successor admits four rapid or eight complex active distinct
   owners on the selected already-warm route, while preserving one active request
   per owner. Analyst's three exact synchronized repeats establish same-warm-
@@ -107,8 +112,8 @@ what is verified, what is still absent, and what happens next.
 WSS/live server transcription, general media conversion, production
 authentication, persistent multi-user service, enterprise DNS/certificates/
 firewall/ZPA, promoted diarization, simultaneous full-profile residency,
-sustained capacity/SLOs, the unmerged qualified Curator candidate, and the
-remaining three agent product surfaces are later gates—not hidden current
+sustained capacity/SLOs, the unmerged qualified Analyst candidate, and the
+remaining Coordinator/Auditor product surfaces are later gates—not hidden current
 capabilities.
 
 ## Repository map
