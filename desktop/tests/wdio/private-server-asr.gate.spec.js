@@ -415,9 +415,12 @@ describe("checked-head private-server ASR gate", () => {
     await invoke("refresh_server_connection");
     const connection = await waitForConnectionState("ready", "become ready");
     expect(connection.capabilities).toEqual({
+      archivistIngestions: false,
       batchJobs: true,
       jobStatus: true,
+      librarianQueries: false,
       liveStreaming: false,
+      transcriptCorrection: false,
     });
 
     const profile = activeGateProfile();
