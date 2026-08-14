@@ -776,7 +776,7 @@ and source/generation staging without embedding or activation. Exact core head
 cancellation, and zero-residue checks; hosted head `e1899db7...` merged it
 through PR #165 as `2a7ec819...`.
 
-Exact product candidate `a2e9b551...` composes that core behind:
+Exact product head `a2e9b551...` composes that core behind:
 
 - `POST /v1/archivist-ingestions` for one authenticated durable recording job;
 - `GET /v1/archivist-ingestions/{requestId}` for owner-scoped state; and
@@ -806,10 +806,12 @@ owners, 10/10 exact terminals, 9 staged requests, 1 queued cancellation, 8
 source admissions/staged generations, 0 active generations, exact replay, two
 PostgreSQL restart/read-backs, and exact teardown. Public server/native/renderer
 checks are green. The private gate does not include a native-to-renderer round
-trip or live enterprise identity-provider exchange. See the
+trip or live enterprise identity-provider exchange. Hosted head `69215c43...`
+passed all 12 required checks, and PR #177 merged the vertical as `e397af8b...`.
+See the
 [product-vertical verification record](../docs/evidence/archivist-product-vertical/VERIFICATION.md).
-Hosted review and merge remain pending; sustained capacity, production SLO,
-knowledge activation, and deployment are not claimed.
+Sustained capacity, production SLO, knowledge activation, and deployment are
+not claimed.
 
 ## Student learning questions
 

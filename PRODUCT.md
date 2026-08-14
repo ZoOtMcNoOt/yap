@@ -34,7 +34,7 @@ boundary; hosted head `67a79ce2...` passed all 12 checks, and PR #174 merged the
 vertical as `98af78c9...`. The private gate did not include a native/renderer
 round trip or live enterprise identity-provider exchange.
 
-The current unmerged Archivist candidate adds one explicit **Stage for
+The merged Archivist product vertical adds one explicit **Stage for
 knowledge** action to a completed server-batch transcript. React sends only the
 local recording identity to native Rust; native code resolves and verifies the
 durable server job/result, owns the bearer exchange, and reconciles cancellation
@@ -43,8 +43,9 @@ It then calls authenticated Archivist HTTP endpoints. The server re-derives the
 reviewed capture, stages a deterministic non-embedding generation, and never
 activates knowledge. Exact executable `a2e9b551...` privately qualified the
 authenticated server/database/broker boundary with 10/10 terminals and exact
-teardown. The private gate did not execute a native-to-renderer round trip or
-live enterprise identity provider, and hosted review/merge remain pending.
+teardown. Hosted head `69215c43...` passed all 12 required checks, and PR #177
+merged the vertical as `e397af8b...`. The private gate did not execute a native-
+to-renderer round trip or live enterprise identity provider.
 
 The internal Student, Curator, Analyst, Coordinator, and Auditor cores are
 merged. None has a current HTTP, native, renderer, or desktop product surface.

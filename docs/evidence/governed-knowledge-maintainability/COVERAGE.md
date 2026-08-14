@@ -12,9 +12,10 @@ Phase 9. Earlier phase and checkpoint acceptance is evidence, not an exemption.
 The Phase 9 delta receives deeper inspection, but it is not the coverage limit.
 
 The current read-back below extends the navigation and cohesion inventory
-through exact Archivist product candidate `a2e9b551...`. Its authenticated
+through exact Archivist product head `a2e9b551...`. Its authenticated
 HTTP/server boundary is privately qualified; the native/renderer path is
-exact-head public-test green, and hosted review/merge remains pending. The
+exact-head public-test green; hosted head `69215c43...` passed all 12 checks and
+PR #177 merged the vertical as `e397af8b...`. The
 threshold inventory is recomputed against that executable candidate with this
 public documentation reconciliation applied. The tracked-path and physical-line
 tables below remain the labeled merged Phase 9 inventory anchor; they are not
@@ -171,7 +172,7 @@ The previously recorded Phase 10 Student candidate snapshot remains historical:
 527 in-scope surfaces at or above 250 physical lines, comprising 287 at or above
 350 and 240 from 250 through 349. It is not recomputed against this successor.
 
-At the current Archivist product-candidate documentation-successor tree, the inventory contains 605
+At the post-Archivist-merge documentation-successor tree, the inventory contains 605
 in-scope tracked source, text, policy, and provenance surfaces at or above 250
 physical lines: 354 at or above 350 and 251 from 250 through 349. The completed
 checkpoint reviews remain the authority for their historical exact heads. This

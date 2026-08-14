@@ -21,19 +21,22 @@ Auditor's idle-only, source-cited review-findings internal core. Hosted head
 `937a4129...` passed all 12 required checks, and PR #172 merged Auditor as
 `1b255e9a...`. All eight bounded internal role cores are now merged.
 
-Scribe and Librarian are the two merged product surfaces. Exact executable
+Scribe, Librarian, and Archivist are the three merged product surfaces. Exact
+executable
 `e2ba1864...` privately qualified Librarian's authenticated HTTP server boundary;
 hosted head `67a79ce2...` passed all 12 required checks, and PR #174 merged the
 HTTP/native/Knowledge vertical as `98af78c9...`. Exact executable
-`a2e9b551...` now privately qualifies an unmerged Archivist product candidate:
+`a2e9b551...` privately qualified the Archivist product vertical:
 authenticated HTTP staging, native-owned job/result transport, and one explicit
 **Stage for knowledge** action for completed server-batch transcripts. Its
 10/10 exact private terminals staged nine requests, cancelled one queued
-request, activated zero generations, and completed exact teardown. Native
-cancellation and quit cleanup now retain ownership through an exact terminal
+request, activated zero generations, and completed exact teardown. Hosted head
+`69215c43...` passed all 12 required checks, and PR #177 merged the vertical as
+`e397af8b...`. Native cancellation and quit cleanup now retain ownership through
+an exact terminal
 request/source identity before releasing the connection lease.
 Production identity, simultaneous full-profile residency, sustained capacity,
-enterprise deployment, hosted merge, and the remaining role product surfaces
+enterprise deployment, and the remaining five role product surfaces
 stay explicitly gated.
 
 Start with [current status](docs/CURRENT-STATUS.md). It states what executes,
@@ -69,7 +72,7 @@ what is verified, what is still absent, and what happens next.
 - The merged team agent plane uses hash-locked Qwen rapid-automation and Gemma
   complex-orchestration vLLM routes with no cross-route fallback. Scribe is the
   only current desktop-facing LLM workflow, and Librarian owns the merged
-  Knowledge workspace. The unmerged Archivist candidate adds no model call: it
+  Knowledge workspace. Archivist adds no model call: it
   resolves a completed server-batch recording natively and asks the authenticated
   server to stage its reviewed transcript without activating knowledge. Student,
   Curator, Analyst, Coordinator, and Auditor remain internal-only. The qualified
@@ -90,7 +93,7 @@ what is verified, what is still absent, and what happens next.
 WSS/live server transcription, general media conversion, production
 authentication, persistent multi-user service, enterprise DNS/certificates/
 firewall/ZPA, promoted diarization, simultaneous full-profile residency,
-sustained capacity/SLOs, hosted Archivist merge, and the remaining agent product
+sustained capacity/SLOs, and the remaining five agent product
 surfaces are later gates—not hidden current capabilities.
 
 ## Repository map

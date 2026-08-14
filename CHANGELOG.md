@@ -3,7 +3,7 @@
 This changelog records product/architecture milestones. Exact test counts and
 immutable evidence belong in phase/checkpoint evidence records.
 
-## Unreleased — Archivist product vertical candidate
+## 2026-08-14 — Archivist product vertical merged
 
 - Exact executable `a2e9b551...` adds authenticated asynchronous Archivist
   staging endpoints, native Tauri job/result ownership, bounded terminal
@@ -18,10 +18,11 @@ immutable evidence belong in phase/checkpoint evidence records.
   exact replay, two PostgreSQL restart/read-backs, and complete teardown.
 - Public server, renderer, native Rust, Playwright, production build, Ruff,
   Clippy, and orchestrator checks are green; the exact-head required native WDIO
-  matrix passed 15/15. The private gate does not include a
-  native-to-renderer round trip or live enterprise identity provider. Hosted
-  exact-head review and merge remain pending, with no production-SLO,
-  simultaneous-residency, deployment, or knowledge-activation claim.
+  matrix passed 15/15. Hosted head `69215c43...` passed all 12 required checks,
+  and PR #177 merged the vertical as `e397af8b...`. The private gate does not
+  include a native-to-renderer round trip or live enterprise identity provider.
+  It makes no production-SLO, simultaneous-residency, deployment, or knowledge-
+  activation claim.
 
 ## 2026-08-13 — Librarian Knowledge product vertical merged
 

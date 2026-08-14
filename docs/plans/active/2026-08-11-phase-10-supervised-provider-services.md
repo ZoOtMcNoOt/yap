@@ -21,9 +21,10 @@ head `937a4129...` passed all 12 checks and PR #172 merged it as `1b255e9a...`.
 Exact `e2ba1864...` privately qualified Librarian's authenticated HTTP server
 boundary; hosted head `67a79ce2...` passed all 12 checks and PR #174 merged its
 HTTP/native/Knowledge surface as `98af78c9...`. Exact `a2e9b551...` privately
-qualified an unmerged Archivist authenticated staging candidate with 10/10
-exact server-side terminals, zero activation, and exact teardown. Hosted
-Archivist merge, Student/Curator/Analyst/Coordinator/Auditor product exposure,
+qualified Archivist's authenticated staging boundary with 10/10 exact server-
+side terminals, zero activation, and exact teardown; hosted head `69215c43...`
+passed all 12 checks and PR #177 merged it as `e397af8b...`.
+Student/Curator/Analyst/Coordinator/Auditor product exposure,
 simultaneous full-profile capacity, and production promotion remain open.
 
 **Base:** merged post-Phase-9 maintainability closure

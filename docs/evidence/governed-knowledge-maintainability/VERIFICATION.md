@@ -3,17 +3,18 @@
 This record separates inherited merged evidence, focused repair checks, the
 completed and hosted-merged Phase 9 checkpoint gate, historical Phase 10 public
 read-backs, the frozen Librarian, Analyst, Coordinator, and Auditor successors,
-the merged Librarian product boundary, and the current privately qualified
-Archivist product candidate. The Curator/profile-capacity successor is privately
+the merged Librarian and Archivist product boundaries. The Curator/profile-
+capacity successor is privately
 qualified at exact protected heads and has a public-lock/aggregate result.
 Hosted-green head `593e627b...` passed all 12 checks, and PR #168 merged it as
 `284ab96b...`; hosted head `da1127f8...` later merged Analyst through PR #170 as
 `52c45d22...`, hosted head `53ee0152...` merged Coordinator through PR #171 as
 `67d836da...`, and hosted head `937a4129...` merged Auditor through PR #172 as
-`1b255e9a...`. PR #174 later merged Librarian's product vertical. Archivist is a
-qualified unmerged candidate; five role product surfaces remain internal-only.
+`1b255e9a...`. PR #174 later merged Librarian's product vertical. Exact
+`a2e9b551...` qualified Archivist; hosted head `69215c43...` passed all 12 checks
+and PR #177 merged it as `e397af8b...`. Five role product surfaces remain internal-only.
 Historical inventories remain labeled at their exact heads. The final section
-records the exact current Archivist-candidate threshold read-back.
+records the exact current post-Archivist-merge threshold read-back.
 
 ## Inherited Phase 9 evidence
 
@@ -790,8 +791,9 @@ The exact 354 high-band path/line/disposition tuples are reproduced in
 This record qualifies only the authenticated Archivist HTTP/database/broker
 boundary. Native/renderer behavior is exact-head public-test evidence and was
 not a private end-to-end client run. Archivist stages but does not embed or
-activate knowledge. Hosted exact-head review/merge, a live enterprise identity-
-provider exchange, sustained capacity/fairness, production p50/p95/p99 or an
+activate knowledge. Hosted head `69215c43...` passed all 12 required checks and
+PR #177 merged it as `e397af8b...`. A live enterprise identity-provider
+exchange, sustained capacity/fairness, production p50/p95/p99 or an
 SLO, simultaneous Qwen/Gemma residency, enterprise networking, and deployment
 remain open. Owner-private tenants, subjects, source/review bytes, request and
 run identities, database rows, paths, credentials, and individual measurements

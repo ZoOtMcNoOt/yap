@@ -269,11 +269,12 @@ Auditor's idle-only source-cited review-findings internal core. Hosted head
 product vertical's authenticated server boundary; hosted head `67a79ce2...`
 passed all 12 checks and PR #174 merged it as `98af78c9...`. Archivist, Student,
 Curator, Analyst, Coordinator, and Auditor were still internal-only at that
-merge. Exact `a2e9b551...` now privately qualifies an unmerged Archivist
+merge. Exact `a2e9b551...` privately qualified the Archivist
 authenticated staging candidate with public-safe evidence SHA-256 `9ec9e373...`:
 10/10 exact server-side terminals, 9 staged, 1 cancelled, 0 active generations,
-and exact teardown. Hosted Archivist review/merge plus Student, Curator,
-Analyst, Coordinator, and Auditor product exposure remain open. Proven selected-route
+and exact teardown. Hosted head `69215c43...` passed all 12 required checks,
+and PR #177 merged the vertical as `e397af8b...`. Student, Curator, Analyst,
+Coordinator, and Auditor product exposure remain open. Proven selected-route
 limits of four rapid/eight complex are not simultaneous-model,
 sustained-capacity, or production-SLO evidence. One Spark cannot retain both
 unchanged full profiles simultaneously, so warm two-route promotion requires a

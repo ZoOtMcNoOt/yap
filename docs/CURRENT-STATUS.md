@@ -1,13 +1,13 @@
 # Current Status
 
-**As of:** 2026-08-13
+**As of:** 2026-08-14
 
-**Most recent merged closure:** [PR #174](https://github.com/mcnatg1/yap/pull/174)
-merged the Librarian HTTP/native/Knowledge product vertical as
-`98af78c940ea801a37103f615002658f90626fb3` after exact hosted head
-`67a79ce2a888e626ab562515b665c8ed33c8d51e` passed all 12 required checks.
-PR #173 previously merged the documentation-only eight-agent internal-roster
-closure. Earlier admission and role receipts retain their exact attribution.
+**Most recent merged closure:** [PR #177](https://github.com/mcnatg1/yap/pull/177)
+merged the Archivist HTTP/native/renderer product vertical as
+`e397af8b29737fa21197c7058c659eab2ad0a00b` after exact hosted head
+`69215c43437c75d7ca2498154a80c4ae5bb749ed` passed all 12 required checks.
+PR #174 previously merged Librarian's product vertical. Earlier qualification,
+admission, and role receipts retain their exact-head attribution.
 The broker admits authenticated work
 only to already-warm Qwen/Gemma services with bounded owner-fair queues; it does
 not start, swap, or silently substitute a model.
@@ -32,7 +32,7 @@ See the
 [candidate verification record](evidence/librarian-product-vertical/VERIFICATION.md).
 
 Exact executable candidate `a2e9b55157799749ffc4eca32a92feabe63fba8e`
-adds the next product vertical for Archivist: authenticated asynchronous HTTP
+qualified the merged Archivist product vertical: authenticated asynchronous HTTP
 staging, native-owned bearer/job/result transport, and one explicit **Stage for
 knowledge** action for a completed server-batch transcript. Its owner-private
 ARM64 database/broker/HTTP gate returned
@@ -48,7 +48,9 @@ ignored** plus all integration groups, strict Clippy, orchestrator Rust,
 required native WDIO **15/15**, and focused gate **8/8**. The exact successor
 closes the native cancellation/quit ownership gap: the client retains its
 connection lease until an exact terminal request/source identity is reconciled.
-This is a privately qualified, unmerged product candidate.
+Hosted head `69215c43437c75d7ca2498154a80c4ae5bb749ed` passed all 12
+required checks, and PR #177 merged the vertical as
+`e397af8b29737fa21197c7058c659eab2ad0a00b`.
 The private gate qualifies the authenticated server/database/broker boundary;
 native/renderer behavior is exact-head public-test evidence rather than a
 private end-to-end client run. See the
@@ -272,12 +274,13 @@ Hosted head `937a4129e13d70e68c6d8151cf9643512b6b6e16` passed all 12
 required checks, and PR #172 merged the internal core as
 `1b255e9aafdc88865425f7455be92cfa27cc265e`.
 
-All eight bounded role cores are merged. Scribe and Librarian are the two merged
-product surfaces. Librarian's authenticated HTTP server boundary is privately
+All eight bounded role cores are merged. Scribe, Librarian, and Archivist are
+the three merged product surfaces. Librarian's authenticated HTTP server boundary is privately
 qualified at exact `e2ba1864...`, and hosted head `67a79ce2...` merged its
-native/renderer product path through PR #174. Archivist is a privately qualified
-unmerged product candidate at exact `a2e9b551...`. Student, Curator, Analyst,
-Coordinator, and Auditor product surfaces remain pending.
+native/renderer product path through PR #174. Archivist's executable qualification
+remains exact `a2e9b551...`; hosted head `69215c43...` passed all 12 checks and
+PR #177 merged it as `e397af8b...`. Student, Curator, Analyst, Coordinator, and
+Auditor product surfaces remain pending.
 
 These results do not prove simultaneous Qwen/Gemma residency, sustained
 capacity/fairness, a production SLO, or deployment. The unchanged `0.40` and
@@ -558,7 +561,7 @@ rewrite that target; this status document distinguishes what currently executes.
 | Meeting-transcription maintainability checkpoint | Merged and closed | The [ownership review](plans/completed/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md) keeps server result adapters independent from worker admission, accepts only current persisted contracts, excludes evaluation code from the request-time image, linearizes native publication/cancellation, and bounds selected History speaker detail. Historical candidate `fb0985e...` passed before documentation successor `e22368fc...` exposed `GHSA-mwp4-54f8-5fhr`. Patched candidate `393710999b53a4bd1b00639e30c0fec88b152530` then passed the canonical build, receipt-bound image preflight, real History/cancellation lifecycle with teardown, single 18-child matrix, receipt validation, and required CI/CodeQL jobs. PR #143 merged as `8fb511ad2fd7217a87e95ddba31d74dfa474fac2`. This did not change model-quality, capacity, or production-promotion qualification. Private evidence remains outside Git and hosted artifacts. |
 | Phase 9 | Merged and gated | Pinned OKF compilation, immutable terminology snapshots, Postgres/pgvector generation and permission-safe retrieval, governed agents/RAG/MCP, explicit no-fallback routing, and private Qwen rapid/Gemma complex workload qualification execute. Exact candidate `a4f34678...` passed the complete Phase 9 gate with real Postgres restart/recovery and exact teardown. Exact hosted-green head `fa26caaf...` merged through PR #152 as `ae81ff06...`. Production service integration and Phase 10 capacity remain unproved. |
 | Post-Phase-9 maintainability checkpoint | Merged and closed | The [governed-knowledge ownership and maintainability review](plans/completed/2026-08-10-governed-knowledge-ownership-and-maintainability-review.md) resolved its accepted public findings at reviewed executable head `a76ed9b0...`, including bounded final structural decoding without tool replay, one exact cited-proposal fixture contract, candidate-specific Qwen 26.07+XGrammar 0.2.1 / Gemma 26.06 runtimes, and separate common/proposal rapid-route qualification bounds. The fresh exact-head route qualification returned `required-workload-routes-qualified`; schema-3 public lock commit `2cf1e92c...` passed semantic admission; exact aggregate candidate `22c3f369...` passed the checkpoint gate. Final hosted head `84c22ec9...` passed every required CI and CodeQL lane and merged through PR #153 as `ca151b1b...`. No Phase 10 behavior was added. |
-| Phase 10 | Eight bounded role cores plus Scribe/Librarian product surfaces merged; Archivist product candidate privately qualified | PRs #164/#165/#166/#168/#169/#170/#171/#172 merged Scribe, Archivist, Student, Curator, Librarian, Analyst, Coordinator, and Auditor internal cores. Exact `08b06f6d...` privately qualified Auditor with 29/29 exact terminals, one lease per invocation, source/current-authority binding, active/queued non-idle blocking and resumption, and exact teardown; hosted head `937a4129...` passed all 12 required checks and merged as `1b255e9a...`. Exact `e2ba1864...` privately qualified Librarian's authenticated HTTP server boundary with 10/10 exact terminals and complete teardown; hosted head `67a79ce2...` passed all 12 checks and PR #174 merged the HTTP/native/Knowledge vertical as `98af78c9...`. Exact `a2e9b551...` privately qualified the unmerged Archivist HTTP/native/renderer candidate with 10/10 exact server-side terminals, zero activation, and exact teardown. Hosted Archivist review/merge, Student/Curator/Analyst/Coordinator/Auditor product surfaces, simultaneous full-profile residency, sustained capacity/SLOs, production operations, and explicit IT/security handoffs remain open. |
+| Phase 10 | Eight bounded role cores plus Scribe/Librarian/Archivist product surfaces merged | PRs #164/#165/#166/#168/#169/#170/#171/#172 merged Scribe, Archivist, Student, Curator, Librarian, Analyst, Coordinator, and Auditor internal cores. Exact `08b06f6d...` privately qualified Auditor with 29/29 exact terminals, one lease per invocation, source/current-authority binding, active/queued non-idle blocking and resumption, and exact teardown; hosted head `937a4129...` passed all 12 required checks and merged as `1b255e9a...`. Exact `e2ba1864...` privately qualified Librarian's authenticated HTTP server boundary with 10/10 exact terminals and complete teardown; hosted head `67a79ce2...` passed all 12 checks and PR #174 merged the HTTP/native/Knowledge vertical as `98af78c9...`. Exact `a2e9b551...` privately qualified Archivist's authenticated staging boundary with 10/10 exact server-side terminals, zero activation, and exact teardown; hosted head `69215c43...` passed all 12 checks and PR #177 merged the product vertical as `e397af8b...`. Student/Curator/Analyst/Coordinator/Auditor product surfaces, simultaneous full-profile residency, sustained capacity/SLOs, production operations, and explicit IT/security handoffs remain open. |
 
 Admitted checkpoint head `4ab13497b19ef74ff54e3bc96b9718058f3b1e11`
 is failed historical evidence and cannot be retried or relabeled. Its exact
@@ -1345,9 +1348,8 @@ provider optimization or non-blocking architecture work.
 1. Preserve the eight merged internal role boundaries without claiming
    knowledge activation, sustained capacity, simultaneous residency, or
    production promotion.
-2. Preserve the merged Librarian HTTP/native/Knowledge boundary, complete
-   exact-head hosted review/merge for the privately qualified Archivist staging
-   candidate, and deliver the remaining Student, Curator, Analyst, Coordinator,
+2. Preserve the merged Librarian and Archivist product boundaries, and deliver
+   the remaining Student, Curator, Analyst, Coordinator,
    and Auditor product surfaces only after each has its own reviewed trigger,
    endpoint, and client surface. Auditor has no scheduled autonomy or mutation
    authority.
