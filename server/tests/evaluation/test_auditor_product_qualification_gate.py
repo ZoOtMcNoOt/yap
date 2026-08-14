@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 from contextlib import ExitStack
@@ -327,7 +326,7 @@ class AuditorProductQualificationGateTests(unittest.TestCase):
 
         def run() -> None:
             try:
-                model.report(
+                model.review(
                     mock.sentinel.request,
                     mock.sentinel.evidence,
                     cancellation=cancellation,
@@ -345,6 +344,7 @@ class AuditorProductQualificationGateTests(unittest.TestCase):
         self.assertTrue(model.cancelled.is_set())
         self.assertEqual(len(failure), 1)
         self.assertIsInstance(failure[0], KnowledgeToolCancelled)
+        self.assertFalse(hasattr(model, "report"))
 
     def test_database_readback_is_auditor_owned_and_exact(self) -> None:
         report = _report()
