@@ -9,7 +9,7 @@ use std::{
 use crate::{jobs::AsrCatalogBinding, runtime};
 
 use super::{
-    archivist, batch, client, config, librarian,
+    archivist, batch, client, config, curator, librarian,
     state::{self, ConnectorInner, SettingsDisposition},
     student, transcript_correction, AsrCapabilityCatalog, ServerConnectionSnapshot,
 };
@@ -72,6 +72,13 @@ pub(crate) struct ArchivistConnectionLease {
     generation: u64,
     base_url: String,
     client: archivist::ArchivistApiClient,
+}
+
+#[derive(Clone)]
+pub(crate) struct CuratorConnectionLease {
+    generation: u64,
+    base_url: String,
+    client: curator::CuratorApiClient,
 }
 
 #[cfg(test)]
@@ -164,6 +171,29 @@ pub(crate) fn archivist_connection_lease_for_test() -> ArchivistConnectionLease 
     let client = archivist::ArchivistApiClient::new(authenticated, "http://127.0.0.1:1")
         .expect("fixed test archivist origin");
     ArchivistConnectionLease {
+        generation: 1,
+        base_url: client.base_url_identity().to_owned(),
+        client,
+    }
+}
+
+#[cfg(test)]
+pub(crate) fn curator_connection_lease_for_test() -> CuratorConnectionLease {
+    struct NoAccess;
+    impl super::authorization::ServerAccessTokenSource for NoAccess {
+        fn access(&self) -> super::authorization::AccessTokenFuture<'_> {
+            Box::pin(async { Ok(None) })
+        }
+    }
+
+    let authenticated = super::AuthenticatedRequestDispatcher::from_source(
+        client::bounded_client().expect("bounded test client"),
+        Arc::new(NoAccess),
+        super::authorization::AuthenticatedSession::new(),
+    );
+    let client = curator::CuratorApiClient::new(authenticated, "http://127.0.0.1:1")
+        .expect("fixed test curator origin");
+    CuratorConnectionLease {
         generation: 1,
         base_url: client.base_url_identity().to_owned(),
         client,
@@ -273,6 +303,12 @@ impl StudentConnectionLease {
 
 impl ArchivistConnectionLease {
     pub(crate) fn client(&self) -> &archivist::ArchivistApiClient {
+        &self.client
+    }
+}
+
+impl CuratorConnectionLease {
+    pub(crate) fn client(&self) -> &curator::CuratorApiClient {
         &self.client
     }
 }
@@ -599,6 +635,37 @@ impl ServerConnector {
         }))
     }
 
+    pub(crate) fn curator_connection_lease(
+        &self,
+    ) -> Result<Option<CuratorConnectionLease>, String> {
+        let generation = self.generation.load(Ordering::Acquire);
+        let inner = self.inner.lock().expect("server connector poisoned");
+        let snapshot = inner.snapshot();
+        if inner.generation() != generation
+            || snapshot.state != runtime::state::ServerConnectorState::Ready
+            || !snapshot.capabilities.curator_proposals
+        {
+            return Ok(None);
+        }
+        let Some(base_url) = inner.configured_base_url(generation) else {
+            return Ok(None);
+        };
+        let authenticated = self
+            .authenticated
+            .bind_current_transport(generation, &base_url)
+            .map_err(|_| {
+                "The server connection changed before knowledge-proposal dispatch.".to_string()
+            })?;
+        let client = curator::CuratorApiClient::new(authenticated, &base_url)
+            .map_err(|_| "The knowledge-proposal server origin is invalid.".to_string())?;
+        let base_url = client.base_url_identity().to_owned();
+        Ok(Some(CuratorConnectionLease {
+            generation,
+            base_url,
+            client,
+        }))
+    }
+
     pub(crate) fn asr_capability_lease(&self) -> Option<AsrCapabilityLease> {
         let generation = self.generation.load(Ordering::Acquire);
         let inner = self.inner.lock().expect("server connector poisoned");
@@ -773,6 +840,25 @@ impl ServerConnector {
             && snapshot.capabilities.archivist_ingestions;
         if !current {
             return Err("Server connection changed before knowledge staging could commit.".into());
+        }
+        Ok(commit())
+    }
+
+    pub(crate) fn with_current_curator_lease<T>(
+        &self,
+        lease: &CuratorConnectionLease,
+        commit: impl FnOnce() -> T,
+    ) -> Result<T, String> {
+        let inner = self.inner.lock().expect("server connector poisoned");
+        let snapshot = inner.snapshot();
+        let current = self.generation.load(Ordering::Acquire) == lease.generation
+            && inner.generation() == lease.generation
+            && inner.configured_base_url(lease.generation).as_deref()
+                == Some(lease.base_url.as_str())
+            && snapshot.state == runtime::state::ServerConnectorState::Ready
+            && snapshot.capabilities.curator_proposals;
+        if !current {
+            return Err("Server connection changed before knowledge proposal could commit.".into());
         }
         Ok(commit())
     }

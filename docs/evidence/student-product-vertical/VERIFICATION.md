@@ -18,12 +18,14 @@ The independently compiled synthetic corpus is
 and the semantic evidence SHA-256 is
 `5399a1ae51eab360f635315e89cf3e2f45df65defd7cc8940551fc1e8b6825e9`.
 
-This is a privately qualified, unmerged product candidate. It qualifies the
+This is a privately qualified, merged product vertical. It qualifies the
 authenticated HTTP/server, current-generation authority, rapid-route admission,
 result-audit, cancellation, and database boundary. It does not qualify a live
 native-to-renderer round trip or a live enterprise identity-provider exchange.
-Those client contracts are exact-head public-test evidence. Hosted review and
-merge remain pending.
+Those client contracts are exact-head public-test evidence. Hosted head
+`53ce570bf2aedafa1d2d2aebdbcc19349e904ce4` passed all 12 required checks,
+and PR #178 merged the vertical as
+`6546970ba3613fe55458b54c334a687cb7ff823e` on 2026-08-14.
 
 Two protected predecessors are terminal and inadmissible. Exact
 `b8671d4601548d53af6c2a1d7c2daa1a01222000` reached the active polling path but
@@ -102,6 +104,10 @@ The whole-tree Ruff format inventory still contains inherited formatting drift
 outside this product slice; this record does not relabel that repository-wide
 check as green.
 
+Hosted head `53ce570bf2aedafa1d2d2aebdbcc19349e904ce4` passed all 12 required
+checks before PR #178 merged the vertical as
+`6546970ba3613fe55458b54c334a687cb7ff823e`.
+
 ## Claim limits and privacy
 
 The create-once private receipt is a mode-`0600`, single-link file outside Git.
@@ -110,9 +116,9 @@ database rows, DSN, host paths, and individual timings remain owner-private.
 Git contains only checked heads, plan/evidence hashes, aggregate counts,
 booleans, and the bounded conclusions above.
 
-This candidate does not establish simultaneous Qwen/Gemma residency, sustained
+This merged vertical does not establish simultaneous Qwen/Gemma residency, sustained
 capacity, enterprise identity exchange, production operations, deployment
 approval, or a Muse Spark model transition. Muse Spark 1.2 remains a separate
-post-merge decision because no approved deployable artifact is currently bound
-to this repository and its observed API route requires explicit organization
+evaluation because no approved deployable artifact is currently bound to this
+repository and an external hosted route would require explicit organization
 cloud/data-transfer approval and an organization-owned credential.

@@ -24,22 +24,26 @@ merged its HTTP/native/Knowledge product surface as `98af78c9...`. Exact
 `a2e9b551...` privately qualified Archivist's authenticated staging boundary
 with 10/10 exact server-side terminals, zero activation, and exact teardown.
 Hosted head `69215c43...` passed all 12 checks and PR #177 merged the vertical as
-`e397af8b...`. Exact `778a7545...` privately qualified an unmerged Student
-product candidate with 11/11 exact server-side terminals. Curator, Analyst,
-Coordinator, and Auditor product surfaces remain open.
+`e397af8b...`. Exact `778a7545...` privately qualified Student with 11/11 exact
+server-side terminals; hosted head `53ce570b...` passed all 12 checks and PR
+#178 merged it as `6546970b...`. Exact `6aa33e4d...` privately qualifies the
+Curator product server boundary with 10/10 exact terminals and public-safe
+evidence SHA-256 `328f6640...`; Curator hosted merge and Analyst, Coordinator,
+and Auditor product surfaces remain open.
 
-**Current branch:** `agent/phase10-student-product` completes hosted review for
-the exact qualified Student product candidate. The requested Muse Spark 1.2
-complex-route successor remains queued immediately after this product merge.
-[Meta's
-August 5 release](https://research.meta.ai/blog/introducing-muse-code-and-muse-spark-1-2)
-offers Muse Spark 1.2 through Meta Model API rather than an admitted local weight
-artifact; no route replacement or qualification is claimed.
+**Current branch:** `agent/phase10-curator-product` follows the merged Student
+vertical and implements Curator's bounded product surface. Exact
+`6aa33e4d...` passed the fresh clean owner-private ARM64 gate; unchanged-head
+hosted review remains required before merge. The
+requested Muse Spark replacement remains a separate evaluation: the official
+Meta material currently available to this branch documents Muse Spark 1.1 via
+the hosted Meta Model API, not an admitted local/offline 1.2 artifact. No route
+replacement or qualification is claimed.
 
-**Base:** Archivist product merge
-`e397af8b29737fa21197c7058c659eab2ad0a00b` from PR #177, with executable
-qualification retained at exact `a2e9b551...` and hosted review at exact
-`69215c43...`.
+**Base:** Student product merge
+`6546970ba3613fe55458b54c334a687cb7ff823e` from PR #178, with executable
+qualification retained at exact `778a7545...` and hosted review at exact
+`53ce570b...`.
 
 **Applied decisions:** [ADR 0031](../../adr/0031-eight-agent-voice-os-roster.md),
 [ADR 0030](../../adr/0030-rust-supervised-provider-service-lifecycle.md),
@@ -453,8 +457,19 @@ Auditor as `1b255e9a...`, completing the bounded internal roster.
   Exact `a2e9b551...` qualified the Archivist authenticated server boundary;
   hosted head `69215c43...` passed all 12 checks and PR #177 merged the vertical.
   Exact `778a7545...` privately qualified Student's authenticated product server
-  boundary; hosted review and merge remain pending. Curator, Analyst,
+  boundary; hosted head `53ce570b...` passed all 12 checks and PR #178 merged
+  the vertical as `6546970b...`. Exact `6aa33e4d...` privately qualifies the
+  Curator product server boundary; hosted review/merge and the Analyst,
   Coordinator, and Auditor product surfaces stay open.
+- [ ] Immediately after the Curator product successor passes hosted review and
+  merges, run a separate Muse replacement decision gate. Require an
+  exact official deployable version and artifact, acceptable license/terms,
+  organization identity and data-transfer approval, local/private runtime
+  support, strict one-tool behavior, and full-route lifecycle/capacity plus
+  affected-workflow requalification before replacing Gemma. If only the hosted
+  Muse Spark 1.1 preview is available, retain qualified Gemma and continue the
+  Analyst, Coordinator, and Auditor product plan without blocking on a model
+  name.
 - [ ] Run portable, database, lifecycle, private-model, mixed-route,
   simultaneous-residency, sustained-capacity, security, accessibility, and
   aggregate exact-head gates.

@@ -16,9 +16,11 @@ import type { LibrarianEvidenceItem } from "@/librarian";
 
 export function LibrarianPanel({
   available,
+  curatorAvailable = false,
   studentAvailable = false,
 }: {
   available: boolean;
+  curatorAvailable?: boolean;
   studentAvailable?: boolean;
 }) {
   const query = useLibrarianQuery({ available });
@@ -124,6 +126,7 @@ export function LibrarianPanel({
         {query.evidence && studentSource ? (
           <StudentQuestionComposer
             available={studentAvailable}
+            curatorAvailable={curatorAvailable}
             generationSha256={query.evidence.generationSha256}
             item={studentSource}
             key={`${query.evidence.evidenceSha256}:${studentSource.conceptId}`}

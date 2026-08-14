@@ -90,6 +90,7 @@ describe("client workflow projections", () => {
         librarianQueries: false,
         archivistIngestions: false,
         studentQuestions: false,
+        curatorProposals: false,
       },
       errorCode: null,
     };

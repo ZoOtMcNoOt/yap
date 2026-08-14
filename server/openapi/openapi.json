@@ -872,9 +872,6 @@
           "404": {
             "$ref": "#/components/responses/ApiErrorResponse"
           },
-          "409": {
-            "$ref": "#/components/responses/ApiErrorResponse"
-          },
           "429": {
             "$ref": "#/components/responses/ApiErrorResponse"
           },
@@ -945,6 +942,141 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ArchivistIngestionJobView"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          }
+        }
+      }
+    },
+    "/v1/curator-proposals": {
+      "post": {
+        "tags": [
+          "agents"
+        ],
+        "summary": "Submit one reviewed, source-bound knowledge proposal",
+        "description": "Starts one owner-bound Curator review from explicit cited content or a reviewed Student answer. A successful result creates only a noncanonical proposal that still requires review; it never activates or mutates canonical knowledge.",
+        "operationId": "submitCuratorProposal",
+        "x-yap-runtime-status": "Implemented only when the authenticated warm Curator runtime verifies",
+        "x-yap-runtime-owner": "Curator reviewed noncanonical proposals",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CuratorProposalRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "The owner-bound Curator review was accepted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CuratorProposalJobView"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          }
+        }
+      }
+    },
+    "/v1/curator-proposals/{requestId}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/CuratorProposalRequestId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "agents"
+        ],
+        "summary": "Read one owner-bound Curator review",
+        "operationId": "getCuratorProposal",
+        "x-yap-runtime-status": "Implemented only when the authenticated warm Curator runtime verifies",
+        "x-yap-runtime-owner": "Curator reviewed noncanonical proposals",
+        "responses": {
+          "200": {
+            "description": "The current bounded Curator review lifecycle projection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CuratorProposalJobView"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/AuthenticationUnavailableResponse"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "agents"
+        ],
+        "summary": "Request cancellation of one owner-bound Curator review",
+        "description": "Signals in-flight Curator evidence and model work and returns its cancellation-requested projection; status polling observes terminal acknowledgement.",
+        "operationId": "cancelCuratorProposal",
+        "x-yap-runtime-status": "Implemented only when the authenticated warm Curator runtime verifies",
+        "x-yap-runtime-owner": "Curator reviewed noncanonical proposals",
+        "responses": {
+          "202": {
+            "description": "Cancellation was requested for the owned Curator review.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CuratorProposalJobView"
                 }
               }
             }
@@ -1740,6 +1872,18 @@
           "maxLength": 52,
           "pattern": "^archivist-ingestion-[0-9a-f]{32}$"
         }
+      },
+      "CuratorProposalRequestId": {
+        "name": "requestId",
+        "in": "path",
+        "required": true,
+        "description": "Opaque Curator product request identity scoped to the authenticated owner.",
+        "schema": {
+          "type": "string",
+          "minLength": 49,
+          "maxLength": 49,
+          "pattern": "^curator-proposal-[0-9a-f]{32}$"
+        }
       }
     },
     "responses": {
@@ -2407,6 +2551,192 @@
           "permissionCount": {
             "type": "integer",
             "minimum": 1
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+          }
+        }
+      },
+      "CuratorProposalCitation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "conceptId",
+          "sourceRevision",
+          "contentSha256",
+          "charStart",
+          "charEnd"
+        ],
+        "properties": {
+          "conceptId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "sourceRevision": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "contentSha256": {
+            "$ref": "#/components/schemas/Sha256"
+          },
+          "charStart": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9223372036854775807
+          },
+          "charEnd": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9223372036854775807
+          }
+        }
+      },
+      "CuratorExplicitProposalRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "submissionId",
+          "trigger",
+          "expectedGenerationSha256",
+          "reviewedContent",
+          "sourceCitations"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "submissionId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+          },
+          "trigger": {
+            "type": "string",
+            "const": "explicit-proposal"
+          },
+          "expectedGenerationSha256": {
+            "$ref": "#/components/schemas/Sha256"
+          },
+          "reviewedContent": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "sourceCitations": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 8,
+            "uniqueItems": true,
+            "items": {
+              "$ref": "#/components/schemas/CuratorProposalCitation"
+            }
+          }
+        }
+      },
+      "CuratorReviewedStudentAnswerRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "submissionId",
+          "trigger",
+          "expectedGenerationSha256",
+          "reviewedContent",
+          "studentQuestion"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "submissionId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+          },
+          "trigger": {
+            "type": "string",
+            "const": "reviewed-student-answer"
+          },
+          "expectedGenerationSha256": {
+            "$ref": "#/components/schemas/Sha256"
+          },
+          "reviewedContent": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "studentQuestion": {
+            "$ref": "#/components/schemas/StudentQuestion"
+          }
+        }
+      },
+      "CuratorProposalRequest": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/CuratorExplicitProposalRequest"
+          },
+          {
+            "$ref": "#/components/schemas/CuratorReviewedStudentAnswerRequest"
+          }
+        ]
+      },
+      "CuratorProposalJobView": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "requestId",
+          "submissionId",
+          "status",
+          "generationSha256"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "requestId": {
+            "type": "string",
+            "minLength": 49,
+            "maxLength": 49,
+            "pattern": "^curator-proposal-[0-9a-f]{32}$"
+          },
+          "submissionId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "cancellation-requested",
+              "proposed",
+              "rejected",
+              "cancelled",
+              "failed"
+            ]
+          },
+          "generationSha256": {
+            "$ref": "#/components/schemas/Sha256"
+          },
+          "evidenceSha256": {
+            "$ref": "#/components/schemas/Sha256"
+          },
+          "proposalId": {
+            "$ref": "#/components/schemas/Sha256"
           },
           "reason": {
             "type": "string",
@@ -5074,7 +5404,8 @@
           "transcriptCorrection",
           "librarianQueries",
           "studentQuestions",
-          "archivistIngestions"
+          "archivistIngestions",
+          "curatorProposals"
         ],
         "properties": {
           "batchJobs": {
@@ -5104,6 +5435,10 @@
           "archivistIngestions": {
             "type": "boolean",
             "description": "True only when authenticated reviewed-source Archivist staging is configured."
+          },
+          "curatorProposals": {
+            "type": "boolean",
+            "description": "True only when authenticated noncanonical Curator knowledge proposals are configured."
           }
         }
       },

@@ -11,6 +11,7 @@ class ServerCapabilities:
     librarian_queries: bool
     student_questions: bool
     archivist_ingestions: bool
+    curator_proposals: bool = False
 
     def to_wire(self) -> dict[str, bool]:
         return {
@@ -21,6 +22,7 @@ class ServerCapabilities:
             "librarianQueries": self.librarian_queries,
             "studentQuestions": self.student_questions,
             "archivistIngestions": self.archivist_ingestions,
+            "curatorProposals": self.curator_proposals,
         }
 
 

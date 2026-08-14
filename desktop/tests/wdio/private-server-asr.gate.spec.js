@@ -416,6 +416,7 @@ describe("checked-head private-server ASR gate", () => {
     const connection = await waitForConnectionState("ready", "become ready");
     expect(connection.capabilities).toEqual({
       archivistIngestions: false,
+      curatorProposals: false,
       studentQuestions: false,
       batchJobs: true,
       jobStatus: true,

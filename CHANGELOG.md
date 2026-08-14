@@ -3,7 +3,31 @@
 This changelog records product/architecture milestones. Exact test counts and
 immutable evidence belong in phase/checkpoint evidence records.
 
-## Unreleased — Student product candidate qualified
+## Unreleased — Curator product candidate privately qualified
+
+- Adds authenticated Curator proposal submission/status/cancellation endpoints,
+  native-owned bearer transport and response validation, and one explicit
+  **Propose as knowledge** action after a completed reviewed Student question.
+- A successful result remains noncanonical and review-required. The product
+  surface cannot activate knowledge or mutate source truth, and the renderer
+  receives no credentials and renders no internal request, evidence, or
+  proposal hashes.
+- Exact executable `6aa33e4d...` privately qualified the authenticated Curator
+  server boundary with public-safe evidence SHA-256 `328f6640...`: 10/10 exact
+  terminals across 8 owners, exact owner isolation, restart/read-back,
+  complex-c8/ninth-owner-queued containment, unchanged source truth, and exact
+  teardown. The HTTP/native/renderer candidate remains unmerged and still
+  requires unchanged-head hosted checks.
+- Public verification is green: portable server **1,584 = 1,537 passed + 47
+  declared skips**, governed fixed **173 = 169 + 4**, desktop **61 files / 383
+  tests**, production TypeScript/Vite, Rust formatting/strict Clippy/tests, and
+  focused Curator product-gate **7/7**.
+- Gemma remains the qualified private complex route. Muse Spark is not silently
+  substituted: a separate post-merge evaluation must first bind an official
+  deployable model/version, license, organization identity, privacy boundary,
+  and exact tool-calling/runtime contract.
+
+## 2026-08-14 — Student product vertical merged
 
 - Exact executable `778a7545...` privately qualified the authenticated Student
   product server boundary with public-safe evidence SHA-256 `c46cf7df...`:
@@ -15,10 +39,11 @@ immutable evidence belong in phase/checkpoint evidence records.
   learning-question action beside permission-safe Librarian meeting evidence.
   It writes no proposal or knowledge mutation and does not launch, swap, or
   reduce the unchanged full Qwen rapid route.
-- This is an unmerged product candidate. Its private gate is a server-boundary
-  run, not a live native-to-renderer or enterprise identity-provider run. Hosted
-  review, merge, simultaneous residency, sustained capacity/SLO, deployment,
-  and the separate Muse Spark 1.2 decision remain pending.
+- Its private gate is a server-boundary run, not a live native-to-renderer or
+  enterprise identity-provider run. Hosted head `53ce570b...` passed all 12
+  required checks, and PR #178 merged the vertical as `6546970b...`.
+  Simultaneous residency, sustained capacity/SLO, deployment, and the separate
+  Muse Spark evaluation remain pending.
 
 ## 2026-08-14 — Archivist product vertical merged
 

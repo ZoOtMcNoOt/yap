@@ -25,6 +25,7 @@ class HealthRoutingTests(HealthServerTestCase):
                     "librarianQueries": False,
                     "studentQuestions": False,
                     "archivistIngestions": False,
+                    "curatorProposals": False,
                 },
             },
         )

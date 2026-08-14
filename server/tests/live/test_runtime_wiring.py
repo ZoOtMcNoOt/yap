@@ -46,6 +46,22 @@ class LiveRuntimeWiringTests(unittest.TestCase):
             thread_name="yap-server-archivist-cleanup",
         )
 
+    def test_curator_cleanup_preserves_its_worker_containment_bound(self) -> None:
+        runtime = SimpleNamespace(close=Mock())
+        with patch.object(
+            server_main,
+            "run_cleanup_before_deadline",
+        ) as run_cleanup:
+            server_main._close_curator_product_runtime_or_fail_stop(runtime)
+
+        run_cleanup.assert_called_once_with(
+            runtime.close,
+            timeout_seconds=(
+                server_main._CURATOR_PRODUCT_RUNTIME_CLEANUP_TIMEOUT_SECONDS
+            ),
+            thread_name="yap-server-curator-product-cleanup",
+        )
+
     def test_main_keeps_authenticated_application_transport_on_loopback(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             settings = ServerSettings(
@@ -111,6 +127,10 @@ class LiveRuntimeWiringTests(unittest.TestCase):
                 service=object(),
                 close=Mock(),
             )
+            curator_runtime = SimpleNamespace(
+                service=object(),
+                close=Mock(),
+            )
             live_transport = Mock()
             live_transport.start.return_value = live_transport
 
@@ -148,6 +168,11 @@ class LiveRuntimeWiringTests(unittest.TestCase):
                 ) as build_student,
                 patch.object(
                     server_main,
+                    "build_curator_product_runtime",
+                    return_value=curator_runtime,
+                ) as build_curator,
+                patch.object(
+                    server_main,
                     "private_live_port_from_env",
                     return_value=19_001,
                 ),
@@ -173,11 +198,16 @@ class LiveRuntimeWiringTests(unittest.TestCase):
         authorization_runtime.close.assert_called_once_with()
         librarian_runtime.close.assert_called_once_with()
         student_runtime.close.assert_called_once_with()
+        curator_runtime.close.assert_called_once_with()
         build_librarian.assert_called_once_with(
             server_main.os.environ,
             authenticated_team_mode=True,
         )
         build_student.assert_called_once_with(
+            server_main.os.environ,
+            authenticated_team_mode=True,
+        )
+        build_curator.assert_called_once_with(
             server_main.os.environ,
             authenticated_team_mode=True,
         )
@@ -190,6 +220,7 @@ class LiveRuntimeWiringTests(unittest.TestCase):
             librarian_query_service=librarian_runtime.service,
             student_question_service=student_runtime.service,
             archivist_ingestion_service=None,
+            curator_proposal_service=curator_runtime.service,
             transcript_correction_service=None,
         )
 
@@ -221,6 +252,11 @@ class LiveRuntimeWiringTests(unittest.TestCase):
             patch.object(
                 server_main,
                 "build_student_product_runtime",
+                return_value=None,
+            ),
+            patch.object(
+                server_main,
+                "build_curator_product_runtime",
                 return_value=None,
             ),
             patch.object(server_main, "PrivateLiveWebSocketServer") as live_server,
@@ -291,6 +327,11 @@ class LiveRuntimeWiringTests(unittest.TestCase):
                 ),
                 patch.object(
                     server_main,
+                    "build_curator_product_runtime",
+                    return_value=None,
+                ),
+                patch.object(
+                    server_main,
                     "build_batch_runtime",
                     return_value=batch_runtime,
                 ),
@@ -327,6 +368,7 @@ class LiveRuntimeWiringTests(unittest.TestCase):
             librarian_query_service=None,
             student_question_service=None,
             archivist_ingestion_service=archivist_runtime.service,
+            curator_proposal_service=None,
         )
         archivist_runtime.close.assert_called_once_with()
         batch_runtime.close.assert_called_once_with()

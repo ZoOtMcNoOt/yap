@@ -20,6 +20,7 @@ class HealthTests(unittest.TestCase):
                     "librarianQueries": False,
                     "studentQuestions": False,
                     "archivistIngestions": False,
+                    "curatorProposals": False,
                 },
             },
         )
@@ -40,6 +41,7 @@ class HealthTests(unittest.TestCase):
                     "librarianQueries": False,
                     "studentQuestions": False,
                     "archivistIngestions": False,
+                    "curatorProposals": False,
                 },
             },
         )

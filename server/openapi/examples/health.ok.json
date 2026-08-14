@@ -10,6 +10,7 @@
     "transcriptCorrection": false,
     "librarianQueries": false,
     "studentQuestions": false,
-    "archivistIngestions": false
+    "archivistIngestions": false,
+    "curatorProposals": false
   }
 }

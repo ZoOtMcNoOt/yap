@@ -5,6 +5,7 @@ _LID_REQUEST_ID = r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}"
 _LIBRARIAN_QUERY_ID = r"librarian-query-[0-9a-f]{32}"
 _STUDENT_QUESTION_ID = r"student-question-[0-9a-f]{32}"
 _ARCHIVIST_INGESTION_ID = r"archivist-ingestion-[0-9a-f]{32}"
+_CURATOR_PROPOSAL_ID = r"curator-proposal-[0-9a-f]{32}"
 LID_PREFLIGHT_PATH = "/v1/lid/preflight"
 LID_PREFLIGHT_CANCEL_PATH = re.compile(
     rf"^/v1/lid/preflights/(?P<request_id>{_LID_REQUEST_ID})$"
@@ -24,6 +25,10 @@ STUDENT_QUESTION_PATH = re.compile(
 ARCHIVIST_INGESTIONS_PATH = "/v1/archivist-ingestions"
 ARCHIVIST_INGESTION_PATH = re.compile(
     rf"^/v1/archivist-ingestions/(?P<request_id>{_ARCHIVIST_INGESTION_ID})$"
+)
+CURATOR_PROPOSALS_PATH = "/v1/curator-proposals"
+CURATOR_PROPOSAL_PATH = re.compile(
+    rf"^/v1/curator-proposals/(?P<request_id>{_CURATOR_PROPOSAL_ID})$"
 )
 JOB_PATH = re.compile(rf"^/v1/jobs/(?P<job_id>{_PATH_ID})$")
 RESULT_PATH = re.compile(rf"^/v1/jobs/(?P<job_id>{_PATH_ID})/result$")
@@ -67,6 +72,10 @@ def allowed_methods(path: str) -> frozenset[str] | None:
     if path == ARCHIVIST_INGESTIONS_PATH:
         return frozenset({"POST"})
     if ARCHIVIST_INGESTION_PATH.fullmatch(path):
+        return frozenset({"DELETE", "GET"})
+    if path == CURATOR_PROPOSALS_PATH:
+        return frozenset({"POST"})
+    if CURATOR_PROPOSAL_PATH.fullmatch(path):
         return frozenset({"DELETE", "GET"})
     if path == "/v1/jobs":
         return frozenset({"POST"})
