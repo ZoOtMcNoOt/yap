@@ -418,6 +418,7 @@ describe("checked-head private-server ASR gate", () => {
       archivistIngestions: false,
       analystAnswers: false,
       coordinatorBundles: false,
+      auditorReports: false,
       curatorProposals: false,
       studentQuestions: false,
       batchJobs: true,

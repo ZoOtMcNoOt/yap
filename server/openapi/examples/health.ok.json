@@ -13,6 +13,7 @@
     "archivistIngestions": false,
     "curatorProposals": false,
     "analystAnswers": false,
-    "coordinatorBundles": false
+    "coordinatorBundles": false,
+    "auditorReports": false
   }
 }

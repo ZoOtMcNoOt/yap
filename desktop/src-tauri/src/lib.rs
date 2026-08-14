@@ -4,6 +4,7 @@ mod archivist_ingestion;
 mod atomic_file;
 mod atomic_text;
 pub mod audio;
+mod auditor_report;
 mod authorization;
 mod bounded_file;
 mod commands;

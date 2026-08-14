@@ -33,6 +33,7 @@ export type ServerCapabilities = {
   librarianQueries: boolean;
   analystAnswers: boolean;
   coordinatorBundles: boolean;
+  auditorReports: boolean;
   archivistIngestions: boolean;
   studentQuestions: boolean;
   curatorProposals: boolean;

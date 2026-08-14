@@ -23,6 +23,7 @@ class HealthTests(unittest.TestCase):
                     "curatorProposals": False,
                     "analystAnswers": False,
                     "coordinatorBundles": False,
+                    "auditorReports": False,
                 },
             },
         )
@@ -46,6 +47,7 @@ class HealthTests(unittest.TestCase):
                     "curatorProposals": False,
                     "analystAnswers": False,
                     "coordinatorBundles": False,
+                    "auditorReports": False,
                 },
             },
         )

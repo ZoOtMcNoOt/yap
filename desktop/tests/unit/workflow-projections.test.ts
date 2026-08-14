@@ -90,6 +90,7 @@ describe("client workflow projections", () => {
         librarianQueries: false,
         analystAnswers: false,
         coordinatorBundles: false,
+        auditorReports: false,
         archivistIngestions: false,
         studentQuestions: false,
         curatorProposals: false,

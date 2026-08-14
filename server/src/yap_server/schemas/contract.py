@@ -14,6 +14,7 @@ class ServerCapabilities:
     curator_proposals: bool
     analyst_answers: bool
     coordinator_bundles: bool
+    auditor_reports: bool
 
     def to_wire(self) -> dict[str, bool]:
         return {
@@ -27,6 +28,7 @@ class ServerCapabilities:
             "curatorProposals": self.curator_proposals,
             "analystAnswers": self.analyst_answers,
             "coordinatorBundles": self.coordinator_bundles,
+            "auditorReports": self.auditor_reports,
         }
 
 

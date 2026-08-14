@@ -37,6 +37,7 @@ class RequestLoggingTests(HealthServerTestCase):
                 "curatorProposals": False,
                 "analystAnswers": False,
                 "coordinatorBundles": False,
+                "auditorReports": False,
             },
         }
         self.assertEqual(status, 200)

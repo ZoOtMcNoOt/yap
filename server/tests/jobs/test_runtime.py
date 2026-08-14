@@ -924,6 +924,7 @@ class ServerMainTests(unittest.TestCase):
             curator_proposal_service=None,
             analyst_answer_service=None,
             coordinator_bundle_service=None,
+            auditor_report_service=None,
         )
         self.assertTrue(runtime.closed)
 

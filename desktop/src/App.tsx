@@ -288,6 +288,8 @@ export default function App() {
 
       {showKnowledge ? (
         <LibrarianPanel
+          auditorAvailable={settings.serverSnapshot.state === "ready"
+            && settings.serverSnapshot.capabilities.auditorReports}
           analystAvailable={settings.serverSnapshot.state === "ready"
             && settings.serverSnapshot.capabilities.analystAnswers}
           available={settings.serverSnapshot.state === "ready"

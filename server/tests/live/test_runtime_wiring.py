@@ -171,6 +171,10 @@ class LiveRuntimeWiringTests(unittest.TestCase):
                 service=object(),
                 close=Mock(),
             )
+            auditor_runtime = SimpleNamespace(
+                service=object(),
+                close=Mock(),
+            )
             live_transport = Mock()
             live_transport.start.return_value = live_transport
 
@@ -223,6 +227,11 @@ class LiveRuntimeWiringTests(unittest.TestCase):
                 ) as build_coordinator,
                 patch.object(
                     server_main,
+                    "build_auditor_product_runtime",
+                    return_value=auditor_runtime,
+                ) as build_auditor,
+                patch.object(
+                    server_main,
                     "private_live_port_from_env",
                     return_value=19_001,
                 ),
@@ -251,6 +260,7 @@ class LiveRuntimeWiringTests(unittest.TestCase):
         curator_runtime.close.assert_called_once_with()
         analyst_runtime.close.assert_called_once_with()
         coordinator_runtime.close.assert_called_once_with()
+        auditor_runtime.close.assert_called_once_with()
         build_librarian.assert_called_once_with(
             server_main.os.environ,
             authenticated_team_mode=True,
@@ -271,6 +281,10 @@ class LiveRuntimeWiringTests(unittest.TestCase):
             server_main.os.environ,
             authenticated_team_mode=True,
         )
+        build_auditor.assert_called_once_with(
+            server_main.os.environ,
+            authenticated_team_mode=True,
+        )
         serve.assert_called_once_with(
             settings,
             request_authenticator=admitted_authenticator,
@@ -283,6 +297,7 @@ class LiveRuntimeWiringTests(unittest.TestCase):
             curator_proposal_service=curator_runtime.service,
             analyst_answer_service=analyst_runtime.service,
             coordinator_bundle_service=coordinator_runtime.service,
+            auditor_report_service=auditor_runtime.service,
             transcript_correction_service=None,
         )
 
@@ -453,6 +468,7 @@ class LiveRuntimeWiringTests(unittest.TestCase):
             curator_proposal_service=None,
             analyst_answer_service=None,
             coordinator_bundle_service=None,
+            auditor_report_service=None,
         )
         archivist_runtime.close.assert_called_once_with()
         batch_runtime.close.assert_called_once_with()
