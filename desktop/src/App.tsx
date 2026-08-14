@@ -292,6 +292,8 @@ export default function App() {
             && settings.serverSnapshot.capabilities.analystAnswers}
           available={settings.serverSnapshot.state === "ready"
             && settings.serverSnapshot.capabilities.librarianQueries}
+          coordinatorAvailable={settings.serverSnapshot.state === "ready"
+            && settings.serverSnapshot.capabilities.coordinatorBundles}
           curatorAvailable={settings.serverSnapshot.state === "ready"
             && settings.serverSnapshot.capabilities.curatorProposals}
           studentAvailable={settings.serverSnapshot.state === "ready"

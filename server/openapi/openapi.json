@@ -829,6 +829,138 @@
         }
       }
     },
+    "/v1/coordinator-bundles": {
+      "post": {
+        "tags": [
+          "agents"
+        ],
+        "summary": "Submit one source-cited coordination objective",
+        "description": "Starts one owner-bound Coordinator request. The server selects only current owner-visible reviewed Curator proposals, admits one complex-route model lease, and returns a server-derived noncanonical review-required bundle. The request carries no tenant, subject, route, provider, proposal, evidence, or citation authority.",
+        "operationId": "submitCoordinatorBundle",
+        "x-yap-runtime-status": "Implemented only when the authenticated warm Coordinator runtime verifies",
+        "x-yap-runtime-owner": "Coordinator noncanonical proposal bundles",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CoordinatorRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "The owner-bound coordination-bundle request was accepted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoordinatorBundleJobView"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          }
+        }
+      }
+    },
+    "/v1/coordinator-bundles/{requestId}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/CoordinatorBundleRequestId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "agents"
+        ],
+        "summary": "Read one owner-bound coordination-bundle request",
+        "operationId": "getCoordinatorBundle",
+        "x-yap-runtime-status": "Implemented only when the authenticated warm Coordinator runtime verifies",
+        "x-yap-runtime-owner": "Coordinator noncanonical proposal bundles",
+        "responses": {
+          "200": {
+            "description": "The current bounded coordination-bundle lifecycle projection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoordinatorBundleJobView"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/AuthenticationUnavailableResponse"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "agents"
+        ],
+        "summary": "Request cancellation of one owner-bound coordination bundle",
+        "description": "Signals in-flight evidence and model work and returns its cancellation-requested projection; status polling observes terminal acknowledgement.",
+        "operationId": "cancelCoordinatorBundle",
+        "x-yap-runtime-status": "Implemented only when the authenticated warm Coordinator runtime verifies",
+        "x-yap-runtime-owner": "Coordinator noncanonical proposal bundles",
+        "responses": {
+          "202": {
+            "description": "Cancellation was requested for the owned coordination-bundle request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoordinatorBundleJobView"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          }
+        }
+      }
+    },
     "/v1/student-questions": {
       "post": {
         "tags": [
@@ -1993,6 +2125,18 @@
           "pattern": "^analyst-answer-[0-9a-f]{32}$"
         }
       },
+      "CoordinatorBundleRequestId": {
+        "name": "requestId",
+        "in": "path",
+        "required": true,
+        "description": "Opaque Coordinator product request identity scoped to the authenticated owner.",
+        "schema": {
+          "type": "string",
+          "minLength": 51,
+          "maxLength": 51,
+          "pattern": "^coordinator-bundle-[0-9a-f]{32}$"
+        }
+      },
       "StudentQuestionRequestId": {
         "name": "requestId",
         "in": "path",
@@ -2531,6 +2675,169 @@
           },
           "citedAnswer": {
             "$ref": "#/components/schemas/AnalystAnswer"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+          }
+        }
+      },
+      "CoordinatorRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "objective",
+          "maximumItems",
+          "expectedGenerationSha256"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "objective": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "maximumItems": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "expectedGenerationSha256": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      },
+      "CoordinatorProposalBundleItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "proposalId",
+          "proposalType",
+          "proposedContent",
+          "citations",
+          "citationSha256",
+          "candidateSha256"
+        ],
+        "properties": {
+          "proposalId": {
+            "$ref": "#/components/schemas/Sha256"
+          },
+          "proposalType": {
+            "type": "string",
+            "const": "summary"
+          },
+          "proposedContent": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "citations": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 8,
+            "items": {
+              "$ref": "#/components/schemas/LibrarianEvidenceItem"
+            }
+          },
+          "citationSha256": {
+            "$ref": "#/components/schemas/Sha256"
+          },
+          "candidateSha256": {
+            "$ref": "#/components/schemas/Sha256"
+          }
+        }
+      },
+      "CoordinatorProposalBundle": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "generationSha256",
+          "evidenceSha256",
+          "items",
+          "bundleSha256",
+          "citationSha256",
+          "canonical",
+          "requiresReview"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "generationSha256": {
+            "$ref": "#/components/schemas/Sha256"
+          },
+          "evidenceSha256": {
+            "$ref": "#/components/schemas/Sha256"
+          },
+          "items": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 5,
+            "items": {
+              "$ref": "#/components/schemas/CoordinatorProposalBundleItem"
+            }
+          },
+          "bundleSha256": {
+            "$ref": "#/components/schemas/Sha256"
+          },
+          "citationSha256": {
+            "$ref": "#/components/schemas/Sha256"
+          },
+          "canonical": {
+            "type": "boolean",
+            "const": false
+          },
+          "requiresReview": {
+            "type": "boolean",
+            "const": true
+          }
+        }
+      },
+      "CoordinatorBundleJobView": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "requestId",
+          "status"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "requestId": {
+            "type": "string",
+            "minLength": 51,
+            "maxLength": 51,
+            "pattern": "^coordinator-bundle-[0-9a-f]{32}$"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "cancellation-requested",
+              "complete",
+              "evidence-unavailable",
+              "cancelled",
+              "failed"
+            ]
+          },
+          "proposalBundle": {
+            "$ref": "#/components/schemas/CoordinatorProposalBundle"
           },
           "reason": {
             "type": "string",
@@ -5665,7 +5972,8 @@
           "studentQuestions",
           "archivistIngestions",
           "curatorProposals",
-          "analystAnswers"
+          "analystAnswers",
+          "coordinatorBundles"
         ],
         "properties": {
           "batchJobs": {
@@ -5703,6 +6011,10 @@
           "analystAnswers": {
             "type": "boolean",
             "description": "True only when authenticated source-cited Analyst answers are configured."
+          },
+          "coordinatorBundles": {
+            "type": "boolean",
+            "description": "True only when authenticated noncanonical review-required Coordinator proposal bundles are configured."
           }
         }
       },

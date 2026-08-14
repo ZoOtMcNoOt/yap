@@ -13,6 +13,7 @@ class ServerCapabilities:
     archivist_ingestions: bool
     curator_proposals: bool
     analyst_answers: bool
+    coordinator_bundles: bool
 
     def to_wire(self) -> dict[str, bool]:
         return {
@@ -25,6 +26,7 @@ class ServerCapabilities:
             "archivistIngestions": self.archivist_ingestions,
             "curatorProposals": self.curator_proposals,
             "analystAnswers": self.analyst_answers,
+            "coordinatorBundles": self.coordinator_bundles,
         }
 
 

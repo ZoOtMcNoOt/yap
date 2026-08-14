@@ -1,6 +1,6 @@
 # ADR 0031: Eight-agent Voice OS roster and execution boundaries
 
-**Status:** Accepted target; all eight bounded role cores and five product surfaces are merged; Analyst has a privately qualified unmerged product successor; Coordinator/Auditor product surfaces and promotion remain open
+**Status:** Accepted target; all eight bounded role cores and six product surfaces are merged; Coordinator has a privately qualified unmerged product successor; Auditor product exposure and promotion remain open
 **Date:** 2026-08-11
 **Deciders:** Yap product and engineering owner
 **Amends:** [ADR 0006](0006-silero-agents-state-machine.md),
@@ -13,7 +13,7 @@
 ## Context
 
 The product architecture names eight agents, and the merged system now delivers
-all eight as bounded internal role cores. Scribe, Librarian, Archivist, Student, and Curator have current
+all eight as bounded internal role cores. Scribe, Librarian, Archivist, Student, Curator, and Analyst have current
 product surfaces in the merged product. Exact `e2ba1864...` privately qualified
 Librarian's authenticated HTTP server boundary; hosted head `67a79ce2...` passed
 all 12 checks, and PR #174 merged the HTTP/native/Knowledge vertical as
@@ -29,10 +29,13 @@ merged the vertical as `6546970b...`. Exact `6aa33e4d...` privately qualified
 Curator's authenticated server boundary with 10/10 exact terminals and public-
 safe evidence SHA-256 `328f6640...`; hosted head `b983adb7...` passed all 12
 checks and PR #179 merged the vertical as `70303872...`. Exact `78b2c638...`
-now privately qualifies Analyst's authenticated cited-answer server boundary
+privately qualified Analyst's authenticated cited-answer server boundary
 with 10/10 exact product terminals and public-safe evidence SHA-256
-`f26adfc0...`; its HTTP/native/renderer successor remains unmerged pending
-hosted review. Phase 9 merged the
+`f26adfc0...`; hosted head `4c8db7c2...` passed all 12 checks and PR #180 merged
+its HTTP/native/renderer successor as `c95fcf1a...`. Exact `05400fb3...`
+privately qualifies Coordinator's product server/database/broker boundary with
+10/10 exact terminals and public-safe evidence SHA-256 `394112ad...`; hosted
+review remains pending. Phase 9 merged the
 governed knowledge, tool, retrieval, terminology,
 and two qualified reasoning-route foundations. Phase 10
 Slices 10.1 and 10.2 merged the Rust-supervised lifecycle and exact Qwen rapid/
@@ -361,9 +364,11 @@ hosted head `53ce570b...` merged the product vertical through PR #178 as
 `6546970b...`. Exact `6aa33e4d...` privately qualified Curator's product
 successor with public-safe evidence SHA-256 `328f6640...`; hosted head
 `b983adb7...` passed all 12 checks and PR #179 merged it as `70303872...`.
-Exact `78b2c638...` privately qualifies Analyst's product server boundary with
-public-safe evidence SHA-256 `f26adfc0...`; Analyst hosted merge plus Coordinator
-and Auditor product exposure, warm
+Exact `78b2c638...` privately qualified Analyst's product server boundary with
+public-safe evidence SHA-256 `f26adfc0...`; hosted head `4c8db7c2...` passed all
+12 checks and PR #180 merged it as `c95fcf1a...`. Exact `05400fb3...` privately
+qualifies Coordinator's product server/database/broker boundary with public-safe
+evidence SHA-256 `394112ad...`; Coordinator hosted merge and Auditor product exposure, warm
 simultaneous two-route residency, sustained multi-owner capacity, and production
 promotion remain open.
 One Spark cannot retain the

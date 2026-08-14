@@ -7,6 +7,7 @@ pub mod audio;
 mod authorization;
 mod bounded_file;
 mod commands;
+mod coordinator_bundle;
 mod curator_proposal;
 mod diagnostics;
 mod exclusive_file_lease;

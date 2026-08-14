@@ -23,6 +23,7 @@ const initialServerSnapshot: ServerConnectionSnapshot = {
     transcriptCorrection: false,
     librarianQueries: false,
     analystAnswers: false,
+    coordinatorBundles: false,
     archivistIngestions: false,
     studentQuestions: false,
     curatorProposals: false,

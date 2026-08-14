@@ -13,6 +13,7 @@ Current architecture-review evidence:
 - [Analyst product-vertical verification](analyst-product-vertical/VERIFICATION.md)
 - [Auditor source-cited review-findings verification](auditor-source-cited-review-findings/VERIFICATION.md)
 - [Coordinator proposal-bundle verification](coordinator-proposal-bundles/VERIFICATION.md)
+- [Coordinator product-vertical verification](coordinator-product-vertical/VERIFICATION.md)
 - [Curator knowledge-proposal verification](curator-knowledge-proposals/VERIFICATION.md)
 - [Curator product-vertical verification](curator-product-vertical/VERIFICATION.md)
 - [Librarian permission-safe evidence verification](librarian-permission-safe-evidence/VERIFICATION.md)

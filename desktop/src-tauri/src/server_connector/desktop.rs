@@ -469,6 +469,7 @@ mod authentication_projection_tests {
                 transcript_correction: true,
                 librarian_queries: true,
                 analyst_answers: true,
+                coordinator_bundles: true,
                 student_questions: true,
                 archivist_ingestions: true,
                 curator_proposals: true,

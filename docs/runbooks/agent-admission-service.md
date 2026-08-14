@@ -178,8 +178,9 @@ Hosted head `da1127f8...` merged the internal core through PR #170 as
 the authenticated Analyst server boundary across 10 exact product jobs. Its
 independent live probe held eight complex leases and queued the ninth; the
 product workload itself claims eight synchronized owner calls, not eight
-simultaneous inferences. The product successor remains unmerged pending hosted
-review, and neither receipt is production-service evidence. See the
+simultaneous inferences. Hosted head `4c8db7c2...` passed all 12 checks and PR
+#180 merged the product successor as `c95fcf1a...`; neither receipt is
+production-service evidence. See the
 [Analyst evidence](../evidence/analyst-grounded-cited-answers/VERIFICATION.md).
 See also the
 [Analyst product record](../evidence/analyst-product-vertical/VERIFICATION.md).
@@ -190,9 +191,15 @@ and all 29 terminal outcomes. The gate independently proved exactly one ticket
 per invocation, 28 submitted leases, 26 completions, one client cancellation,
 one deadline expiry, and one pre-cancelled unsubmitted ticket. Hosted head
 `53ee0152...` passed all 12 checks, and PR #171 merged Coordinator as
-`67d836da...`. This qualifies a merged internal workflow, not a product
-endpoint, autonomous action, or production service. See the
+`67d836da...`. Exact product successor `05400fb3...` then privately qualified
+the authenticated Coordinator server/database/broker boundary across 10 exact
+product jobs. Its independent live probe held eight complex leases and queued
+the ninth; the product workload itself claims eight synchronized owner calls,
+not eight simultaneous inferences. The product successor remains unmerged
+pending hosted review, and neither receipt is production-service evidence. See the
 [Coordinator evidence](../evidence/coordinator-proposal-bundles/VERIFICATION.md).
+See also the
+[Coordinator product record](../evidence/coordinator-product-vertical/VERIFICATION.md).
 
 Exact executable `08b06f6d...` privately qualified Auditor on the idle-only
 complex route. Three synchronized repeat waves matched 24 of 24 normal service

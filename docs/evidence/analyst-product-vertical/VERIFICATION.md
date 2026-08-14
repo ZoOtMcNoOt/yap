@@ -9,7 +9,9 @@ qualifies the Analyst product vertical. Its owner-private ARM64 gate returned
 `analyst-authenticated-product-server-boundary-qualified` with public-safe
 evidence SHA-256
 `f26adfc034cdc99d667f1a99ca54daf92dc9d885456104f17787cdf2cc96fa44`.
-The candidate remains unmerged and still requires unchanged-head hosted review.
+Hosted head `4c8db7c22f6a8ebadbc73433155f060b5b699fb6` passed all 12
+required checks, and PR #180 merged the product vertical as
+`c95fcf1a043f919661b007f014a8dc6729aa02f2` on 2026-08-14.
 
 The frozen product acceptance plan is
 `server/analyst-product-acceptance.json`, SHA-256
@@ -93,9 +95,10 @@ citation, model output, database row, DSN, host path, individual timing, or
 private receipt is committed. Git records only exact revisions, public-safe
 hashes, aggregate counts, booleans, and bounded outcomes.
 
-This result qualifies the authenticated Analyst server boundary. It does not
-qualify a native/renderer round trip, live enterprise identity-provider
-exchange, hosted review, merge, production deployment, simultaneous Qwen/Gemma
+This result qualifies the authenticated Analyst server boundary. The merged
+native/renderer implementation is exact-head public- and hosted-test evidence;
+the private gate did not execute a native/renderer round trip or live enterprise
+identity-provider exchange. It does not qualify production deployment, simultaneous Qwen/Gemma
 residency, sustained capacity, or a p50/p95/p99 SLO. The internal Analyst gate's
 three synchronized repeats remain the same-warm-provider semantic-repeatability
 authority; this product gate runs one synchronized eight-owner product wave and

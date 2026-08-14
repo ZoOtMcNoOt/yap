@@ -12,6 +12,7 @@
     "studentQuestions": false,
     "archivistIngestions": false,
     "curatorProposals": false,
-    "analystAnswers": false
+    "analystAnswers": false,
+    "coordinatorBundles": false
   }
 }

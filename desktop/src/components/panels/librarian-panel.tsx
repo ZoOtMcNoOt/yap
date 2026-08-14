@@ -5,6 +5,7 @@ import { XCircle } from "@phosphor-icons/react/XCircle";
 import { useEffect, useState } from "react";
 
 import { AnalystAnswerComposer } from "@/components/analyst/analyst-answer-composer";
+import { CoordinatorBundleComposer } from "@/components/coordinator/coordinator-bundle-composer";
 import { LibrarianEvidenceResults } from "@/components/librarian/librarian-evidence-results";
 import { useLibrarianQuery } from "@/components/librarian/use-librarian-query";
 import { StudentQuestionComposer } from "@/components/student/student-question-composer";
@@ -18,11 +19,13 @@ import type { LibrarianEvidenceItem } from "@/librarian";
 export function LibrarianPanel({
   analystAvailable = false,
   available,
+  coordinatorAvailable = false,
   curatorAvailable = false,
   studentAvailable = false,
 }: {
   analystAvailable?: boolean;
   available: boolean;
+  coordinatorAvailable?: boolean;
   curatorAvailable?: boolean;
   studentAvailable?: boolean;
 }) {
@@ -63,6 +66,8 @@ export function LibrarianPanel({
         ) : null}
 
         <AnalystAnswerComposer available={analystAvailable} />
+
+        <CoordinatorBundleComposer available={coordinatorAvailable} />
 
         <div className="border-t border-border/60 pt-5">
           <h3 className="text-base font-semibold">Search exact source excerpts</h3>

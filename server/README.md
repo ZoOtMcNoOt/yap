@@ -1043,10 +1043,10 @@ equivalence, two PostgreSQL restart/read-backs, exact Analyst/Librarian/tool
 audits, zero proposal writes, complex c8/ninth-owner-queued containment, and
 complete teardown. Public-safe evidence SHA-256 is `f26adfc0...`. See the
 [Analyst product record](../docs/evidence/analyst-product-vertical/VERIFICATION.md).
-The candidate remains unmerged pending hosted review. Its private gate does not
-qualify a native/renderer round trip or live enterprise identity-provider
-exchange. Simultaneous residency, sustained capacity, a production SLO, and
-deployment remain pending.
+Hosted head `4c8db7c2...` passed all 12 required checks, and PR #180 merged the
+vertical as `c95fcf1a...`. Its private gate does not qualify a native/renderer
+round trip or live enterprise identity-provider exchange. Simultaneous
+residency, sustained capacity, a production SLO, and deployment remain pending.
 
 ## Coordinator source-cited proposal-bundle core
 
@@ -1074,9 +1074,33 @@ ordinary client cancellation. It emitted no receipt, is terminal, and is not
 reused; its owner-private harness teardown passed. See the
 [Coordinator verification record](../docs/evidence/coordinator-proposal-bundles/VERIFICATION.md).
 Hosted head `53ee0152...` passed all 12 checks, and PR #171 merged the core as
-`67d836da...`. HTTP/native/renderer/UI exposure, autonomous action,
-simultaneous residency, sustained capacity, a production SLO, and deployment
-remain pending.
+`67d836da...`.
+
+Exact successor `05400fb3...` composes the core into one product vertical. In
+authenticated team mode it exposes:
+
+- `POST /v1/coordinator-bundles` to create one bounded proposal-bundle request;
+- `GET /v1/coordinator-bundles/{requestId}` to read only the authenticated
+  owner's state; and
+- `DELETE /v1/coordinator-bundles/{requestId}` to request cancellation.
+
+Enable it explicitly with `YAP_COORDINATOR_RUNTIME=warm_gemma`, absolute
+`YAP_COORDINATOR_ADMISSION_SOCKET`, `YAP_COORDINATOR_PROFILE`,
+`YAP_COORDINATOR_CANDIDATE_LOCK`, and `YAP_COORDINATOR_KNOWLEDGE_DSN_FILE`
+paths. Incomplete or non-authenticated configuration fails closed. Native Rust
+owns bearer exchange, one connection lease, request/result/citation validation,
+cancellation, and quit containment; React receives only validated bundle state.
+The owner-private product gate matched 10/10 terminals across 8 owners: 5 exact
+server-derived noncanonical review-required bundles, 4 unavailable results, 0
+failures, and 1 fail-closed cancellation. It also proved owner isolation,
+hidden/absent equivalence, two PostgreSQL restart/read-backs, exact Curator
+lineage and audit rows, complex c8/ninth-owner-queued containment, and complete
+teardown. Public-safe evidence SHA-256 is `394112ad...`. See the
+[Coordinator product record](../docs/evidence/coordinator-product-vertical/VERIFICATION.md).
+The candidate remains unmerged pending hosted review. Its private gate does not
+qualify a native/renderer round trip or live enterprise identity-provider
+exchange. Autonomous action, simultaneous residency, sustained capacity, a
+production SLO, and deployment remain pending.
 
 ## Auditor source-cited review-findings core
 

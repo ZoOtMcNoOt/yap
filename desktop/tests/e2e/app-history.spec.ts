@@ -131,6 +131,7 @@ test("history keeps committed review actions separate from recoverable capture a
                 transcriptCorrection: false,
                 archivistIngestions: false,
                 analystAnswers: false,
+                coordinatorBundles: false,
                 curatorProposals: false,
                 studentQuestions: false,
               },

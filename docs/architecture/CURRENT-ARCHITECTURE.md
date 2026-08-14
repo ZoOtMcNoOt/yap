@@ -57,12 +57,15 @@ native-owned bearer/response validation, and a source-bound renderer action
 beside permission-safe Librarian evidence. Its private gate proves the
 authenticated server boundary, not a live native/renderer round trip. Hosted
 head `53ce570b...` passed all 12 required checks, and PR #178 merged it as
-`6546970b...`. Exact product successor `78b2c638...` privately qualifies
+`6546970b...`. Exact product successor `78b2c638...` privately qualified
 Analyst's authenticated cited-answer server boundary with 10/10 exact terminals
-and public-safe evidence SHA-256 `f26adfc0...`; its native/renderer composition
-is public-test green, but the candidate remains unmerged pending hosted review.
-Coordinator/Auditor product exposure and the capacity/operations layers remain
-open.
+and public-safe evidence SHA-256 `f26adfc0...`; hosted head `4c8db7c2...` passed
+all 12 checks and PR #180 merged its native/renderer composition as
+`c95fcf1a...`. Exact `05400fb3...` now privately qualifies Coordinator's
+authenticated proposal-bundle server/database/broker boundary with 10/10 exact
+terminals and public-safe evidence SHA-256 `394112ad...`; its native/renderer
+candidate is public-test green but unmerged. Auditor product exposure and the
+capacity/operations layers remain open.
 Phase 7
 implements provider-neutral
 OIDC verification with Entra policy, fail-closed authentication, tenant-scoped
@@ -1221,9 +1224,10 @@ citation/result validation, and an explicit cited-answer renderer beside
 Librarian evidence. Its private gate matched all 10 product terminals across 8
 owners, including 4 exact server-derived answers, 5 unavailable results, and 1
 fail-closed cancellation; it completed two PostgreSQL restart/read-backs,
-complex-c8/ninth-owner-queued containment, and exact teardown. The candidate is
-unmerged pending hosted review; the private receipt does not qualify a native/
-renderer round trip or live enterprise identity-provider exchange. See the
+complex-c8/ninth-owner-queued containment, and exact teardown. Hosted head
+`4c8db7c2...` passed all 12 checks, and PR #180 merged the product vertical as
+`c95fcf1a...`; the private receipt does not qualify a native/renderer round trip
+or live enterprise identity-provider exchange. See the
 [Analyst product record](../evidence/analyst-product-vertical/VERIFICATION.md).
 
 Exact executable candidate `fed729b3...` privately qualified Coordinator as an
@@ -1239,8 +1243,17 @@ matched, and 15 bundles contained 18 selected items with 18 citations. Exact
 and is not reused. See the
 [Coordinator evidence](../evidence/coordinator-proposal-bundles/VERIFICATION.md).
 Hosted head `53ee0152...` passed all 12 checks, and PR #171 merged the core as
-`67d836da...`. Every endpoint/UI surface, autonomous action, and production
-operation remain pending.
+`67d836da...`. Exact successor `05400fb3...` composes this core into
+authenticated create/status/cancel proposal-bundle jobs, native-owned bearer
+and strict bundle/citation validation, and an explicit Coordinator composer.
+Its private gate matched all 10 product terminals across 8 owners, including 5
+exact server-derived bundles, 4 unavailable results, and 1 fail-closed
+cancellation; it completed two PostgreSQL restart/read-backs, complex-c8/ninth-
+owner-queued containment, and exact teardown. The candidate is unmerged pending
+hosted review; the private receipt does not qualify a native/renderer round trip
+or live enterprise identity-provider exchange. See the
+[Coordinator product record](../evidence/coordinator-product-vertical/VERIFICATION.md).
+Autonomous action and production operation remain pending.
 
 Exact executable candidate `08b06f6d...` privately qualified Auditor as an
 internal idle-only complex-route workflow. One explicit authenticated request

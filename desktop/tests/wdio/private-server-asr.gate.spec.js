@@ -417,6 +417,7 @@ describe("checked-head private-server ASR gate", () => {
     expect(connection.capabilities).toEqual({
       archivistIngestions: false,
       analystAnswers: false,
+      coordinatorBundles: false,
       curatorProposals: false,
       studentQuestions: false,
       batchJobs: true,
