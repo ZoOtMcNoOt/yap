@@ -3,12 +3,12 @@
 ## Status
 
 Exact executable candidate
-`2dcecef406b81b5cf8a9d72e5547f0cdc8b1de10` over merged Student baseline
+`6aa33e4d975602c2b6916f1c85a9a782f93d7234` over merged Student baseline
 `6546970ba3613fe55458b54c334a687cb7ff823e` implements and privately qualifies
 the Curator product vertical. Its owner-private ARM64 gate returned
 `curator-authenticated-product-server-boundary-qualified` with public-safe
 evidence SHA-256
-`bc24ee6baab9d0eb07f0fd9bf3e3c8c2779ddd369888a1e8b00190ff5b671b82`.
+`328f6640ff945db4ecf224d58861e0c893dcd2f05d2b8ecc70364fb1b1368036`.
 The candidate remains unmerged and still requires unchanged-head hosted review.
 
 The frozen product acceptance plan is
@@ -58,6 +58,16 @@ On 2026-08-14 the checked gate ran at the clean exact head above and observed:
 - exact product workers, broker, provider, container, listener, process,
   network, volume, and database teardown.
 
+The previously qualified `2dcecef4...` executable is retained as historical
+evidence only. Exact-head review found that its native status/cancel client did
+not bind a syntactically valid response to the requested product request ID in
+the emergency containment path. Successor `6aa33e4d...` requires that identity
+match for both operations and adds a red/green transport regression. A first
+fresh-checkout preparation stopped before provider readiness or gate execution
+because the release supervisor had not yet been built; it emitted no receipt
+and is not qualification evidence. After the exact checkout built that binary,
+the fresh create-once gate produced the successful receipt recorded here.
+
 The normal-request p95 remained within the frozen 60,000 ms bound. The checked
 full complex profile remained Gemma 4 NVFP4 with batch invariance enabled,
 prefix caching disabled, request seed 0, 7,680 input tokens, 512 output tokens,
@@ -86,7 +96,7 @@ Against the current implementation successor:
 - desktop Vitest passed **61 files / 383 tests**, and the production
   TypeScript/Vite build completed;
 - desktop Rust passed formatting, strict all-target/all-feature Clippy, and
-  **1,261 unit tests = 1,250 passed + 11 expected ignored**, plus all integration
+  **1,262 unit tests = 1,251 passed + 11 expected ignored**, plus all integration
   groups; and
 - `git diff --check` was clean at the public verification checkpoint.
 

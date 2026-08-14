@@ -12,8 +12,8 @@ immutable evidence belong in phase/checkpoint evidence records.
   surface cannot activate knowledge or mutate source truth, and the renderer
   receives no credentials and renders no internal request, evidence, or
   proposal hashes.
-- Exact executable `2dcecef4...` privately qualified the authenticated Curator
-  server boundary with public-safe evidence SHA-256 `bc24ee6b...`: 10/10 exact
+- Exact executable `6aa33e4d...` privately qualified the authenticated Curator
+  server boundary with public-safe evidence SHA-256 `328f6640...`: 10/10 exact
   terminals across 8 owners, exact owner isolation, restart/read-back,
   complex-c8/ninth-owner-queued containment, unchanged source truth, and exact
   teardown. The HTTP/native/renderer candidate remains unmerged and still

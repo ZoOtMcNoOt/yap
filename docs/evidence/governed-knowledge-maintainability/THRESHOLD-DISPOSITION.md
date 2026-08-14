@@ -56,7 +56,7 @@ Each line contains up to two independent entries in the form
   835 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/batch/response.rs ||   564 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/batch/tests.rs
   652 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/capabilities.rs ||   364 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/client/tests.rs
   422 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/config.rs ||   398 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/config/persistence.rs
- 1174 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/core.rs ||   734 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/curator.rs
+ 1174 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/core.rs ||   790 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/curator.rs
   554 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/desktop.rs ||   516 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/librarian.rs
   664 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/native_access_token_provider.rs ||  1073 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/native_access_token_provider/tests.rs
   802 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/state.rs ||   503 NATIVE-SOURCE        desktop/src-tauri/src/server_connector/student.rs

@@ -939,11 +939,11 @@ result/cancellation validation, and one explicit reviewed-proposal renderer
 action after a completed Student question. It delegates semantic work to the
 same Curator core and exposes only typed status plus the bounded noncanonical,
 review-required result. It introduces no activation or second proposal/evidence
-authority. Exact executable `2dcecef4...` privately qualified the authenticated
+authority. Exact executable `6aa33e4d...` privately qualified the authenticated
 server boundary with 10/10 exact terminals across 8 owners, exact owner
 isolation, source-truth preservation, two PostgreSQL restart/read-backs,
 complex-c8/ninth-owner-queued containment, and complete teardown. Public-safe
-evidence SHA-256 is `bc24ee6b...`. The HTTP/native/renderer candidate remains
+evidence SHA-256 is `328f6640...`. The HTTP/native/renderer candidate remains
 unmerged pending hosted review, and the private receipt does not qualify a
 native/renderer round trip or live enterprise identity-provider exchange. See the
 [Curator product record](../docs/evidence/curator-product-vertical/VERIFICATION.md).

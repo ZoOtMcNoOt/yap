@@ -22,9 +22,9 @@ profiles sequentially, exact workflow head `7cd24deb...` qualified Scribe,
 Student, and Curator, and public-lock/aggregate head `7f896b34...` passed the
 governed gate. Hosted-green head `593e627b...` passed all 12 checks, and PR #168
 merged the profile-capacity successor and Curator internal core as
-`284ab96b...`. Exact successor `2dcecef4...` privately qualifies the current
+`284ab96b...`. Exact successor `6aa33e4d...` privately qualifies the current
 HTTP/native/renderer Curator product candidate's authenticated server boundary
-with 10/10 exact terminals and public-safe evidence SHA-256 `bc24ee6b...`; the
+with 10/10 exact terminals and public-safe evidence SHA-256 `328f6640...`; the
 product vertical remains unmerged pending hosted review. Exact
 `56b7f5d0...` qualified the no-LLM Librarian core; hosted head `7505247e...`
 merged it through PR #169 as `d7a7e003...`. Exact executable `0665c486...`
@@ -1166,12 +1166,12 @@ noncanonical proposal and cannot activate knowledge or mutate source truth.
 See the [profile-capacity evidence](../evidence/agent-admission-profile-capacity/VERIFICATION.md)
 and [Curator evidence](../evidence/curator-knowledge-proposals/VERIFICATION.md).
 Hosted-green head `593e627b...` passed all 12 checks, and PR #168 merged the
-slice as `284ab96b...`. Exact successor `2dcecef4...` implements authenticated
+slice as `284ab96b...`. Exact successor `6aa33e4d...` implements authenticated
 proposal jobs, native-owned transport/lifecycle validation, and one reviewed
 renderer action. Its owner-private ARM64 gate qualified the authenticated
 server boundary with 10/10 exact terminals, exact source-truth preservation,
 two PostgreSQL restart/read-backs, complex c8/ninth-owner-queued containment,
-and complete teardown; public-safe evidence SHA-256 is `bc24ee6b...`. The
+and complete teardown; public-safe evidence SHA-256 is `328f6640...`. The
 product candidate is admitted at that exact head but remains unmerged pending
 hosted review. The private receipt does not qualify a native/renderer round trip
 or live enterprise identity-provider exchange. See the

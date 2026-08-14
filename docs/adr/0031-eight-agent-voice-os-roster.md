@@ -25,9 +25,9 @@ qualified Student with authenticated question
 jobs, native-owned transport/validation, and a source-bound renderer action;
 its private gate covers the authenticated server boundary rather than a live
 native/renderer run. Hosted head `53ce570b...` passed all 12 checks, and PR #178
-merged the vertical as `6546970b...`. Exact `2dcecef4...` privately qualifies
+merged the vertical as `6546970b...`. Exact `6aa33e4d...` privately qualifies
 the current Curator successor's authenticated server boundary with 10/10 exact
-terminals and public-safe evidence SHA-256 `bc24ee6b...`; its HTTP/native/
+terminals and public-safe evidence SHA-256 `328f6640...`; its HTTP/native/
 renderer candidate remains unmerged pending hosted review. Phase 9 merged the
 governed knowledge, tool, retrieval, terminology,
 and two qualified reasoning-route foundations. Phase 10
@@ -353,8 +353,8 @@ head `da1127f8...` merged Analyst through PR #170 as `52c45d22...`; hosted head
 product vertical later merged through PR #174; Archivist's product vertical
 merged through PR #177. Exact `778a7545...` privately qualified Student, and
 hosted head `53ce570b...` merged the product vertical through PR #178 as
-`6546970b...`. Exact `2dcecef4...` privately qualifies Curator's product
-successor with public-safe evidence SHA-256 `bc24ee6b...`; Analyst, Coordinator,
+`6546970b...`. Exact `6aa33e4d...` privately qualifies Curator's product
+successor with public-safe evidence SHA-256 `328f6640...`; Analyst, Coordinator,
 and Auditor product exposure, Curator hosted merge, warm
 simultaneous two-route residency, sustained multi-owner capacity, and production
 promotion remain open.

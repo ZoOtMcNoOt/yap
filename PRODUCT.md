@@ -53,10 +53,10 @@ authenticated product boundary; hosted head `53ce570b...` passed all 12 checks,
 and PR #178 merged the HTTP/native/renderer vertical as `6546970b...`. Its
 private gate covers the authenticated server boundary, not a live native/
 renderer round trip or enterprise identity exchange. Exact executable
-`2dcecef4...` privately qualified the current Curator successor's explicit
+`6aa33e4d...` privately qualified the current Curator successor's explicit
 reviewed-proposal HTTP jobs, native-owned bearer and lifecycle handling, and
 source-bound review action after a completed Student question. Its 10/10 exact
-server terminals returned public-safe evidence SHA-256 `bc24ee6b...`; the
+server terminals returned public-safe evidence SHA-256 `328f6640...`; the
 candidate remains unmerged and its private gate did not execute a native/
 renderer round trip or live enterprise identity exchange. Analyst, Coordinator,
 and Auditor still have no HTTP, native, renderer, or desktop product surface.

@@ -16,8 +16,8 @@ Hosted-green head `593e627b...` passed all 12 checks, and PR #168 merged it as
 and PR #177 merged it as `e397af8b...`. Exact `778a7545...` privately qualified
 Student's authenticated product server boundary; hosted head `53ce570b...`
 passed all 12 checks and PR #178 merged it as `6546970b...`. Exact
-`2dcecef4...` privately qualifies the Curator product server boundary with
-public-safe evidence SHA-256 `bc24ee6b...`; its hosted merge remains pending,
+`6aa33e4d...` privately qualifies the Curator product server boundary with
+public-safe evidence SHA-256 `328f6640...`; its hosted merge remains pending,
 and Analyst, Coordinator, and Auditor product surfaces remain internal-only.
 Historical inventories remain labeled at their exact heads. The final section
 records the exact current Curator-product-successor threshold read-back.
@@ -850,13 +850,13 @@ paths, credentials, and individual measurements remain outside Git.
 
 ## Phase 10 Curator product-vertical successor public read-back
 
-Exact executable successor `2dcecef4...` over merged Student product baseline
+Exact executable successor `6aa33e4d...` over merged Student product baseline
 `6546970ba3613fe55458b54c334a687cb7ff823e` adds authenticated Curator proposal
 create/status/cancel HTTP operations, a native-owned credential and lifecycle
 boundary, and a renderer review action available only after a completed Student
 question. The owner-private ARM64 exact-head gate matched 10/10 terminals across
 8 owners and returned `curator-authenticated-product-server-boundary-qualified`
-with public-safe evidence SHA-256 `bc24ee6b...`. It observed exact owner
+with public-safe evidence SHA-256 `328f6640...`. It observed exact owner
 isolation, unchanged source truth, two PostgreSQL restart/read-backs,
 complex-c8/ninth-owner-queued containment, and complete teardown. The product
 candidate remains unmerged and no hosted-success claim is made; native/renderer
@@ -869,7 +869,7 @@ The governed fixed membership ran 173 tests: 169 passed and four were declared
 skips. Whole-server Ruff, changed-file formatting, the 61-file/383-test desktop
 unit suite, the production TypeScript/Vite build, Rust formatting and strict
 Clippy, and the Rust test matrix were green. The main Rust library reported
-1,261 tests: 1,250 passed and 11 were expected ignored; its integration groups
+1,262 tests: 1,251 passed and 11 were expected ignored; its integration groups
 also passed. Whole-tree Ruff formatting retains inherited drift outside this
 slice and is not labeled green.
 

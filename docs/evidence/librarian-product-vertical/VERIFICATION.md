@@ -103,7 +103,7 @@ This candidate does **not** prove:
 - sustained throughput, p95/p99, simultaneous Qwen/Gemma residency, or a
   production SLO; or
 - any other role's product exposure. Archivist and Student have separate
-  qualified and merged product evidence; exact `2dcecef4...` privately qualifies
+  qualified and merged product evidence; exact `6aa33e4d...` privately qualifies
   Curator's product server boundary but its vertical remains unmerged; Analyst,
   Coordinator, and Auditor remain unexposed.
 

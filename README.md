@@ -39,9 +39,9 @@ request/source identity before releasing the connection lease. Exact executable
 authenticated question jobs, native-owned bearer and response validation, and
 a source-bound learning-question action beside permission-safe Librarian
 evidence. Hosted head `53ce570b...` passed all 12 required checks, and PR #178
-merged the vertical as `6546970b...`. Exact executable `2dcecef4...` then
+merged the vertical as `6546970b...`. Exact executable `6aa33e4d...` then
 privately qualified the authenticated Curator proposal server boundary across
-10/10 exact terminals with public-safe evidence SHA-256 `bc24ee6b...`. Its
+10/10 exact terminals with public-safe evidence SHA-256 `328f6640...`. Its
 HTTP/native/renderer candidate remains unmerged until unchanged-head hosted
 review completes. Production identity,
 simultaneous full-profile residency, sustained capacity, enterprise deployment,
@@ -85,7 +85,7 @@ what is verified, what is still absent, and what happens next.
   resolves a completed server-batch recording natively and asks the authenticated
   server to stage its reviewed transcript without activating knowledge. The
   merged Student surface adds authenticated question jobs and a source-bound
-  learning-question action. Exact `2dcecef4...` privately qualified the current
+  learning-question action. Exact `6aa33e4d...` privately qualified the current
   Curator successor's explicit reviewed proposal submission, owner-scoped
   status/cancellation, and review-required noncanonical server result. The
   product candidate remains unmerged; Analyst, Coordinator, and Auditor remain
