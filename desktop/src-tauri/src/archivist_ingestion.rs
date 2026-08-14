@@ -100,6 +100,39 @@ impl ArchivistIngestionOwner {
         Ok(view)
     }
 
+    fn reconcile_terminal(
+        &self,
+        owned: &OwnedArchivistIngestion,
+        view: ArchivistIngestionJobView,
+    ) -> Result<ArchivistIngestionJobView, String> {
+        if view.status.is_active()
+            || view.request_id != owned.latest.request_id
+            || !view.matches_request(&owned.request)
+        {
+            return Err("The knowledge staging terminal response is invalid.".into());
+        }
+        let mut state = self.state.lock().expect("archivist owner poisoned");
+        let current = state.requests.get_mut(&view.request_id).ok_or_else(|| {
+            "This device no longer owns that knowledge staging request.".to_string()
+        })?;
+        if current.request != owned.request || current.latest.request_id != owned.latest.request_id
+        {
+            return Err("The knowledge staging owner changed before commit.".into());
+        }
+        if !current.latest.status.is_active() {
+            return if current.latest == view {
+                Ok(current.latest.clone())
+            } else {
+                Err("The knowledge staging terminal response changed.".into())
+            };
+        }
+        if !valid_status_transition(&current.latest, &view) {
+            return Err("The knowledge staging response regressed its lifecycle.".into());
+        }
+        current.latest = view.clone();
+        Ok(view)
+    }
+
     pub(crate) async fn cancel_active_requests(&self) -> Result<usize, String> {
         let active = self
             .state
@@ -108,17 +141,23 @@ impl ArchivistIngestionOwner {
             .requests
             .values()
             .filter(|request| request.latest.status.is_active())
-            .map(|request| {
-                (
-                    request.latest.request_id.clone(),
-                    request.lease.client().clone(),
-                )
-            })
+            .cloned()
             .collect::<Vec<_>>();
         let total = active.len();
         let mut failures = 0_usize;
-        for (request_id, client) in active {
-            if client.cancel(&request_id).await.is_err() {
+        let deadline = Instant::now() + UNOWNED_REQUEST_CONTAINMENT_TIMEOUT;
+        for owned in active {
+            let terminal = contain_submitted_ingestion_before(
+                owned.lease.client(),
+                &owned.latest.request_id,
+                &owned.request,
+                deadline,
+            )
+            .await;
+            if terminal
+                .and_then(|view| self.reconcile_terminal(&owned, view))
+                .is_err()
+            {
                 failures += 1;
             }
         }
@@ -243,14 +282,21 @@ pub(crate) async fn start_archivist_ingestion(
         .map_err(|error| error.to_string())?;
     let request_id = view.request_id.clone();
     let commit = connector
-        .with_current_archivist_lease(&lease, || submission.commit(request, lease.clone(), view))
+        .with_current_archivist_lease(&lease, || {
+            submission.commit(request.clone(), lease.clone(), view)
+        })
         .and_then(|result| result);
     match commit {
         Ok(committed) => Ok(committed),
         Err(error) => {
-            if contain_unowned_submitted_ingestion(lease.client(), &request_id)
-                .await
-                .is_err()
+            if contain_submitted_ingestion_before(
+                lease.client(),
+                &request_id,
+                &request,
+                Instant::now() + UNOWNED_REQUEST_CONTAINMENT_TIMEOUT,
+            )
+            .await
+            .is_err()
             {
                 return Err(
                     "Knowledge staging could not be contained after local ownership failed.".into(),
@@ -288,121 +334,70 @@ pub(crate) async fn cancel_archivist_ingestion(
 ) -> Result<ArchivistIngestionJobView, String> {
     crate::authorization::ensure_main(&window)?;
     let owned = owner.request(&request_id)?;
-    let view = owned
-        .lease
-        .client()
-        .cancel(&request_id)
-        .await
-        .map_err(|error| error.to_string())?;
-    connector.with_current_archivist_lease(&owned.lease, || owner.update(&owned, view))?
+    let view =
+        contain_submitted_ingestion(owned.lease.client(), &request_id, &owned.request).await?;
+    connector
+        .with_current_archivist_lease(&owned.lease, || owner.reconcile_terminal(&owned, view))?
 }
 
-async fn contain_unowned_submitted_ingestion(
+async fn contain_submitted_ingestion(
     client: &ArchivistApiClient,
     request_id: &str,
-) -> Result<(), String> {
-    let deadline = Instant::now() + UNOWNED_REQUEST_CONTAINMENT_TIMEOUT;
-    let mut view = match client.cancel(request_id).await {
-        Ok(view) => view,
-        Err(_) => client
-            .status(request_id)
-            .await
-            .map_err(|_| "accepted knowledge staging request could not be found".to_string())?,
-    };
+    request: &ArchivistIngestionRequest,
+) -> Result<ArchivistIngestionJobView, String> {
+    contain_submitted_ingestion_before(
+        client,
+        request_id,
+        request,
+        Instant::now() + UNOWNED_REQUEST_CONTAINMENT_TIMEOUT,
+    )
+    .await
+}
+
+async fn contain_submitted_ingestion_before(
+    client: &ArchivistApiClient,
+    request_id: &str,
+    request: &ArchivistIngestionRequest,
+    deadline: Instant,
+) -> Result<ArchivistIngestionJobView, String> {
+    let mut view = exact_containment_view(
+        match client.cancel(request_id).await {
+            Ok(view) => view,
+            Err(_) => client
+                .status(request_id)
+                .await
+                .map_err(|_| "accepted knowledge staging request could not be found".to_string())?,
+        },
+        request_id,
+        request,
+    )?;
     while view.status.is_active() {
         if Instant::now() >= deadline {
             return Err("accepted knowledge staging request did not stop".into());
         }
         tokio::time::sleep(UNOWNED_REQUEST_POLL_INTERVAL).await;
-        view = client
-            .status(request_id)
-            .await
-            .map_err(|_| "accepted knowledge staging status was lost".to_string())?;
+        view = exact_containment_view(
+            client
+                .status(request_id)
+                .await
+                .map_err(|_| "accepted knowledge staging status was lost".to_string())?,
+            request_id,
+            request,
+        )?;
     }
-    Ok(())
+    Ok(view)
+}
+
+fn exact_containment_view(
+    view: ArchivistIngestionJobView,
+    request_id: &str,
+    request: &ArchivistIngestionRequest,
+) -> Result<ArchivistIngestionJobView, String> {
+    if view.request_id != request_id || !view.matches_request(request) {
+        return Err("accepted knowledge staging response changed source identity".into());
+    }
+    Ok(view)
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::server_connector::archivist_connection_lease_for_test;
-
-    fn request() -> ArchivistIngestionRequest {
-        ArchivistIngestionRequest::new("server-job-1".into(), "a".repeat(64)).unwrap()
-    }
-
-    fn view(status: ArchivistIngestionStatus, reason: Option<&str>) -> ArchivistIngestionJobView {
-        ArchivistIngestionJobView::for_test(
-            format!("archivist-ingestion-{}", "1".repeat(32)),
-            status,
-            "server-job-1".into(),
-            "a".repeat(64),
-            reason.map(str::to_owned),
-        )
-    }
-
-    #[test]
-    fn owner_preserves_source_identity_and_monotonic_lifecycle() {
-        let owner = ArchivistIngestionOwner::new();
-        owner
-            .insert_for_test(
-                request(),
-                archivist_connection_lease_for_test(),
-                view(ArchivistIngestionStatus::Queued, None),
-            )
-            .unwrap();
-        let owned = owner
-            .request(&format!("archivist-ingestion-{}", "1".repeat(32)))
-            .unwrap();
-        assert_eq!(
-            owner
-                .update(&owned, view(ArchivistIngestionStatus::Running, None))
-                .unwrap()
-                .status,
-            ArchivistIngestionStatus::Running
-        );
-        let running = owner.request(&owned.latest.request_id).unwrap();
-        assert!(owner
-            .update(&running, view(ArchivistIngestionStatus::Queued, None))
-            .is_err());
-    }
-
-    #[test]
-    fn terminal_owner_state_is_exact_and_reclaimable() {
-        let owner = ArchivistIngestionOwner::new();
-        owner
-            .insert_for_test(
-                request(),
-                archivist_connection_lease_for_test(),
-                view(
-                    ArchivistIngestionStatus::Cancelled,
-                    Some("client-cancelled"),
-                ),
-            )
-            .unwrap();
-        let owned = owner
-            .request(&format!("archivist-ingestion-{}", "1".repeat(32)))
-            .unwrap();
-        assert_eq!(
-            owner
-                .update(
-                    &owned,
-                    view(
-                        ArchivistIngestionStatus::Cancelled,
-                        Some("client-cancelled"),
-                    ),
-                )
-                .unwrap(),
-            owned.latest
-        );
-        assert!(owner
-            .update(
-                &owned,
-                view(
-                    ArchivistIngestionStatus::Failed,
-                    Some("storage-unavailable")
-                ),
-            )
-            .is_err());
-    }
-}
+mod tests;

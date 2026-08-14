@@ -63,6 +63,7 @@ class ArchivistProductQualificationGateTests(unittest.TestCase):
             "desktop/src/archivist.ts",
             "desktop/src/components/archivist/use-archivist-ingestion.ts",
             "desktop/src-tauri/src/archivist_ingestion.rs",
+            "desktop/src-tauri/src/archivist_ingestion/tests.rs",
             "desktop/src-tauri/src/server_connector/archivist.rs",
             "desktop/tests/e2e/archivist-ingestion.spec.ts",
             ".github/workflows/ci.yml",
