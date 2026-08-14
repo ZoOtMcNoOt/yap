@@ -93,6 +93,7 @@ class BatchJobApiTests(BatchJobApiTestCase):
                 "jobStatus": True,
                 "transcriptCorrection": False,
                 "librarianQueries": False,
+                "studentQuestions": False,
                 "archivistIngestions": False,
             },
         )

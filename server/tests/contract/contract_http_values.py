@@ -20,6 +20,9 @@ HTTP_OPERATIONS = {
     ("/v1/librarian-queries", "post"): "submitLibrarianQuery",
     ("/v1/librarian-queries/{requestId}", "get"): "getLibrarianQuery",
     ("/v1/librarian-queries/{requestId}", "delete"): "cancelLibrarianQuery",
+    ("/v1/student-questions", "post"): "submitStudentQuestion",
+    ("/v1/student-questions/{requestId}", "get"): "getStudentQuestion",
+    ("/v1/student-questions/{requestId}", "delete"): "cancelStudentQuestion",
     ("/v1/archivist-ingestions", "post"): "submitArchivistIngestion",
     ("/v1/archivist-ingestions/{requestId}", "get"): "getArchivistIngestion",
     (
@@ -78,6 +81,18 @@ OPERATION_RUNTIME = {
     ("/v1/librarian-queries/{requestId}", "delete"): (
         "Implemented only when the authenticated Librarian runtime verifies",
         "Librarian permission-safe evidence",
+    ),
+    ("/v1/student-questions", "post"): (
+        "Implemented only when the authenticated warm Student runtime verifies",
+        "Student source-cited learning questions",
+    ),
+    ("/v1/student-questions/{requestId}", "get"): (
+        "Implemented only when the authenticated warm Student runtime verifies",
+        "Student source-cited learning questions",
+    ),
+    ("/v1/student-questions/{requestId}", "delete"): (
+        "Implemented only when the authenticated warm Student runtime verifies",
+        "Student source-cited learning questions",
     ),
     ("/v1/archivist-ingestions", "post"): (
         "Implemented only when the authenticated Archivist runtime verifies",
@@ -147,6 +162,10 @@ RUNTIME_PATH_EXAMPLES = {
     "/v1/librarian-queries": "/v1/librarian-queries",
     "/v1/librarian-queries/{requestId}": (
         "/v1/librarian-queries/librarian-query-11111111111111111111111111111111"
+    ),
+    "/v1/student-questions": "/v1/student-questions",
+    "/v1/student-questions/{requestId}": (
+        "/v1/student-questions/student-question-11111111111111111111111111111111"
     ),
     "/v1/archivist-ingestions": "/v1/archivist-ingestions",
     "/v1/archivist-ingestions/{requestId}": (
@@ -253,6 +272,30 @@ HTTP_SCHEMA_CONTRACTS: list[dict[str, Any]] = [
         "method": "delete",
         "request": None,
         "success": {"202": "#/components/schemas/LibrarianQueryJobView"},
+        "errors": ["401", "403", "404", "501", "503"],
+    },
+    {
+        "path": "/v1/student-questions",
+        "method": "post",
+        "request": (
+            "application/json",
+            "#/components/schemas/StudentRequest",
+        ),
+        "success": {"202": "#/components/schemas/StudentQuestionJobView"},
+        "errors": ["400", "401", "403", "429", "501", "503"],
+    },
+    {
+        "path": "/v1/student-questions/{requestId}",
+        "method": "get",
+        "request": None,
+        "success": {"200": "#/components/schemas/StudentQuestionJobView"},
+        "errors": ["401", "403", "404", "501", "503"],
+    },
+    {
+        "path": "/v1/student-questions/{requestId}",
+        "method": "delete",
+        "request": None,
+        "success": {"202": "#/components/schemas/StudentQuestionJobView"},
         "errors": ["401", "403", "404", "501", "503"],
     },
     {

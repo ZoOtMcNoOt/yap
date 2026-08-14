@@ -71,6 +71,7 @@ class RequestAuthenticationTests(HealthServerTestCase):
                 "jobStatus": False,
                 "transcriptCorrection": False,
                 "librarianQueries": False,
+                "studentQuestions": False,
                 "archivistIngestions": False,
             },
         )

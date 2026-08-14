@@ -3,6 +3,7 @@ import re
 _PATH_ID = r"[A-Za-z0-9_-]+"
 _LID_REQUEST_ID = r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}"
 _LIBRARIAN_QUERY_ID = r"librarian-query-[0-9a-f]{32}"
+_STUDENT_QUESTION_ID = r"student-question-[0-9a-f]{32}"
 _ARCHIVIST_INGESTION_ID = r"archivist-ingestion-[0-9a-f]{32}"
 LID_PREFLIGHT_PATH = "/v1/lid/preflight"
 LID_PREFLIGHT_CANCEL_PATH = re.compile(
@@ -15,6 +16,10 @@ TRANSCRIPT_CORRECTION_PATH = re.compile(
 LIBRARIAN_QUERIES_PATH = "/v1/librarian-queries"
 LIBRARIAN_QUERY_PATH = re.compile(
     rf"^/v1/librarian-queries/(?P<request_id>{_LIBRARIAN_QUERY_ID})$"
+)
+STUDENT_QUESTIONS_PATH = "/v1/student-questions"
+STUDENT_QUESTION_PATH = re.compile(
+    rf"^/v1/student-questions/(?P<request_id>{_STUDENT_QUESTION_ID})$"
 )
 ARCHIVIST_INGESTIONS_PATH = "/v1/archivist-ingestions"
 ARCHIVIST_INGESTION_PATH = re.compile(
@@ -54,6 +59,10 @@ def allowed_methods(path: str) -> frozenset[str] | None:
     if path == LIBRARIAN_QUERIES_PATH:
         return frozenset({"POST"})
     if LIBRARIAN_QUERY_PATH.fullmatch(path):
+        return frozenset({"DELETE", "GET"})
+    if path == STUDENT_QUESTIONS_PATH:
+        return frozenset({"POST"})
+    if STUDENT_QUESTION_PATH.fullmatch(path):
         return frozenset({"DELETE", "GET"})
     if path == ARCHIVIST_INGESTIONS_PATH:
         return frozenset({"POST"})
