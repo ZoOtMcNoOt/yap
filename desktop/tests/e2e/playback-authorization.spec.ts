@@ -100,6 +100,7 @@ async function installPlaybackBridge(
                 liveStreaming: false,
                 transcriptCorrection: false,
                 archivistIngestions: false,
+                studentQuestions: false,
               },
               checkedAtMs: 1,
               errorCode: null,

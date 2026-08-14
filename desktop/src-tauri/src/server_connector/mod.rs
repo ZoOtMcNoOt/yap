@@ -11,6 +11,7 @@ mod core;
 mod desktop;
 pub(crate) mod librarian;
 pub(crate) mod lid;
+pub(crate) mod student;
 // Never in a shipped binary: it trusts a synthetic issuer and carries a
 // published client secret.
 #[cfg(debug_assertions)]
@@ -33,11 +34,12 @@ pub use core::ServerConnector;
 #[cfg(test)]
 pub(crate) use core::{
     archivist_connection_lease_for_test, librarian_connection_lease_for_test,
-    transcript_correction_connection_lease_for_test,
+    student_connection_lease_for_test, transcript_correction_connection_lease_for_test,
 };
 pub(crate) use core::{
     ArchivistConnectionLease, AsrCatalogDispatchProof, BatchConnectionLease, CurrentAsrCatalog,
-    LibrarianConnectionLease, LidPreflightDispatchProof, TranscriptCorrectionConnectionLease,
+    LibrarianConnectionLease, LidPreflightDispatchProof, StudentConnectionLease,
+    TranscriptCorrectionConnectionLease,
 };
 pub(crate) use desktop::{
     current_asr_capabilities, last_known_asr_capabilities, with_current_asr_capabilities,

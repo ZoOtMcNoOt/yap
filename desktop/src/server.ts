@@ -32,6 +32,7 @@ export type ServerCapabilities = {
   transcriptCorrection: boolean;
   librarianQueries: boolean;
   archivistIngestions: boolean;
+  studentQuestions: boolean;
 };
 
 export type AsrExecutionMode =

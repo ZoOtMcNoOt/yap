@@ -24,6 +24,7 @@ pub mod runtime;
 mod runtime_policy;
 pub mod server_connector;
 pub mod stt;
+mod student_question;
 mod transcript_correction;
 mod tray;
 

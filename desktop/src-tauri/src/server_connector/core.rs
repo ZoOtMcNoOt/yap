@@ -11,7 +11,7 @@ use crate::{jobs::AsrCatalogBinding, runtime};
 use super::{
     archivist, batch, client, config, librarian,
     state::{self, ConnectorInner, SettingsDisposition},
-    transcript_correction, AsrCapabilityCatalog, ServerConnectionSnapshot,
+    student, transcript_correction, AsrCapabilityCatalog, ServerConnectionSnapshot,
 };
 
 pub struct ServerConnector {
@@ -58,6 +58,13 @@ pub(crate) struct LibrarianConnectionLease {
     generation: u64,
     base_url: String,
     client: librarian::LibrarianApiClient,
+}
+
+#[derive(Clone)]
+pub(crate) struct StudentConnectionLease {
+    generation: u64,
+    base_url: String,
+    client: student::StudentApiClient,
 }
 
 #[derive(Clone)]
@@ -111,6 +118,29 @@ pub(crate) fn librarian_connection_lease_for_test() -> LibrarianConnectionLease 
     let client = librarian::LibrarianApiClient::new(authenticated, "http://127.0.0.1:1")
         .expect("fixed test librarian origin");
     LibrarianConnectionLease {
+        generation: 1,
+        base_url: client.base_url_identity().to_owned(),
+        client,
+    }
+}
+
+#[cfg(test)]
+pub(crate) fn student_connection_lease_for_test() -> StudentConnectionLease {
+    struct NoAccess;
+    impl super::authorization::ServerAccessTokenSource for NoAccess {
+        fn access(&self) -> super::authorization::AccessTokenFuture<'_> {
+            Box::pin(async { Ok(None) })
+        }
+    }
+
+    let authenticated = super::AuthenticatedRequestDispatcher::from_source(
+        client::bounded_client().expect("bounded test client"),
+        Arc::new(NoAccess),
+        super::authorization::AuthenticatedSession::new(),
+    );
+    let client = student::StudentApiClient::new(authenticated, "http://127.0.0.1:1")
+        .expect("fixed test student origin");
+    StudentConnectionLease {
         generation: 1,
         base_url: client.base_url_identity().to_owned(),
         client,
@@ -231,6 +261,12 @@ impl TranscriptCorrectionConnectionLease {
 
 impl LibrarianConnectionLease {
     pub(crate) fn client(&self) -> &librarian::LibrarianApiClient {
+        &self.client
+    }
+}
+
+impl StudentConnectionLease {
+    pub(crate) fn client(&self) -> &student::StudentApiClient {
         &self.client
     }
 }
@@ -501,6 +537,37 @@ impl ServerConnector {
         }))
     }
 
+    pub(crate) fn student_connection_lease(
+        &self,
+    ) -> Result<Option<StudentConnectionLease>, String> {
+        let generation = self.generation.load(Ordering::Acquire);
+        let inner = self.inner.lock().expect("server connector poisoned");
+        let snapshot = inner.snapshot();
+        if inner.generation() != generation
+            || snapshot.state != runtime::state::ServerConnectorState::Ready
+            || !snapshot.capabilities.student_questions
+        {
+            return Ok(None);
+        }
+        let Some(base_url) = inner.configured_base_url(generation) else {
+            return Ok(None);
+        };
+        let authenticated = self
+            .authenticated
+            .bind_current_transport(generation, &base_url)
+            .map_err(|_| {
+                "The server connection changed before learning-question dispatch.".to_string()
+            })?;
+        let client = student::StudentApiClient::new(authenticated, &base_url)
+            .map_err(|_| "The learning-question server origin is invalid.".to_string())?;
+        let base_url = client.base_url_identity().to_owned();
+        Ok(Some(StudentConnectionLease {
+            generation,
+            base_url,
+            client,
+        }))
+    }
+
     pub(crate) fn archivist_connection_lease(
         &self,
     ) -> Result<Option<ArchivistConnectionLease>, String> {
@@ -668,6 +735,25 @@ impl ServerConnector {
             && snapshot.capabilities.librarian_queries;
         if !current {
             return Err("Server connection changed before knowledge query could commit.".into());
+        }
+        Ok(commit())
+    }
+
+    pub(crate) fn with_current_student_lease<T>(
+        &self,
+        lease: &StudentConnectionLease,
+        commit: impl FnOnce() -> T,
+    ) -> Result<T, String> {
+        let inner = self.inner.lock().expect("server connector poisoned");
+        let snapshot = inner.snapshot();
+        let current = self.generation.load(Ordering::Acquire) == lease.generation
+            && inner.generation() == lease.generation
+            && inner.configured_base_url(lease.generation).as_deref()
+                == Some(lease.base_url.as_str())
+            && snapshot.state == runtime::state::ServerConnectorState::Ready
+            && snapshot.capabilities.student_questions;
+        if !current {
+            return Err("Server connection changed before learning questions could commit.".into());
         }
         Ok(commit())
     }

@@ -20,6 +20,7 @@ pub struct ServerCapabilities {
     pub job_status: bool,
     pub transcript_correction: bool,
     pub librarian_queries: bool,
+    pub student_questions: bool,
     pub archivist_ingestions: bool,
 }
 
@@ -422,6 +423,7 @@ mod tests {
                     job_status: true,
                     transcript_correction: true,
                     librarian_queries: true,
+                    student_questions: true,
                     archivist_ingestions: true,
                 },
             },
@@ -730,6 +732,7 @@ mod tests {
                         job_status: true,
                         transcript_correction: true,
                         librarian_queries: true,
+                        student_questions: true,
                         archivist_ingestions: true,
                     },
                 },
@@ -748,6 +751,7 @@ mod tests {
                 job_status: true,
                 transcript_correction: true,
                 librarian_queries: true,
+                student_questions: true,
                 archivist_ingestions: true,
             }
         );

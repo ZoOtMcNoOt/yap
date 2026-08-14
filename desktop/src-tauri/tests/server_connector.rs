@@ -8,8 +8,8 @@ use yap_desktop_lib::runtime::state::ServerConnectorState;
 use yap_desktop_lib::server_connector::config::{ServerSettings, CURRENT_SCHEMA_VERSION};
 use yap_desktop_lib::server_connector::{ServerConnectionSnapshot, ServerConnectorBoundary};
 
-const HEALTHY_BODY: &str = r#"{"service":"yap-server","status":"ok","apiVersion":"1","auth":"not_configured","capabilities":{"batchJobs":true,"liveStreaming":true,"jobStatus":true,"transcriptCorrection":true,"librarianQueries":true,"archivistIngestions":true}}"#;
-const AUTH_REQUIRED_BODY: &str = r#"{"service":"yap-server","status":"ok","apiVersion":"1","auth":"required","capabilities":{"batchJobs":false,"liveStreaming":false,"jobStatus":false,"transcriptCorrection":false,"librarianQueries":false,"archivistIngestions":false}}"#;
+const HEALTHY_BODY: &str = r#"{"service":"yap-server","status":"ok","apiVersion":"1","auth":"not_configured","capabilities":{"batchJobs":true,"liveStreaming":true,"jobStatus":true,"transcriptCorrection":true,"librarianQueries":true,"archivistIngestions":true,"studentQuestions":true}}"#;
+const AUTH_REQUIRED_BODY: &str = r#"{"service":"yap-server","status":"ok","apiVersion":"1","auth":"required","capabilities":{"batchJobs":false,"liveStreaming":false,"jobStatus":false,"transcriptCorrection":false,"librarianQueries":false,"archivistIngestions":false,"studentQuestions":false}}"#;
 
 #[test]
 fn healthy_health_contract_projects_ready_capabilities() {

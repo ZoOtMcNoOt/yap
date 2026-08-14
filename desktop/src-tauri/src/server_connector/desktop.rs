@@ -468,6 +468,7 @@ mod authentication_projection_tests {
                 job_status: true,
                 transcript_correction: true,
                 librarian_queries: true,
+                student_questions: true,
                 archivist_ingestions: true,
             },
         }
