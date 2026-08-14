@@ -12,8 +12,8 @@ Phase 9. Earlier phase and checkpoint acceptance is evidence, not an exemption.
 The Phase 9 delta receives deeper inspection, but it is not the coverage limit.
 
 The current read-back below extends the navigation and cohesion inventory
-through the merged Student product boundary and the public-test-green,
-unqualified Curator product successor over merge `6546970b...`. The threshold
+through the merged Student product boundary and the privately qualified,
+unmerged Curator product successor over merge `6546970b...`. The threshold
 inventory is recomputed against that successor with this public documentation
 reconciliation applied. The tracked-path and physical-line
 tables below remain the labeled merged Phase 9 inventory anchor; they are not

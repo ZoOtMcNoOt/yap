@@ -3,7 +3,7 @@
 This changelog records product/architecture milestones. Exact test counts and
 immutable evidence belong in phase/checkpoint evidence records.
 
-## Unreleased — Curator product candidate implemented
+## Unreleased — Curator product candidate privately qualified
 
 - Adds authenticated Curator proposal submission/status/cancellation endpoints,
   native-owned bearer transport and response validation, and one explicit
@@ -12,11 +12,16 @@ immutable evidence belong in phase/checkpoint evidence records.
   surface cannot activate knowledge or mutate source truth, and the renderer
   receives no credentials and renders no internal request, evidence, or
   proposal hashes.
+- Exact executable `2dcecef4...` privately qualified the authenticated Curator
+  server boundary with public-safe evidence SHA-256 `bc24ee6b...`: 10/10 exact
+  terminals across 8 owners, exact owner isolation, restart/read-back,
+  complex-c8/ninth-owner-queued containment, unchanged source truth, and exact
+  teardown. The HTTP/native/renderer candidate remains unmerged and still
+  requires unchanged-head hosted checks.
 - Public verification is green: portable server **1,584 = 1,537 passed + 47
   declared skips**, governed fixed **173 = 169 + 4**, desktop **61 files / 383
   tests**, production TypeScript/Vite, Rust formatting/strict Clippy/tests, and
-  focused Curator product-gate **7/7**. The owner-private ARM64 exact-head gate
-  has not run, so this is not a qualified or merge-ready candidate yet.
+  focused Curator product-gate **7/7**.
 - Gemma remains the qualified private complex route. Muse Spark is not silently
   substituted: a separate post-merge evaluation must first bind an official
   deployable model/version, license, organization identity, privacy boundary,

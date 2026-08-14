@@ -28,7 +28,7 @@ backlog.
 - [Librarian product-vertical qualified-candidate verification](evidence/librarian-product-vertical/VERIFICATION.md)
 - [Archivist product-vertical qualified-candidate verification](evidence/archivist-product-vertical/VERIFICATION.md)
 - [Student product-vertical verification](evidence/student-product-vertical/VERIFICATION.md)
-- [Curator product-vertical public-candidate verification](evidence/curator-product-vertical/VERIFICATION.md)
+- [Curator product-vertical exact-head verification](evidence/curator-product-vertical/VERIFICATION.md)
 
 ## Long-term architecture frame
 

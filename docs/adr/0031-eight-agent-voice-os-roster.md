@@ -1,6 +1,6 @@
 # ADR 0031: Eight-agent Voice OS roster and execution boundaries
 
-**Status:** Accepted target; all eight bounded role cores and the Scribe/Librarian/Archivist/Student product surfaces are merged; Curator has a public-green unqualified successor; four product surfaces and promotion remain open
+**Status:** Accepted target; all eight bounded role cores and the Scribe/Librarian/Archivist/Student product surfaces are merged; Curator has a privately qualified unmerged successor; three product surfaces and promotion remain open
 **Date:** 2026-08-11
 **Deciders:** Yap product and engineering owner
 **Amends:** [ADR 0006](0006-silero-agents-state-machine.md),
@@ -25,9 +25,10 @@ qualified Student with authenticated question
 jobs, native-owned transport/validation, and a source-bound renderer action;
 its private gate covers the authenticated server boundary rather than a live
 native/renderer run. Hosted head `53ce570b...` passed all 12 checks, and PR #178
-merged the vertical as `6546970b...`. The current Curator successor implements
-an HTTP/native/renderer candidate but has no private qualification receipt.
-Phase 9 merged the
+merged the vertical as `6546970b...`. Exact `2dcecef4...` privately qualifies
+the current Curator successor's authenticated server boundary with 10/10 exact
+terminals and public-safe evidence SHA-256 `bc24ee6b...`; its HTTP/native/
+renderer candidate remains unmerged pending hosted review. Phase 9 merged the
 governed knowledge, tool, retrieval, terminology,
 and two qualified reasoning-route foundations. Phase 10
 Slices 10.1 and 10.2 merged the Rust-supervised lifecycle and exact Qwen rapid/
@@ -352,9 +353,9 @@ head `da1127f8...` merged Analyst through PR #170 as `52c45d22...`; hosted head
 product vertical later merged through PR #174; Archivist's product vertical
 merged through PR #177. Exact `778a7545...` privately qualified Student, and
 hosted head `53ce570b...` merged the product vertical through PR #178 as
-`6546970b...`. Curator now has a public-green unqualified product successor;
-Analyst, Coordinator, and Auditor product exposure, Curator qualification/
-merge, warm
+`6546970b...`. Exact `2dcecef4...` privately qualifies Curator's product
+successor with public-safe evidence SHA-256 `bc24ee6b...`; Analyst, Coordinator,
+and Auditor product exposure, Curator hosted merge, warm
 simultaneous two-route residency, sustained multi-owner capacity, and production
 promotion remain open.
 One Spark cannot retain the

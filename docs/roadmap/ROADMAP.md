@@ -278,8 +278,9 @@ and PR #177 merged the vertical as `e397af8b...`. Exact `778a7545...` privately
 qualified Student with 11/11 exact server-side
 terminals, authenticated question endpoints, native-owned transport/validation,
 and a source-bound renderer action. Hosted head `53ce570b...` passed all 12
-checks and PR #178 merged it as `6546970b...`. The current Curator successor is
-public-test green but unqualified; Curator private qualification/merge plus
+checks and PR #178 merged it as `6546970b...`. Exact `2dcecef4...` privately
+qualifies the current Curator product server boundary with 10/10 exact terminals
+and public-safe evidence SHA-256 `bc24ee6b...`; Curator hosted merge plus
 Analyst, Coordinator, and Auditor product exposure remain open. Proven selected-route
 limits of four rapid/eight complex are not simultaneous-model,
 sustained-capacity, or production-SLO evidence. One Spark cannot retain both

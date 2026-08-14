@@ -924,9 +924,9 @@ unconfigured.
   and PR #177 merged it as `e397af8b...`. Exact `778a7545...` privately
   qualified Student with 11/11 exact server-side terminals; hosted head
   `53ce570b...` passed all 12 checks and PR #178 merged it as `6546970b...`.
-  Curator now has a public-green unqualified product successor; Curator private
-  qualification/merge and Analyst, Coordinator, and Auditor product surfaces
-  remain open. Proven
+  Exact `2dcecef4...` privately qualifies Curator's product server boundary
+  with public-safe evidence SHA-256 `bc24ee6b...`; Curator hosted merge and
+  Analyst, Coordinator, and Auditor product surfaces remain open. Proven
   selected-route capacity four/eight is
   not simultaneous-model residency, sustained capacity/SLO, or production
   evidence.

@@ -2,11 +2,14 @@
 
 ## Status
 
-The current successor over merged Student baseline
-`6546970ba3613fe55458b54c334a687cb7ff823e` implements the Curator product
-vertical and is focused-public green. It is not privately qualified, has no
-Curator product qualification receipt, and is not merge-ready until the fresh
-clean exact-head owner-private ARM64 gate passes.
+Exact executable candidate
+`2dcecef406b81b5cf8a9d72e5547f0cdc8b1de10` over merged Student baseline
+`6546970ba3613fe55458b54c334a687cb7ff823e` implements and privately qualifies
+the Curator product vertical. Its owner-private ARM64 gate returned
+`curator-authenticated-product-server-boundary-qualified` with public-safe
+evidence SHA-256
+`bc24ee6baab9d0eb07f0fd9bf3e3c8c2779ddd369888a1e8b00190ff5b671b82`.
+The candidate remains unmerged and still requires unchanged-head hosted review.
 
 The frozen product acceptance plan is
 `server/curator-product-acceptance.json`, SHA-256
@@ -37,9 +40,9 @@ and
 - Remote Curator unavailability does not disable local recording,
   transcription, History, playback, copy, Librarian, or Student controls.
 
-## Frozen private gate
+## Private qualification read-back
 
-The checked gate is designed to require, at one clean exact head:
+On 2026-08-14 the checked gate ran at the clean exact head above and observed:
 
 - 8 cases across 8 authenticated owners and 10 product requests;
 - 10/10 exact terminal projections: 4 proposed, 4 rejected, 1 failed, and 1
@@ -53,11 +56,22 @@ The checked gate is designed to require, at one clean exact head:
 - the unchanged full complex profile and a live eight-owner/ninth-queued broker
   probe without model launch, swap, fallback, or profile reduction; and
 - exact product workers, broker, provider, container, listener, process,
-  network, and database teardown.
+  network, volume, and database teardown.
 
-The normal-request p95 bound is 60,000 ms. These are qualification requirements,
-not observed private results. No private gate was run from this dirty working
-tree.
+The normal-request p95 remained within the frozen 60,000 ms bound. The checked
+full complex profile remained Gemma 4 NVFP4 with batch invariance enabled,
+prefix caching disabled, request seed 0, 7,680 input tokens, 512 output tokens,
+and eight active sequences. The live capacity probe held eight distinct-owner
+complex leases while the ninth remained queued, then contained all tickets
+without a provider or broker identity change. This is selected-route
+qualification evidence, not simultaneous Qwen/Gemma residency or a production
+latency SLO.
+
+Independent harness read-back found gate exit 0 and harness exit 0; no owned
+broker socket, provider container, private network, qualification container,
+qualification network, qualification volume, or rapid/complex listener
+remained. The private evidence directory and files remain owner-only outside
+Git.
 
 ## Public verification
 
@@ -81,14 +95,16 @@ slice; this record does not relabel that whole-tree check as green.
 
 ## Claim limits and privacy
 
-No private receipt, tenant/subject identity, run/request ID, source/evidence/
-model bytes, database row, DSN, host path, or individual timing is committed.
-If the private gate later passes, Git may record only the exact checked head,
-acceptance/evidence hashes, aggregate counts, booleans, and bounded outcome.
+No private tenant/subject identity, run/request ID, source/evidence/model bytes,
+database row, DSN, host path, individual timing, or private evidence artifact is
+committed. Git records only the exact checked head, public-safe evidence and
+acceptance hashes, aggregate counts, booleans, and bounded outcome.
 
-This public-green successor is not private qualification, hosted review, merge,
-production deployment, simultaneous Qwen/Gemma residency, sustained capacity,
-or a p95/p99 SLO. Gemma remains the qualified private complex route. Muse Spark
-is a separate evaluation and cannot replace it until an official deployable
-version, license/terms, organization identity and data-transfer boundary, and
-exact tool-calling/runtime contract are approved and qualified.
+This exact-head result qualifies the authenticated Curator server boundary; it
+does not qualify a native/renderer round trip, live enterprise identity-provider
+exchange, hosted review, merge, production deployment, simultaneous Qwen/Gemma
+residency, sustained capacity, or a p95/p99 SLO. Gemma remains the qualified
+private complex route. Muse Spark is a separate post-merge evaluation and cannot
+replace it until an official deployable version, license/terms, organization
+identity and data-transfer boundary, and exact tool-calling/runtime contract are
+approved and qualified.

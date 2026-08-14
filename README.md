@@ -39,10 +39,11 @@ request/source identity before releasing the connection lease. Exact executable
 authenticated question jobs, native-owned bearer and response validation, and
 a source-bound learning-question action beside permission-safe Librarian
 evidence. Hosted head `53ce570b...` passed all 12 required checks, and PR #178
-merged the vertical as `6546970b...`. The current successor implements an
-authenticated Curator proposal product candidate across HTTP, native Rust, and
-the renderer, but it remains public-test green and unqualified until its fresh
-exact-head private gate runs. Production identity,
+merged the vertical as `6546970b...`. Exact executable `2dcecef4...` then
+privately qualified the authenticated Curator proposal server boundary across
+10/10 exact terminals with public-safe evidence SHA-256 `bc24ee6b...`. Its
+HTTP/native/renderer candidate remains unmerged until unchanged-head hosted
+review completes. Production identity,
 simultaneous full-profile residency, sustained capacity, enterprise deployment,
 and the remaining Curator/Analyst/Coordinator/Auditor product promotion work
 stay explicitly gated.
@@ -84,10 +85,11 @@ what is verified, what is still absent, and what happens next.
   resolves a completed server-batch recording natively and asks the authenticated
   server to stage its reviewed transcript without activating knowledge. The
   merged Student surface adds authenticated question jobs and a source-bound
-  learning-question action. The current Curator successor adds explicit reviewed
-  proposal submission, owner-scoped status/cancellation, and a review-required
-  noncanonical result surface, but it is not privately qualified or merged;
-  Analyst, Coordinator, and Auditor remain internal-only. The qualified
+  learning-question action. Exact `2dcecef4...` privately qualified the current
+  Curator successor's explicit reviewed proposal submission, owner-scoped
+  status/cancellation, and review-required noncanonical server result. The
+  product candidate remains unmerged; Analyst, Coordinator, and Auditor remain
+  internal-only. The qualified
   profile-capacity successor admits four rapid or eight complex active distinct
   owners on the selected already-warm route, while preserving one active request
   per owner. Analyst's three exact synchronized repeats establish same-warm-
@@ -105,8 +107,9 @@ what is verified, what is still absent, and what happens next.
 WSS/live server transcription, general media conversion, production
 authentication, persistent multi-user service, enterprise DNS/certificates/
 firewall/ZPA, promoted diarization, simultaneous full-profile residency,
-sustained capacity/SLOs, the unqualified Curator candidate, and the remaining
-four agent product surfaces are later gates—not hidden current capabilities.
+sustained capacity/SLOs, the unmerged qualified Curator candidate, and the
+remaining three agent product surfaces are later gates—not hidden current
+capabilities.
 
 ## Repository map
 

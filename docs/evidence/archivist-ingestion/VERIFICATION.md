@@ -3,8 +3,8 @@
 **Status:** Focused exact-head implementation, real PostgreSQL verification,
 hosted review, and merge passed. The separate Archivist product vertical later
 merged through PR #177. Student's separately qualified product vertical later
-merged through PR #178. The Curator product successor is public-test green but
-remains unqualified and unmerged.
+merged through PR #178. Exact `2dcecef4...` privately qualifies the Curator
+product server boundary; its vertical remains unmerged pending hosted review.
 
 ## Exact candidate
 

@@ -26,13 +26,15 @@ with 10/10 exact server-side terminals, zero activation, and exact teardown.
 Hosted head `69215c43...` passed all 12 checks and PR #177 merged the vertical as
 `e397af8b...`. Exact `778a7545...` privately qualified Student with 11/11 exact
 server-side terminals; hosted head `53ce570b...` passed all 12 checks and PR
-#178 merged it as `6546970b...`. Curator now has a public-green unqualified
-product successor; Curator qualification/merge and Analyst, Coordinator, and
-Auditor product surfaces remain open.
+#178 merged it as `6546970b...`. Exact `2dcecef4...` privately qualifies the
+Curator product server boundary with 10/10 exact terminals and public-safe
+evidence SHA-256 `bc24ee6b...`; Curator hosted merge and Analyst, Coordinator,
+and Auditor product surfaces remain open.
 
 **Current branch:** `agent/phase10-curator-product` follows the merged Student
-vertical and implements Curator's bounded product surface. Curator must pass a
-fresh clean exact-head private gate and hosted review before merge. The
+vertical and implements Curator's bounded product surface. Exact
+`2dcecef4...` passed the fresh clean owner-private ARM64 gate; unchanged-head
+hosted review remains required before merge. The
 requested Muse Spark replacement remains a separate evaluation: the official
 Meta material currently available to this branch documents Muse Spark 1.1 via
 the hosted Meta Model API, not an admitted local/offline 1.2 artifact. No route
@@ -456,11 +458,11 @@ Auditor as `1b255e9a...`, completing the bounded internal roster.
   hosted head `69215c43...` passed all 12 checks and PR #177 merged the vertical.
   Exact `778a7545...` privately qualified Student's authenticated product server
   boundary; hosted head `53ce570b...` passed all 12 checks and PR #178 merged
-  the vertical as `6546970b...`. Curator now has a public-test-green but
-  unqualified product successor; Analyst, Coordinator, and Auditor product
-  surfaces stay open.
-- [ ] Immediately after the Curator product successor qualifies, passes hosted
-  review, and merges, run a separate Muse replacement decision gate. Require an
+  the vertical as `6546970b...`. Exact `2dcecef4...` privately qualifies the
+  Curator product server boundary; hosted review/merge and the Analyst,
+  Coordinator, and Auditor product surfaces stay open.
+- [ ] Immediately after the Curator product successor passes hosted review and
+  merges, run a separate Muse replacement decision gate. Require an
   exact official deployable version and artifact, acceptable license/terms,
   organization identity and data-transfer approval, local/private runtime
   support, strict one-tool behavior, and full-route lifecycle/capacity plus

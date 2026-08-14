@@ -4,7 +4,7 @@ This record separates inherited merged evidence, focused repair checks, the
 completed and hosted-merged Phase 9 checkpoint gate, historical Phase 10 public
 read-backs, the frozen Librarian, Analyst, Coordinator, and Auditor successors,
 the merged Librarian, Archivist, and Student product boundaries, and the
-public-test-green unqualified Curator product successor. The Curator/profile-
+privately qualified unmerged Curator product successor. The Curator/profile-
 capacity core successor is privately
 qualified at exact protected heads and has a public-lock/aggregate result.
 Hosted-green head `593e627b...` passed all 12 checks, and PR #168 merged it as
@@ -15,9 +15,10 @@ Hosted-green head `593e627b...` passed all 12 checks, and PR #168 merged it as
 `a2e9b551...` qualified Archivist; hosted head `69215c43...` passed all 12 checks
 and PR #177 merged it as `e397af8b...`. Exact `778a7545...` privately qualified
 Student's authenticated product server boundary; hosted head `53ce570b...`
-passed all 12 checks and PR #178 merged it as `6546970b...`. The Curator product
-successor is public-test green but unqualified; Analyst, Coordinator, and
-Auditor product surfaces remain internal-only.
+passed all 12 checks and PR #178 merged it as `6546970b...`. Exact
+`2dcecef4...` privately qualifies the Curator product server boundary with
+public-safe evidence SHA-256 `bc24ee6b...`; its hosted merge remains pending,
+and Analyst, Coordinator, and Auditor product surfaces remain internal-only.
 Historical inventories remain labeled at their exact heads. The final section
 records the exact current Curator-product-successor threshold read-back.
 
@@ -843,19 +844,23 @@ mutation. Hosted head `53ce570b...` later passed all 12 checks and PR #178
 merged the product vertical as `6546970b...`. A live enterprise identity-
 provider exchange, sustained capacity/fairness, production p50/p95/p99 or an SLO,
 simultaneous Qwen/Gemma residency, enterprise networking, deployment, and the
-separate Muse Spark 1.2 decision remain open. Owner-private tenants, subjects,
+separate requested Muse Spark replacement decision remain open. Owner-private tenants, subjects,
 source/evidence/question bytes, request and run identities, database rows,
 paths, credentials, and individual measurements remain outside Git.
 
 ## Phase 10 Curator product-vertical successor public read-back
 
-The current staged successor over merged Student product baseline
+Exact executable successor `2dcecef4...` over merged Student product baseline
 `6546970ba3613fe55458b54c334a687cb7ff823e` adds authenticated Curator proposal
 create/status/cancel HTTP operations, a native-owned credential and lifecycle
 boundary, and a renderer review action available only after a completed Student
-question. It remains unqualified and unmerged: the owner-private ARM64 exact-
-head Curator product gate has not run, no qualification receipt exists, and no
-hosted or merge claim is made.
+question. The owner-private ARM64 exact-head gate matched 10/10 terminals across
+8 owners and returned `curator-authenticated-product-server-boundary-qualified`
+with public-safe evidence SHA-256 `bc24ee6b...`. It observed exact owner
+isolation, unchanged source truth, two PostgreSQL restart/read-backs,
+complex-c8/ninth-owner-queued containment, and complete teardown. The product
+candidate remains unmerged and no hosted-success claim is made; native/renderer
+and live enterprise identity-provider round trips were not privately executed.
 
 The focused server/API/runtime/Curator matrix ran 78 tests with zero failures;
 the focused product-gate contract ran 7 tests with zero failures. The full
@@ -873,16 +878,17 @@ The frozen Curator product acceptance-plan SHA-256 is
 The underlying Curator acceptance and synthetic corpus SHA-256 values remain
 `74f53d7aa45bbc8ba3ee0339235edac792b86323719d3c42e11b26793a089696`
 and `28bfadfbabe50c89dc8cac53a440d0ce7ba30d428682b98154cef63a59dfde1b`.
-Against the staged successor and this documentation reconciliation, the current
+Against the qualified successor and this documentation reconciliation, the current
 250-line inventory enumerates 615 surfaces: 364 at or above 350 lines and 251
 from 250 through 349. The exact 364 high-band tuples are reproduced in
 [THRESHOLD-DISPOSITION.md](THRESHOLD-DISPOSITION.md).
 
-This public read-back does not qualify the product boundary, execute the native
-or renderer surface against a private server, activate or mutate canonical
-knowledge, prove simultaneous model residency, establish sustained capacity or
-an SLO, approve enterprise deployment, or replace the qualified Gemma complex
-route. The separate Muse evaluation remains a post-merge model/runtime decision
+This public read-back records the exact-head authenticated server qualification;
+it does not execute the native or renderer surface against a private server,
+activate or mutate canonical knowledge, prove simultaneous model residency,
+establish sustained capacity or an SLO, approve enterprise deployment, or
+replace the qualified Gemma complex route. The separate Muse evaluation remains
+a post-merge model/runtime decision
 and cannot inherit Curator or route evidence. Owner-private tenants, subjects,
 request/run identities, proposal/evidence bytes, database rows, paths,
 credentials, model output, and individual measurements remain outside Git.
