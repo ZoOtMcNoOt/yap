@@ -1393,14 +1393,14 @@ provider optimization or non-blocking architecture work.
 1. Preserve the eight merged internal role boundaries without claiming
    knowledge activation, sustained capacity, simultaneous residency, or
    production promotion.
-2. Preserve the merged Librarian, Archivist, and Student product boundaries;
-   complete unchanged-head hosted review and merge for the qualified Curator
-   successor. Immediately afterward, run the bounded Muse Spark decision gate
-   without replacing Gemma unless an official deployable identity and the full
-   route/workflow evidence pass, then deliver the remaining Analyst,
-   Coordinator, and Auditor product surfaces. Each surface requires its own
-   reviewed trigger, endpoint, and client boundary. Auditor has no scheduled
-   autonomy or mutation authority.
+2. Preserve the merged Librarian, Archivist, Student, and Curator product
+   boundaries. The post-Curator Muse decision found official Muse Spark 1.2 on
+   the hosted Meta Model API, but no published open-weight artifact for the
+   organization-owned private DGX route; retain the exact qualified Gemma
+   complex profile and treat Muse as a later hosted-provider candidate. Deliver
+   the remaining Analyst, Coordinator, and Auditor product surfaces next. Each
+   surface requires its own reviewed trigger, endpoint, and client boundary.
+   Auditor has no scheduled autonomy or mutation authority.
 3. Provision a second full-strength owned GPU node and IT-controlled private
    routing if the single Spark cannot keep the unchanged Qwen and Gemma profiles
    warm together. Do not reduce either qualified profile or swap models per
