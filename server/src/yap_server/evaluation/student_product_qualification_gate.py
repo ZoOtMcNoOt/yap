@@ -554,14 +554,19 @@ def _wait_for_terminal(
         )
         if status != HTTPStatus.OK:
             raise RuntimeError("Student product status request failed")
-        view = _parse_product_view(
-            payload,
-            expected_evidence=expected_evidence,
-            expected_evidence_sha256=expected_evidence_sha256,
+        active = payload.get("status") in _ACTIVE_STATUSES
+        view = (
+            _parse_product_view(payload)
+            if active
+            else _parse_product_view(
+                payload,
+                expected_evidence=expected_evidence,
+                expected_evidence_sha256=expected_evidence_sha256,
+            )
         )
         if view.request_id != request_id:
             raise ValueError("Student product status identity changed")
-        if view.status not in _ACTIVE_STATUSES:
+        if not active:
             return view
         time.sleep(_POLL_INTERVAL_SECONDS)
     raise TimeoutError("Student product request exceeded its terminal deadline")

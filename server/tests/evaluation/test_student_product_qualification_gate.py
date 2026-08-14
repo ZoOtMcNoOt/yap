@@ -212,6 +212,50 @@ class StudentProductQualificationGateTests(unittest.TestCase):
                 ),
             )
 
+    def test_terminal_wait_defers_expected_evidence_binding_until_terminal(
+        self,
+    ) -> None:
+        request_id = "student-question-" + "3" * 32
+        active = {
+            "schemaVersion": 1,
+            "requestId": request_id,
+            "status": "running",
+            "conversationConceptId": "meetings/atlas",
+            "generationSha256": "c" * 64,
+            "questions": [],
+            "outputBudgetExhausted": False,
+        }
+        expected_evidence = tuple(
+            gate.StudentExpectedEvidence(
+                item.concept_id,
+                item.source_revision,
+                item.content_sha256,
+                item.char_start,
+                item.char_end,
+                item.text,
+            )
+            for item in (_question().supports[0].evidence,)
+        )
+        with mock.patch.object(
+            gate,
+            "_http_json",
+            side_effect=[
+                (200, active),
+                (200, _complete_wire(request_id)),
+            ],
+        ):
+            observed = gate._wait_for_terminal(
+                "http://127.0.0.1:1",
+                request_id,
+                token="token",
+                deadline=gate.time.monotonic() + 1.0,
+                expected_evidence=expected_evidence,
+                expected_evidence_sha256="d" * 64,
+            )
+
+        self.assertEqual(observed.status, "complete")
+        self.assertEqual(observed.evidence_sha256, "d" * 64)
+
     def test_expected_product_evidence_binds_compiled_permission_authority(
         self,
     ) -> None:
