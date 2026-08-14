@@ -5,14 +5,14 @@ immutable evidence belong in phase/checkpoint evidence records.
 
 ## Unreleased — Archivist product vertical candidate
 
-- Exact executable `163a409c...` adds authenticated asynchronous Archivist
+- Exact executable `e78746b5...` adds authenticated asynchronous Archivist
   staging endpoints, native Tauri job/result ownership and cancellation, and one
   explicit **Stage for knowledge** action for completed server-batch
   transcripts. The server owns reviewed-source derivation and stages a
   deterministic non-embedding generation without activation.
 - Its owner-private ARM64 database/broker/HTTP gate returned
   `archivist-authenticated-product-vertical-qualified` with public-safe evidence
-  SHA-256 `d25ccd61...`: 10/10 exact terminals, 9 staged requests, 1 queued
+  SHA-256 `3de55ce4...`: 10/10 exact terminals, 9 staged requests, 1 queued
   cancellation, 8 source admissions/staged generations, 0 active generations,
   exact replay, two PostgreSQL restart/read-backs, and complete teardown.
 - Public server, renderer, native Rust, Playwright, production build, Ruff,

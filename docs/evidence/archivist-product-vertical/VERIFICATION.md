@@ -3,12 +3,20 @@
 ## Status
 
 Exact executable candidate
-`163a409c0e186e3d239826088d5fa63f806568c8` is privately qualified as an
+`e78746b583bf5f9aa3179ec1c166890a4c4cf11e` is privately qualified as an
 unmerged Archivist product candidate. Its owner-private ARM64 gate returned
 `archivist-authenticated-product-vertical-qualified` with public-safe evidence
-SHA-256 `d25ccd61d6c2ba732440f9fd84c03f8cddd21b7608af37f2674f30c2b6309005`.
+SHA-256 `3de55ce4c091d70114491a002c32b0262042869f54b84c22404aaed115dab31e`.
 The frozen acceptance plan SHA-256 is
 `ebac7e6ecf35d73ab9d6f6c554e3f6dfb0aad00858fe89d1ac5d614a65f64b0a`.
+
+Predecessor `163a409c0e186e3d239826088d5fa63f806568c8` first qualified the
+vertical with public-safe evidence SHA-256
+`d25ccd61d6c2ba732440f9fd84c03f8cddd21b7608af37f2674f30c2b6309005`.
+The hosted release contract then found that its protected E2E population
+inventory did not enumerate the new Archivist spec. Successor `e78746b5...`
+adds only that explicit test floor and was freshly qualified; the predecessor
+receipt is retained as exact-head history and is not used for this successor.
 
 This record qualifies the authenticated HTTP/server, durable recording-source,
 Server-IO admission, reviewed-capture, and deterministic staging boundary. It
@@ -63,7 +71,7 @@ fairness, production-load, or deployment claim.
 
 ## Public verification
 
-At the same executable head:
+At production implementation head `163a409c...`:
 
 - the portable server suite passed **1,548 total = 1,501 passed + 47 declared
   skips**;
@@ -77,6 +85,12 @@ At the same executable head:
   **1,244 unit tests = 1,233 passed + 11 expected ignored**, plus all integration
   groups; and
 - server-orchestrator Rust passed formatting, strict Clippy, and all tests.
+
+At protected successor `e78746b5...`, the corrected E2E population contract
+passed 3/3 and the supported Chromium suite again passed 42/42, including the
+Archivist scenario. The owner-private gate was rerun from a clean immutable
+checkout and returned the current evidence hash above. Hosted checks still must
+pass the final documentation successor before merge.
 
 ## Claim limits and privacy
 

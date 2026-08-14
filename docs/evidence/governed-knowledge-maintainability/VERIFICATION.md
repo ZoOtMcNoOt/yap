@@ -750,10 +750,10 @@ credentials, and individual measurements remain outside Git.
 
 ## Phase 10 Archivist product-vertical successor public read-back
 
-Exact executable candidate `163a409c0e186e3d239826088d5fa63f806568c8`
+Exact executable candidate `e78746b583bf5f9aa3179ec1c166890a4c4cf11e`
 returned `archivist-authenticated-product-vertical-qualified` with public-safe
 evidence SHA-256
-`d25ccd61d6c2ba732440f9fd84c03f8cddd21b7608af37f2674f30c2b6309005`.
+`3de55ce4c091d70114491a002c32b0262042869f54b84c22404aaed115dab31e`.
 The frozen acceptance-plan SHA-256 is
 `ebac7e6ecf35d73ab9d6f6c554e3f6dfb0aad00858fe89d1ac5d614a65f64b0a`.
 Eight synchronized authenticated owner calls plus exact replay and one queued
@@ -770,7 +770,10 @@ passed and 47 were declared skips. The governed fixed membership ran 173 tests:
 374-test unit coverage, TypeScript/production Vite, Playwright 42/42, desktop
 Rust 1,244 unit tests (1,233 passed and 11 expected ignored) plus all integration
 groups, strict desktop/orchestrator Clippy, orchestrator tests, focused gate 8/8,
-and `git diff --check` were green. Against that executable candidate, with this
+and `git diff --check` were green. The sole protected successor delta registers
+the existing Archivist E2E spec in the explicit population contract; at
+`e78746b5...`, that contract passed 3/3 and Playwright again passed 42/42.
+Against that executable successor, with this
 public documentation reconciliation applied, the current 250-line inventory
 enumerates 605 surfaces: 354 at or above 350 lines and 251 from 250 through 349.
 The exact 354 high-band path/line/disposition tuples are reproduced in

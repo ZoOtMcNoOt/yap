@@ -1021,9 +1021,9 @@ Exact source candidate `3ec9885e...` passed focused unit checks, the complete
 1,207-test portable server suite, and two real PostgreSQL retry/restart/
 cross-owner/cancellation tests with exact six-part teardown. Hosted-green head
 `e1899db7...` passed all 12 checks and PR #165 merged the core as
-`2a7ec819...`. Exact product candidate `163a409c...` privately qualified its
+`2a7ec819...`. Exact product candidate `e78746b5...` privately qualified its
 authenticated server/database/broker boundary with public-safe evidence SHA-256
-`d25ccd61...`: 10/10 exact terminals, 9 staged, 1 queued cancellation, 0 active
+`3de55ce4...`: 10/10 exact terminals, 9 staged, 1 queued cancellation, 0 active
 generations, exact replay, and complete teardown. Native/renderer behavior is
 exact-head public-test green; hosted review and merge remain pending. The private
 gate is not a native-to-renderer run or live enterprise identity exchange.

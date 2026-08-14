@@ -17,7 +17,7 @@ all eight as bounded internal role cores. Scribe and Librarian have current
 product surfaces in the merged product. Exact `e2ba1864...` privately qualified
 Librarian's authenticated HTTP server boundary; hosted head `67a79ce2...` passed
 all 12 checks, and PR #174 merged the HTTP/native/Knowledge vertical as
-`98af78c9...`. Exact `163a409c...` privately qualified an unmerged Archivist
+`98af78c9...`. Exact `e78746b5...` privately qualified an unmerged Archivist
 HTTP/native/renderer candidate with 10/10 exact server-side terminals, zero
 activation, and exact teardown; hosted review/merge remains pending. Phase 9 merged the
 governed knowledge, tool, retrieval, terminology,
@@ -245,11 +245,11 @@ durable owner-scoped reviewed capture, compiles/stages deterministically without
 an LLM or activation, and passed focused portable plus real PostgreSQL
 restart/idempotency/cross-owner/cancellation/teardown evidence. Hosted-green
 head `e1899db7...` merged it through PR #165 as `2a7ec819...`.
-Exact product successor `163a409c...` composes that core behind authenticated
+Exact product successor `e78746b5...` composes that core behind authenticated
 HTTP jobs, native-owned durable recording/result resolution, and an explicit
 renderer **Stage for knowledge** action. Its owner-private ARM64 gate returned
 `archivist-authenticated-product-vertical-qualified` with public-safe evidence
-SHA-256 `d25ccd61...`: 10/10 exact terminals, 9 staged requests, 1 queued
+SHA-256 `3de55ce4...`: 10/10 exact terminals, 9 staged requests, 1 queued
 cancellation, 8 source admissions/staged generations, 0 active generations,
 exact replay, and complete teardown. The private gate qualifies the server/
 database/broker boundary; native/renderer behavior is exact-head public-test

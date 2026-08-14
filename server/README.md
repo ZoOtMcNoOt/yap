@@ -776,7 +776,7 @@ and source/generation staging without embedding or activation. Exact core head
 cancellation, and zero-residue checks; hosted head `e1899db7...` merged it
 through PR #165 as `2a7ec819...`.
 
-Exact product candidate `163a409c...` composes that core behind:
+Exact product candidate `e78746b5...` composes that core behind:
 
 - `POST /v1/archivist-ingestions` for one authenticated durable recording job;
 - `GET /v1/archivist-ingestions/{requestId}` for owner-scoped state; and
@@ -799,8 +799,8 @@ containment. React sends only a local recording ID and shows one explicit
 receives a bearer or source path.
 
 The owner-private ARM64 database/broker/HTTP gate returned
-`archivist-authenticated-product-vertical-qualified` at exact `163a409c...`
-with public-safe evidence SHA-256 `d25ccd61...`: eight synchronized authenticated
+`archivist-authenticated-product-vertical-qualified` at exact `e78746b5...`
+with public-safe evidence SHA-256 `3de55ce4...`: eight synchronized authenticated
 owners, 10/10 exact terminals, 9 staged requests, 1 queued cancellation, 8
 source admissions/staged generations, 0 active generations, exact replay, two
 PostgreSQL restart/read-backs, and exact teardown. Public server/native/renderer

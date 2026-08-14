@@ -7,7 +7,7 @@ justifications and disposition meanings live in [COVERAGE.md](COVERAGE.md).
 
 The inventory includes tracked source, text, policy, and provenance contract
 extensions and applies the script's frozen generated-product exclusions. Against
-executable candidate `163a409c0e186e3d239826088d5fa63f806568c8`,
+executable candidate `e78746b583bf5f9aa3179ec1c166890a4c4cf11e`,
 with this public documentation reconciliation applied, the
 complete 250-line inventory is 605 files: 354 listed below at 350 or more lines
 and 251 from 250 through 349.
@@ -78,7 +78,7 @@ Each line contains up to two independent entries in the form
   643 CURRENT-DOC          docs/adr/0025-provider-specific-asr-serving.md ||   438 CURRENT-DOC          docs/adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md
   387 CURRENT-DOC          docs/adr/0031-eight-agent-voice-os-roster.md ||  1279 CURRENT-DOC          docs/architecture/boundaries/EXECUTABLE-OWNERSHIP.md
  1310 CURRENT-DOC          docs/architecture/CURRENT-ARCHITECTURE.md ||  1362 CURRENT-DOC          docs/CURRENT-STATUS.md
-  367 CURRENT-DOC          docs/evidence/governed-knowledge-maintainability/COVERAGE.md ||   787 CURRENT-DOC          docs/evidence/governed-knowledge-maintainability/VERIFICATION.md
+  367 CURRENT-DOC          docs/evidence/governed-knowledge-maintainability/COVERAGE.md ||   790 CURRENT-DOC          docs/evidence/governed-knowledge-maintainability/VERIFICATION.md
  1030 CURRENT-DOC          docs/plans/active/2026-07-17-voiceos-decision-evidence-queue.md ||   466 CURRENT-DOC          docs/plans/active/2026-08-11-eight-agent-voice-os-delivery.md
   627 HISTORICAL-DOC       docs/plans/archived/2026-07-05-client-state-machine-implementation.md ||   561 HISTORICAL-DOC       docs/plans/archived/2026-07-08-local-audio-preprocessing-stack.md
   525 HISTORICAL-DOC       docs/plans/archived/2026-07-09-client-hardening-storage.md ||   988 HISTORICAL-DOC       docs/plans/archived/2026-07-10-client-audio-foundation.md
