@@ -20,19 +20,20 @@ privately qualified Auditor; hosted head `937a4129...` passed all 12 checks and
 PR #172 merged it as `1b255e9a...`. All eight bounded internal role cores are
 merged. Exact `e2ba1864...` privately qualified Librarian's authenticated HTTP
 server boundary; hosted head `67a79ce2...` passed all 12 checks and PR #174
-merged its HTTP/native/Knowledge product surface as `98af78c9...`. Every other
-non-Scribe product surface remains open.
+merged its HTTP/native/Knowledge product surface as `98af78c9...`. Exact
+`163a409c...` privately qualified an unmerged Archivist authenticated staging
+candidate with 10/10 exact server-side terminals, zero activation, and exact
+teardown. Its hosted merge and every Student/Curator/Analyst/Coordinator/Auditor
+product surface remain open.
 
-**Current branch:** `docs/phase10-librarian-product-closure` reconciles PR #174's
-exact hosted merge before the next product slice. The executable qualification
-remains attributed to `e2ba1864...`; hosted head `67a79ce2...` merged as
-`98af78c9...`.
+**Current branch:** `agent/phase10-archivist-product` implements and qualifies the
+Archivist product vertical. The executable qualification remains attributed to
+exact `163a409c...`; hosted review and merge remain pending.
 
-**Base:** Non-product CI-harness repair merge
-`9a4a391ba83c7d98f99b0a9e12dc60a96145d60c` from PR #176, descended from the
+**Base:** Librarian product documentation closure
+`1bbdb07ea395392a093051962bf6f726cf26fe51` from PR #175, descended from the
 Librarian product merge `98af78c940ea801a37103f615002658f90626fb3`
-from PR #174 and the merged Auditor internal core at
-`1b255e9a...`.
+and the merged Auditor internal core at `1b255e9a...`.
 
 **Applied decisions:** [ADR 0031](../../adr/0031-eight-agent-voice-os-roster.md),
 [ADR 0030](../../adr/0030-rust-supervised-provider-service-lifecycle.md),
@@ -297,6 +298,17 @@ and PR #165 merged Archivist as
 not a product endpoint/UI or aggregate Slice D closure. See the
 [public verification record](../../evidence/archivist-ingestion/VERIFICATION.md).
 
+Exact product successor `163a409c...` adds authenticated asynchronous
+Archivist HTTP jobs, native-owned durable recording/result resolution and
+cancellation, and one explicit renderer **Stage for knowledge** action. Its
+owner-private ARM64 gate matched 10/10 terminals, staged 9 requests, cancelled
+1 queued request, produced 8 exact source admissions/staged generations,
+activated 0 generations, and completed exact teardown. The private gate proves
+the authenticated server/database/broker boundary; native/renderer behavior is
+exact-head public-test green. See the
+[product verification record](../../evidence/archivist-product-vertical/VERIFICATION.md).
+Hosted review and merge remain pending.
+
 Student adds one internal BACKGROUND_LLM workflow on the already-warm rapid
 route. It reads one owner-scoped, permission-safe admitted conversation
 generation and asks the unchanged full Qwen profile for bounded learning
@@ -431,7 +443,9 @@ Auditor as `1b255e9a...`, completing the bounded internal roster.
   commands with role-specific UI states, retry/cancel controls, and graceful
   degradation. Exact `e2ba1864...` qualified this for Librarian's authenticated
   server boundary, and PR #174 merged its hosted-green native/Knowledge surface.
-  The remaining product surfaces stay open.
+  Exact `163a409c...` qualified the Archivist authenticated server boundary and
+  its native/renderer contract is public-test green; hosted merge remains open.
+  Student, Curator, Analyst, Coordinator, and Auditor product surfaces stay open.
 - [ ] Run portable, database, lifecycle, private-model, mixed-route,
   simultaneous-residency, sustained-capacity, security, accessibility, and
   aggregate exact-head gates.

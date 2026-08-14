@@ -768,6 +768,48 @@ contains the exact hashes, counts, and limits. Hosted review and merge closed
 through PR #164. This result does not prove simultaneous Qwen/Gemma residency, sustained
 mixed-route capacity, production SLOs, or completion of the remaining non-Scribe product surfaces.
 
+## Archivist reviewed-source staging product
+
+The merged no-LLM Archivist core owns deterministic reviewed-capture compilation
+and source/generation staging without embedding or activation. Exact core head
+`3ec9885e...` passed portable plus real-PostgreSQL retry/restart, cross-owner,
+cancellation, and zero-residue checks; hosted head `e1899db7...` merged it
+through PR #165 as `2a7ec819...`.
+
+Exact product candidate `163a409c...` composes that core behind:
+
+- `POST /v1/archivist-ingestions` for one authenticated durable recording job;
+- `GET /v1/archivist-ingestions/{requestId}` for owner-scoped state; and
+- `DELETE /v1/archivist-ingestions/{requestId}` for token-bound cancellation.
+
+The request contains only `schemaVersion`, `jobId`, and
+`expectedResultSha256`. The server re-resolves the authenticated owner's
+completed recording/result, derives the reviewed capture, and submits exactly
+one source-bound Archivist Server-IO workflow. It never accepts caller-authored
+transcript bytes, selects no model route, and never activates the staged
+generation. Enable the product runner explicitly with
+`YAP_ARCHIVIST_RUNTIME=reviewed_capture_postgres` and its required absolute
+owner-controlled database/admission configuration; incomplete or non-
+authenticated configuration fails closed.
+
+Native Rust owns the bearer-bearing exchange, durable recording/job/result
+resolution, one ingestion lease, cancellation, restart recovery, and quit
+containment. React sends only a local recording ID and shows one explicit
+**Stage for knowledge** action for a completed server-batch transcript; it never
+receives a bearer or source path.
+
+The owner-private ARM64 database/broker/HTTP gate returned
+`archivist-authenticated-product-vertical-qualified` at exact `163a409c...`
+with public-safe evidence SHA-256 `d25ccd61...`: eight synchronized authenticated
+owners, 10/10 exact terminals, 9 staged requests, 1 queued cancellation, 8
+source admissions/staged generations, 0 active generations, exact replay, two
+PostgreSQL restart/read-backs, and exact teardown. Public server/native/renderer
+checks are green. The private gate does not include a native-to-renderer round
+trip or live enterprise identity-provider exchange. See the
+[product-vertical verification record](../docs/evidence/archivist-product-vertical/VERIFICATION.md).
+Hosted review and merge remain pending; sustained capacity, production SLO,
+knowledge activation, and deployment are not claimed.
+
 ## Student learning questions
 
 The Student core is an internal `BACKGROUND_LLM` consumer of the already-warm

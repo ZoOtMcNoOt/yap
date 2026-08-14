@@ -977,25 +977,38 @@ Exact Scribe source-lock head `e5858424...` passed its private gate; hosted-gree
 head `bc9a88bc...` passed all 12 required checks and PR #164 merged the workflow
 as `ec3af506...`.
 
-### 28. Archivist reviewed-source ingestion
+### 28. Archivist reviewed-source ingestion and product staging
 
 - **Entry point:** `yap_server/agents/archivist_service.py` owns one synchronous
   BACKGROUND_IO broker workflow; `yap_server/agents/archivist.py` owns the
-  reviewed-capture-to-compiled-generation boundary.
+  reviewed-capture-to-compiled-generation boundary. The unmerged product
+  candidate adds `api/archivist_ingestion_requests.py` plus
+  `agents/archivist_ingestion_service.py`/`archivist_ingestion_runner.py` for
+  authenticated asynchronous HTTP jobs, native `archivist_ingestion.rs` plus
+  `server_connector/archivist.rs` for the bearer/job/result boundary, and
+  renderer `use-archivist-ingestion.ts` for the explicit action state.
 - **Authoritative owner:** the reviewed-capture ledger owns durable source
   identity and bytes; the existing compiler, source-admission ledger, and
   generation ledger remain the only compilation/admission/staging writers.
   Archivist composes them and does not become a second database authority.
 - **Persisted state:** one source admission plus one immutable staged generation.
+  The product runner retains bounded in-memory request lifecycle only; durable
+  recording jobs/results and knowledge ledgers remain the authorities.
   Archivist never stores raw caller content, embeddings, an active-generation
-  pointer, or a separate success ledger.
-- **Trust boundary:** the request contains only schema version and capture SHA.
-  Tenant/owner comes from the authenticated principal. The capture is read,
+  pointer, or a second knowledge authority.
+- **Trust boundary:** the internal request contains only schema version and
+  capture SHA. The product request contains only schema version, durable job ID,
+  and expected result SHA-256. Tenant/owner comes from the authenticated
+  principal; the server re-resolves the owned complete recording result and
+  derives the reviewed capture. The renderer supplies only local recording
+  identity to native code and never receives a bearer. The capture is read,
   compiled in an owner-private temporary workspace, and re-read before one
   admission/staging transaction.
-- **Dependencies/events:** durable reviewed capture -> SERVER_IO lease ->
-  deterministic OKF compile -> source admission -> exact idempotent generation
-  stage -> typed result. No LLM/GPU route is selected.
+- **Dependencies/events:** explicit renderer action -> native-owned durable
+  recording/job/result resolution -> authenticated Archivist HTTP job -> durable
+  reviewed capture -> SERVER_IO lease -> deterministic OKF compile -> source
+  admission -> exact idempotent generation stage -> typed result. No LLM/GPU
+  route is selected and no generation is activated.
 - **Failure/recovery:** queued/active cancellation, deadline, invalid/cross-owner
   source, storage failure, and wrong-route lease fail without activation or a
   success result. Exact retry succeeds only when the complete persisted
@@ -1008,7 +1021,12 @@ Exact source candidate `3ec9885e...` passed focused unit checks, the complete
 1,207-test portable server suite, and two real PostgreSQL retry/restart/
 cross-owner/cancellation tests with exact six-part teardown. Hosted-green head
 `e1899db7...` passed all 12 checks and PR #165 merged the core as
-`2a7ec819...`. HTTP/native/UI exposure remains later work.
+`2a7ec819...`. Exact product candidate `163a409c...` privately qualified its
+authenticated server/database/broker boundary with public-safe evidence SHA-256
+`d25ccd61...`: 10/10 exact terminals, 9 staged, 1 queued cancellation, 0 active
+generations, exact replay, and complete teardown. Native/renderer behavior is
+exact-head public-test green; hosted review and merge remain pending. The private
+gate is not a native-to-renderer run or live enterprise identity exchange.
 
 ### 29. Student learning-question workflow
 
