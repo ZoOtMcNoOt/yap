@@ -961,6 +961,139 @@
         }
       }
     },
+
+    "/v1/auditor-reports": {
+      "post": {
+        "tags": [
+          "agents"
+        ],
+        "summary": "Submit one source-cited audit focus",
+        "description": "Starts one owner-bound Auditor request. The server reads only current owner-visible reviewed knowledge, admits one idle-only complex-route model lease, and returns a server-derived noncanonical review-required report. The request carries no tenant, subject, route, provider, evidence, or citation authority.",
+        "operationId": "submitAuditorReport",
+        "x-yap-runtime-status": "Implemented only when the authenticated warm Auditor runtime verifies",
+        "x-yap-runtime-owner": "Auditor noncanonical source-cited reports",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuditorRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "The owner-bound audit-report request was accepted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditorReportJobView"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          }
+        }
+      }
+    },
+    "/v1/auditor-reports/{requestId}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/AuditorReportRequestId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "agents"
+        ],
+        "summary": "Read one owner-bound audit-report request",
+        "operationId": "getAuditorReport",
+        "x-yap-runtime-status": "Implemented only when the authenticated warm Auditor runtime verifies",
+        "x-yap-runtime-owner": "Auditor noncanonical source-cited reports",
+        "responses": {
+          "200": {
+            "description": "The current bounded audit-report lifecycle projection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditorReportJobView"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/AuthenticationUnavailableResponse"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "agents"
+        ],
+        "summary": "Request cancellation of one owner-bound audit report",
+        "description": "Signals in-flight evidence and model work and returns its cancellation-requested projection; status polling observes terminal acknowledgement.",
+        "operationId": "cancelAuditorReport",
+        "x-yap-runtime-status": "Implemented only when the authenticated warm Auditor runtime verifies",
+        "x-yap-runtime-owner": "Auditor noncanonical source-cited reports",
+        "responses": {
+          "202": {
+            "description": "Cancellation was requested for the owned audit-report request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditorReportJobView"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          }
+        }
+      }
+    },
     "/v1/student-questions": {
       "post": {
         "tags": [
@@ -2137,6 +2270,18 @@
           "pattern": "^coordinator-bundle-[0-9a-f]{32}$"
         }
       },
+      "AuditorReportRequestId": {
+        "name": "requestId",
+        "in": "path",
+        "required": true,
+        "description": "Opaque Auditor product request identity scoped to the authenticated owner.",
+        "schema": {
+          "type": "string",
+          "minLength": 47,
+          "maxLength": 47,
+          "pattern": "^auditor-report-[0-9a-f]{32}$"
+        }
+      },
       "StudentQuestionRequestId": {
         "name": "requestId",
         "in": "path",
@@ -2838,6 +2983,169 @@
           },
           "proposalBundle": {
             "$ref": "#/components/schemas/CoordinatorProposalBundle"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+          }
+        }
+      },
+      "AuditorRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "focus",
+          "maximumFindings",
+          "expectedGenerationSha256"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "focus": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "maximumFindings": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "expectedGenerationSha256": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      },
+      "AuditorFinding": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "summary",
+          "citations",
+          "findingSha256",
+          "requiresReview"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "potential-contradiction"
+          },
+          "summary": {
+            "type": "string",
+            "const": "These two current reviewed knowledge statements may conflict."
+          },
+          "citations": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "$ref": "#/components/schemas/LibrarianEvidenceItem"
+            }
+          },
+          "findingSha256": {
+            "$ref": "#/components/schemas/Sha256"
+          },
+          "requiresReview": {
+            "type": "boolean",
+            "const": true
+          }
+        }
+      },
+      "AuditorReport": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "generationSha256",
+          "sourceAdmissionSha256",
+          "evidenceSha256",
+          "findings",
+          "citationSha256",
+          "canonical",
+          "requiresReview",
+          "reportSha256"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "generationSha256": {
+            "$ref": "#/components/schemas/Sha256"
+          },
+          "sourceAdmissionSha256": {
+            "$ref": "#/components/schemas/Sha256"
+          },
+          "evidenceSha256": {
+            "$ref": "#/components/schemas/Sha256"
+          },
+          "findings": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 5,
+            "items": {
+              "$ref": "#/components/schemas/AuditorFinding"
+            }
+          },
+          "citationSha256": {
+            "$ref": "#/components/schemas/Sha256"
+          },
+          "canonical": {
+            "type": "boolean",
+            "const": false
+          },
+          "requiresReview": {
+            "type": "boolean",
+            "const": true
+          },
+          "reportSha256": {
+            "$ref": "#/components/schemas/Sha256"
+          }
+        }
+      },
+      "AuditorReportJobView": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "requestId",
+          "status"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "requestId": {
+            "type": "string",
+            "minLength": 47,
+            "maxLength": 47,
+            "pattern": "^auditor-report-[0-9a-f]{32}$"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "cancellation-requested",
+              "complete",
+              "evidence-unavailable",
+              "cancelled",
+              "failed"
+            ]
+          },
+          "report": {
+            "$ref": "#/components/schemas/AuditorReport"
           },
           "reason": {
             "type": "string",
@@ -5973,7 +6281,8 @@
           "archivistIngestions",
           "curatorProposals",
           "analystAnswers",
-          "coordinatorBundles"
+          "coordinatorBundles",
+          "auditorReports"
         ],
         "properties": {
           "batchJobs": {
@@ -6015,6 +6324,10 @@
           "coordinatorBundles": {
             "type": "boolean",
             "description": "True only when authenticated noncanonical review-required Coordinator proposal bundles are configured."
+          },
+          "auditorReports": {
+            "type": "boolean",
+            "description": "True only when authenticated noncanonical review-required Auditor reports are configured."
           }
         }
       },

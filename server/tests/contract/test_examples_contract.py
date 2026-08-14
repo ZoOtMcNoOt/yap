@@ -341,6 +341,7 @@ class ContractTests(unittest.TestCase):
             curator_proposals=False,
             analyst_answers=False,
             coordinator_bundles=False,
+            auditor_reports=False,
         )
         view = HealthView(
             service="yap-server",
@@ -363,6 +364,7 @@ class ContractTests(unittest.TestCase):
                 "curatorProposals": False,
                 "analystAnswers": False,
                 "coordinatorBundles": False,
+                "auditorReports": False,
             },
         )
         self.assertEqual(

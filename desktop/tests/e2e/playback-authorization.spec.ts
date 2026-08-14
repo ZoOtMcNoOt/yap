@@ -102,6 +102,7 @@ async function installPlaybackBridge(
                 archivistIngestions: false,
                 analystAnswers: false,
                 coordinatorBundles: false,
+                auditorReports: false,
                 curatorProposals: false,
                 studentQuestions: false,
               },

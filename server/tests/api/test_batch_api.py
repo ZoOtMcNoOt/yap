@@ -100,6 +100,7 @@ class BatchJobApiTests(BatchJobApiTestCase):
                 "curatorProposals": False,
                 "analystAnswers": False,
                 "coordinatorBundles": False,
+                "auditorReports": False,
             },
         )
 

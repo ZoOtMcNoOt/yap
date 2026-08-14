@@ -9,7 +9,7 @@ use std::{
 use crate::{jobs::AsrCatalogBinding, runtime};
 
 use super::{
-    analyst, archivist, batch, client, config, coordinator, curator, librarian,
+    analyst, archivist, auditor, batch, client, config, coordinator, curator, librarian,
     state::{self, ConnectorInner, SettingsDisposition},
     student, transcript_correction, AsrCapabilityCatalog, ServerConnectionSnapshot,
 };
@@ -72,6 +72,13 @@ pub(crate) struct CoordinatorConnectionLease {
     generation: u64,
     base_url: String,
     client: coordinator::CoordinatorApiClient,
+}
+
+#[derive(Clone)]
+pub(crate) struct AuditorConnectionLease {
+    generation: u64,
+    base_url: String,
+    client: auditor::AuditorApiClient,
 }
 
 #[derive(Clone)]
@@ -185,6 +192,29 @@ pub(crate) fn coordinator_connection_lease_for_test() -> CoordinatorConnectionLe
     let client = coordinator::CoordinatorApiClient::new(authenticated, "http://127.0.0.1:1")
         .expect("fixed test coordinator origin");
     CoordinatorConnectionLease {
+        generation: 1,
+        base_url: client.base_url_identity().to_owned(),
+        client,
+    }
+}
+
+#[cfg(test)]
+pub(crate) fn auditor_connection_lease_for_test() -> AuditorConnectionLease {
+    struct NoAccess;
+    impl super::authorization::ServerAccessTokenSource for NoAccess {
+        fn access(&self) -> super::authorization::AccessTokenFuture<'_> {
+            Box::pin(async { Ok(None) })
+        }
+    }
+
+    let authenticated = super::AuthenticatedRequestDispatcher::from_source(
+        client::bounded_client().expect("bounded test client"),
+        Arc::new(NoAccess),
+        super::authorization::AuthenticatedSession::new(),
+    );
+    let client = auditor::AuditorApiClient::new(authenticated, "http://127.0.0.1:1")
+        .expect("fixed test auditor origin");
+    AuditorConnectionLease {
         generation: 1,
         base_url: client.base_url_identity().to_owned(),
         client,
@@ -363,6 +393,12 @@ impl AnalystConnectionLease {
 
 impl CoordinatorConnectionLease {
     pub(crate) fn client(&self) -> &coordinator::CoordinatorApiClient {
+        &self.client
+    }
+}
+
+impl AuditorConnectionLease {
+    pub(crate) fn client(&self) -> &auditor::AuditorApiClient {
         &self.client
     }
 }
@@ -707,6 +743,37 @@ impl ServerConnector {
         }))
     }
 
+    pub(crate) fn auditor_connection_lease(
+        &self,
+    ) -> Result<Option<AuditorConnectionLease>, String> {
+        let generation = self.generation.load(Ordering::Acquire);
+        let inner = self.inner.lock().expect("server connector poisoned");
+        let snapshot = inner.snapshot();
+        if inner.generation() != generation
+            || snapshot.state != runtime::state::ServerConnectorState::Ready
+            || !snapshot.capabilities.auditor_reports
+        {
+            return Ok(None);
+        }
+        let Some(base_url) = inner.configured_base_url(generation) else {
+            return Ok(None);
+        };
+        let authenticated = self
+            .authenticated
+            .bind_current_transport(generation, &base_url)
+            .map_err(|_| {
+                "The server connection changed before audit-report dispatch.".to_string()
+            })?;
+        let client = auditor::AuditorApiClient::new(authenticated, &base_url)
+            .map_err(|_| "The audit-report server origin is invalid.".to_string())?;
+        let base_url = client.base_url_identity().to_owned();
+        Ok(Some(AuditorConnectionLease {
+            generation,
+            base_url,
+            client,
+        }))
+    }
+
     pub(crate) fn student_connection_lease(
         &self,
     ) -> Result<Option<StudentConnectionLease>, String> {
@@ -976,6 +1043,25 @@ impl ServerConnector {
             return Err(
                 "Server connection changed before coordination bundle could commit.".into(),
             );
+        }
+        Ok(commit())
+    }
+
+    pub(crate) fn with_current_auditor_lease<T>(
+        &self,
+        lease: &AuditorConnectionLease,
+        commit: impl FnOnce() -> T,
+    ) -> Result<T, String> {
+        let inner = self.inner.lock().expect("server connector poisoned");
+        let snapshot = inner.snapshot();
+        let current = self.generation.load(Ordering::Acquire) == lease.generation
+            && inner.generation() == lease.generation
+            && inner.configured_base_url(lease.generation).as_deref()
+                == Some(lease.base_url.as_str())
+            && snapshot.state == runtime::state::ServerConnectorState::Ready
+            && snapshot.capabilities.auditor_reports;
+        if !current {
+            return Err("Server connection changed before audit report could commit.".into());
         }
         Ok(commit())
     }

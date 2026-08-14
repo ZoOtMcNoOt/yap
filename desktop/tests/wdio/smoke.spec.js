@@ -287,6 +287,7 @@ describe("Yap desktop shell", () => {
     expect(typeof commands.server.capabilities.batchJobs).toBe("boolean");
     expect(typeof commands.server.capabilities.liveStreaming).toBe("boolean");
     expect(typeof commands.server.capabilities.jobStatus).toBe("boolean");
+    expect(typeof commands.server.capabilities.auditorReports).toBe("boolean");
     expect(commands.server.checkedAtMs === null || typeof commands.server.checkedAtMs === "number").toBe(true);
     expect(commands.server.retryAtMs === null || typeof commands.server.retryAtMs === "number").toBe(true);
     expect(typeof commands.live.status).toBe("string");
@@ -312,6 +313,9 @@ describe("Yap desktop shell", () => {
     expect(bodyText).toContain("Ask or find reviewed knowledge");
     expect(bodyText).toContain(
       "Cited answers need your connected organization server with Analyst enabled.",
+    );
+    expect(bodyText).toContain(
+      "Audit reports need your connected organization server with Auditor enabled.",
     );
     expect(bodyText).toContain(
       "Knowledge search needs your connected organization server with Librarian enabled.",
@@ -436,6 +440,7 @@ describe("Yap desktop shell", () => {
         archivistIngestions: false,
         analystAnswers: false,
         coordinatorBundles: false,
+        auditorReports: false,
         curatorProposals: false,
         studentQuestions: false,
         batchJobs: false,

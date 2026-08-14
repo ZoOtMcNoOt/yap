@@ -470,6 +470,7 @@ mod authentication_projection_tests {
                 librarian_queries: true,
                 analyst_answers: true,
                 coordinator_bundles: true,
+                auditor_reports: true,
                 student_questions: true,
                 archivist_ingestions: true,
                 curator_proposals: true,

@@ -28,6 +28,7 @@ class HealthRoutingTests(HealthServerTestCase):
                     "curatorProposals": False,
                     "analystAnswers": False,
                     "coordinatorBundles": False,
+                    "auditorReports": False,
                 },
             },
         )

@@ -350,6 +350,12 @@ fn finalize_owned_work_before_quit(app: &tauri::AppHandle) -> Result<(), String>
             "coordination-bundle shutdown cancellation was incomplete: {error}"
         ));
     }
+    let auditor_owner = app.state::<crate::auditor_report::AuditorReportOwner>();
+    if let Err(error) = cancel_auditor_reports_before_quit(&auditor_owner) {
+        crate::diagnostics::log(&format!(
+            "audit-report shutdown cancellation was incomplete: {error}"
+        ));
+    }
     let student_owner = app.state::<crate::student_question::StudentQuestionOwner>();
     if let Err(error) = cancel_student_questions_before_quit(&student_owner) {
         crate::diagnostics::log(&format!(
@@ -415,6 +421,18 @@ pub(super) fn cancel_coordinator_bundles_before_quit(
             .await
             .map_err(|_| {
                 "coordination-bundle shutdown cancellation exceeded its bounded wait".to_string()
+            })?
+    })
+}
+
+pub(super) fn cancel_auditor_reports_before_quit(
+    owner: &crate::auditor_report::AuditorReportOwner,
+) -> Result<usize, String> {
+    tauri::async_runtime::block_on(async {
+        tokio::time::timeout(Duration::from_secs(5), owner.cancel_active_requests())
+            .await
+            .map_err(|_| {
+                "audit-report shutdown cancellation exceeded its bounded wait".to_string()
             })?
     })
 }

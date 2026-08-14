@@ -35,6 +35,10 @@ from .coordinator_bundle_requests import (
     CoordinatorBundleRequestMixin,
     CoordinatorBundleServiceProtocol,
 )
+from .auditor_report_requests import (
+    AuditorReportRequestMixin,
+    AuditorReportServiceProtocol,
+)
 from .http_server import (
     MAX_CONCURRENT_REQUEST_THREADS,
     ThreadingYapHTTPServer,
@@ -66,6 +70,8 @@ from .routes import (
     CURATOR_PROPOSALS_PATH,
     COORDINATOR_BUNDLE_PATH,
     COORDINATOR_BUNDLES_PATH,
+    AUDITOR_REPORT_PATH,
+    AUDITOR_REPORTS_PATH,
     LID_PREFLIGHT_CANCEL_PATH,
     LID_PREFLIGHT_PATH,
     LIBRARIAN_QUERIES_PATH,
@@ -89,6 +95,7 @@ _REQUEST_LOGGER = logging.getLogger("yap_server.requests")
 
 
 class _HealthRequestHandler(
+    AuditorReportRequestMixin,
     CoordinatorBundleRequestMixin,
     AnalystAnswerRequestMixin,
     ArchivistIngestionRequestMixin,
@@ -118,6 +125,7 @@ class _HealthRequestHandler(
         curator_proposal_service: CuratorProposalServiceProtocol | None,
         analyst_answer_service: AnalystAnswerServiceProtocol | None,
         coordinator_bundle_service: CoordinatorBundleServiceProtocol | None,
+        auditor_report_service: AuditorReportServiceProtocol | None,
         transcript_correction_service: TranscriptCorrectionServiceProtocol | None,
         asr_capabilities: Mapping[str, object] | None,
         **kwargs: Any,
@@ -133,6 +141,7 @@ class _HealthRequestHandler(
         self._curator_proposal_service = curator_proposal_service
         self._analyst_answer_service = analyst_answer_service
         self._coordinator_bundle_service = coordinator_bundle_service
+        self._auditor_report_service = auditor_report_service
         self._transcript_correction_service = transcript_correction_service
         self._asr_capabilities = asr_capabilities
         self._request_id = f"req-{uuid4().hex}"
@@ -231,6 +240,7 @@ class _HealthRequestHandler(
                     curator_proposals=(self._curator_proposal_service is not None),
                     analyst_answers=(self._analyst_answer_service is not None),
                     coordinator_bundles=(self._coordinator_bundle_service is not None),
+                    auditor_reports=(self._auditor_report_service is not None),
                 ),
             )
             return
@@ -369,6 +379,21 @@ class _HealthRequestHandler(
             self._dispatch_coordinator_bundle_request(path)
             return
 
+        is_auditor_report_route = (
+            path == AUDITOR_REPORTS_PATH
+            or AUDITOR_REPORT_PATH.fullmatch(path) is not None
+        )
+        if is_auditor_report_route:
+            if self._auditor_report_service is None:
+                self._send_error(
+                    HTTPStatus.NOT_IMPLEMENTED,
+                    code="NOT_IMPLEMENTED",
+                    message="Audit reports are not configured.",
+                )
+                return
+            self._dispatch_auditor_report_request(path)
+            return
+
         if self._job_service is not None and path != "/v1/live":
             self._dispatch_job_request(path)
             return
@@ -417,6 +442,7 @@ def create_server(
     curator_proposal_service: CuratorProposalServiceProtocol | None = None,
     analyst_answer_service: AnalystAnswerServiceProtocol | None = None,
     coordinator_bundle_service: CoordinatorBundleServiceProtocol | None = None,
+    auditor_report_service: AuditorReportServiceProtocol | None = None,
     transcript_correction_service: TranscriptCorrectionServiceProtocol | None = None,
     asr_capabilities: Mapping[str, object] | None = None,
 ) -> HTTPServer:
@@ -458,6 +484,7 @@ def create_server(
         curator_proposal_service=curator_proposal_service,
         analyst_answer_service=analyst_answer_service,
         coordinator_bundle_service=coordinator_bundle_service,
+        auditor_report_service=auditor_report_service,
         transcript_correction_service=transcript_correction_service,
         asr_capabilities=asr_capabilities,
     )
@@ -472,6 +499,7 @@ def create_server(
             or curator_proposal_service is not None
             or analyst_answer_service is not None
             or coordinator_bundle_service is not None
+            or auditor_report_service is not None
             or transcript_correction_service is not None
         ),
     )((settings.host, settings.port), handler)
@@ -493,6 +521,7 @@ def serve(
     curator_proposal_service: CuratorProposalServiceProtocol | None = None,
     analyst_answer_service: AnalystAnswerServiceProtocol | None = None,
     coordinator_bundle_service: CoordinatorBundleServiceProtocol | None = None,
+    auditor_report_service: AuditorReportServiceProtocol | None = None,
     transcript_correction_service: TranscriptCorrectionServiceProtocol | None = None,
     asr_capabilities: Mapping[str, object] | None = None,
 ) -> None:
@@ -507,6 +536,7 @@ def serve(
         curator_proposal_service=curator_proposal_service,
         analyst_answer_service=analyst_answer_service,
         coordinator_bundle_service=coordinator_bundle_service,
+        auditor_report_service=auditor_report_service,
         transcript_correction_service=transcript_correction_service,
         asr_capabilities=asr_capabilities,
     ) as server:

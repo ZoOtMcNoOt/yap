@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 
 import { AnalystAnswerComposer } from "@/components/analyst/analyst-answer-composer";
 import { CoordinatorBundleComposer } from "@/components/coordinator/coordinator-bundle-composer";
+import { AuditorReportComposer } from "@/components/auditor/auditor-report-composer";
 import { LibrarianEvidenceResults } from "@/components/librarian/librarian-evidence-results";
 import { useLibrarianQuery } from "@/components/librarian/use-librarian-query";
 import { StudentQuestionComposer } from "@/components/student/student-question-composer";
@@ -20,12 +21,14 @@ export function LibrarianPanel({
   analystAvailable = false,
   available,
   coordinatorAvailable = false,
+  auditorAvailable = false,
   curatorAvailable = false,
   studentAvailable = false,
 }: {
   analystAvailable?: boolean;
   available: boolean;
   coordinatorAvailable?: boolean;
+  auditorAvailable?: boolean;
   curatorAvailable?: boolean;
   studentAvailable?: boolean;
 }) {
@@ -68,6 +71,8 @@ export function LibrarianPanel({
         <AnalystAnswerComposer available={analystAvailable} />
 
         <CoordinatorBundleComposer available={coordinatorAvailable} />
+
+        <AuditorReportComposer available={auditorAvailable} />
 
         <div className="border-t border-border/60 pt-5">
           <h3 className="text-base font-semibold">Search exact source excerpts</h3>

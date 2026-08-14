@@ -8,6 +8,7 @@ _ARCHIVIST_INGESTION_ID = r"archivist-ingestion-[0-9a-f]{32}"
 _CURATOR_PROPOSAL_ID = r"curator-proposal-[0-9a-f]{32}"
 _ANALYST_ANSWER_ID = r"analyst-answer-[0-9a-f]{32}"
 _COORDINATOR_BUNDLE_ID = r"coordinator-bundle-[0-9a-f]{32}"
+_AUDITOR_REPORT_ID = r"auditor-report-[0-9a-f]{32}"
 LID_PREFLIGHT_PATH = "/v1/lid/preflight"
 LID_PREFLIGHT_CANCEL_PATH = re.compile(
     rf"^/v1/lid/preflights/(?P<request_id>{_LID_REQUEST_ID})$"
@@ -39,6 +40,10 @@ ANALYST_ANSWER_PATH = re.compile(
 COORDINATOR_BUNDLES_PATH = "/v1/coordinator-bundles"
 COORDINATOR_BUNDLE_PATH = re.compile(
     rf"^/v1/coordinator-bundles/(?P<request_id>{_COORDINATOR_BUNDLE_ID})$"
+)
+AUDITOR_REPORTS_PATH = "/v1/auditor-reports"
+AUDITOR_REPORT_PATH = re.compile(
+    rf"^/v1/auditor-reports/(?P<request_id>{_AUDITOR_REPORT_ID})$"
 )
 JOB_PATH = re.compile(rf"^/v1/jobs/(?P<job_id>{_PATH_ID})$")
 RESULT_PATH = re.compile(rf"^/v1/jobs/(?P<job_id>{_PATH_ID})/result$")
@@ -94,6 +99,10 @@ def allowed_methods(path: str) -> frozenset[str] | None:
     if path == COORDINATOR_BUNDLES_PATH:
         return frozenset({"POST"})
     if COORDINATOR_BUNDLE_PATH.fullmatch(path):
+        return frozenset({"DELETE", "GET"})
+    if path == AUDITOR_REPORTS_PATH:
+        return frozenset({"POST"})
+    if AUDITOR_REPORT_PATH.fullmatch(path):
         return frozenset({"DELETE", "GET"})
     if path == "/v1/jobs":
         return frozenset({"POST"})
