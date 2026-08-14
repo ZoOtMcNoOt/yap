@@ -19,6 +19,10 @@ from yap_server.auth import (
 from yap_server.config import ServerSettings, ensure_private_application_bind
 from yap_server.jobs import RecordingJobService
 
+from .analyst_answer_requests import (
+    AnalystAnswerRequestMixin,
+    AnalystAnswerServiceProtocol,
+)
 from .archivist_ingestion_requests import (
     ArchivistIngestionRequestMixin,
     ArchivistIngestionServiceProtocol,
@@ -50,6 +54,8 @@ from .request_io import (
 )
 from .responses import ResponseMixin
 from .routes import (
+    ANALYST_ANSWER_PATH,
+    ANALYST_ANSWERS_PATH,
     ARCHIVIST_INGESTION_PATH,
     ARCHIVIST_INGESTIONS_PATH,
     CURATOR_PROPOSAL_PATH,
@@ -77,6 +83,7 @@ _REQUEST_LOGGER = logging.getLogger("yap_server.requests")
 
 
 class _HealthRequestHandler(
+    AnalystAnswerRequestMixin,
     ArchivistIngestionRequestMixin,
     CuratorProposalRequestMixin,
     StudentQuestionRequestMixin,
@@ -102,6 +109,7 @@ class _HealthRequestHandler(
         student_question_service: StudentQuestionServiceProtocol | None,
         archivist_ingestion_service: ArchivistIngestionServiceProtocol | None,
         curator_proposal_service: CuratorProposalServiceProtocol | None,
+        analyst_answer_service: AnalystAnswerServiceProtocol | None,
         transcript_correction_service: TranscriptCorrectionServiceProtocol | None,
         asr_capabilities: Mapping[str, object] | None,
         **kwargs: Any,
@@ -115,6 +123,7 @@ class _HealthRequestHandler(
         self._student_question_service = student_question_service
         self._archivist_ingestion_service = archivist_ingestion_service
         self._curator_proposal_service = curator_proposal_service
+        self._analyst_answer_service = analyst_answer_service
         self._transcript_correction_service = transcript_correction_service
         self._asr_capabilities = asr_capabilities
         self._request_id = f"req-{uuid4().hex}"
@@ -211,6 +220,7 @@ class _HealthRequestHandler(
                         self._archivist_ingestion_service is not None
                     ),
                     curator_proposals=(self._curator_proposal_service is not None),
+                    analyst_answers=(self._analyst_answer_service is not None),
                 ),
             )
             return
@@ -319,6 +329,21 @@ class _HealthRequestHandler(
             self._dispatch_curator_proposal_request(path)
             return
 
+        is_analyst_answer_route = (
+            path == ANALYST_ANSWERS_PATH
+            or ANALYST_ANSWER_PATH.fullmatch(path) is not None
+        )
+        if is_analyst_answer_route:
+            if self._analyst_answer_service is None:
+                self._send_error(
+                    HTTPStatus.NOT_IMPLEMENTED,
+                    code="NOT_IMPLEMENTED",
+                    message="Cited answers are not configured.",
+                )
+                return
+            self._dispatch_analyst_answer_request(path)
+            return
+
         if self._job_service is not None and path != "/v1/live":
             self._dispatch_job_request(path)
             return
@@ -365,6 +390,7 @@ def create_server(
     student_question_service: StudentQuestionServiceProtocol | None = None,
     archivist_ingestion_service: ArchivistIngestionServiceProtocol | None = None,
     curator_proposal_service: CuratorProposalServiceProtocol | None = None,
+    analyst_answer_service: AnalystAnswerServiceProtocol | None = None,
     transcript_correction_service: TranscriptCorrectionServiceProtocol | None = None,
     asr_capabilities: Mapping[str, object] | None = None,
 ) -> HTTPServer:
@@ -404,6 +430,7 @@ def create_server(
         student_question_service=student_question_service,
         archivist_ingestion_service=archivist_ingestion_service,
         curator_proposal_service=curator_proposal_service,
+        analyst_answer_service=analyst_answer_service,
         transcript_correction_service=transcript_correction_service,
         asr_capabilities=asr_capabilities,
     )
@@ -416,6 +443,7 @@ def create_server(
             or student_question_service is not None
             or archivist_ingestion_service is not None
             or curator_proposal_service is not None
+            or analyst_answer_service is not None
             or transcript_correction_service is not None
         ),
     )((settings.host, settings.port), handler)
@@ -435,6 +463,7 @@ def serve(
     student_question_service: StudentQuestionServiceProtocol | None = None,
     archivist_ingestion_service: ArchivistIngestionServiceProtocol | None = None,
     curator_proposal_service: CuratorProposalServiceProtocol | None = None,
+    analyst_answer_service: AnalystAnswerServiceProtocol | None = None,
     transcript_correction_service: TranscriptCorrectionServiceProtocol | None = None,
     asr_capabilities: Mapping[str, object] | None = None,
 ) -> None:
@@ -447,6 +476,7 @@ def serve(
         student_question_service=student_question_service,
         archivist_ingestion_service=archivist_ingestion_service,
         curator_proposal_service=curator_proposal_service,
+        analyst_answer_service=analyst_answer_service,
         transcript_correction_service=transcript_correction_service,
         asr_capabilities=asr_capabilities,
     ) as server:

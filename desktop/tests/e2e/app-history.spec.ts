@@ -130,6 +130,7 @@ test("history keeps committed review actions separate from recoverable capture a
                 liveStreaming: false,
                 transcriptCorrection: false,
                 archivistIngestions: false,
+                analystAnswers: false,
                 curatorProposals: false,
                 studentQuestions: false,
               },

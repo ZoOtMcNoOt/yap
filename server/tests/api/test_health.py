@@ -21,6 +21,7 @@ class HealthTests(unittest.TestCase):
                     "studentQuestions": False,
                     "archivistIngestions": False,
                     "curatorProposals": False,
+                    "analystAnswers": False,
                 },
             },
         )
@@ -42,6 +43,7 @@ class HealthTests(unittest.TestCase):
                     "studentQuestions": False,
                     "archivistIngestions": False,
                     "curatorProposals": False,
+                    "analystAnswers": False,
                 },
             },
         )

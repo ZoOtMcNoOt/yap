@@ -98,6 +98,7 @@ class BatchJobApiTests(BatchJobApiTestCase):
                 "studentQuestions": False,
                 "archivistIngestions": False,
                 "curatorProposals": False,
+                "analystAnswers": False,
             },
         )
 

@@ -288,6 +288,8 @@ export default function App() {
 
       {showKnowledge ? (
         <LibrarianPanel
+          analystAvailable={settings.serverSnapshot.state === "ready"
+            && settings.serverSnapshot.capabilities.analystAnswers}
           available={settings.serverSnapshot.state === "ready"
             && settings.serverSnapshot.capabilities.librarianQueries}
           curatorAvailable={settings.serverSnapshot.state === "ready"
