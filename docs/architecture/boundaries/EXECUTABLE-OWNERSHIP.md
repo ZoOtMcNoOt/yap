@@ -1175,9 +1175,10 @@ See the [Librarian verification record](../../evidence/librarian-permission-safe
 - **Status:** privately qualified merged internal core. Exact executable head
   `0665c486...` supplied qualification; lock-only `8fee7a5c...` publishes the
   matching route lock; hosted head `da1127f8...` merged through PR #170 as
-  `52c45d22...`. Exact `78b2c638...` privately qualifies the authenticated
-  product server boundary with public-safe evidence SHA-256 `f26adfc0...`; the
-  native/renderer successor remains unmerged pending hosted review.
+  `52c45d22...`. Exact `78b2c638...` privately qualified the authenticated
+  product server boundary with public-safe evidence SHA-256 `f26adfc0...`;
+  hosted head `4c8db7c2...` passed all 12 checks and PR #180 merged the native/
+  renderer successor as `c95fcf1a...`.
 - **Entry point:** `yap_server/agents/analyst_service.py` owns one bounded
   authenticated interactive complex-route request composed through
   `analyst_runtime.py`.
@@ -1217,7 +1218,9 @@ restart/read-backs, complex capacity containment, and teardown. See the
 
 - **Status:** privately qualified merged internal core at exact executable head
   `fed729b3...`. Hosted head `53ee0152...` passed all 12 checks, and PR #171
-  merged it as `67d836da...`. All product surfaces remain pending.
+  merged it as `67d836da...`. Exact `05400fb3...` privately qualifies the
+  authenticated product server/database/broker boundary with public-safe
+  evidence SHA-256 `394112ad...`; hosted review remains pending.
 - **Entry point:** `yap_server/agents/coordinator_service.py` owns one bounded
   authenticated background complex-route request composed through
   `coordinator_runtime.py`. It submits no nested role-service request.
@@ -1240,6 +1243,13 @@ restart/read-backs, complex capacity containment, and teardown. See the
   proposal reader owns current authorization; `CoordinatorService` owns one
   workflow lease and termination; the Coordinator result-audit ledger owns
   durable terminal identity; the broker owns admission.
+- **Product composition:** `coordinator_bundle_service.py` and
+  `coordinator_product_runtime.py` own bounded asynchronous product jobs;
+  `api/coordinator_bundle_requests.py` is the authenticated HTTP adapter. Native
+  `coordinator_bundle.rs` and `server_connector/coordinator.rs` own credentials,
+  request lifecycle, exact bundle/citation validation, cancellation, and quit
+  containment. React receives only validated product state and never a bearer
+  token or internal request/evidence hashes.
 
 Three synchronized repeat waves matched 24 of 24 normal service calls, all 29
 terminals matched, and 15 server-derived noncanonical review-required bundles
@@ -1247,12 +1257,16 @@ contained 18 selected items and 18 citations. Exact `11f325bb...` remains
 terminal no-receipt evidence from the superseded deadline-lifecycle verifier
 and is not reused. See the
 [Coordinator verification record](../../evidence/coordinator-proposal-bundles/VERIFICATION.md).
+The separate 10-request product gate matched 5 complete, 4 unavailable, and 1
+cancelled terminal with exact bundles/citations, owner isolation, two database
+restart/read-backs, complex capacity containment, and teardown. See the
+[Coordinator product record](../../evidence/coordinator-product-vertical/VERIFICATION.md).
 
 ### 34. Auditor source-cited review-findings core
 
 - **Status:** privately qualified merged internal core at exact executable head
   `08b06f6d...`. Hosted head `937a4129...` passed all 12 checks and PR #172
-  merged it as `1b255e9a...`; all product surfaces remain pending.
+  merged it as `1b255e9a...`; its product surface remains pending.
 - **Entry point:** `yap_server/agents/auditor_service.py` owns one bounded
   authenticated idle-only complex-route request composed through
   `auditor_runtime.py`. It submits no nested role-service request.

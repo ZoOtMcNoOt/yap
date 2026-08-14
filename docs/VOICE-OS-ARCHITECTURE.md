@@ -229,10 +229,13 @@ with authenticated question jobs, native-owned transport and
 validation, and a source-bound renderer action. Its private evidence covers the
 authenticated server boundary; hosted head `53ce570b...` passed all 12 checks
 and PR #178 merged the product vertical as `6546970b...`. Exact
-`78b2c638...` now privately qualifies Analyst's authenticated product server
+`78b2c638...` privately qualified Analyst's authenticated product server
 boundary with 10/10 exact terminals and public-safe evidence SHA-256
-`f26adfc0...`; its HTTP/native/renderer successor remains unmerged pending
-hosted review. Coordinator and Auditor product surfaces stay open.
+`f26adfc0...`; hosted head `4c8db7c2...` passed all 12 checks and PR #180 merged
+its HTTP/native/renderer successor as `c95fcf1a...`. Exact `05400fb3...`
+privately qualifies Coordinator's product server/database/broker boundary with
+10/10 exact terminals and public-safe evidence SHA-256 `394112ad...`; its
+HTTP/native/renderer successor remains unmerged. Auditor product exposure stays open.
 The
 accepted performance topology is provider-specific: Cohere batch
 uses a digest-pinned vLLM candidate, Nemotron keeps a Transformers correctness
@@ -1006,7 +1009,7 @@ timeline
 | **7** | Merged and gated | Phase 7 merged as `66d314d7`; its adversarial checkpoint closed at `ef6d977`. The merged work has a provider-neutral OIDC verifier with Entra policy, fail-closed defaults, token-derived `(tid, oid)` ownership, owner-scoped jobs/LID, authenticated bounded private WebSocket admission, and a qualified native lower handshake. The desktop has only a narrow native token-provider seam; no production adapter is approved. Exact application/runtime candidate `dc6359162fb16909d38f410cdb75c2729d83972f` passed the one complete private 25-cell matrix and independent receipt validation. Hosted CI exposed only runner-portability defects. Reviewed repairs through `c1d81fc085218cf91a4e370087bcc5927e5b1f70` change hosted/gate tooling, its contracts, and documentation—not shipped product/runtime or candidate-manifest behavior—so the passed candidate matrix remains authoritative. Purpose grants, revocation, and their audit records are implemented and unit-tested but reachable only from tests: nothing calls `IdentityAuthorizationService`, so `access_disabled` and grants can be changed only by editing `identity.sqlite` directly. The layer is not a shipped capability; a future purpose-authorized speaker reconciliation/naming workflow must expose or remove it under review. Real IT-provided Entra policy conformance remains open. |
 | **8** | Closed as unadvertised baseline | ADR 0020, ADR 0027, and the source-aware design are canonical. PR #144 merged exact 30-second Tiron epochs, request-scoped reuse of its ECAPA encoder, an eight-slot decode-window boundary, a 32-speaker session target, a 64-speaker ceiling, strict `Unknown`, and clean one-speaker History projection. The server has one meeting-inference path and no ASR-plus-diarization fallback. Exact candidate `3ddb930...` recorded `unadvertised-baseline` because the independent private holdout was unconfigured; Tiron remains explicit Preview and absent from the default catalog. |
 | **9** | Merged and gated | Google OKF conformance, deterministic compilation, immutable terminology snapshots, Postgres permission/relationship generations, pgvector retrieval, governed agents/RAG/MCP, explicit no-fallback routing, and privately qualified Qwen rapid/Gemma complex vLLM routes execute. Exact candidate `a4f34678...` passed the complete Phase 9 gate with real Postgres restart/recovery and exact teardown. Exact hosted-green head `fa26caaf...` merged through PR #152 as `ae81ff06...`. The separate maintainability checkpoint gate passed at exact head `22c3f369...`; final hosted head `84c22ec9...` merged through PR #153 as `ca151b1b...`. Postgres remains the sole projection because no measured gap justified Neo4j. Production supervision, simultaneous residency, sustained mixed-user capacity, and external serving remain Phase 10. |
-| **10** | Eight bounded role cores plus five product surfaces merged; Analyst successor privately qualified and awaiting hosted merge | The merged baseline includes all eight internal cores through PR #172 and the Scribe/Librarian/Archivist/Student/Curator product surfaces. Exact `6aa33e4d...` privately qualified Curator's authenticated server boundary with public-safe evidence SHA-256 `328f6640...`; hosted head `b983adb7...` passed all 12 checks and PR #179 merged it as `70303872...`. Exact `78b2c638...` privately qualifies Analyst's authenticated product server boundary with 10/10 exact terminals, 4 exact cited answers, strict owner isolation, two PostgreSQL restart/read-backs, c8/ninth-owner-queued containment, and public-safe evidence SHA-256 `f26adfc0...`. Analyst hosted review/merge plus Coordinator/Auditor product exposure, simultaneous residency, sustained capacity, observability, enterprise access, secure-edge promotion, publication governance, and repo split remain later slices or IT handoffs. |
+| **10** | Eight bounded role cores plus six product surfaces merged; Coordinator successor privately qualified and awaiting hosted merge | The merged baseline includes all eight internal cores through PR #172 and the Scribe/Librarian/Archivist/Student/Curator/Analyst product surfaces through PR #180. Exact `05400fb3...` privately qualifies Coordinator's authenticated product server/database/broker boundary with 10/10 exact terminals, 5 exact server-derived noncanonical review-required bundles, strict owner isolation, two PostgreSQL restart/read-backs, c8/ninth-owner-queued containment, and public-safe evidence SHA-256 `394112ad...`. Coordinator hosted review/merge plus Auditor product exposure, simultaneous residency, sustained capacity, observability, enterprise access, secure-edge promotion, publication governance, and repo split remain later slices or IT handoffs. |
 
 The client-convergence PR was an MVP prerequisite merged separately before this
 server-node change; it does not rename canonical Phase 4 or imply that the
@@ -1086,9 +1089,11 @@ qualified Student; hosted head `53ce570b...` passed all 12 checks and PR #178
 merged it as `6546970b...`. Exact `6aa33e4d...` privately qualified Curator's
 product successor with public-safe evidence SHA-256 `328f6640...`; hosted head
 `b983adb7...` passed all 12 checks and PR #179 merged it as `70303872...`.
-Exact `78b2c638...` privately qualifies Analyst's product server boundary;
-Analyst hosted merge plus Coordinator and Auditor product integration remain
-open.
+Exact `78b2c638...` privately qualified Analyst's product server boundary;
+hosted head `4c8db7c2...` passed all 12 checks and PR #180 merged it as
+`c95fcf1a...`. Exact `05400fb3...` privately qualifies Coordinator's product
+server/database/broker boundary; its hosted merge and Auditor product
+integration remain open.
 Coordinator
 is merged through PR #171 as `67d836da...`; Auditor
 is merged through PR #172 as `1b255e9a...`. The separate full-strength

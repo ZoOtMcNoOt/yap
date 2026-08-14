@@ -3,19 +3,20 @@
 This changelog records product/architecture milestones. Exact test counts and
 immutable evidence belong in phase/checkpoint evidence records.
 
-## Unreleased — Analyst product candidate privately qualified
+## Unreleased — Coordinator product candidate privately qualified
 
-- Adds authenticated Analyst answer jobs, native-owned validation, and a cited-
-  answer composer. Unavailable or cancelled results expose no answer.
-- Exact `78b2c638...` qualified 10/10 server terminals across 8 owners with
-  public-safe evidence SHA-256 `f26adfc0...`, exact restart/read-back, c8/ninth-
-  queued containment, and teardown. The candidate awaits hosted review.
-- Public verification passed server **1,603 = 1,556 + 47 skips**, governed
-  **173 = 169 + 4**, focused Analyst **69 = 67 + 2 skips**, desktop **62/387**,
-  TypeScript/Vite, Ruff, Rust formatting/strict Clippy/tests, and gate **9/9**.
-- Gemma remains the qualified local complex route. Muse Spark 1.2 is recorded
-  only as a future hosted-provider watch item because Meta has not published
-  deployable open weights for this local/offline boundary.
+- Adds authenticated Coordinator proposal-bundle jobs, native-owned validation,
+  and an explicit composer for server-derived, source-cited, noncanonical,
+  review-required bundles; unavailable/cancelled results expose no bundle.
+- Exact `05400fb3...` qualified 10/10 server terminals across 8 owners with
+  public-safe evidence SHA-256 `394112ad...`, restart/read-back, c8 containment,
+  and teardown; focused/public checks are green and hosted review is pending.
+- Gemma remains local; Muse stays hosted-only until open weights are available.
+
+## 2026-08-14 — Analyst product vertical merged
+
+- Exact `78b2c638...` qualified with evidence `f26adfc0...`; hosted head
+  `4c8db7c2...` passed all 12 checks and PR #180 merged as `c95fcf1a...`.
 
 ## 2026-08-14 — Curator product vertical merged
 

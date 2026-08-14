@@ -3,8 +3,8 @@
 This record separates inherited merged evidence, focused repair checks, the
 completed and hosted-merged Phase 9 checkpoint gate, historical Phase 10 public
 read-backs, the frozen Librarian, Analyst, Coordinator, and Auditor successors,
-the merged Librarian, Archivist, Student, and Curator product boundaries, and
-the privately qualified unmerged Analyst product successor. The Curator/profile-
+the merged Librarian, Archivist, Student, Curator, and Analyst product boundaries,
+and the privately qualified unmerged Coordinator product successor. The Curator/profile-
 capacity core successor is privately
 qualified at exact protected heads and has a public-lock/aggregate result.
 Hosted-green head `593e627b...` passed all 12 checks, and PR #168 merged it as
@@ -19,11 +19,13 @@ passed all 12 checks and PR #178 merged it as `6546970b...`. Exact
 `6aa33e4d...` privately qualified the Curator product server boundary with
 public-safe evidence SHA-256 `328f6640...`; hosted head `b983adb7...` passed all
 12 checks and PR #179 merged it as `70303872...`. Exact `78b2c638...` privately
-qualifies Analyst's product server boundary with public-safe evidence SHA-256
-`f26adfc0...`; its hosted merge remains pending, and Coordinator/Auditor product
-surfaces remain internal-only.
+qualified Analyst's product server boundary with public-safe evidence SHA-256
+`f26adfc0...`; hosted head `4c8db7c2...` passed all 12 checks and PR #180 merged
+it as `c95fcf1a...`. Exact `05400fb3...` privately qualifies Coordinator's
+product server/database/broker boundary with public-safe evidence SHA-256
+`394112ad...`; its hosted merge remains pending, and Auditor remains internal-only.
 Historical inventories remain labeled at their exact heads. The final section
-records the exact current Analyst-product-successor threshold read-back.
+records the exact current Coordinator-product-successor threshold read-back.
 
 ## Inherited Phase 9 evidence
 
@@ -933,9 +935,52 @@ in [THRESHOLD-DISPOSITION.md](THRESHOLD-DISPOSITION.md).
 
 This record qualifies only the authenticated Analyst HTTP/database/broker
 boundary. Native/renderer behavior is exact-head public-test evidence and was
-not a private end-to-end client run. The candidate remains unmerged pending
-hosted review. No evidence here proves simultaneous Qwen/Gemma residency,
+not a private end-to-end client run. Hosted head `4c8db7c2...` passed all 12
+checks and PR #180 merged it as `c95fcf1a...`. No evidence here proves simultaneous Qwen/Gemma residency,
 sustained capacity/fairness, a production p50/p95/p99 or SLO, live enterprise
 identity integration, or deployment. Owner-private tenants, subjects,
 questions, evidence, answers, citations, model output, database rows, paths,
 credentials, and individual measurements remain outside Git.
+
+## Phase 10 Coordinator product-vertical successor public read-back
+
+Exact executable successor `05400fb33a6a2ed63f49db622b8789a330def3e7`
+returned `coordinator-authenticated-product-server-boundary-qualified` with
+public-safe evidence SHA-256
+`394112ade3727f4e40fbec0b5083e23d7889a0318553026227f0c4a0e6c4bd89`.
+The frozen product acceptance-plan SHA-256 is
+`5e52d54547fed0ae7ab6fcaa5d2ea79ce4f1c71bf6f4c5143549db6399b99e91`;
+the qualified Coordinator semantic plan and corpus remain
+`34f7152da6eeeb7c21018bcfb4581cfea89d794414ffe15e7a690e43d64d5b04`
+and `e427bb41a7cd351e0b092333a6ce800a4abd931fa7593e3b9d6f127f9b95895f`.
+Eight authenticated owners matched all 10 product terminals: five complete,
+four unavailable, zero failed, and one cancelled. All five returned bundles and
+their citations matched the independent compiler- and Curator-lineage-bound
+oracle. Authentication, owner isolation, hidden-only/absent equivalence, HTTP
+cancellation, exact proposal/result/tool audits, two PostgreSQL restart/read-
+backs, complex c8/ninth-owner-queued containment, worker containment, and
+complete teardown passed.
+
+At exact executable `05400fb3...`, the portable server suite ran 1,622 tests:
+1,575 passed and 47 were declared skips. The governed fixed membership ran 173
+tests: 169 passed and four were declared skips. Focused Coordinator product/core
+checks ran 41 tests. Whole-server Ruff, desktop 63-file/391-test unit coverage,
+production TypeScript/Vite, desktop Rust formatting, strict Clippy and locked
+tests, documentation truth/links, and `git diff --check` were green.
+
+Against executable candidate `05400fb3...`, with this public documentation
+reconciliation applied in the current docs successor, the complete 250-line
+inventory enumerates 625 surfaces: 373 at or above 350 lines and 252 from 250
+through 349. The exact 373 high-band path/line/disposition tuples are reproduced
+in [THRESHOLD-DISPOSITION.md](THRESHOLD-DISPOSITION.md).
+
+This record qualifies only the authenticated Coordinator HTTP/database/broker
+boundary. Native/renderer behavior is exact-head public-test evidence and was
+not a private end-to-end client run. The candidate remains unmerged pending
+hosted review. No evidence here proves autonomous action, simultaneous
+Qwen/Gemma residency, sustained capacity/fairness, a production p50/p95/p99 or
+SLO, live enterprise identity integration, or deployment. Owner-private
+tenants, subjects, objectives, proposals, bundles, citations, model output,
+database rows, paths, credentials, and individual measurements remain outside
+Git. Gemma remains the qualified local complex route; Muse Spark 1.2 remains a
+future hosted-provider watch item until deployable open weights are available.

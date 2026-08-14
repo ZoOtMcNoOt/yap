@@ -59,14 +59,19 @@ source-bound review action after a completed Student question. Its 10/10 exact
 server terminals returned public-safe evidence SHA-256 `328f6640...`. Hosted
 head `b983adb7...` passed all 12 checks, and PR #179 merged that product vertical
 as `70303872...`; its private gate did not execute a native/renderer round trip
-or live enterprise identity exchange. Exact `78b2c638...` now privately
+or live enterprise identity exchange. Exact `78b2c638...` privately
 qualifies Analyst's authenticated cited-answer server boundary: 10/10 exact
 product terminals, 4 exact server-derived cited answers, strict owner isolation,
 two PostgreSQL restart/read-backs, fail-closed cancellation, and exact teardown.
-The native/renderer Analyst successor is public-test green but remains unmerged;
-its private gate likewise does not claim a client round trip or live enterprise
-identity exchange. Coordinator and Auditor still have no HTTP, native, renderer,
-or desktop product surface.
+Hosted head `4c8db7c2...` passed all 12 required checks, and PR #180 merged the
+native/renderer Analyst successor as `c95fcf1a...`; its private gate did not
+claim a client round trip or live enterprise identity exchange. Exact
+`05400fb3...` now privately qualifies Coordinator's authenticated proposal-
+bundle server boundary: 10/10 exact product terminals, 5 exact server-derived
+noncanonical review-required bundles, strict owner isolation, two PostgreSQL
+restart/read-backs, fail-closed cancellation, and exact teardown. Its native/
+renderer successor is public-test green but unmerged. Auditor still has no HTTP,
+native, renderer, or desktop product surface.
 
 This is not live-only dictation or a Wispr Flow clone. Batch recordings remain the target core loop once the trusted server route exists; live capture is the implemented compact, explicit companion path.
 

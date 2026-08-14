@@ -281,12 +281,17 @@ and a source-bound renderer action. Hosted head `53ce570b...` passed all 12
 checks and PR #178 merged it as `6546970b...`. Exact `6aa33e4d...` privately
 qualified the Curator product server boundary with 10/10 exact terminals and
 public-safe evidence SHA-256 `328f6640...`; hosted head `b983adb7...` passed all
-12 checks and PR #179 merged it as `70303872...`. Exact `78b2c638...` now
-privately qualifies Analyst's authenticated product server boundary with 10/10
+12 checks and PR #179 merged it as `70303872...`. Exact `78b2c638...`
+privately qualified Analyst's authenticated product server boundary with 10/10
 exact terminals, 4 exact cited answers, 5 unavailable results, 1 cancelled
 request, two PostgreSQL restart/read-backs, complex-c8/ninth-owner-queued
-containment, and public-safe evidence SHA-256 `f26adfc0...`. Analyst hosted
-merge plus Coordinator and Auditor product exposure remain open. Proven selected-route
+containment, and public-safe evidence SHA-256 `f26adfc0...`. Hosted head
+`4c8db7c2...` passed all 12 checks and PR #180 merged it as `c95fcf1a...`.
+Exact `05400fb3...` privately qualifies Coordinator's authenticated product
+server/database/broker boundary with 10/10 exact terminals, 5 exact bundles,
+two PostgreSQL restart/read-backs, c8/ninth-owner-queued containment, and public-
+safe evidence SHA-256 `394112ad...`. Coordinator hosted merge and Auditor
+product exposure remain open. Proven selected-route
 limits of four rapid/eight complex are not simultaneous-model,
 sustained-capacity, or production-SLO evidence. One Spark cannot retain both
 unchanged full profiles simultaneously, so warm two-route promotion requires a

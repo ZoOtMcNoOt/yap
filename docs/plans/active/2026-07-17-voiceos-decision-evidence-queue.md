@@ -927,9 +927,11 @@ unconfigured.
   Exact `6aa33e4d...` privately qualified Curator's product server boundary
   with public-safe evidence SHA-256 `328f6640...`; hosted head `b983adb7...`
   passed all 12 checks and PR #179 merged it as `70303872...`. Exact
-  `78b2c638...` privately qualifies Analyst's product server boundary with
-  public-safe evidence SHA-256 `f26adfc0...`; Analyst hosted merge and
-  Coordinator/Auditor product surfaces remain open. Proven
+  `78b2c638...` privately qualified Analyst's product server boundary with
+  public-safe evidence SHA-256 `f26adfc0...`; hosted head `4c8db7c2...` passed
+  all 12 checks and PR #180 merged it as `c95fcf1a...`. Exact `05400fb3...`
+  privately qualifies Coordinator's product server/database/broker boundary;
+  Coordinator hosted merge and the Auditor product surface remain open. Proven
   selected-route capacity four/eight is
   not simultaneous-model residency, sustained capacity/SLO, or production
   evidence.

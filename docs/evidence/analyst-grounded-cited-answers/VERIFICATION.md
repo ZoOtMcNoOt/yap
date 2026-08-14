@@ -96,7 +96,7 @@ evidence above plus three exact warm-provider repeats.
 This record qualifies the merged internal core; it does not by itself qualify a
 product-exposed workflow. The separate
 [Analyst product record](../analyst-product-vertical/VERIFICATION.md) binds the
-current authenticated server-boundary successor, which remains unmerged.
+authenticated server-boundary successor later merged through PR #180.
 The merged roster contains Scribe, Archivist, Student, Curator, Librarian,
 Analyst, Coordinator, and Auditor. No evidence here proves
 simultaneous Qwen/Gemma residency, sustained multi-user capacity or fairness,

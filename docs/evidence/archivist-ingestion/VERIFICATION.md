@@ -5,7 +5,9 @@ hosted review, and merge passed. The separate Archivist product vertical later
 merged through PR #177. Student's separately qualified product vertical later
 merged through PR #178. Exact `6aa33e4d...` privately qualified the Curator
 product server boundary, and PR #179 merged that vertical. Exact `78b2c638...`
-privately qualifies the unmerged Analyst product server boundary.
+privately qualified the Analyst product server boundary, and PR #180 merged that
+vertical. Exact `05400fb3...` privately qualifies the unmerged Coordinator
+product server/database/broker boundary.
 
 ## Exact candidate
 

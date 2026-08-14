@@ -29,13 +29,16 @@ server-side terminals; hosted head `53ce570b...` passed all 12 checks and PR
 #178 merged it as `6546970b...`. Exact `6aa33e4d...` privately qualified the
 Curator product server boundary with 10/10 exact terminals and public-safe
 evidence SHA-256 `328f6640...`; hosted head `b983adb7...` passed all 12 checks
-and PR #179 merged the vertical as `70303872...`. Exact `78b2c638...` now
-privately qualifies Analyst's authenticated product server boundary with 10/10
-exact terminals and public-safe evidence SHA-256 `f26adfc0...`; its hosted merge
-plus Coordinator and Auditor product surfaces remain open.
+and PR #179 merged the vertical as `70303872...`. Exact `78b2c638...` privately
+qualified Analyst's authenticated product server boundary with 10/10 exact
+terminals and public-safe evidence SHA-256 `f26adfc0...`; hosted head
+`4c8db7c2...` passed all 12 checks and PR #180 merged it as `c95fcf1a...`. Exact
+`05400fb3...` privately qualifies Coordinator's product server/database/broker
+boundary with public-safe evidence SHA-256 `394112ad...`; its hosted merge and
+the Auditor product surface remain open.
 
-**Current branch:** `agent/phase10-analyst-product` follows the merged Curator
-vertical and implements and privately qualifies Analyst's bounded product
+**Current branch:** `agent/phase10-coordinator-product` follows the merged Analyst
+vertical and implements and privately qualifies Coordinator's bounded product
 server surface; unchanged-head hosted review/merge remains. The requested Muse
 replacement decision is closed for this slice: Meta's official
 [Muse Spark 1.2](https://developer.meta.com/ai/models/muse-spark/) page exposes
@@ -45,10 +48,10 @@ route. The exact qualified Gemma complex profile therefore remains unchanged;
 Muse Spark 1.2 is recorded as a later hosted-provider candidate rather than a
 local replacement.
 
-**Base:** Curator product merge
-`70303872261667da17becfd06f985bc8cda960bc` from PR #179, with executable
-qualification retained at exact `6aa33e4d...` and hosted review at exact
-`b983adb7...`.
+**Base:** Analyst product merge
+`c95fcf1a043f919661b007f014a8dc6729aa02f2` from PR #180, with executable
+qualification retained at exact `78b2c638...` and hosted review at exact
+`4c8db7c2...`.
 
 **Applied decisions:** [ADR 0031](../../adr/0031-eight-agent-voice-os-roster.md),
 [ADR 0030](../../adr/0030-rust-supervised-provider-service-lifecycle.md),
@@ -466,8 +469,11 @@ Auditor as `1b255e9a...`, completing the bounded internal roster.
   the vertical as `6546970b...`. Exact `6aa33e4d...` privately qualified the
   Curator product server boundary; hosted head `b983adb7...` passed all 12
   checks and PR #179 merged it as `70303872...`. Exact `78b2c638...` privately
-  qualified Analyst's product server boundary with 10/10 exact terminals; its
-  hosted merge plus Coordinator and Auditor product surfaces stay open.
+  qualified Analyst's product server boundary with 10/10 exact terminals;
+  hosted head `4c8db7c2...` passed all 12 checks and PR #180 merged it as
+  `c95fcf1a...`. Exact `05400fb3...` privately qualified Coordinator's product
+  server/database/broker boundary with 10/10 exact terminals; its hosted merge
+  plus the Auditor product surface stay open.
 - [x] Immediately after the Curator product successor passed hosted review and
   merged, run a separate Muse replacement decision gate. Require an
   exact official deployable version and artifact, acceptable license/terms,
@@ -476,7 +482,7 @@ Auditor as `1b255e9a...`, completing the bounded internal roster.
   affected-workflow requalification before replacing Gemma. Official Muse
   Spark 1.2 is available through the hosted Meta Model API, but its model page
   publishes no open-weight artifact for the private DGX route. Retain qualified
-  Gemma and continue the Analyst, Coordinator, and Auditor product plan without
+  Gemma and continue the Coordinator and Auditor product plan without
   blocking on the model name; treat Muse as a later hosted-provider evaluation.
 - [ ] Run portable, database, lifecycle, private-model, mixed-route,
   simultaneous-residency, sustained-capacity, security, accessibility, and

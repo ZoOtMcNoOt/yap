@@ -30,6 +30,7 @@ backlog.
 - [Student product-vertical verification](evidence/student-product-vertical/VERIFICATION.md)
 - [Curator product-vertical verification](evidence/curator-product-vertical/VERIFICATION.md)
 - [Analyst product-vertical exact-head verification](evidence/analyst-product-vertical/VERIFICATION.md)
+- [Coordinator product-vertical exact-head verification](evidence/coordinator-product-vertical/VERIFICATION.md)
 
 ## Long-term architecture frame
 
