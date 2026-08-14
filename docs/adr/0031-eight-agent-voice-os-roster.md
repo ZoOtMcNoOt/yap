@@ -1,6 +1,6 @@
 # ADR 0031: Eight-agent Voice OS roster and execution boundaries
 
-**Status:** Accepted target; all eight bounded role cores and the Scribe/Librarian/Archivist product surfaces are merged; Student is a privately qualified unmerged product candidate; four product surfaces and promotion remain open
+**Status:** Accepted target; all eight bounded role cores and the Scribe/Librarian/Archivist/Student product surfaces are merged; Curator has a public-green unqualified successor; four product surfaces and promotion remain open
 **Date:** 2026-08-11
 **Deciders:** Yap product and engineering owner
 **Amends:** [ADR 0006](0006-silero-agents-state-machine.md),
@@ -13,7 +13,7 @@
 ## Context
 
 The product architecture names eight agents, and the merged system now delivers
-all eight as bounded internal role cores. Scribe, Librarian, and Archivist have current
+all eight as bounded internal role cores. Scribe, Librarian, Archivist, and Student have current
 product surfaces in the merged product. Exact `e2ba1864...` privately qualified
 Librarian's authenticated HTTP server boundary; hosted head `67a79ce2...` passed
 all 12 checks, and PR #174 merged the HTTP/native/Knowledge vertical as
@@ -21,10 +21,13 @@ all 12 checks, and PR #174 merged the HTTP/native/Knowledge vertical as
 HTTP/native/renderer boundary with 10/10 exact server-side terminals, zero
 activation, and exact teardown; hosted head `69215c43...` passed all 12 checks
 and PR #177 merged the vertical as `e397af8b...`. Exact `778a7545...` privately
-qualifies an unmerged Student product candidate with authenticated question
+qualified Student with authenticated question
 jobs, native-owned transport/validation, and a source-bound renderer action;
 its private gate covers the authenticated server boundary rather than a live
-native/renderer run. Hosted review and merge remain pending. Phase 9 merged the
+native/renderer run. Hosted head `53ce570b...` passed all 12 checks, and PR #178
+merged the vertical as `6546970b...`. The current Curator successor implements
+an HTTP/native/renderer candidate but has no private qualification receipt.
+Phase 9 merged the
 governed knowledge, tool, retrieval, terminology,
 and two qualified reasoning-route foundations. Phase 10
 Slices 10.1 and 10.2 merged the Rust-supervised lifecycle and exact Qwen rapid/
@@ -60,12 +63,12 @@ queued, exact PostgreSQL lifecycle/read-back, and teardown. Curator may append
 only a noncanonical proposal; it cannot activate or mutate source truth.
 Hosted-green head `593e627b...` passed all 12 checks, and PR #168 merged the
 Curator/profile-capacity slice as `284ab96b...` on 2026-08-13. Curator product
-  exposure remains open. Exact head `56b7f5d0...` privately qualified the no-LLM
+qualification and merge remain open. Exact head `56b7f5d0...` privately qualified the no-LLM
 Librarian permission-safe evidence core across an actual eight-owner broker
 wave, ten exact invocations, Server-IO one-active/second-queued containment,
   PostgreSQL restart/read-back, and exact teardown. Hosted head `7505247e...`
-  merged the internal core through PR #169 as `d7a7e003...`; it has no product
-  surface. Exact predecessor `ecdcb8ee...` is
+  merged the internal core through PR #169 as `d7a7e003...`; PR #174 later
+  merged its authenticated product surface. Exact predecessor `ecdcb8ee...` is
 terminal/inadmissible because only seven owners entered broker submission.
 Exact executable `0665c486...` then privately qualified Analyst as an internal
 candidate with public-safe evidence SHA-256 `940fd7c6...`: three synchronized
@@ -347,9 +350,11 @@ head `da1127f8...` merged Analyst through PR #170 as `52c45d22...`; hosted head
 `53ee0152...` merged Coordinator through PR #171 as `67d836da...`; hosted head
 `937a4129...` merged Auditor through PR #172 as `1b255e9a...`. Librarian's
 product vertical later merged through PR #174; Archivist's product vertical
-merged through PR #177. Exact `778a7545...` privately qualified an unmerged
-Student product candidate. Curator, Analyst, Coordinator, and Auditor product
-exposure, warm
+merged through PR #177. Exact `778a7545...` privately qualified Student, and
+hosted head `53ce570b...` merged the product vertical through PR #178 as
+`6546970b...`. Curator now has a public-green unqualified product successor;
+Analyst, Coordinator, and Auditor product exposure, Curator qualification/
+merge, warm
 simultaneous two-route residency, sustained multi-owner capacity, and production
 promotion remain open.
 One Spark cannot retain the

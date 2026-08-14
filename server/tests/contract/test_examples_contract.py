@@ -357,6 +357,7 @@ class ContractTests(unittest.TestCase):
                 "librarianQueries": False,
                 "studentQuestions": False,
                 "archivistIngestions": False,
+                "curatorProposals": False,
             },
         )
         self.assertEqual(

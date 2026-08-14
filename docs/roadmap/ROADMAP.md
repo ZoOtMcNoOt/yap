@@ -252,8 +252,9 @@ was still open at that merge. Exact route head `dab19fe...` returned
 and qualified the nonmutating Curator core with public-safe evidence
 SHA-256 `b60df1e2...`; exact aggregate/public-lock head `7f896b34...` passed with
 public-safe evidence SHA-256 `fd197b98...`. Hosted-green head `593e627b...`
-passed all 12 checks, and PR #168 merged the slice as `284ab96b...`. Student and
-Curator product exposure remain open. Exact `56b7f5d0...` privately qualified
+passed all 12 checks, and PR #168 merged the slice as `284ab96b...`. Student
+product exposure later merged through PR #178; Curator product qualification
+and merge remain open. Exact `56b7f5d0...` privately qualified
 Librarian; hosted head `7505247e...` merged it through PR #169 as `d7a7e003...`.
 Exact executable `0665c486...` then privately qualified Analyst's grounded
 cited-answer internal core; lock-only `8fee7a5c...` publishes the matching
@@ -274,10 +275,12 @@ authenticated staging candidate with public-safe evidence SHA-256 `9ec9e373...`:
 10/10 exact server-side terminals, 9 staged, 1 cancelled, 0 active generations,
 and exact teardown. Hosted head `69215c43...` passed all 12 required checks,
 and PR #177 merged the vertical as `e397af8b...`. Exact `778a7545...` privately
-qualified an unmerged Student product candidate with 11/11 exact server-side
+qualified Student with 11/11 exact server-side
 terminals, authenticated question endpoints, native-owned transport/validation,
-and a source-bound renderer action. Hosted review and merge remain pending.
-Curator, Analyst, Coordinator, and Auditor product exposure remains open. Proven selected-route
+and a source-bound renderer action. Hosted head `53ce570b...` passed all 12
+checks and PR #178 merged it as `6546970b...`. The current Curator successor is
+public-test green but unqualified; Curator private qualification/merge plus
+Analyst, Coordinator, and Auditor product exposure remain open. Proven selected-route
 limits of four rapid/eight complex are not simultaneous-model,
 sustained-capacity, or production-SLO evidence. One Spark cannot retain both
 unchanged full profiles simultaneously, so warm two-route promotion requires a

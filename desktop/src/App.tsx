@@ -290,6 +290,8 @@ export default function App() {
         <LibrarianPanel
           available={settings.serverSnapshot.state === "ready"
             && settings.serverSnapshot.capabilities.librarianQueries}
+          curatorAvailable={settings.serverSnapshot.state === "ready"
+            && settings.serverSnapshot.capabilities.curatorProposals}
           studentAvailable={settings.serverSnapshot.state === "ready"
             && settings.serverSnapshot.capabilities.studentQuestions}
         />

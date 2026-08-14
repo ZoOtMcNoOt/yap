@@ -922,9 +922,11 @@ unconfigured.
   authenticated staging boundary with 10/10 exact server-side terminals, zero
   activation, and exact teardown; hosted head `69215c43...` passed all 12 checks
   and PR #177 merged it as `e397af8b...`. Exact `778a7545...` privately
-  qualified an unmerged Student product candidate with 11/11 exact server-side
-  terminals; hosted review and merge remain pending. Curator, Analyst,
-  Coordinator, and Auditor product surfaces remain open. Proven
+  qualified Student with 11/11 exact server-side terminals; hosted head
+  `53ce570b...` passed all 12 checks and PR #178 merged it as `6546970b...`.
+  Curator now has a public-green unqualified product successor; Curator private
+  qualification/merge and Analyst, Coordinator, and Auditor product surfaces
+  remain open. Proven
   selected-route capacity four/eight is
   not simultaneous-model residency, sustained capacity/SLO, or production
   evidence.

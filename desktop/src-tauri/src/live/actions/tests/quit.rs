@@ -1,9 +1,10 @@
 use std::cell::RefCell;
 
 use super::super::quit::{
-    cancel_archivist_ingestions_before_quit, cancel_librarian_queries_before_quit,
-    cancel_student_questions_before_quit, cancel_transcript_corrections_before_quit, run_quit_with,
-    QuitClaim, QuitCoordinator, QuitRunError,
+    cancel_archivist_ingestions_before_quit, cancel_curator_proposals_before_quit,
+    cancel_librarian_queries_before_quit, cancel_student_questions_before_quit,
+    cancel_transcript_corrections_before_quit, run_quit_with, QuitClaim, QuitCoordinator,
+    QuitRunError,
 };
 
 #[test]
@@ -24,6 +25,17 @@ fn student_shutdown_enters_the_async_runtime_on_its_worker_thread() {
         .join()
         .expect("student shutdown worker panicked")
         .expect("empty student owner failed shutdown");
+
+    assert_eq!(cancelled, 0);
+}
+
+#[test]
+fn curator_shutdown_enters_the_async_runtime_on_its_worker_thread() {
+    let owner = crate::curator_proposal::CuratorProposalOwner::new();
+    let cancelled = std::thread::spawn(move || cancel_curator_proposals_before_quit(&owner))
+        .join()
+        .expect("curator shutdown worker panicked")
+        .expect("empty curator owner failed shutdown");
 
     assert_eq!(cancelled, 0);
 }

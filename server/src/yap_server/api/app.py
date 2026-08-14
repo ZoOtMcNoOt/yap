@@ -23,6 +23,10 @@ from .archivist_ingestion_requests import (
     ArchivistIngestionRequestMixin,
     ArchivistIngestionServiceProtocol,
 )
+from .curator_proposal_requests import (
+    CuratorProposalRequestMixin,
+    CuratorProposalServiceProtocol,
+)
 from .http_server import (
     MAX_CONCURRENT_REQUEST_THREADS,
     ThreadingYapHTTPServer,
@@ -48,6 +52,8 @@ from .responses import ResponseMixin
 from .routes import (
     ARCHIVIST_INGESTION_PATH,
     ARCHIVIST_INGESTIONS_PATH,
+    CURATOR_PROPOSAL_PATH,
+    CURATOR_PROPOSALS_PATH,
     LID_PREFLIGHT_CANCEL_PATH,
     LID_PREFLIGHT_PATH,
     LIBRARIAN_QUERIES_PATH,
@@ -72,6 +78,7 @@ _REQUEST_LOGGER = logging.getLogger("yap_server.requests")
 
 class _HealthRequestHandler(
     ArchivistIngestionRequestMixin,
+    CuratorProposalRequestMixin,
     StudentQuestionRequestMixin,
     LibrarianQueryRequestMixin,
     TranscriptCorrectionRequestMixin,
@@ -94,6 +101,7 @@ class _HealthRequestHandler(
         librarian_query_service: LibrarianQueryServiceProtocol | None,
         student_question_service: StudentQuestionServiceProtocol | None,
         archivist_ingestion_service: ArchivistIngestionServiceProtocol | None,
+        curator_proposal_service: CuratorProposalServiceProtocol | None,
         transcript_correction_service: TranscriptCorrectionServiceProtocol | None,
         asr_capabilities: Mapping[str, object] | None,
         **kwargs: Any,
@@ -106,6 +114,7 @@ class _HealthRequestHandler(
         self._librarian_query_service = librarian_query_service
         self._student_question_service = student_question_service
         self._archivist_ingestion_service = archivist_ingestion_service
+        self._curator_proposal_service = curator_proposal_service
         self._transcript_correction_service = transcript_correction_service
         self._asr_capabilities = asr_capabilities
         self._request_id = f"req-{uuid4().hex}"
@@ -201,6 +210,7 @@ class _HealthRequestHandler(
                     archivist_ingestions=(
                         self._archivist_ingestion_service is not None
                     ),
+                    curator_proposals=(self._curator_proposal_service is not None),
                 ),
             )
             return
@@ -294,6 +304,21 @@ class _HealthRequestHandler(
             self._dispatch_archivist_ingestion_request(path)
             return
 
+        is_curator_proposal_route = (
+            path == CURATOR_PROPOSALS_PATH
+            or CURATOR_PROPOSAL_PATH.fullmatch(path) is not None
+        )
+        if is_curator_proposal_route:
+            if self._curator_proposal_service is None:
+                self._send_error(
+                    HTTPStatus.NOT_IMPLEMENTED,
+                    code="NOT_IMPLEMENTED",
+                    message="Knowledge proposals are not configured.",
+                )
+                return
+            self._dispatch_curator_proposal_request(path)
+            return
+
         if self._job_service is not None and path != "/v1/live":
             self._dispatch_job_request(path)
             return
@@ -339,6 +364,7 @@ def create_server(
     librarian_query_service: LibrarianQueryServiceProtocol | None = None,
     student_question_service: StudentQuestionServiceProtocol | None = None,
     archivist_ingestion_service: ArchivistIngestionServiceProtocol | None = None,
+    curator_proposal_service: CuratorProposalServiceProtocol | None = None,
     transcript_correction_service: TranscriptCorrectionServiceProtocol | None = None,
     asr_capabilities: Mapping[str, object] | None = None,
 ) -> HTTPServer:
@@ -377,6 +403,7 @@ def create_server(
         librarian_query_service=librarian_query_service,
         student_question_service=student_question_service,
         archivist_ingestion_service=archivist_ingestion_service,
+        curator_proposal_service=curator_proposal_service,
         transcript_correction_service=transcript_correction_service,
         asr_capabilities=asr_capabilities,
     )
@@ -388,6 +415,7 @@ def create_server(
             or librarian_query_service is not None
             or student_question_service is not None
             or archivist_ingestion_service is not None
+            or curator_proposal_service is not None
             or transcript_correction_service is not None
         ),
     )((settings.host, settings.port), handler)
@@ -406,6 +434,7 @@ def serve(
     librarian_query_service: LibrarianQueryServiceProtocol | None = None,
     student_question_service: StudentQuestionServiceProtocol | None = None,
     archivist_ingestion_service: ArchivistIngestionServiceProtocol | None = None,
+    curator_proposal_service: CuratorProposalServiceProtocol | None = None,
     transcript_correction_service: TranscriptCorrectionServiceProtocol | None = None,
     asr_capabilities: Mapping[str, object] | None = None,
 ) -> None:
@@ -417,6 +446,7 @@ def serve(
         librarian_query_service=librarian_query_service,
         student_question_service=student_question_service,
         archivist_ingestion_service=archivist_ingestion_service,
+        curator_proposal_service=curator_proposal_service,
         transcript_correction_service=transcript_correction_service,
         asr_capabilities=asr_capabilities,
     ) as server:

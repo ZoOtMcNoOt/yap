@@ -1,6 +1,7 @@
 import { Repeat } from "@phosphor-icons/react/Repeat";
 import { XCircle } from "@phosphor-icons/react/XCircle";
 
+import { CuratorProposalComposer } from "@/components/curator/curator-proposal-composer";
 import { StudentQuestionResult } from "@/components/student/student-question-result";
 import { useStudentQuestion } from "@/components/student/use-student-question";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -12,11 +13,13 @@ import type { LibrarianEvidenceItem } from "@/librarian";
 
 export function StudentQuestionComposer({
   available,
+  curatorAvailable,
   generationSha256,
   item,
   onClose,
 }: {
   available: boolean;
+  curatorAvailable: boolean;
   generationSha256: string;
   item: LibrarianEvidenceItem;
   onClose: () => void;
@@ -102,7 +105,16 @@ export function StudentQuestionComposer({
         ) : null}
 
         {student.view?.status === "complete" ? (
-          <StudentQuestionResult view={student.view} />
+          <>
+            <StudentQuestionResult view={student.view} />
+            {student.view.questions[0] ? (
+              <CuratorProposalComposer
+                available={curatorAvailable}
+                generationSha256={student.view.generationSha256}
+                question={student.view.questions[0]}
+              />
+            ) : null}
+          </>
         ) : null}
       </CardContent>
     </Card>

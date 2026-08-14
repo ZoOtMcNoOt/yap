@@ -203,7 +203,8 @@ sequentially at selected-route capacities four/eight, exact workflow head
 `7cd24deb...` requalified Scribe/Student and qualified the nonmutating Curator
 core, and exact aggregate head `7f896b34...` passed. Hosted-green head
 `593e627b...` passed all 12 checks, and PR #168 merged the slice as
-`284ab96b...`. Curator is not product-exposed. Exact `56b7f5d0...` privately
+`284ab96b...`. Curator's current product successor is public-test green but
+unqualified and unmerged. Exact `56b7f5d0...` privately
 qualified Librarian; hosted head `7505247e...` merged it through PR #169 as
 `d7a7e003...`. Exact executable `0665c486...` privately qualified Analyst, and
 lock-only `8fee7a5c...` publishes the matching batch-invariant route lock.
@@ -220,11 +221,14 @@ qualified the Archivist authenticated staging boundary with 10/10
 exact server-side terminals, zero activation, and exact teardown. Its native/
 renderer contract remains public-test rather than private-client evidence.
 Hosted head `69215c43...` passed all 12 checks and PR #177 merged the vertical
-as `e397af8b...`. Exact `778a7545...` privately qualifies an unmerged Student
-product candidate with authenticated question jobs, native-owned transport and
+as `e397af8b...`. Exact `778a7545...` privately qualified Student
+with authenticated question jobs, native-owned transport and
 validation, and a source-bound renderer action. Its private evidence covers the
-server boundary rather than a live native/renderer run. Four other internal-
-only role product surfaces stay open. The
+authenticated server boundary; hosted head `53ce570b...` passed all 12 checks
+and PR #178 merged the product vertical as `6546970b...`. The current Curator
+successor adds an HTTP/native/renderer surface but remains public-test green,
+unqualified, and unmerged. Curator qualification/merge plus Analyst,
+Coordinator, and Auditor product surfaces stay open. The
 accepted performance topology is provider-specific: Cohere batch
 uses a digest-pinned vLLM candidate, Nemotron keeps a Transformers correctness
 reference and evaluates NeMo for server streaming. Under ADR 0029, vLLM serves
@@ -997,7 +1001,7 @@ timeline
 | **7** | Merged and gated | Phase 7 merged as `66d314d7`; its adversarial checkpoint closed at `ef6d977`. The merged work has a provider-neutral OIDC verifier with Entra policy, fail-closed defaults, token-derived `(tid, oid)` ownership, owner-scoped jobs/LID, authenticated bounded private WebSocket admission, and a qualified native lower handshake. The desktop has only a narrow native token-provider seam; no production adapter is approved. Exact application/runtime candidate `dc6359162fb16909d38f410cdb75c2729d83972f` passed the one complete private 25-cell matrix and independent receipt validation. Hosted CI exposed only runner-portability defects. Reviewed repairs through `c1d81fc085218cf91a4e370087bcc5927e5b1f70` change hosted/gate tooling, its contracts, and documentation—not shipped product/runtime or candidate-manifest behavior—so the passed candidate matrix remains authoritative. Purpose grants, revocation, and their audit records are implemented and unit-tested but reachable only from tests: nothing calls `IdentityAuthorizationService`, so `access_disabled` and grants can be changed only by editing `identity.sqlite` directly. The layer is not a shipped capability; a future purpose-authorized speaker reconciliation/naming workflow must expose or remove it under review. Real IT-provided Entra policy conformance remains open. |
 | **8** | Closed as unadvertised baseline | ADR 0020, ADR 0027, and the source-aware design are canonical. PR #144 merged exact 30-second Tiron epochs, request-scoped reuse of its ECAPA encoder, an eight-slot decode-window boundary, a 32-speaker session target, a 64-speaker ceiling, strict `Unknown`, and clean one-speaker History projection. The server has one meeting-inference path and no ASR-plus-diarization fallback. Exact candidate `3ddb930...` recorded `unadvertised-baseline` because the independent private holdout was unconfigured; Tiron remains explicit Preview and absent from the default catalog. |
 | **9** | Merged and gated | Google OKF conformance, deterministic compilation, immutable terminology snapshots, Postgres permission/relationship generations, pgvector retrieval, governed agents/RAG/MCP, explicit no-fallback routing, and privately qualified Qwen rapid/Gemma complex vLLM routes execute. Exact candidate `a4f34678...` passed the complete Phase 9 gate with real Postgres restart/recovery and exact teardown. Exact hosted-green head `fa26caaf...` merged through PR #152 as `ae81ff06...`. The separate maintainability checkpoint gate passed at exact head `22c3f369...`; final hosted head `84c22ec9...` merged through PR #153 as `ca151b1b...`. Postgres remains the sole projection because no measured gap justified Neo4j. Production supervision, simultaneous residency, sustained mixed-user capacity, and external serving remain Phase 10. |
-| **10** | Eight bounded role cores plus Scribe/Librarian/Archivist product surfaces merged; Student product candidate privately qualified | The merged baseline includes Scribe, Archivist, Student, Curator, Librarian, Analyst, Coordinator, and Auditor through PR #172. Exact `e2ba1864...` privately qualified Librarian's authenticated HTTP server boundary with 10/10 exact terminals and complete teardown; hosted head `67a79ce2...` passed all 12 checks and PR #174 merged its HTTP/native/Knowledge product surface as `98af78c9...`. Exact `a2e9b551...` privately qualified Archivist's staging boundary with 10/10 server-side terminals, 9 staged, 1 cancelled, 0 active generations, and exact teardown; hosted head `69215c43...` passed all 12 checks and PR #177 merged the vertical as `e397af8b...`. Exact `778a7545...` privately qualified Student's authenticated product server boundary with 11/11 exact terminals; hosted review and merge remain pending. Curator/Analyst/Coordinator/Auditor product exposure, simultaneous residency, sustained capacity, observability, enterprise access, secure-edge promotion, publication governance, and repo split remain later slices or IT handoffs. |
+| **10** | Eight bounded role cores plus Scribe/Librarian/Archivist/Student product surfaces merged; Curator successor public-green and unqualified | The merged baseline includes Scribe, Archivist, Student, Curator, Librarian, Analyst, Coordinator, and Auditor through PR #172. Exact `e2ba1864...` privately qualified Librarian's authenticated HTTP server boundary with 10/10 exact terminals and complete teardown; hosted head `67a79ce2...` passed all 12 checks and PR #174 merged its HTTP/native/Knowledge product surface as `98af78c9...`. Exact `a2e9b551...` privately qualified Archivist's staging boundary with 10/10 server-side terminals, 9 staged, 1 cancelled, 0 active generations, and exact teardown; hosted head `69215c43...` passed all 12 checks and PR #177 merged the vertical as `e397af8b...`. Exact `778a7545...` privately qualified Student's authenticated product server boundary with 11/11 exact terminals; hosted head `53ce570b...` passed all 12 checks and PR #178 merged it as `6546970b...`. Curator private qualification/merge plus Analyst/Coordinator/Auditor product exposure, simultaneous residency, sustained capacity, observability, enterprise access, secure-edge promotion, publication governance, and repo split remain later slices or IT handoffs. |
 
 The client-convergence PR was an MVP prerequisite merged separately before this
 server-node change; it does not rename canonical Phase 4 or imply that the
@@ -1073,8 +1077,10 @@ boundary; hosted head `67a79ce2...` passed all 12 checks and PR #174 merged the
 HTTP/native/Knowledge surface as `98af78c9...`. Exact `a2e9b551...` privately
 qualified Archivist's staging boundary; hosted head `69215c43...` passed all 12
 checks and PR #177 merged it as `e397af8b...`. Exact `778a7545...` privately
-qualified an unmerged Student product candidate; Curator, Analyst, Coordinator,
-and Auditor product integration remains open. Coordinator
+qualified Student; hosted head `53ce570b...` passed all 12 checks and PR #178
+merged it as `6546970b...`. Curator has an unqualified product successor;
+Curator qualification/merge plus Analyst, Coordinator, and Auditor product
+integration remain open. Coordinator
 is merged through PR #171 as `67d836da...`; Auditor
 is merged through PR #172 as `1b255e9a...`. The separate full-strength
 second-node capacity topology remains open.

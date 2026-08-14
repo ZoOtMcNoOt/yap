@@ -21,7 +21,7 @@ Auditor's idle-only, source-cited review-findings internal core. Hosted head
 `937a4129...` passed all 12 required checks, and PR #172 merged Auditor as
 `1b255e9a...`. All eight bounded internal role cores are now merged.
 
-Scribe, Librarian, and Archivist are the three merged product surfaces. Exact
+Scribe, Librarian, Archivist, and Student are the four merged product surfaces. Exact
 executable
 `e2ba1864...` privately qualified Librarian's authenticated HTTP server boundary;
 hosted head `67a79ce2...` passed all 12 required checks, and PR #174 merged the
@@ -35,12 +35,17 @@ request, activated zero generations, and completed exact teardown. Hosted head
 `e397af8b...`. Native cancellation and quit cleanup now retain ownership through
 an exact terminal
 request/source identity before releasing the connection lease. Exact executable
-`778a7545...` now privately qualifies an unmerged Student product candidate:
+`778a7545...` privately qualified the Student product vertical:
 authenticated question jobs, native-owned bearer and response validation, and
 a source-bound learning-question action beside permission-safe Librarian
-evidence. Hosted review and merge remain pending. Production identity,
+evidence. Hosted head `53ce570b...` passed all 12 required checks, and PR #178
+merged the vertical as `6546970b...`. The current successor implements an
+authenticated Curator proposal product candidate across HTTP, native Rust, and
+the renderer, but it remains public-test green and unqualified until its fresh
+exact-head private gate runs. Production identity,
 simultaneous full-profile residency, sustained capacity, enterprise deployment,
-and the remaining four unqualified role product surfaces stay explicitly gated.
+and the remaining Curator/Analyst/Coordinator/Auditor product promotion work
+stay explicitly gated.
 
 Start with [current status](docs/CURRENT-STATUS.md). It states what executes,
 what is verified, what is still absent, and what happens next.
@@ -78,9 +83,11 @@ what is verified, what is still absent, and what happens next.
   Knowledge workspace. Archivist adds no model call: it
   resolves a completed server-batch recording natively and asks the authenticated
   server to stage its reviewed transcript without activating knowledge. The
-  current Student candidate adds authenticated question jobs and a source-bound
-  learning-question action, but it is not merged; Curator, Analyst, Coordinator,
-  and Auditor remain internal-only. The qualified
+  merged Student surface adds authenticated question jobs and a source-bound
+  learning-question action. The current Curator successor adds explicit reviewed
+  proposal submission, owner-scoped status/cancellation, and a review-required
+  noncanonical result surface, but it is not privately qualified or merged;
+  Analyst, Coordinator, and Auditor remain internal-only. The qualified
   profile-capacity successor admits four rapid or eight complex active distinct
   owners on the selected already-warm route, while preserving one active request
   per owner. Analyst's three exact synchronized repeats establish same-warm-
@@ -98,8 +105,8 @@ what is verified, what is still absent, and what happens next.
 WSS/live server transcription, general media conversion, production
 authentication, persistent multi-user service, enterprise DNS/certificates/
 firewall/ZPA, promoted diarization, simultaneous full-profile residency,
-sustained capacity/SLOs, the unmerged Student candidate, and the remaining four agent product
-surfaces are later gates—not hidden current capabilities.
+sustained capacity/SLOs, the unqualified Curator candidate, and the remaining
+four agent product surfaces are later gates—not hidden current capabilities.
 
 ## Repository map
 

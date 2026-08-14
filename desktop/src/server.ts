@@ -33,6 +33,7 @@ export type ServerCapabilities = {
   librarianQueries: boolean;
   archivistIngestions: boolean;
   studentQuestions: boolean;
+  curatorProposals: boolean;
 };
 
 export type AsrExecutionMode =

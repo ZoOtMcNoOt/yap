@@ -24,8 +24,10 @@ HTTP/native/Knowledge surface as `98af78c9...`. Exact `a2e9b551...` privately
 qualified Archivist's authenticated staging boundary with 10/10 exact server-
 side terminals, zero activation, and exact teardown; hosted head `69215c43...`
 passed all 12 checks and PR #177 merged it as `e397af8b...`. Exact
-`778a7545...` privately qualified an unmerged Student product candidate with
-11/11 exact server-side terminals. Curator/Analyst/Coordinator/Auditor product
+`778a7545...` privately qualified Student with 11/11 exact server-side
+terminals; hosted head `53ce570b...` passed all 12 checks and PR #178 merged it
+as `6546970b...`. Curator now has a public-green unqualified product successor;
+Curator private qualification/merge, Analyst/Coordinator/Auditor product
 exposure, simultaneous full-profile capacity, and production promotion remain
 open.
 

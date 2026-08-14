@@ -921,6 +921,7 @@ class ServerMainTests(unittest.TestCase):
             librarian_query_service=None,
             student_question_service=None,
             archivist_ingestion_service=None,
+            curator_proposal_service=None,
         )
         self.assertTrue(runtime.closed)
 

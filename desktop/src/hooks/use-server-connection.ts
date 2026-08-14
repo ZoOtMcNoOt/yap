@@ -24,6 +24,7 @@ const initialServerSnapshot: ServerConnectionSnapshot = {
     librarianQueries: false,
     archivistIngestions: false,
     studentQuestions: false,
+    curatorProposals: false,
   },
   errorCode: null,
 };

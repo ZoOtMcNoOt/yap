@@ -49,7 +49,9 @@ class BatchJobApiTests(BatchJobApiTestCase):
         self.assertIn(b" 400 ", head)
         self.assertEqual(json.loads(body)["code"], "IDEMPOTENCY_KEY_REQUIRED")
 
-    def test_storage_failures_return_a_generic_error_without_private_paths(self) -> None:
+    def test_storage_failures_return_a_generic_error_without_private_paths(
+        self,
+    ) -> None:
         private_path = "C:/private/recordings/patient-audio.wav"
         stderr = io.StringIO()
 
@@ -95,6 +97,7 @@ class BatchJobApiTests(BatchJobApiTestCase):
                 "librarianQueries": False,
                 "studentQuestions": False,
                 "archivistIngestions": False,
+                "curatorProposals": False,
             },
         )
 
@@ -195,9 +198,7 @@ class BatchJobApiTests(BatchJobApiTestCase):
         )
         self.assertEqual(status, 202)
         self.assertEqual(cancelled["status"], "cancelled")
-        result_status, _, missing_result = self._request(
-            f"/v1/jobs/{job_id}/result"
-        )
+        result_status, _, missing_result = self._request(f"/v1/jobs/{job_id}/result")
         self.assertEqual(result_status, 409)
         self.assertEqual(missing_result["code"], "RESULT_NOT_READY")
         self.assertEqual(list((job_root / "chunks").iterdir()), [])
@@ -230,7 +231,9 @@ class BatchJobApiTests(BatchJobApiTestCase):
         self.assertEqual(cancelled["status"], "cancelled")
         self.assertEqual(replayed, cancelled)
 
-    def test_stage_routes_expose_latest_evidence_and_retry_exact_failed_asr(self) -> None:
+    def test_stage_routes_expose_latest_evidence_and_retry_exact_failed_asr(
+        self,
+    ) -> None:
         request = meeting_import_job_request()
         created = self.jobs.create(request, idempotency_key="stage-api-create")
         job_id = created["jobId"]

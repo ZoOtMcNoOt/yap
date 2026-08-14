@@ -22,7 +22,9 @@ profiles sequentially, exact workflow head `7cd24deb...` qualified Scribe,
 Student, and Curator, and public-lock/aggregate head `7f896b34...` passed the
 governed gate. Hosted-green head `593e627b...` passed all 12 checks, and PR #168
 merged the profile-capacity successor and Curator internal core as
-`284ab96b...`. Curator has no HTTP/native/UI product surface. Exact
+`284ab96b...`. The current successor adds an unqualified HTTP/native/renderer
+Curator product candidate; the merged baseline still has no qualified Curator
+product surface. Exact
 `56b7f5d0...` qualified the no-LLM Librarian core; hosted head `7505247e...`
 merged it through PR #169 as `d7a7e003...`. Exact executable `0665c486...`
 privately qualified Analyst, and lock-only `8fee7a5c...` publishes its matching
@@ -48,13 +50,15 @@ Its private gate matched 10/10 server-side terminals and left zero active
 generations with exact teardown. The native/renderer contract is exact-head
 public-test green rather than part of the private client run. Hosted head
 `69215c43...` passed all 12 required checks, and PR #177 merged the vertical as
-`e397af8b...`. Exact executable `778a7545...` now privately qualifies an
-unmerged Student product candidate with authenticated question jobs,
+`e397af8b...`. Exact executable `778a7545...` privately qualified the
+Student product vertical with authenticated question jobs,
 native-owned bearer/response validation, and a source-bound renderer action
 beside permission-safe Librarian evidence. Its private gate proves the
 authenticated server boundary, not a live native/renderer round trip. Hosted
-review and merge remain pending. Curator/Analyst/Coordinator/Auditor product
-exposure and the capacity/operations layers remain open.
+head `53ce570b...` passed all 12 required checks, and PR #178 merged it as
+`6546970b...`. Curator's public-green candidate still requires private
+qualification and hosted merge; Analyst/Coordinator/Auditor product exposure
+and the capacity/operations layers remain open.
 Phase 7
 implements provider-neutral
 OIDC verification with Entra policy, fail-closed authentication, tenant-scoped
@@ -1136,8 +1140,9 @@ evidence SHA-256 `c46cf7df...`: 11/11 exact terminals across 8 owners, exact
 bearer/owner isolation, exact product/internal request and audit binding, two
 PostgreSQL restart/read-backs, rapid c4 with the fifth queued, and exact
 teardown. The client path is exact-head public-test green; the private gate is
-not a native-to-renderer run or live enterprise identity exchange. This is a
-qualified unmerged candidate; hosted review and merge remain pending. See the
+not a native-to-renderer run or live enterprise identity exchange. Hosted head
+`53ce570b...` passed all 12 checks, and PR #178 merged the vertical as
+`6546970b...`. See the
 [Student product record](../evidence/student-product-vertical/VERIFICATION.md).
 
 The merged PR #158 scheduler and its one-active-slot-per-route qualification
@@ -1160,7 +1165,11 @@ noncanonical proposal and cannot activate knowledge or mutate source truth.
 See the [profile-capacity evidence](../evidence/agent-admission-profile-capacity/VERIFICATION.md)
 and [Curator evidence](../evidence/curator-knowledge-proposals/VERIFICATION.md).
 Hosted-green head `593e627b...` passed all 12 checks, and PR #168 merged the
-slice as `284ab96b...`. Every Curator product surface remains open.
+slice as `284ab96b...`. The current successor implements authenticated
+proposal jobs, native-owned transport/lifecycle validation, and one reviewed
+renderer action. It is public-test green but has no private qualification
+receipt, so no Curator product surface is yet admitted or merged. See the
+[Curator product record](../evidence/curator-product-vertical/VERIFICATION.md).
 
 The batch-invariant successor has separate evidence. Executable candidate
 `0665c486...` passed sequential lifecycle evidence `7cc016f4...` and route
@@ -1173,7 +1182,8 @@ records do not relabel the older merged receipts.
 
 Exact candidate `56b7f5d0...` qualified Librarian as a no-LLM Server-IO read
 workflow; hosted head `7505247e...` merged it through PR #169 as `d7a7e003...`.
-It remains unexposed. The server pins retrieval to the
+PR #174 later merged its authenticated HTTP/native/Knowledge product surface.
+The server pins retrieval to the
 authenticated permission view and active generation, suppresses hidden nodes
 and links before limiting, and records content-free terminal audits. Its actual
 eight-normal-owner wave entered the broker; the Server-IO capacity probe held

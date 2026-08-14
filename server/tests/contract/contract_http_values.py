@@ -23,6 +23,9 @@ HTTP_OPERATIONS = {
     ("/v1/student-questions", "post"): "submitStudentQuestion",
     ("/v1/student-questions/{requestId}", "get"): "getStudentQuestion",
     ("/v1/student-questions/{requestId}", "delete"): "cancelStudentQuestion",
+    ("/v1/curator-proposals", "post"): "submitCuratorProposal",
+    ("/v1/curator-proposals/{requestId}", "get"): "getCuratorProposal",
+    ("/v1/curator-proposals/{requestId}", "delete"): "cancelCuratorProposal",
     ("/v1/archivist-ingestions", "post"): "submitArchivistIngestion",
     ("/v1/archivist-ingestions/{requestId}", "get"): "getArchivistIngestion",
     (
@@ -93,6 +96,18 @@ OPERATION_RUNTIME = {
     ("/v1/student-questions/{requestId}", "delete"): (
         "Implemented only when the authenticated warm Student runtime verifies",
         "Student source-cited learning questions",
+    ),
+    ("/v1/curator-proposals", "post"): (
+        "Implemented only when the authenticated warm Curator runtime verifies",
+        "Curator reviewed noncanonical proposals",
+    ),
+    ("/v1/curator-proposals/{requestId}", "get"): (
+        "Implemented only when the authenticated warm Curator runtime verifies",
+        "Curator reviewed noncanonical proposals",
+    ),
+    ("/v1/curator-proposals/{requestId}", "delete"): (
+        "Implemented only when the authenticated warm Curator runtime verifies",
+        "Curator reviewed noncanonical proposals",
     ),
     ("/v1/archivist-ingestions", "post"): (
         "Implemented only when the authenticated Archivist runtime verifies",
@@ -166,6 +181,10 @@ RUNTIME_PATH_EXAMPLES = {
     "/v1/student-questions": "/v1/student-questions",
     "/v1/student-questions/{requestId}": (
         "/v1/student-questions/student-question-11111111111111111111111111111111"
+    ),
+    "/v1/curator-proposals": "/v1/curator-proposals",
+    "/v1/curator-proposals/{requestId}": (
+        "/v1/curator-proposals/curator-proposal-11111111111111111111111111111111"
     ),
     "/v1/archivist-ingestions": "/v1/archivist-ingestions",
     "/v1/archivist-ingestions/{requestId}": (
@@ -299,6 +318,30 @@ HTTP_SCHEMA_CONTRACTS: list[dict[str, Any]] = [
         "errors": ["401", "403", "404", "501", "503"],
     },
     {
+        "path": "/v1/curator-proposals",
+        "method": "post",
+        "request": (
+            "application/json",
+            "#/components/schemas/CuratorProposalRequest",
+        ),
+        "success": {"202": "#/components/schemas/CuratorProposalJobView"},
+        "errors": ["400", "401", "403", "409", "429", "501", "503"],
+    },
+    {
+        "path": "/v1/curator-proposals/{requestId}",
+        "method": "get",
+        "request": None,
+        "success": {"200": "#/components/schemas/CuratorProposalJobView"},
+        "errors": ["401", "403", "404", "501", "503"],
+    },
+    {
+        "path": "/v1/curator-proposals/{requestId}",
+        "method": "delete",
+        "request": None,
+        "success": {"202": "#/components/schemas/CuratorProposalJobView"},
+        "errors": ["401", "403", "404", "501", "503"],
+    },
+    {
         "path": "/v1/archivist-ingestions",
         "method": "post",
         "request": (
@@ -306,7 +349,7 @@ HTTP_SCHEMA_CONTRACTS: list[dict[str, Any]] = [
             "#/components/schemas/ArchivistIngestionRequest",
         ),
         "success": {"202": "#/components/schemas/ArchivistIngestionJobView"},
-        "errors": ["400", "401", "403", "404", "409", "429", "501", "503"],
+        "errors": ["400", "401", "403", "404", "429", "501", "503"],
     },
     {
         "path": "/v1/archivist-ingestions/{requestId}",

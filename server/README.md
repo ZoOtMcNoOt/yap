@@ -898,10 +898,10 @@ permission-safe Librarian meeting-evidence item. Its owner-private gate returned
 evidence SHA-256 `c46cf7df...`: 11/11 exact terminals across 8 owners, exact
 authorization and owner isolation, product/internal request binding, two
 PostgreSQL restart/read-backs, rapid c4 with the fifth queued, and exact
-teardown. Student creates no proposal or knowledge mutation. This is a
-privately qualified unmerged candidate; its private evidence covers the server
-boundary rather than a live native/renderer or enterprise identity-provider
-run. See the
+teardown. Student creates no proposal or knowledge mutation. Its private
+evidence covers the server boundary rather than a live native/renderer or
+enterprise identity-provider run. Hosted head `53ce570b...` passed all 12
+checks, and PR #178 merged the vertical as `6546970b...`. See the
 [product verification record](../docs/evidence/student-product-vertical/VERIFICATION.md).
 
 A second owned GPU node/private route remains required before both
@@ -931,9 +931,19 @@ no successful proposal.
 
 The [Curator verification record](../docs/evidence/curator-knowledge-proposals/VERIFICATION.md)
 contains the public-safe exact-head result. Hosted-green head `593e627b...`
-passed all 12 checks, and PR #168 merged the core as `284ab96b...`. HTTP,
-native, renderer/UI, active-knowledge promotion, and production operation remain
-open.
+passed all 12 checks, and PR #168 merged the core as `284ab96b...`.
+
+The current product successor adds authenticated `POST /v1/curator-proposals`
+plus owner-scoped `GET`/`DELETE`, native-owned bearer transport and strict
+result/cancellation validation, and one explicit reviewed-proposal renderer
+action after a completed Student question. It delegates semantic work to the
+same Curator core and exposes only typed status plus the bounded noncanonical,
+review-required result. It introduces no activation or second proposal/evidence
+authority. Public verification is green, but its fresh clean exact-head
+owner-private ARM64 gate has not run, so no Curator product qualification
+receipt exists. See the
+[Curator product record](../docs/evidence/curator-product-vertical/VERIFICATION.md).
+Active-knowledge promotion and production operation remain open.
 
 ## Librarian permission-safe evidence core
 

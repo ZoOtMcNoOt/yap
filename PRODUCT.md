@@ -48,13 +48,16 @@ merged the vertical as `e397af8b...`. The private gate did not execute a native-
 to-renderer round trip or live enterprise identity provider.
 
 The internal Student, Curator, Analyst, Coordinator, and Auditor cores are
-merged. Exact executable `778a7545...` privately qualifies an unmerged Student
-product candidate with authenticated question jobs, native-owned bearer and
-response validation, and a source-bound learning-question action beside
-permission-safe Librarian evidence. Its private gate covers the authenticated
-server boundary, not a live native/renderer round trip or enterprise identity
-exchange. Curator, Analyst, Coordinator, and Auditor still have no HTTP,
-native, renderer, or desktop product surface.
+merged. Exact executable `778a7545...` privately qualified Student's
+authenticated product boundary; hosted head `53ce570b...` passed all 12 checks,
+and PR #178 merged the HTTP/native/renderer vertical as `6546970b...`. Its
+private gate covers the authenticated server boundary, not a live native/
+renderer round trip or enterprise identity exchange. The current Curator
+successor implements explicit reviewed-proposal HTTP jobs, native-owned bearer
+and lifecycle handling, and a source-bound review action after a completed
+Student question. The Curator surface remains an unqualified, unmerged product
+candidate with no private receipt. Analyst, Coordinator, and Auditor still have no HTTP, native,
+renderer, or desktop product surface.
 
 This is not live-only dictation or a Wispr Flow clone. Batch recordings remain the target core loop once the trusted server route exists; live capture is the implemented compact, explicit companion path.
 

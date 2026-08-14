@@ -22,6 +22,7 @@ pub struct ServerCapabilities {
     pub librarian_queries: bool,
     pub student_questions: bool,
     pub archivist_ingestions: bool,
+    pub curator_proposals: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -425,6 +426,7 @@ mod tests {
                     librarian_queries: true,
                     student_questions: true,
                     archivist_ingestions: true,
+                    curator_proposals: true,
                 },
             },
             20,
@@ -734,6 +736,7 @@ mod tests {
                         librarian_queries: true,
                         student_questions: true,
                         archivist_ingestions: true,
+                        curator_proposals: true,
                     },
                 },
                 20,
@@ -753,6 +756,7 @@ mod tests {
                 librarian_queries: true,
                 student_questions: true,
                 archivist_ingestions: true,
+                curator_proposals: true,
             }
         );
         assert!(!inner.arm_retry(6, 1_020));

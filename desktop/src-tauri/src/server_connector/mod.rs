@@ -8,6 +8,7 @@ mod capability_snapshot;
 mod client;
 pub mod config;
 mod core;
+pub(crate) mod curator;
 mod desktop;
 pub(crate) mod librarian;
 pub(crate) mod lid;
@@ -33,13 +34,14 @@ pub(crate) use capability_snapshot::LastKnownAsrCapabilities;
 pub use core::ServerConnector;
 #[cfg(test)]
 pub(crate) use core::{
-    archivist_connection_lease_for_test, librarian_connection_lease_for_test,
-    student_connection_lease_for_test, transcript_correction_connection_lease_for_test,
+    archivist_connection_lease_for_test, curator_connection_lease_for_test,
+    librarian_connection_lease_for_test, student_connection_lease_for_test,
+    transcript_correction_connection_lease_for_test,
 };
 pub(crate) use core::{
-    ArchivistConnectionLease, AsrCatalogDispatchProof, BatchConnectionLease, CurrentAsrCatalog,
-    LibrarianConnectionLease, LidPreflightDispatchProof, StudentConnectionLease,
-    TranscriptCorrectionConnectionLease,
+    ArchivistConnectionLease, AsrCatalogDispatchProof, BatchConnectionLease,
+    CuratorConnectionLease, CurrentAsrCatalog, LibrarianConnectionLease, LidPreflightDispatchProof,
+    StudentConnectionLease, TranscriptCorrectionConnectionLease,
 };
 pub(crate) use desktop::{
     current_asr_capabilities, last_known_asr_capabilities, with_current_asr_capabilities,

@@ -12,9 +12,7 @@ from .api_fixtures import HealthServerTestCase
 
 class RequestLoggingTests(HealthServerTestCase):
     def test_request_logging_redacts_query_and_absolute_target_secrets(self) -> None:
-        status, _, body = self._request(
-            "/v1/health?token=relative-secret"
-        )
+        status, _, body = self._request("/v1/health?token=relative-secret")
         absolute_response = self._raw_request(
             b"GET http://user:absolute-secret@127.0.0.1/v1/health"
             b"?token=query-secret HTTP/1.0\r\nHost: 127.0.0.1\r\n\r\n"
@@ -36,6 +34,7 @@ class RequestLoggingTests(HealthServerTestCase):
                 "librarianQueries": False,
                 "studentQuestions": False,
                 "archivistIngestions": False,
+                "curatorProposals": False,
             },
         }
         self.assertEqual(status, 200)
@@ -64,9 +63,7 @@ class RequestLoggingTests(HealthServerTestCase):
     def test_request_log_bound_includes_json_escape_expansion(self) -> None:
         request_target = b"/v1/" + (b"\x80" * 600)
         response = self._raw_request(
-            b"GET "
-            + request_target
-            + b" HTTP/1.0\r\nHost: 127.0.0.1\r\n\r\n"
+            b"GET " + request_target + b" HTTP/1.0\r\nHost: 127.0.0.1\r\n\r\n"
         )
 
         self.assertIn(b" 404 ", response.split(b"\r\n", 1)[0])
@@ -150,7 +147,9 @@ class RequestLoggingTests(HealthServerTestCase):
 
         self.assertEqual(stderr.getvalue(), "")
 
-    def test_unexpected_request_failure_is_generic_without_default_traceback(self) -> None:
+    def test_unexpected_request_failure_is_generic_without_default_traceback(
+        self,
+    ) -> None:
         private_path = "C:/private/recordings/patient-audio.wav"
         stderr = io.StringIO()
         with (

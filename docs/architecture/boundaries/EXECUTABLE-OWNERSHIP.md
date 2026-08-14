@@ -1083,17 +1083,19 @@ workspace as presentation owner. The product wrapper delegates semantic work to
 the unchanged qualified Student core; it creates no second evidence, question,
 citation, proposal, or knowledge authority. Its owner-private gate returned
 `student-authenticated-product-server-boundary-qualified` with 11/11 exact
-terminals and public-safe evidence SHA-256 `c46cf7df...`. This is a privately
-qualified unmerged candidate. Native/renderer behavior is exact-head public-
-test evidence rather than a private client round trip; hosted review and merge
-remain pending.
+terminals and public-safe evidence SHA-256 `c46cf7df...`. Native/renderer
+behavior is exact-head public-test evidence rather than a private client round
+trip. Hosted head `53ce570b...` passed all 12 checks, and PR #178 merged the
+vertical as `6546970b...`.
 
 ### 30. Curator knowledge-proposal core
 
 - **Status:** privately qualified internal core at exact head `7cd24deb...` with
   public-safe evidence SHA-256 `b60df1e2...`; hosted-green head `593e627b...`
-  passed all 12 checks, and PR #168 merged it as `284ab96b...`. No HTTP, native,
-  renderer/UI surface, active-knowledge promotion, or production promotion exists.
+  passed all 12 checks, and PR #168 merged it as `284ab96b...`. The current
+  successor adds an HTTP/native/renderer product candidate, but it remains
+  public-test green and unqualified. No active-knowledge or production
+  promotion exists.
 - **Entry point:** `yap_server/agents/curator_service.py` owns an internal
   complex-route workflow for only `explicit-proposal` and
   `reviewed-student-answer` submissions.
@@ -1121,6 +1123,16 @@ envelope contract, wrote no Curator qualification receipt, established no
 admissible Curator success evidence, and remains terminal; no teardown result is
 attributed to it. See the
 [Curator verification record](../../evidence/curator-knowledge-proposals/VERIFICATION.md).
+
+The product successor adds `curator_proposal_service.py` and
+`curator_product_runtime.py` as the bounded asynchronous server owner,
+`api/curator_proposal_requests.py` as the authenticated HTTP adapter, native
+Rust as bearer/transport/result/cancellation owner, and the renderer's Curator
+components as presentation owner. It delegates semantic work to the unchanged
+Curator core and introduces no second evidence, proposal, citation, or
+activation authority. Public verification is green, but the owner-private
+exact-head gate has not run and no product qualification receipt exists. See
+the [Curator product record](../../evidence/curator-product-vertical/VERIFICATION.md).
 
 ### 31. Librarian permission-safe evidence core
 
