@@ -3,29 +3,28 @@
 This changelog records product/architecture milestones. Exact test counts and
 immutable evidence belong in phase/checkpoint evidence records.
 
-## Unreleased — Coordinator product candidate privately qualified
+## Unreleased — Auditor product candidate privately qualified
 
-- Adds authenticated Coordinator proposal-bundle jobs, native-owned validation,
-  and an explicit composer for server-derived, source-cited, noncanonical,
-  review-required bundles; unavailable/cancelled results expose no bundle.
-- Exact `05400fb3...` qualified 10/10 server terminals across 8 owners with
-  public-safe evidence SHA-256 `394112ad...`, restart/read-back, c8 containment,
-  and teardown; focused/public checks are green and hosted review is pending.
+- Adds authenticated Auditor review-report jobs, native-owned validation, and an
+  explicit composer for server-derived, source-cited, review-required findings.
+- Exact `87924d5f...` qualified 10/10 server terminals with evidence
+  `b5a31c21...`, restart/read-back, c8 containment, and teardown.
+- Predecessor `50417bfc...` failed before receipt and is terminal/nonreusable.
 - Gemma remains local; Muse stays hosted-only until open weights are available.
+
+## 2026-08-14 — Coordinator product vertical merged
+
+- Exact `05400fb3...` qualified; hosted head `6890a9f5...` passed all 12 checks and PR #181 merged as `3fd5eaed...`.
 
 ## 2026-08-14 — Analyst product vertical merged
 
-- Exact `78b2c638...` qualified with evidence `f26adfc0...`; hosted head
-  `4c8db7c2...` passed all 12 checks and PR #180 merged as `c95fcf1a...`.
+- Exact `78b2c638...` qualified; hosted head `4c8db7c2...` passed all 12 checks and PR #180 merged as `c95fcf1a...`.
 
 ## 2026-08-14 — Curator product vertical merged
 
-- Adds authenticated Curator proposal jobs, native-owned validation, and one
-  explicit **Propose as knowledge** action. Results remain noncanonical and
-  review-required; the surface cannot activate knowledge or mutate source truth.
-- Exact `6aa33e4d...` qualified 10/10 server terminals with public-safe evidence
-  SHA-256 `328f6640...`, owner isolation, two restart/read-backs, c8 containment,
-  unchanged source truth, and teardown.
+- Adds authenticated Curator proposal jobs and **Propose as knowledge** without activation or source mutation.
+- Exact `6aa33e4d...` qualified 10/10 server terminals with evidence
+  `328f6640...`, isolation, restart/read-back, c8 containment, and teardown.
 - Hosted head `b983adb7...` passed all 12 checks; PR #179 merged as `70303872...`.
 
 ## 2026-08-14 — Student product vertical merged
@@ -96,8 +95,9 @@ immutable evidence belong in phase/checkpoint evidence records.
   teardown passed.
 - Hosted head `937a4129...` passed all 12 required checks, and PR #172 merged
   Auditor as `1b255e9a...`, completing the eight bounded internal role cores.
-  Auditor still has no HTTP, native, renderer, UI, product, scheduled-autonomy,
-  action, proposal, or knowledge-mutation surface. Same-warm-process evidence
+  At that merge Auditor had no HTTP, native, renderer, UI, or product surface;
+  scheduled autonomy, action, proposal, and knowledge mutation remain absent.
+  Same-warm-process evidence
   is not simultaneous residency, sustained capacity, a production SLO, or
   deployment evidence.
 

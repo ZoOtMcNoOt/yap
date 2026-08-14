@@ -21,7 +21,8 @@ Auditor's idle-only, source-cited review-findings internal core. Hosted head
 `937a4129...` passed all 12 required checks, and PR #172 merged Auditor as
 `1b255e9a...`. All eight bounded internal role cores are now merged.
 
-Scribe, Librarian, Archivist, Student, Curator, and Analyst are the six merged product surfaces. Exact
+Scribe, Librarian, Archivist, Student, Curator, Analyst, and Coordinator are the
+seven merged product surfaces. Exact
 executable
 `e2ba1864...` privately qualified Librarian's authenticated HTTP server boundary;
 hosted head `67a79ce2...` passed all 12 required checks, and PR #174 merged the
@@ -47,13 +48,15 @@ head `b983adb7...` passed all 12 checks, and PR #179 merged the vertical as
 authenticated Analyst cited-answer server boundary across 10/10 exact product
 terminals with public-safe evidence SHA-256 `f26adfc0...`; hosted head
 `4c8db7c2...` passed all 12 required checks, and PR #180 merged the HTTP/native/
-renderer successor as `c95fcf1a...`. Exact `05400fb3...` now privately
-qualifies Coordinator's authenticated proposal-bundle server boundary across
-10/10 exact product terminals with public-safe evidence SHA-256 `394112ad...`.
-Production identity,
-simultaneous full-profile residency, sustained capacity, enterprise deployment,
-and the remaining Coordinator hosted merge and Auditor product promotion work
-stay explicitly gated.
+renderer successor as `c95fcf1a...`. Exact `05400fb3...` privately qualified
+Coordinator's authenticated proposal-bundle server boundary across 10/10 exact
+product terminals with public-safe evidence SHA-256 `394112ad...`; hosted head
+`6890a9f5...` passed all 12 required checks, and PR #181 merged the vertical as
+`3fd5eaed...`. Exact `87924d5f...` now privately qualifies Auditor's
+authenticated source-cited review-report server boundary across 10/10 exact
+product terminals with public-safe evidence SHA-256 `b5a31c21...`. Production
+identity, simultaneous full-profile residency, sustained capacity, enterprise
+deployment, and Auditor hosted merge stay explicitly gated.
 
 Start with [current status](docs/CURRENT-STATUS.md). It states what executes,
 what is verified, what is still absent, and what happens next.
@@ -95,9 +98,10 @@ what is verified, what is still absent, and what happens next.
   learning-question action. PR #179 merged Curator's explicit reviewed proposal
   submission, owner-scoped status/cancellation, and review-required
   noncanonical result. PR #180 merged Analyst's authenticated cited-answer
-  product surface. Exact `05400fb3...` privately qualifies Coordinator's
-  authenticated proposal-bundle server boundary; its native/renderer candidate
-  is public-test green but unmerged. Auditor remains internal-only.
+  product surface. PR #181 merged Coordinator's authenticated proposal-bundle
+  server/native/renderer vertical. Exact `87924d5f...` privately qualifies
+  Auditor's authenticated report server boundary; its native/renderer candidate
+  is focused-public green but unmerged.
   The qualified
   profile-capacity successor admits four rapid or eight complex active distinct
   owners on the selected already-warm route, while preserving one active request
@@ -116,8 +120,8 @@ what is verified, what is still absent, and what happens next.
 WSS/live server transcription, general media conversion, production
 authentication, persistent multi-user service, enterprise DNS/certificates/
 firewall/ZPA, promoted diarization, simultaneous full-profile residency,
-sustained capacity/SLOs, the unmerged qualified Coordinator candidate, and the
-remaining Auditor product surface are later gates—not hidden current
+sustained capacity/SLOs, and the unmerged qualified Auditor candidate are later
+gates—not hidden current
 capabilities.
 
 ## Repository map

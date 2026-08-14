@@ -149,12 +149,14 @@ output cap, timeout, queue bound, or acceptance threshold.
 ## Deliberate limits
 
 Student is a merged internal core. Exact product successor `778a7545...`
-privately qualifies an unmerged authenticated HTTP/native/renderer candidate
-with public-safe evidence SHA-256 `c46cf7df...`; see the separate
+privately qualified its authenticated HTTP/native/renderer candidate with
+public-safe evidence SHA-256 `c46cf7df...`; hosted head `53ce570b...` passed all
+12 required checks, and PR #178 merged the product vertical as `6546970b...`.
+See the separate
 [Student product-vertical record](../student-product-vertical/VERIFICATION.md).
 Its private gate covers the authenticated server boundary, not a live native/
-renderer round trip or enterprise identity exchange. There is still no merged
-Student product surface or production deployment.
+renderer round trip or enterprise identity exchange. Production deployment
+remains open.
 The merged profile-capacity admission successor changed
 protected broker/model-client inputs and therefore received its own exact-head
 route and affected-workflow qualifications; the historical PR #166 receipt is
@@ -164,9 +166,11 @@ topology. At lock-only successor `8fee7a5c...`, the unchanged executable inputs
 freshly returned
 `student-learning-questions-qualified` with public-safe evidence SHA-256
 `5c2525b306aa6660936a288a69d7d02c8a571643fa36ed01d2092e071bff5dab`;
-this does not relabel the merged receipt. Curator, Analyst, Coordinator, and
-Auditor remain merged internal cores without product exposure. Hosted
-head `937a4129...` passed all 12 checks and PR #172 merged it as `1b255e9a...`.
+this does not relabel the merged receipt. Curator, Analyst, and Coordinator now
+also have merged product surfaces. Auditor remains a merged internal core; exact
+product successor `87924d5f...` privately qualifies its unmerged authenticated
+product candidate. Hosted core head `937a4129...` passed all 12 checks and PR
+#172 merged it as `1b255e9a...`.
 A fresh post-aggregate observation
 on 2026-08-12 found the unchanged full Qwen rapid route warm on the current
 single Spark. Full-strength two-route promotion requires a second owned GPU

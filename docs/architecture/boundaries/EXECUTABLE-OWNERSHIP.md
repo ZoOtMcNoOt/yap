@@ -1218,9 +1218,10 @@ restart/read-backs, complex capacity containment, and teardown. See the
 
 - **Status:** privately qualified merged internal core at exact executable head
   `fed729b3...`. Hosted head `53ee0152...` passed all 12 checks, and PR #171
-  merged it as `67d836da...`. Exact `05400fb3...` privately qualifies the
+  merged it as `67d836da...`. Exact `05400fb3...` privately qualified the
   authenticated product server/database/broker boundary with public-safe
-  evidence SHA-256 `394112ad...`; hosted review remains pending.
+  evidence SHA-256 `394112ad...`; hosted head `6890a9f5...` passed all 12
+  checks and PR #181 merged it as `3fd5eaed...`.
 - **Entry point:** `yap_server/agents/coordinator_service.py` owns one bounded
   authenticated background complex-route request composed through
   `coordinator_runtime.py`. It submits no nested role-service request.
@@ -1266,7 +1267,9 @@ restart/read-backs, complex capacity containment, and teardown. See the
 
 - **Status:** privately qualified merged internal core at exact executable head
   `08b06f6d...`. Hosted head `937a4129...` passed all 12 checks and PR #172
-  merged it as `1b255e9a...`; its product surface remains pending.
+  merged it as `1b255e9a...`. Exact `87924d5f...` privately qualifies the
+  authenticated product server/database/broker boundary with public-safe
+  evidence SHA-256 `b5a31c21...`; hosted review remains pending.
 - **Entry point:** `yap_server/agents/auditor_service.py` owns one bounded
   authenticated idle-only complex-route request composed through
   `auditor_runtime.py`. It submits no nested role-service request.
@@ -1291,6 +1294,13 @@ restart/read-backs, complex capacity containment, and teardown. See the
   reader owns current authorization; `AuditorService` owns one workflow lease
   and termination; the Auditor result-audit ledger owns durable terminal
   identity; the broker owns admission.
+- **Product composition:** `auditor_report_service.py` and
+  `auditor_product_runtime.py` own bounded asynchronous product jobs;
+  `api/auditor_report_requests.py` is the authenticated HTTP adapter. Native
+  `auditor_report.rs` and `server_connector/auditor.rs` own credentials,
+  request lifecycle, exact report/finding/citation validation, cancellation,
+  and quit containment. React receives only validated product state and never
+  a bearer token or internal request/evidence hashes.
 
 Three synchronized repeat waves matched 24 of 24 normal service calls, all 29
 terminals matched, and 12 server-derived noncanonical review-required reports
@@ -1298,6 +1308,10 @@ contained 15 findings and 30 citations. The active/pending non-idle block and
 post-terminal resumption contract was observed without changing provider or
 broker identity. See the
 [Auditor verification record](../../evidence/auditor-source-cited-review-findings/VERIFICATION.md).
+The separate 10-request product gate matched 4 complete, 5 unavailable, and 1
+cancelled terminal with exact reports/citations, owner isolation, two database
+restart/read-backs, complex capacity containment, and teardown. See the
+[Auditor product record](../../evidence/auditor-product-vertical/VERIFICATION.md).
 
 ## Persistent-state owners
 

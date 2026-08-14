@@ -33,12 +33,15 @@ and PR #179 merged the vertical as `70303872...`. Exact `78b2c638...` privately
 qualified Analyst's authenticated product server boundary with 10/10 exact
 terminals and public-safe evidence SHA-256 `f26adfc0...`; hosted head
 `4c8db7c2...` passed all 12 checks and PR #180 merged it as `c95fcf1a...`. Exact
-`05400fb3...` privately qualifies Coordinator's product server/database/broker
-boundary with public-safe evidence SHA-256 `394112ad...`; its hosted merge and
-the Auditor product surface remain open.
+`05400fb3...` privately qualified Coordinator's product server/database/broker
+boundary with public-safe evidence SHA-256 `394112ad...`; hosted head
+`6890a9f5...` passed all 12 checks and PR #181 merged it as `3fd5eaed...`.
+Exact `87924d5f...` privately qualifies Auditor's product
+server/database/broker boundary with public-safe evidence SHA-256
+`b5a31c21...`; its hosted merge remains open.
 
-**Current branch:** `agent/phase10-coordinator-product` follows the merged Analyst
-vertical and implements and privately qualifies Coordinator's bounded product
+**Current branch:** `agent/phase10-auditor-product` follows the merged Coordinator
+vertical and implements and privately qualifies Auditor's bounded product
 server surface; unchanged-head hosted review/merge remains. The requested Muse
 replacement decision is closed for this slice: Meta's official
 [Muse Spark 1.2](https://developer.meta.com/ai/models/muse-spark/) page exposes
@@ -48,10 +51,10 @@ route. The exact qualified Gemma complex profile therefore remains unchanged;
 Muse Spark 1.2 is recorded as a later hosted-provider candidate rather than a
 local replacement.
 
-**Base:** Analyst product merge
-`c95fcf1a043f919661b007f014a8dc6729aa02f2` from PR #180, with executable
-qualification retained at exact `78b2c638...` and hosted review at exact
-`4c8db7c2...`.
+**Base:** Coordinator product merge
+`3fd5eaed2e3d47a6e765b5467345ba26a424af23` from PR #181, with executable
+qualification retained at exact `05400fb3...` and hosted review at exact
+`6890a9f5...`.
 
 **Applied decisions:** [ADR 0031](../../adr/0031-eight-agent-voice-os-roster.md),
 [ADR 0030](../../adr/0030-rust-supervised-provider-service-lifecycle.md),
@@ -472,8 +475,10 @@ Auditor as `1b255e9a...`, completing the bounded internal roster.
   qualified Analyst's product server boundary with 10/10 exact terminals;
   hosted head `4c8db7c2...` passed all 12 checks and PR #180 merged it as
   `c95fcf1a...`. Exact `05400fb3...` privately qualified Coordinator's product
-  server/database/broker boundary with 10/10 exact terminals; its hosted merge
-  plus the Auditor product surface stay open.
+  server/database/broker boundary with 10/10 exact terminals; hosted head
+  `6890a9f5...` passed all 12 checks and PR #181 merged it as `3fd5eaed...`.
+  Exact `87924d5f...` privately qualifies Auditor's product server/database/
+  broker boundary with 10/10 exact terminals; its hosted merge stays open.
 - [x] Immediately after the Curator product successor passed hosted review and
   merged, run a separate Muse replacement decision gate. Require an
   exact official deployable version and artifact, acceptable license/terms,
@@ -482,7 +487,7 @@ Auditor as `1b255e9a...`, completing the bounded internal roster.
   affected-workflow requalification before replacing Gemma. Official Muse
   Spark 1.2 is available through the hosted Meta Model API, but its model page
   publishes no open-weight artifact for the private DGX route. Retain qualified
-  Gemma and continue the Coordinator and Auditor product plan without
+  Gemma and continue the Auditor product plan without
   blocking on the model name; treat Muse as a later hosted-provider evaluation.
 - [ ] Run portable, database, lifecycle, private-model, mixed-route,
   simultaneous-residency, sustained-capacity, security, accessibility, and

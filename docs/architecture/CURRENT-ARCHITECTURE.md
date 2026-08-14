@@ -61,10 +61,14 @@ head `53ce570b...` passed all 12 required checks, and PR #178 merged it as
 Analyst's authenticated cited-answer server boundary with 10/10 exact terminals
 and public-safe evidence SHA-256 `f26adfc0...`; hosted head `4c8db7c2...` passed
 all 12 checks and PR #180 merged its native/renderer composition as
-`c95fcf1a...`. Exact `05400fb3...` now privately qualifies Coordinator's
+`c95fcf1a...`. Exact `05400fb3...` privately qualified Coordinator's
 authenticated proposal-bundle server/database/broker boundary with 10/10 exact
-terminals and public-safe evidence SHA-256 `394112ad...`; its native/renderer
-candidate is public-test green but unmerged. Auditor product exposure and the
+terminals and public-safe evidence SHA-256 `394112ad...`; hosted head
+`6890a9f5...` passed all 12 checks, and PR #181 merged its native/renderer
+composition as `3fd5eaed...`. Exact `87924d5f...` now privately qualifies
+Auditor's authenticated report server/database/broker boundary with 10/10 exact
+terminals and public-safe evidence SHA-256 `b5a31c21...`; its native/renderer
+candidate is focused-public green but unmerged. Auditor hosted review and the
 capacity/operations layers remain open.
 Phase 7
 implements provider-neutral
@@ -1249,8 +1253,9 @@ and strict bundle/citation validation, and an explicit Coordinator composer.
 Its private gate matched all 10 product terminals across 8 owners, including 5
 exact server-derived bundles, 4 unavailable results, and 1 fail-closed
 cancellation; it completed two PostgreSQL restart/read-backs, complex-c8/ninth-
-owner-queued containment, and exact teardown. The candidate is unmerged pending
-hosted review; the private receipt does not qualify a native/renderer round trip
+owner-queued containment, and exact teardown. Hosted head `6890a9f5...` passed
+all 12 required checks, and PR #181 merged the product vertical as
+`3fd5eaed...`; the private receipt does not qualify a native/renderer round trip
 or live enterprise identity-provider exchange. See the
 [Coordinator product record](../evidence/coordinator-product-vertical/VERIFICATION.md).
 Autonomous action and production operation remain pending.
@@ -1268,8 +1273,17 @@ blocked Auditor admission; admission resumed only after non-idle work became
 terminal. See the
 [Auditor evidence](../evidence/auditor-source-cited-review-findings/VERIFICATION.md).
 Hosted head `937a4129...` passed all 12 checks, and PR #172 merged the core as
-`1b255e9a...`. Scheduled autonomous execution, every endpoint/UI surface, and
-production operation remain pending.
+`1b255e9a...`. Exact product successor `87924d5f...` composes the core into
+authenticated create/status/cancel report jobs, native-owned bearer and strict
+report/finding/citation validation, and an explicit Auditor report composer.
+Its private gate matched all 10 product terminals across 8 owners, including 4
+exact server-derived reports, 5 unavailable results, and 1 fail-closed
+cancellation; it completed two PostgreSQL restart/read-backs, complex-c8/ninth-
+owner-queued containment, and exact teardown. The candidate is unmerged pending
+hosted review; its private receipt does not qualify a native/renderer round trip
+or live enterprise identity-provider exchange. See the
+[Auditor product record](../evidence/auditor-product-vertical/VERIFICATION.md).
+Scheduled autonomous execution and production operation remain pending.
 
 A post-aggregate observation on 2026-08-12 found Qwen rapid warm and the
 broker active against exact rapid profile hash `14712e69...`; the observed

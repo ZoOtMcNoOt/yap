@@ -89,16 +89,20 @@ outside Git.
 
 ## Deliberate limits
 
-Auditor is a qualified merged internal core, not a product-exposed workflow.
-The merged roster contains all eight bounded roles. Auditor accepts only an explicit
-authenticated internal request, runs only under the idle-only admission class,
-and returns source-cited potential-contradiction findings for review. It writes
-no proposal, source, canonical knowledge, task, or action and performs no
+This record qualifies Auditor's merged internal core only. Exact product
+successor `87924d5f...` separately privately qualifies an unmerged authenticated
+HTTP/native/renderer candidate; see the
+[Auditor product record](../auditor-product-vertical/VERIFICATION.md). The merged
+roster contains all eight bounded roles. Auditor accepts only an explicit
+authenticated request, runs only under the idle-only admission class, and
+returns source-cited potential-contradiction findings for review. It writes no
+proposal, source, canonical knowledge, task, or action and performs no
 autonomous mutation.
 
 No evidence here proves simultaneous Qwen/Gemma residency, sustained multi-
-user capacity/fairness, production p50/p95/p99 or availability, external
-endpoints, scheduled autonomous execution, enterprise networking, deployment,
-or approval to act on a finding. One Spark can run the unchanged full Qwen and
-Gemma profiles only sequentially; a second owned GPU node and IT-controlled
-private route remain required for simultaneous warm two-route promotion.
+user capacity/fairness, production p50/p95/p99 or availability, a live native/
+renderer or enterprise identity-provider round trip, scheduled autonomous
+execution, enterprise networking, deployment, or approval to act on a finding.
+One Spark can run the unchanged full Qwen and Gemma profiles only sequentially;
+a second owned GPU node and IT-controlled private route remain required for
+simultaneous warm two-route promotion.

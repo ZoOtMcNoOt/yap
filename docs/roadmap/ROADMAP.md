@@ -287,11 +287,15 @@ exact terminals, 4 exact cited answers, 5 unavailable results, 1 cancelled
 request, two PostgreSQL restart/read-backs, complex-c8/ninth-owner-queued
 containment, and public-safe evidence SHA-256 `f26adfc0...`. Hosted head
 `4c8db7c2...` passed all 12 checks and PR #180 merged it as `c95fcf1a...`.
-Exact `05400fb3...` privately qualifies Coordinator's authenticated product
+Exact `05400fb3...` privately qualified Coordinator's authenticated product
 server/database/broker boundary with 10/10 exact terminals, 5 exact bundles,
 two PostgreSQL restart/read-backs, c8/ninth-owner-queued containment, and public-
-safe evidence SHA-256 `394112ad...`. Coordinator hosted merge and Auditor
-product exposure remain open. Proven selected-route
+safe evidence SHA-256 `394112ad...`; hosted head `6890a9f5...` passed all 12
+checks and PR #181 merged it as `3fd5eaed...`. Exact `87924d5f...` privately
+qualifies Auditor's authenticated product server/database/broker boundary with
+10/10 exact terminals, 4 exact reports, two PostgreSQL restart/read-backs,
+c8/ninth-owner-queued containment, and public-safe evidence SHA-256
+`b5a31c21...`. Auditor hosted merge remains open. Proven selected-route
 limits of four rapid/eight complex are not simultaneous-model,
 sustained-capacity, or production-SLO evidence. One Spark cannot retain both
 unchanged full profiles simultaneously, so warm two-route promotion requires a
