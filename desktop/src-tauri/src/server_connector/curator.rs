@@ -416,7 +416,11 @@ impl CuratorApiClient {
             )
             .await
             .map_err(map_dispatch)?;
-        decode_response(response, &[StatusCode::OK]).await
+        let view = decode_response(response, &[StatusCode::OK]).await?;
+        if view.request_id != request_id {
+            return Err(CuratorClientError::MalformedResponse);
+        }
+        Ok(view)
     }
 
     pub(crate) async fn cancel(
@@ -432,7 +436,11 @@ impl CuratorApiClient {
             )
             .await
             .map_err(map_dispatch)?;
-        decode_response(response, &[StatusCode::ACCEPTED]).await
+        let view = decode_response(response, &[StatusCode::ACCEPTED]).await?;
+        if view.request_id != request_id {
+            return Err(CuratorClientError::MalformedResponse);
+        }
+        Ok(view)
     }
 
     pub(crate) fn base_url_identity(&self) -> &str {
@@ -730,5 +738,53 @@ mod tests {
         assert!(!decode_job_view(serde_json::to_vec(&mismatched).unwrap())
             .unwrap()
             .matches_request(&request()));
+    }
+
+    #[test]
+    fn status_and_cancel_reject_a_different_response_identity() {
+        for (method, response_status, proposal_status) in [
+            ("GET", "200 OK", "running"),
+            ("DELETE", "202 Accepted", "cancellation-requested"),
+        ] {
+            let listener = TcpListener::bind(("127.0.0.1", 0)).unwrap();
+            let address = listener.local_addr().unwrap();
+            let expected_request_id = format!("curator-proposal-{}", "1".repeat(32));
+            let expected_path = format!("/v1/curator-proposals/{expected_request_id}");
+            let server = thread::spawn(move || {
+                let (mut stream, _) = listener.accept().unwrap();
+                let mut bytes = [0_u8; 8192];
+                let count = stream.read(&mut bytes).unwrap();
+                let request_text = String::from_utf8_lossy(&bytes[..count]);
+                assert!(request_text.starts_with(&format!("{method} {expected_path} HTTP/1.1\r\n")));
+                let body = serde_json::json!({
+                    "schemaVersion": 1,
+                    "requestId": format!("curator-proposal-{}", "2".repeat(32)),
+                    "submissionId": "submission-1",
+                    "status": proposal_status,
+                    "generationSha256": sha('a')
+                })
+                .to_string();
+                write!(
+                    stream,
+                    "HTTP/1.1 {response_status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                    body.len(),
+                    body
+                )
+                .unwrap();
+            });
+
+            let client = CuratorApiClient::new(
+                AuthenticatedRequestDispatcher::fixed(reqwest::Client::new(), "private-token"),
+                &format!("http://{address}"),
+            )
+            .unwrap();
+            let result = if method == "GET" {
+                tauri::async_runtime::block_on(client.status(&expected_request_id))
+            } else {
+                tauri::async_runtime::block_on(client.cancel(&expected_request_id))
+            };
+            assert!(matches!(result, Err(CuratorClientError::MalformedResponse)));
+            server.join().unwrap();
+        }
     }
 }
