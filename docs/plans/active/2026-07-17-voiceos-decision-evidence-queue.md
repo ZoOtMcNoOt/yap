@@ -932,8 +932,10 @@ unconfigured.
   all 12 checks and PR #180 merged it as `c95fcf1a...`. Exact `05400fb3...`
   privately qualified Coordinator's product server/database/broker boundary;
   hosted head `6890a9f5...` passed all 12 checks and PR #181 merged it as
-  `3fd5eaed...`. Exact `87924d5f...` privately qualifies Auditor's product
-  server/database/broker boundary; Auditor hosted merge remains open. Proven
+  `3fd5eaed...`. Exact `87924d5f...` privately qualified Auditor's product
+  server/database/broker boundary; hosted head `6bb72953...` passed all six CI
+  jobs reported for PR #183, which rebase-merged the tree-identical product
+  successor with main tip `13d9e3ef...`. All eight product surfaces are merged. Proven
   selected-route capacity four/eight is
   not simultaneous-model residency, sustained capacity/SLO, or production
   evidence.

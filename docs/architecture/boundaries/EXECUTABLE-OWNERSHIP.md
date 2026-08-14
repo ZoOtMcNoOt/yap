@@ -1267,9 +1267,11 @@ restart/read-backs, complex capacity containment, and teardown. See the
 
 - **Status:** privately qualified merged internal core at exact executable head
   `08b06f6d...`. Hosted head `937a4129...` passed all 12 checks and PR #172
-  merged it as `1b255e9a...`. Exact `87924d5f...` privately qualifies the
+  merged it as `1b255e9a...`. Exact `87924d5f...` privately qualified the
   authenticated product server/database/broker boundary with public-safe
-  evidence SHA-256 `b5a31c21...`; hosted review remains pending.
+  evidence SHA-256 `b5a31c21...`. Hosted head `6bb72953...` passed all six CI
+  jobs reported for PR #183, which rebase-merged the tree-identical product
+  successor with main tip `13d9e3ef...`.
 - **Entry point:** `yap_server/agents/auditor_service.py` owns one bounded
   authenticated idle-only complex-route request composed through
   `auditor_runtime.py`. It submits no nested role-service request.
@@ -1312,6 +1314,8 @@ The separate 10-request product gate matched 4 complete, 5 unavailable, and 1
 cancelled terminal with exact reports/citations, owner isolation, two database
 restart/read-backs, complex capacity containment, and teardown. See the
 [Auditor product record](../../evidence/auditor-product-vertical/VERIFICATION.md).
+Its private gate does not qualify a native/renderer round trip or live enterprise
+identity-provider exchange.
 
 ## Persistent-state owners
 

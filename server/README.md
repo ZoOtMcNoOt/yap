@@ -1153,10 +1153,12 @@ exact Auditor/tool audits, zero proposal or source writes, complex c8/ninth-
 owner-queued containment, and complete teardown. Public-safe evidence SHA-256
 is `b5a31c21...`. See the
 [Auditor product record](../docs/evidence/auditor-product-vertical/VERIFICATION.md).
-The candidate remains unmerged pending hosted review. Its private gate does not
-qualify a native/renderer round trip or live enterprise identity-provider
-exchange. Scheduled autonomous execution, simultaneous residency, sustained
-capacity, a production SLO, and deployment remain pending.
+Hosted head `6bb72953...` passed all six CI jobs reported for PR #183, which
+rebase-merged the tree-identical native/renderer successor with main tip
+`13d9e3ef...`. Its private gate does not qualify a native/renderer round trip or
+live enterprise identity-provider exchange. Scheduled autonomous execution,
+simultaneous residency, sustained capacity, a production SLO, and deployment
+remain pending.
 
 ## Local checks
 

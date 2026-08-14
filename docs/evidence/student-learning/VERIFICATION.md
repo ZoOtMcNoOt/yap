@@ -166,11 +166,13 @@ topology. At lock-only successor `8fee7a5c...`, the unchanged executable inputs
 freshly returned
 `student-learning-questions-qualified` with public-safe evidence SHA-256
 `5c2525b306aa6660936a288a69d7d02c8a571643fa36ed01d2092e071bff5dab`;
-this does not relabel the merged receipt. Curator, Analyst, and Coordinator now
-also have merged product surfaces. Auditor remains a merged internal core; exact
-product successor `87924d5f...` privately qualifies its unmerged authenticated
-product candidate. Hosted core head `937a4129...` passed all 12 checks and PR
-#172 merged it as `1b255e9a...`.
+this does not relabel the merged receipt. Curator, Analyst, Coordinator, and
+Auditor now also have merged product surfaces. Exact Auditor successor
+`87924d5f...` privately qualified its authenticated product server boundary;
+hosted source head `6bb72953...` passed all six CI jobs reported for PR #183 and
+rebase-merged tree-identically with main tip `13d9e3ef...`. Hosted Auditor core
+head `937a4129...` previously passed all 12 checks and PR #172 merged it as
+`1b255e9a...`.
 A fresh post-aggregate observation
 on 2026-08-12 found the unchanged full Qwen rapid route warm on the current
 single Spark. Full-strength two-route promotion requires a second owned GPU

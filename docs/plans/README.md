@@ -16,12 +16,12 @@ Current work:
 - [VoiceOS/Yap decision, evidence, and future-work queue](active/2026-07-17-voiceos-decision-evidence-queue.md)
 - [Integrated MVP validation and delivery control](active/2026-07-23-integrated-mvp-validation-and-delivery-control.md)
 - [Phase 10 supervised provider services](active/2026-08-11-phase-10-supervised-provider-services.md)
-- [Complete eight-agent Voice OS delivery](active/2026-08-11-eight-agent-voice-os-delivery.md)
 
 Queued work (activate only in roadmap order): none.
 
 Recently completed:
 
+- [Complete eight-agent Voice OS delivery](completed/2026-08-11-eight-agent-voice-os-delivery.md)
 - [Governed knowledge ownership and maintainability review](completed/2026-08-10-governed-knowledge-ownership-and-maintainability-review.md)
 - [Meeting transcription production qualification](completed/2026-08-03-meeting-transcription-production-qualification.md)
 - [Meeting transcription ownership and maintainability review](completed/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md)

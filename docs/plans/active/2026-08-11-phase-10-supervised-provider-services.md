@@ -34,10 +34,12 @@ public-safe evidence SHA-256 `f26adfc0...`; hosted head `4c8db7c2...` passed all
 12 checks and PR #180 merged it as `c95fcf1a...`. Exact `05400fb3...` privately
 qualified Coordinator's product server/database/broker boundary with public-safe
 evidence SHA-256 `394112ad...`; hosted head `6890a9f5...` passed all 12 checks
-and PR #181 merged it as `3fd5eaed...`. Exact `87924d5f...` privately qualifies
+and PR #181 merged it as `3fd5eaed...`. Exact `87924d5f...` privately qualified
 Auditor's product server/database/broker boundary with public-safe evidence
-SHA-256 `b5a31c21...`; Auditor hosted merge, simultaneous full-profile capacity,
-and production promotion remain open.
+SHA-256 `b5a31c21...`; hosted head `6bb72953...` passed all six CI jobs reported
+for PR #183, which rebase-merged the tree-identical product successor with main
+tip `13d9e3ef...`. All eight bounded role/product surfaces are merged;
+simultaneous full-profile capacity and production promotion remain open.
 
 **Base:** merged post-Phase-9 maintainability closure
 `fc8a16510fa27514db244eb641dea582918a940b` from
@@ -141,7 +143,7 @@ claim simultaneous model residency, or publish a capacity/SLO result.
 - Preserve explicit Qwen rapid/Gemma complex selection with no fallback.
 - Deliver the bounded admission and service adapters consumed by the eight
   workflows in the
-  [complete-roster plan](2026-08-11-eight-agent-voice-os-delivery.md); this
+  [completed roster plan](../completed/2026-08-11-eight-agent-voice-os-delivery.md); this
   infrastructure is not itself evidence that any persona has shipped.
 
 Merged exact protected head `7bd93dc6...` supplies the Rust-owned request,

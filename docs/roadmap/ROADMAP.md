@@ -292,10 +292,12 @@ server/database/broker boundary with 10/10 exact terminals, 5 exact bundles,
 two PostgreSQL restart/read-backs, c8/ninth-owner-queued containment, and public-
 safe evidence SHA-256 `394112ad...`; hosted head `6890a9f5...` passed all 12
 checks and PR #181 merged it as `3fd5eaed...`. Exact `87924d5f...` privately
-qualifies Auditor's authenticated product server/database/broker boundary with
+qualified Auditor's authenticated product server/database/broker boundary with
 10/10 exact terminals, 4 exact reports, two PostgreSQL restart/read-backs,
 c8/ninth-owner-queued containment, and public-safe evidence SHA-256
-`b5a31c21...`. Auditor hosted merge remains open. Proven selected-route
+`b5a31c21...`. Hosted head `6bb72953...` passed all six CI jobs reported for PR
+#183, which rebase-merged the tree-identical successor with main tip
+`13d9e3ef...`. Proven selected-route
 limits of four rapid/eight complex are not simultaneous-model,
 sustained-capacity, or production-SLO evidence. One Spark cannot retain both
 unchanged full profiles simultaneously, so warm two-route promotion requires a
