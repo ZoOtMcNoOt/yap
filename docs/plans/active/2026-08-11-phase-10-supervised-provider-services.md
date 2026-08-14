@@ -20,7 +20,7 @@ it as `67d836da...`. Exact `08b06f6d...` privately qualified Auditor; hosted
 head `937a4129...` passed all 12 checks and PR #172 merged it as `1b255e9a...`.
 Exact `e2ba1864...` privately qualified Librarian's authenticated HTTP server
 boundary; hosted head `67a79ce2...` passed all 12 checks and PR #174 merged its
-HTTP/native/Knowledge surface as `98af78c9...`. Exact `e78746b5...` privately
+HTTP/native/Knowledge surface as `98af78c9...`. Exact `a2e9b551...` privately
 qualified an unmerged Archivist authenticated staging candidate with 10/10
 exact server-side terminals, zero activation, and exact teardown. Hosted
 Archivist merge, Student/Curator/Analyst/Coordinator/Auditor product exposure,

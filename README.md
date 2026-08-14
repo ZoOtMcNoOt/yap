@@ -25,11 +25,13 @@ Scribe and Librarian are the two merged product surfaces. Exact executable
 `e2ba1864...` privately qualified Librarian's authenticated HTTP server boundary;
 hosted head `67a79ce2...` passed all 12 required checks, and PR #174 merged the
 HTTP/native/Knowledge vertical as `98af78c9...`. Exact executable
-`e78746b5...` now privately qualifies an unmerged Archivist product candidate:
+`a2e9b551...` now privately qualifies an unmerged Archivist product candidate:
 authenticated HTTP staging, native-owned job/result transport, and one explicit
 **Stage for knowledge** action for completed server-batch transcripts. Its
 10/10 exact private terminals staged nine requests, cancelled one queued
-request, activated zero generations, and completed exact teardown.
+request, activated zero generations, and completed exact teardown. Native
+cancellation and quit cleanup now retain ownership through an exact terminal
+request/source identity before releasing the connection lease.
 Production identity, simultaneous full-profile residency, sustained capacity,
 enterprise deployment, hosted merge, and the remaining role product surfaces
 stay explicitly gated.

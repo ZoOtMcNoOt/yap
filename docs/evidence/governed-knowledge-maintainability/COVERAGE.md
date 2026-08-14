@@ -12,7 +12,7 @@ Phase 9. Earlier phase and checkpoint acceptance is evidence, not an exemption.
 The Phase 9 delta receives deeper inspection, but it is not the coverage limit.
 
 The current read-back below extends the navigation and cohesion inventory
-through exact Archivist product candidate `e78746b5...`. Its authenticated
+through exact Archivist product candidate `a2e9b551...`. Its authenticated
 HTTP/server boundary is privately qualified; the native/renderer path is
 exact-head public-test green, and hosted review/merge remains pending. The
 threshold inventory is recomputed against that executable candidate with this

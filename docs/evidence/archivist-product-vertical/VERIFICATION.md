@@ -3,10 +3,10 @@
 ## Status
 
 Exact executable candidate
-`e78746b583bf5f9aa3179ec1c166890a4c4cf11e` is privately qualified as an
+`a2e9b55157799749ffc4eca32a92feabe63fba8e` is privately qualified as an
 unmerged Archivist product candidate. Its owner-private ARM64 gate returned
 `archivist-authenticated-product-vertical-qualified` with public-safe evidence
-SHA-256 `3de55ce4c091d70114491a002c32b0262042869f54b84c22404aaed115dab31e`.
+SHA-256 `9ec9e37353c2c89198f374efe0f474b8284e077455b4168eb345d6a1e7a76a4f`.
 The frozen acceptance plan SHA-256 is
 `ebac7e6ecf35d73ab9d6f6c554e3f6dfb0aad00858fe89d1ac5d614a65f64b0a`.
 
@@ -15,8 +15,14 @@ vertical with public-safe evidence SHA-256
 `d25ccd61d6c2ba732440f9fd84c03f8cddd21b7608af37f2674f30c2b6309005`.
 The hosted release contract then found that its protected E2E population
 inventory did not enumerate the new Archivist spec. Successor `e78746b5...`
-adds only that explicit test floor and was freshly qualified; the predecessor
-receipt is retained as exact-head history and is not used for this successor.
+added that explicit test floor and was freshly qualified with evidence
+`3de55ce4...`. Final review then found that native cancellation and quit cleanup
+could stop after a `cancellation-requested` response and retain the owned
+connection lease indefinitely. `4ac421e2...` added bounded terminal
+reconciliation and exact request/source checks; `a2e9b551...` also refreshed
+the complete native capability assertion exposed by the hosted WDIO smoke.
+Those protected changes required the current fresh qualification. Earlier
+receipts remain exact-head history and are not used for this successor.
 
 This record qualifies the authenticated HTTP/server, durable recording-source,
 Server-IO admission, reviewed-capture, and deterministic staging boundary. It
@@ -34,7 +40,9 @@ evidence and still require hosted review on the final candidate.
   job, submits exactly the bound Archivist Server-IO work, compiles the source,
   and stages a non-embedding generation without activating knowledge.
 - Native Rust owns bearer transport, job/result identity resolution, one
-  ingestion lease, cancellation, restart recovery, and quit containment.
+  ingestion lease, restart recovery, and bounded cancellation/quit
+  reconciliation through an exact terminal request/source identity before it
+  releases the owned connection lease.
 - The renderer sends only the local recording identity to native code and shows
   one explicit **Stage for knowledge** action for a completed server-batch
   transcript. Remote failure leaves local playback, transcript, and controls
@@ -88,9 +96,30 @@ At production implementation head `163a409c...`:
 
 At protected successor `e78746b5...`, the corrected E2E population contract
 passed 3/3 and the supported Chromium suite again passed 42/42, including the
-Archivist scenario. The owner-private gate was rerun from a clean immutable
-checkout and returned the current evidence hash above. Hosted checks still must
-pass the final documentation successor before merge.
+Archivist scenario.
+
+At exact executable successor `a2e9b551...`:
+
+- the portable server suite passed **1,548 total = 1,501 passed + 47 declared
+  skips**, the governed fixed set passed **173 = 169 + 4**, and whole-server
+  Ruff was clean;
+- desktop Vitest passed **59 files / 374 tests**, Playwright passed **42/42**
+  including the Archivist scenario, and the production TypeScript/Vite build
+  completed;
+- focused native Archivist ownership tests passed 5/5, including an
+  authenticated cancellation-requested-to-cancelled exchange, concurrent
+  terminal reconciliation, mismatched identity rejection, and terminal lease
+  reclamation;
+- desktop Rust passed formatting, strict all-target/all-feature Clippy, and
+  **1,247 unit tests = 1,236 passed + 11 expected ignored**, plus all integration
+  groups;
+- the required native WDIO matrix passed **3/3 spec files and 15/15 tests**
+  across smoke, overlay, and tray with an empty isolated recording root;
+- the Archivist product-gate unit suite passed 8/8; and
+- the owner-private gate reran from a clean immutable checkout and returned the
+  current evidence hash above with exact provider/broker/database teardown.
+
+Hosted checks still must pass the final documentation successor before merge.
 
 ## Claim limits and privacy
 

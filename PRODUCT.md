@@ -37,13 +37,14 @@ round trip or live enterprise identity-provider exchange.
 The current unmerged Archivist candidate adds one explicit **Stage for
 knowledge** action to a completed server-batch transcript. React sends only the
 local recording identity to native Rust; native code resolves and verifies the
-durable server job/result, owns the bearer exchange and cancellation, and calls
-authenticated Archivist HTTP endpoints. The server re-derives the reviewed
-capture, stages a deterministic non-embedding generation, and never activates
-knowledge. Exact executable `e78746b5...` privately qualified the authenticated
-server/database/broker boundary with 10/10 terminals and exact teardown. The
-private gate did not execute a native-to-renderer round trip or live enterprise
-identity provider, and hosted review/merge remain pending.
+durable server job/result, owns the bearer exchange, and reconciles cancellation
+through an exact terminal request/source identity before releasing its lease.
+It then calls authenticated Archivist HTTP endpoints. The server re-derives the
+reviewed capture, stages a deterministic non-embedding generation, and never
+activates knowledge. Exact executable `a2e9b551...` privately qualified the
+authenticated server/database/broker boundary with 10/10 terminals and exact
+teardown. The private gate did not execute a native-to-renderer round trip or
+live enterprise identity provider, and hosted review/merge remain pending.
 
 The internal Student, Curator, Analyst, Coordinator, and Auditor cores are
 merged. None has a current HTTP, native, renderer, or desktop product surface.

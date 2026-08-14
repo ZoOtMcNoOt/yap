@@ -21,14 +21,14 @@ PR #172 merged it as `1b255e9a...`. All eight bounded internal role cores are
 merged. Exact `e2ba1864...` privately qualified Librarian's authenticated HTTP
 server boundary; hosted head `67a79ce2...` passed all 12 checks and PR #174
 merged its HTTP/native/Knowledge product surface as `98af78c9...`. Exact
-`e78746b5...` privately qualified an unmerged Archivist authenticated staging
+`a2e9b551...` privately qualified an unmerged Archivist authenticated staging
 candidate with 10/10 exact server-side terminals, zero activation, and exact
 teardown. Its hosted merge and every Student/Curator/Analyst/Coordinator/Auditor
 product surface remain open.
 
 **Current branch:** `agent/phase10-archivist-product` implements and qualifies the
 Archivist product vertical. The executable qualification remains attributed to
-exact `e78746b5...`; hosted review and merge remain pending.
+exact `a2e9b551...`; hosted review and merge remain pending.
 
 **Base:** Librarian product documentation closure
 `1bbdb07ea395392a093051962bf6f726cf26fe51` from PR #175, descended from the
@@ -298,7 +298,7 @@ and PR #165 merged Archivist as
 not a product endpoint/UI or aggregate Slice D closure. See the
 [public verification record](../../evidence/archivist-ingestion/VERIFICATION.md).
 
-Exact product successor `e78746b5...` adds authenticated asynchronous
+Exact product successor `a2e9b551...` adds authenticated asynchronous
 Archivist HTTP jobs, native-owned durable recording/result resolution and
 cancellation, and one explicit renderer **Stage for knowledge** action. Its
 owner-private ARM64 gate matched 10/10 terminals, staged 9 requests, cancelled
@@ -443,7 +443,7 @@ Auditor as `1b255e9a...`, completing the bounded internal roster.
   commands with role-specific UI states, retry/cancel controls, and graceful
   degradation. Exact `e2ba1864...` qualified this for Librarian's authenticated
   server boundary, and PR #174 merged its hosted-green native/Knowledge surface.
-  Exact `e78746b5...` qualified the Archivist authenticated server boundary and
+  Exact `a2e9b551...` qualified the Archivist authenticated server boundary and
   its native/renderer contract is public-test green; hosted merge remains open.
   Student, Curator, Analyst, Coordinator, and Auditor product surfaces stay open.
 - [ ] Run portable, database, lifecycle, private-model, mixed-route,

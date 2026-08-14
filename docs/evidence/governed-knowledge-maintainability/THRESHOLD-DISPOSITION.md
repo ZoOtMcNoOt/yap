@@ -7,7 +7,7 @@ justifications and disposition meanings live in [COVERAGE.md](COVERAGE.md).
 
 The inventory includes tracked source, text, policy, and provenance contract
 extensions and applies the script's frozen generated-product exclusions. Against
-executable candidate `e78746b583bf5f9aa3179ec1c166890a4c4cf11e`,
+executable candidate `a2e9b55157799749ffc4eca32a92feabe63fba8e`,
 with this public documentation reconciliation applied, the
 complete 250-line inventory is 605 files: 354 listed below at 350 or more lines
 and 251 from 250 through 349.
@@ -19,7 +19,7 @@ Each line contains up to two independent entries in the form
   945 CI                   .github/workflows/ci.yml ||   431 CI                   .github/workflows/release.yml
   390 NATIVE-MIGRATION     desktop/src-tauri/migrations/0001_current_job_ledger.sql ||   393 NATIVE-SOURCE        desktop/src-tauri/src/app.rs
   639 NATIVE-SOURCE        desktop/src-tauri/src/app/instance_activation.rs ||   840 NATIVE-SOURCE        desktop/src-tauri/src/app/tests.rs
-  408 NATIVE-SOURCE        desktop/src-tauri/src/archivist_ingestion.rs ||   387 NATIVE-SOURCE        desktop/src-tauri/src/audio/coordinator/sink.rs
+  403 NATIVE-SOURCE        desktop/src-tauri/src/archivist_ingestion.rs ||   387 NATIVE-SOURCE        desktop/src-tauri/src/audio/coordinator/sink.rs
   360 NATIVE-SOURCE        desktop/src-tauri/src/audio/coordinator/tests/lifecycle.rs ||   377 NATIVE-SOURCE        desktop/src-tauri/src/audio/coordinator/tests/queue_semantics.rs
   358 NATIVE-SOURCE        desktop/src-tauri/src/audio/preprocess.rs ||   537 NATIVE-SOURCE        desktop/src-tauri/src/audio/session.rs
   359 NATIVE-SOURCE        desktop/src-tauri/src/commands/history.rs ||   433 NATIVE-SOURCE        desktop/src-tauri/src/commands/live.rs
@@ -71,14 +71,14 @@ Each line contains up to two independent entries in the form
   431 DESKTOP-TEST         desktop/tests/scripts/release-contract/windows-installer.contract.mjs ||   634 DESKTOP-TEST         desktop/tests/scripts/release-contract/workflow.contract.mjs
   549 DESKTOP-TEST         desktop/tests/scripts/shipped-dependency-inventory.mjs ||   526 DESKTOP-TEST         desktop/tests/wdio.target-client-language-routing.conf.ts
   479 DESKTOP-TEST         desktop/tests/wdio/live-overlay-window-fixture.js ||   415 DESKTOP-TEST         desktop/tests/wdio/live-overlay.hardware.spec.js
-  472 DESKTOP-TEST         desktop/tests/wdio/live-overlay.spec.js ||   859 DESKTOP-TEST         desktop/tests/wdio/private-server-asr.gate.spec.js
-  511 DESKTOP-TEST         desktop/tests/wdio/smoke.spec.js ||   388 DESKTOP-TEST         desktop/tests/wdio/target-client-language-routing-hardware.js
+  472 DESKTOP-TEST         desktop/tests/wdio/live-overlay.spec.js ||   862 DESKTOP-TEST         desktop/tests/wdio/private-server-asr.gate.spec.js
+  512 DESKTOP-TEST         desktop/tests/wdio/smoke.spec.js ||   388 DESKTOP-TEST         desktop/tests/wdio/target-client-language-routing-hardware.js
   466 CURRENT-DOC          docs/adr/0014-server-tier-compute-topology.md ||   390 CURRENT-DOC          docs/adr/0016-auth-identity-bridge.md
   373 CURRENT-DOC          docs/adr/0017-knowledge-base-compiler.md ||   805 CURRENT-DOC          docs/adr/0024-global-language-routing.md
   643 CURRENT-DOC          docs/adr/0025-provider-specific-asr-serving.md ||   438 CURRENT-DOC          docs/adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md
-  387 CURRENT-DOC          docs/adr/0031-eight-agent-voice-os-roster.md ||  1279 CURRENT-DOC          docs/architecture/boundaries/EXECUTABLE-OWNERSHIP.md
- 1310 CURRENT-DOC          docs/architecture/CURRENT-ARCHITECTURE.md ||  1362 CURRENT-DOC          docs/CURRENT-STATUS.md
-  367 CURRENT-DOC          docs/evidence/governed-knowledge-maintainability/COVERAGE.md ||   790 CURRENT-DOC          docs/evidence/governed-knowledge-maintainability/VERIFICATION.md
+  387 CURRENT-DOC          docs/adr/0031-eight-agent-voice-os-roster.md ||  1281 CURRENT-DOC          docs/architecture/boundaries/EXECUTABLE-OWNERSHIP.md
+ 1311 CURRENT-DOC          docs/architecture/CURRENT-ARCHITECTURE.md ||  1365 CURRENT-DOC          docs/CURRENT-STATUS.md
+  367 CURRENT-DOC          docs/evidence/governed-knowledge-maintainability/COVERAGE.md ||   798 CURRENT-DOC          docs/evidence/governed-knowledge-maintainability/VERIFICATION.md
  1030 CURRENT-DOC          docs/plans/active/2026-07-17-voiceos-decision-evidence-queue.md ||   466 CURRENT-DOC          docs/plans/active/2026-08-11-eight-agent-voice-os-delivery.md
   627 HISTORICAL-DOC       docs/plans/archived/2026-07-05-client-state-machine-implementation.md ||   561 HISTORICAL-DOC       docs/plans/archived/2026-07-08-local-audio-preprocessing-stack.md
   525 HISTORICAL-DOC       docs/plans/archived/2026-07-09-client-hardening-storage.md ||   988 HISTORICAL-DOC       docs/plans/archived/2026-07-10-client-audio-foundation.md
@@ -93,7 +93,7 @@ Each line contains up to two independent entries in the form
   601 INFRA                infra/yap-server-node/private-container-loopback-proxy.sh ||  1113 INFRA                infra/yap-server-node/resident-provider-lifecycle-gate.sh
   504 INFRA                infra/yap-server-node/setup-server.sh ||   350 SERVER-CONTRACT      server/librarian-workload-fixtures.json
   364 SERVER-CONTRACT      server/orchestrator/src/agent_admission.rs ||   463 SERVER-CONTRACT      server/orchestrator/src/supervisor.rs
-  453 SERVER-CONTRACT      server/orchestrator/tests/supervised_service.rs ||  1132 SERVER-RUNBOOK       server/README.md
+  453 SERVER-CONTRACT      server/orchestrator/tests/supervised_service.rs ||  1133 SERVER-RUNBOOK       server/README.md
   754 SERVER-CONTRACT      server/src/yap_server/agents/analyst_result_audit.py ||   905 SERVER-CONTRACT      server/src/yap_server/agents/analyst_service.py
   398 SERVER-CONTRACT      server/src/yap_server/agents/analyst.py ||   464 SERVER-CONTRACT      server/src/yap_server/agents/archivist_ingestion_service.py
   424 SERVER-CONTRACT      server/src/yap_server/agents/archivist_service.py ||   694 SERVER-CONTRACT      server/src/yap_server/agents/auditor_result_audit.py
@@ -166,7 +166,7 @@ Each line contains up to two independent entries in the form
   395 TEST-EVALUATION      server/tests/evaluation/promotion_registry_fixture.py ||   843 TEST-EVALUATION      server/tests/evaluation/test_agent_model_fixture_runner.py
   880 TEST-EVALUATION      server/tests/evaluation/test_agent_model_qualification.py ||   354 TEST-EVALUATION      server/tests/evaluation/test_agent_model_scoring.py
   717 TEST-EVALUATION      server/tests/evaluation/test_agent_vllm_runtime.py ||   486 TEST-EVALUATION      server/tests/evaluation/test_analyst_qualification_gate.py
-  422 TEST-EVALUATION      server/tests/evaluation/test_analyst_qualification.py ||   566 TEST-EVALUATION      server/tests/evaluation/test_archivist_product_qualification_gate.py
+  422 TEST-EVALUATION      server/tests/evaluation/test_analyst_qualification.py ||   567 TEST-EVALUATION      server/tests/evaluation/test_archivist_product_qualification_gate.py
   744 TEST-EVALUATION      server/tests/evaluation/test_auditor_qualification_gate.py ||   449 TEST-EVALUATION      server/tests/evaluation/test_auditor_qualification.py
   872 TEST-EVALUATION      server/tests/evaluation/test_coordinator_qualification_gate.py ||   476 TEST-EVALUATION      server/tests/evaluation/test_coordinator_qualification.py
  1433 TEST-EVALUATION      server/tests/evaluation/test_corpus_manifest.py ||   434 TEST-EVALUATION      server/tests/evaluation/test_curator_qualification_gate.py

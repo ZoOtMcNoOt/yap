@@ -750,10 +750,10 @@ credentials, and individual measurements remain outside Git.
 
 ## Phase 10 Archivist product-vertical successor public read-back
 
-Exact executable candidate `e78746b583bf5f9aa3179ec1c166890a4c4cf11e`
+Exact executable candidate `a2e9b55157799749ffc4eca32a92feabe63fba8e`
 returned `archivist-authenticated-product-vertical-qualified` with public-safe
 evidence SHA-256
-`3de55ce4c091d70114491a002c32b0262042869f54b84c22404aaed115dab31e`.
+`9ec9e37353c2c89198f374efe0f474b8284e077455b4168eb345d6a1e7a76a4f`.
 The frozen acceptance-plan SHA-256 is
 `ebac7e6ecf35d73ab9d6f6c554e3f6dfb0aad00858fe89d1ac5d614a65f64b0a`.
 Eight synchronized authenticated owner calls plus exact replay and one queued
@@ -770,9 +770,17 @@ passed and 47 were declared skips. The governed fixed membership ran 173 tests:
 374-test unit coverage, TypeScript/production Vite, Playwright 42/42, desktop
 Rust 1,244 unit tests (1,233 passed and 11 expected ignored) plus all integration
 groups, strict desktop/orchestrator Clippy, orchestrator tests, focused gate 8/8,
-and `git diff --check` were green. The sole protected successor delta registers
-the existing Archivist E2E spec in the explicit population contract; at
-`e78746b5...`, that contract passed 3/3 and Playwright again passed 42/42.
+and `git diff --check` were green. Protected successor `e78746b5...` registered
+the existing Archivist E2E spec in the explicit population contract; that
+contract passed 3/3 and Playwright again passed 42/42. Exact executable
+`a2e9b551...` additionally closes native cancellation/quit ownership through
+terminal reconciliation and refreshes the complete native capability assertion.
+At that head, the portable server suite again passed 1,548 tests (1,501 + 47
+declared skips), the governed set passed 173 (169 + 4), whole-server Ruff was
+clean, desktop Vitest passed 59 files/374 tests, Playwright passed 42/42,
+desktop Rust passed 1,247 unit tests (1,236 passed and 11 expected ignored) plus
+all integration groups, strict Clippy/formatting, the focused Archivist gate
+passed 8/8, and required native WDIO passed 15/15.
 Against that executable successor, with this
 public documentation reconciliation applied, the current 250-line inventory
 enumerates 605 surfaces: 354 at or above 350 lines and 251 from 250 through 349.
