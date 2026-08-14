@@ -23,6 +23,9 @@ HTTP_OPERATIONS = {
     ("/v1/analyst-answers", "post"): "submitAnalystAnswer",
     ("/v1/analyst-answers/{requestId}", "get"): "getAnalystAnswer",
     ("/v1/analyst-answers/{requestId}", "delete"): "cancelAnalystAnswer",
+    ("/v1/coordinator-bundles", "post"): "submitCoordinatorBundle",
+    ("/v1/coordinator-bundles/{requestId}", "get"): "getCoordinatorBundle",
+    ("/v1/coordinator-bundles/{requestId}", "delete"): "cancelCoordinatorBundle",
     ("/v1/student-questions", "post"): "submitStudentQuestion",
     ("/v1/student-questions/{requestId}", "get"): "getStudentQuestion",
     ("/v1/student-questions/{requestId}", "delete"): "cancelStudentQuestion",
@@ -99,6 +102,18 @@ OPERATION_RUNTIME = {
     ("/v1/analyst-answers/{requestId}", "delete"): (
         "Implemented only when the authenticated warm Analyst runtime verifies",
         "Analyst extractive cited answers",
+    ),
+    ("/v1/coordinator-bundles", "post"): (
+        "Implemented only when the authenticated warm Coordinator runtime verifies",
+        "Coordinator noncanonical proposal bundles",
+    ),
+    ("/v1/coordinator-bundles/{requestId}", "get"): (
+        "Implemented only when the authenticated warm Coordinator runtime verifies",
+        "Coordinator noncanonical proposal bundles",
+    ),
+    ("/v1/coordinator-bundles/{requestId}", "delete"): (
+        "Implemented only when the authenticated warm Coordinator runtime verifies",
+        "Coordinator noncanonical proposal bundles",
     ),
     ("/v1/student-questions", "post"): (
         "Implemented only when the authenticated warm Student runtime verifies",
@@ -196,6 +211,11 @@ RUNTIME_PATH_EXAMPLES = {
     "/v1/analyst-answers": "/v1/analyst-answers",
     "/v1/analyst-answers/{requestId}": (
         "/v1/analyst-answers/analyst-answer-11111111111111111111111111111111"
+    ),
+    "/v1/coordinator-bundles": "/v1/coordinator-bundles",
+    "/v1/coordinator-bundles/{requestId}": (
+        "/v1/coordinator-bundles/"
+        "coordinator-bundle-11111111111111111111111111111111"
     ),
     "/v1/student-questions": "/v1/student-questions",
     "/v1/student-questions/{requestId}": (
@@ -334,6 +354,30 @@ HTTP_SCHEMA_CONTRACTS: list[dict[str, Any]] = [
         "method": "delete",
         "request": None,
         "success": {"202": "#/components/schemas/AnalystAnswerJobView"},
+        "errors": ["401", "403", "404", "501", "503"],
+    },
+    {
+        "path": "/v1/coordinator-bundles",
+        "method": "post",
+        "request": (
+            "application/json",
+            "#/components/schemas/CoordinatorRequest",
+        ),
+        "success": {"202": "#/components/schemas/CoordinatorBundleJobView"},
+        "errors": ["400", "401", "403", "429", "501", "503"],
+    },
+    {
+        "path": "/v1/coordinator-bundles/{requestId}",
+        "method": "get",
+        "request": None,
+        "success": {"200": "#/components/schemas/CoordinatorBundleJobView"},
+        "errors": ["401", "403", "404", "501", "503"],
+    },
+    {
+        "path": "/v1/coordinator-bundles/{requestId}",
+        "method": "delete",
+        "request": None,
+        "success": {"202": "#/components/schemas/CoordinatorBundleJobView"},
         "errors": ["401", "403", "404", "501", "503"],
     },
     {

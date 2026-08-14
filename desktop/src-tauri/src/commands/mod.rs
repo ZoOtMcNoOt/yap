@@ -21,6 +21,7 @@ pub(crate) fn register(builder: tauri::Builder<tauri::Wry>) -> tauri::Builder<ta
         .manage(recording_jobs)
         .manage(remote_job_drain)
         .manage(crate::analyst_answer::AnalystAnswerOwner::new())
+        .manage(crate::coordinator_bundle::CoordinatorBundleOwner::new())
         .manage(crate::librarian_query::LibrarianQueryOwner::new())
         .manage(crate::student_question::StudentQuestionOwner::new())
         .manage(crate::curator_proposal::CuratorProposalOwner::new())
@@ -121,6 +122,9 @@ pub(crate) fn register(builder: tauri::Builder<tauri::Wry>) -> tauri::Builder<ta
         crate::analyst_answer::start_analyst_answer,
         crate::analyst_answer::analyst_answer_status,
         crate::analyst_answer::cancel_analyst_answer,
+        crate::coordinator_bundle::start_coordinator_bundle,
+        crate::coordinator_bundle::coordinator_bundle_status,
+        crate::coordinator_bundle::cancel_coordinator_bundle,
         crate::archivist_ingestion::start_archivist_ingestion,
         crate::archivist_ingestion::archivist_ingestion_status,
         crate::archivist_ingestion::cancel_archivist_ingestion,
