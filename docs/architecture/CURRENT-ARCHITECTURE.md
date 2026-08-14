@@ -65,11 +65,12 @@ all 12 checks and PR #180 merged its native/renderer composition as
 authenticated proposal-bundle server/database/broker boundary with 10/10 exact
 terminals and public-safe evidence SHA-256 `394112ad...`; hosted head
 `6890a9f5...` passed all 12 checks, and PR #181 merged its native/renderer
-composition as `3fd5eaed...`. Exact `87924d5f...` now privately qualifies
-Auditor's authenticated report server/database/broker boundary with 10/10 exact
-terminals and public-safe evidence SHA-256 `b5a31c21...`; its native/renderer
-candidate is focused-public green but unmerged. Auditor hosted review and the
-capacity/operations layers remain open.
+composition as `3fd5eaed...`. Exact `87924d5f...` privately qualified Auditor's
+authenticated report server/database/broker boundary with 10/10 exact terminals
+and public-safe evidence SHA-256 `b5a31c21...`. Hosted head `6bb72953...` passed
+all six CI jobs reported for PR #183, which rebase-merged the tree-identical
+native/renderer successor with main tip `13d9e3ef...`. The capacity and
+operations layers remain open.
 Phase 7
 implements provider-neutral
 OIDC verification with Entra policy, fail-closed authentication, tenant-scoped
@@ -1279,9 +1280,11 @@ report/finding/citation validation, and an explicit Auditor report composer.
 Its private gate matched all 10 product terminals across 8 owners, including 4
 exact server-derived reports, 5 unavailable results, and 1 fail-closed
 cancellation; it completed two PostgreSQL restart/read-backs, complex-c8/ninth-
-owner-queued containment, and exact teardown. The candidate is unmerged pending
-hosted review; its private receipt does not qualify a native/renderer round trip
-or live enterprise identity-provider exchange. See the
+owner-queued containment, and exact teardown. Hosted head `6bb72953...` passed
+all six CI jobs reported for PR #183, which rebase-merged the tree-identical
+product successor with main tip `13d9e3ef...`. Its private receipt does not
+qualify a native/renderer round trip or live enterprise identity-provider
+exchange. See the
 [Auditor product record](../evidence/auditor-product-vertical/VERIFICATION.md).
 Scheduled autonomous execution and production operation remain pending.
 

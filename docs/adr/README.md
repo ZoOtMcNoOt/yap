@@ -111,8 +111,10 @@ SHA-256 `f597cca7...`; hosted-green head `b03c6e79...` passed all 12 checks and
   checks and PR #180 merged it as `c95fcf1a...`. Exact `05400fb3...` privately
   qualified Coordinator's product server/database/broker boundary; hosted head
   `6890a9f5...` passed all 12 checks and PR #181 merged it as `3fd5eaed...`.
-  Exact `87924d5f...` privately qualifies Auditor's product server boundary;
-  its hosted merge plus sustained capacity and promotion remain open.
+  Exact `87924d5f...` privately qualified Auditor's product server boundary;
+  hosted head `6bb72953...` passed all six CI jobs reported for PR #183 and
+  rebase-merged tree-identically with main tip `13d9e3ef...`. Sustained capacity
+  and promotion remain open.
 
 ## Applicability and precedence
 
@@ -163,7 +165,7 @@ Every implementation plan must list its applied ADRs, superseded details it inte
 | [0028](0028-model-independent-terminology-authority.md) | Model-independent terminology authority and frozen projections | Accepted; merged Phase 9 has server-derived ownership, immutable job snapshots, bounded projections, revocation, governed-agent consumption, and a passed complete gate; production UI and operations remain open |
 | [0029](0029-vllm-agent-reasoning-runtime.md) | vLLM agent reasoning runtime on DGX Spark | Accepted; exact-head private Qwen rapid/Gemma complex route qualification and aggregate Phase 9 admission passed and merged through PR #152; the post-Phase-9 checkpoint gate passed at `22c3f369...` and hosted head `84c22ec9...` merged through PR #153; production serving, simultaneous residency, and sustained capacity remain Phase 10 |
 | [0030](0030-rust-supervised-provider-service-lifecycle.md) | Rust-supervised provider service lifecycle | Accepted Phase 10 target; Slices 10.1 and 10.2 merged the hardware-independent systemd/Rust/foreground-launcher boundary and immutable Qwen/Gemma profiles through PRs #155 and #157. Slice 10.3 bounded admission merged under ADR 0031 through PR #158. Exact executable `0665c486...` reran the full profiles sequentially for the batch-invariant successor; simultaneous residency, sustained capacity, and production operation remain open. |
-| [0031](0031-eight-agent-voice-os-roster.md) | Eight-agent Voice OS roster and execution boundaries | Accepted Phase 10 target; all eight bounded role cores are merged through PR #172. Scribe/Librarian/Archivist/Student/Curator/Analyst/Coordinator product surfaces are merged through PR #181. Exact `87924d5f...` privately qualifies Auditor's product server/database/broker boundary with public-safe evidence SHA-256 `b5a31c21...`; hosted merge, simultaneous full-profile residency, sustained capacity, and production promotion remain pending. |
+| [0031](0031-eight-agent-voice-os-roster.md) | Eight-agent Voice OS roster and execution boundaries | Accepted and implemented as eight bounded role cores plus eight authenticated product surfaces through PR #183. Exact `87924d5f...` privately qualified Auditor's product server/database/broker boundary with public-safe evidence SHA-256 `b5a31c21...`; hosted head `6bb72953...` passed all six reported CI jobs and rebase-merged tree-identically with main tip `13d9e3ef...`. Simultaneous full-profile residency, sustained capacity, and production promotion remain pending. |
 
 **Build specs** (how, not why): [docs/specs/](../specs/) — STT sidecar, LLM sidecar, live UX, testing.
 

@@ -90,10 +90,13 @@ outside Git.
 ## Deliberate limits
 
 This record qualifies Auditor's merged internal core only. Exact product
-successor `87924d5f...` separately privately qualifies an unmerged authenticated
-HTTP/native/renderer candidate; see the
+successor `87924d5f...` separately privately qualified the authenticated
+HTTP/native/renderer server boundary; hosted head `6bb72953...` passed all six
+CI jobs reported for PR #183 and rebase-merged tree-identically with main tip
+`13d9e3ef...`. See the
 [Auditor product record](../auditor-product-vertical/VERIFICATION.md). The merged
-roster contains all eight bounded roles. Auditor accepts only an explicit
+roster contains all eight bounded role and product surfaces. Auditor accepts
+only an explicit
 authenticated request, runs only under the idle-only admission class, and
 returns source-cited potential-contradiction findings for review. It writes no
 proposal, source, canonical knowledge, task, or action and performs no

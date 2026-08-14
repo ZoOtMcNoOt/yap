@@ -102,10 +102,9 @@ This candidate does **not** prove:
 - enterprise deployment or production operation;
 - sustained throughput, p95/p99, simultaneous Qwen/Gemma residency, or a
   production SLO; or
-- any other role's product exposure. Archivist, Student, and Curator have
-  separate qualified and merged product evidence. Exact `78b2c638...` privately
-  qualifies Analyst's product server boundary, but its successor remains
-  unmerged; Coordinator and Auditor remain unexposed.
+- any other role's product exposure. Archivist, Student, Curator, Analyst,
+  Coordinator, and Auditor have separate exact qualifications and merged
+  product evidence; none inherits Librarian's receipt.
 
 No private DSN, tenant or subject identity, query, evidence text, database row,
 raw latency array, host path, credential, prompt, or model output belongs in

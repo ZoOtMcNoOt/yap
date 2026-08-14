@@ -71,12 +71,14 @@ bundle server boundary: 10/10 exact product terminals, 5 exact server-derived
 noncanonical review-required bundles, strict owner isolation, two PostgreSQL
 restart/read-backs, fail-closed cancellation, and exact teardown. Hosted head
 `6890a9f5...` passed all 12 required checks, and PR #181 merged the native/
-renderer vertical as `3fd5eaed...`. Exact `87924d5f...` now privately
-qualifies Auditor's authenticated report server boundary: 10/10 exact product
+renderer vertical as `3fd5eaed...`. Exact `87924d5f...` privately qualified
+Auditor's authenticated report server boundary: 10/10 exact product
 terminals, 4 exact server-derived noncanonical review-required reports, strict
 owner isolation, two PostgreSQL restart/read-backs, fail-closed cancellation,
-and exact teardown. Its native/renderer successor is focused-public green but
-unmerged and does not schedule reviews or mutate source or knowledge state.
+and exact teardown. Hosted head `6bb72953...` passed all six hosted CI jobs
+reported for PR #183, which rebase-merged the tree-identical native/renderer
+successor with main tip `13d9e3ef...`. Auditor does not schedule reviews or
+mutate source or knowledge state.
 
 This is not live-only dictation or a Wispr Flow clone. Batch recordings remain the target core loop once the trusted server route exists; live capture is the implemented compact, explicit companion path.
 

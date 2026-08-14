@@ -1,6 +1,6 @@
 # Complete eight-agent Voice OS delivery
 
-**Status:** Active; Slices A and B merged through PRs #157/#158. Slice C Scribe
+**Status:** Completed; Slices A and B merged through PRs #157/#158. Slice C Scribe
 merged through PR #164. Slice D Archivist merged through PR #165 as
 `2a7ec819edbf03a4f3fd3fe8de92ddad5bfd71f9`. Student's exact `428d6e48...`
 topic-copy prompt repair is privately qualified on the unchanged full Qwen
@@ -36,14 +36,16 @@ terminals and public-safe evidence SHA-256 `f26adfc0...`; hosted head
 `05400fb3...` privately qualified Coordinator's product server/database/broker
 boundary with public-safe evidence SHA-256 `394112ad...`; hosted head
 `6890a9f5...` passed all 12 checks and PR #181 merged it as `3fd5eaed...`.
-Exact `87924d5f...` privately qualifies Auditor's product
+Exact `87924d5f...` privately qualified Auditor's product
 server/database/broker boundary with public-safe evidence SHA-256
-`b5a31c21...`; its hosted merge remains open.
+`b5a31c21...`. Hosted head `6bb72953...` passed all six CI jobs reported for
+PR #183, which rebase-merged the tree-identical product successor with main tip
+`13d9e3ef...`. The eight-agent roster and authenticated product delivery
+objective is complete; production promotion remains a separate active program.
 
-**Current branch:** `agent/phase10-auditor-product` follows the merged Coordinator
-vertical and implements and privately qualifies Auditor's bounded product
-server surface; unchanged-head hosted review/merge remains. The requested Muse
-replacement decision is closed for this slice: Meta's official
+**Closure:** PR #183 completed the final Auditor product surface after exact
+private qualification and exact hosted review. The requested Muse replacement
+decision is closed for this plan: Meta's official
 [Muse Spark 1.2](https://developer.meta.com/ai/models/muse-spark/) page exposes
 the model through the hosted Meta Model API with a one-million-token context,
 but publishes no open-weight artifact for the organization-owned private DGX
@@ -51,10 +53,11 @@ route. The exact qualified Gemma complex profile therefore remains unchanged;
 Muse Spark 1.2 is recorded as a later hosted-provider candidate rather than a
 local replacement.
 
-**Base:** Coordinator product merge
-`3fd5eaed2e3d47a6e765b5467345ba26a424af23` from PR #181, with executable
-qualification retained at exact `05400fb3...` and hosted review at exact
-`6890a9f5...`.
+**Merged closure:** hosted source head
+`6bb72953d227927b4255702fdb394b8e8a3b1ca0` passed all six jobs reported for
+PR #183 and rebase-merged tree-identically with main tip
+`13d9e3ef7f74059f2dece6ce9ee4b62d0139b828`. Auditor's qualification remains
+at exact executable `87924d5f...` with public-safe evidence `b5a31c21...`.
 
 **Applied decisions:** [ADR 0031](../../adr/0031-eight-agent-voice-os-roster.md),
 [ADR 0030](../../adr/0030-rust-supervised-provider-service-lifecycle.md),
@@ -461,7 +464,7 @@ Auditor as `1b255e9a...`, completing the bounded internal roster.
 
 ## Slice F — product integration and promotion evidence
 
-- [ ] Expose the roster through authenticated server endpoints and native Tauri
+- [x] Expose the roster through authenticated server endpoints and native Tauri
   commands with role-specific UI states, retry/cancel controls, and graceful
   degradation. Exact `e2ba1864...` qualified this for Librarian's authenticated
   server boundary, and PR #174 merged its hosted-green native/Knowledge surface.
@@ -477,8 +480,10 @@ Auditor as `1b255e9a...`, completing the bounded internal roster.
   `c95fcf1a...`. Exact `05400fb3...` privately qualified Coordinator's product
   server/database/broker boundary with 10/10 exact terminals; hosted head
   `6890a9f5...` passed all 12 checks and PR #181 merged it as `3fd5eaed...`.
-  Exact `87924d5f...` privately qualifies Auditor's product server/database/
-  broker boundary with 10/10 exact terminals; its hosted merge stays open.
+  Exact `87924d5f...` privately qualified Auditor's product server/database/
+  broker boundary with 10/10 exact terminals; hosted head `6bb72953...` passed
+  all six reported CI jobs and PR #183 rebase-merged the tree-identical surface
+  with main tip `13d9e3ef...`.
 - [x] Immediately after the Curator product successor passed hosted review and
   merged, run a separate Muse replacement decision gate. Require an
   exact official deployable version and artifact, acceptable license/terms,
@@ -487,16 +492,18 @@ Auditor as `1b255e9a...`, completing the bounded internal roster.
   affected-workflow requalification before replacing Gemma. Official Muse
   Spark 1.2 is available through the hosted Meta Model API, but its model page
   publishes no open-weight artifact for the private DGX route. Retain qualified
-  Gemma and continue the Auditor product plan without
-  blocking on the model name; treat Muse as a later hosted-provider evaluation.
-- [ ] Run portable, database, lifecycle, private-model, mixed-route,
-  simultaneous-residency, sustained-capacity, security, accessibility, and
-  aggregate exact-head gates.
-- [ ] Publish only public-safe hashes, counts, outcomes, and bounded qualitative
+  Gemma and record Muse only as a later hosted-provider evaluation.
+- [x] Run the role-scoped portable, database, lifecycle, private-model,
+  security, accessibility, and exact-head gates required for each bounded
+  internal core and authenticated product surface.
+- **Transferred to the active production-promotion plan:** simultaneous full-
+  profile residency, sustained mixed-user capacity, p95/p99 SLOs,
+  observability, and operations are not part of completing the bounded roster.
+- [x] Publish only public-safe hashes, counts, outcomes, and bounded qualitative
   facts; keep prompts, outputs, credentials, paths, database content, and raw
   private measurements private.
-- [ ] Reconcile architecture/status/ADR/roadmap/runbooks, open focused PRs, wait
-  for hosted-green exact heads, merge, and complete the post-delivery checkpoint.
+- [x] Reconcile architecture/status/ADR/roadmap/runbooks, open focused PRs, wait
+  for hosted-green exact heads, and merge every product surface through PR #183.
 
 ## Prohibited shortcuts
 

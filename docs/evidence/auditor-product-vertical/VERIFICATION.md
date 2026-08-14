@@ -9,7 +9,12 @@ qualifies the Auditor product vertical. Its owner-private ARM64 gate returned
 `auditor-authenticated-product-server-boundary-qualified` with public-safe
 evidence SHA-256
 `b5a31c215d21ab713c51ae7d9704d8984f67c01381e5ed861ce3e7d18f994d5c`.
-The candidate remains unmerged and requires unchanged-head hosted review.
+Exact hosted source head `6bb72953d227927b4255702fdb394b8e8a3b1ca0`
+passed all six CI jobs reported for PR #183. The repository's linear-history
+rule rebase-merged the tree-identical successor with main tip
+`13d9e3ef7f74059f2dece6ce9ee4b62d0139b828` on 2026-08-14. Qualification
+remains attributed to exact executable `87924d5f...`; it is not relabeled as a
+docs or merge head.
 
 The frozen product acceptance plan is
 `server/auditor-product-acceptance.json`, SHA-256
@@ -100,8 +105,18 @@ qualification adapter and its test, also passed:
 The full local portable-server aggregate was not admitted as green: its two
 attempts reached an unrelated Windows/WSL proxy-behavior test that exceeded the
 30-second Windows Bash wrapper bound. That exact isolated test and its complete
-12-test module passed immediately afterward. Exact-head hosted Linux review
-must therefore supply the final full-suite release signal before merge.
+12-test module passed immediately afterward.
+
+## Hosted review and merge
+
+At exact source head `6bb72953...`, PR #183 reported six hosted jobs and all six
+completed successfully: `frontend`, `rust`, `Native WDIO smoke (required, no
+hardware)`, `server`, `Server orchestrator (Linux lifecycle)`, and `mock-oidc`.
+GitHub reported the PR
+mergeable and clean. A separate default-setup CodeQL suite was not instantiated
+for this PR, so this record does not manufacture a 12-job claim. The linear-
+history rebase produced main tip `13d9e3ef...`; independent tree comparison
+confirmed it is byte-for-byte identical to hosted source head `6bb72953...`.
 
 ## Claim limits and privacy
 
@@ -111,10 +126,10 @@ timing, or private receipt is committed. Git records only exact revisions,
 public-safe hashes, aggregate counts, booleans, and bounded outcomes.
 
 This result qualifies the authenticated Auditor server/database/broker
-boundary. It does not qualify a private native/renderer round trip, live
-enterprise identity-provider exchange, hosted review, merge, production
-deployment, scheduled autonomous review, simultaneous Qwen/Gemma residency,
-sustained capacity, or a p50/p95/p99 SLO. Gemma remains the qualified local
-complex route. Muse Spark 1.2 is recorded only as a future hosted-provider
+boundary and the tree-identical product vertical is merged. It does not qualify
+a private native/renderer round trip, live enterprise identity-provider
+exchange, production deployment, scheduled autonomous review, simultaneous
+Qwen/Gemma residency, sustained capacity, or a p50/p95/p99 SLO. Gemma remains
+the qualified local complex route. Muse Spark 1.2 is recorded only as a future hosted-provider
 watch item because deployable open weights are not available for this
 local/offline boundary.

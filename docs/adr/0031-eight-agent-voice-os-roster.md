@@ -1,6 +1,6 @@
 # ADR 0031: Eight-agent Voice OS roster and execution boundaries
 
-**Status:** Accepted target; all eight bounded role cores and seven product surfaces are merged; Auditor has a privately qualified unmerged product successor
+**Status:** Accepted and implemented as eight bounded role cores with eight authenticated product surfaces; production promotion remains separately gated
 **Date:** 2026-08-11
 **Deciders:** Yap product and engineering owner
 **Amends:** [ADR 0006](0006-silero-agents-state-machine.md),
@@ -13,8 +13,8 @@
 ## Context
 
 The product architecture names eight agents, and the merged system now delivers
-all eight as bounded internal role cores. Scribe, Librarian, Archivist, Student, Curator, Analyst, and Coordinator have current
-product surfaces in the merged product. Exact `e2ba1864...` privately qualified
+all eight as bounded internal role cores with authenticated product surfaces.
+Exact `e2ba1864...` privately qualified
 Librarian's authenticated HTTP server boundary; hosted head `67a79ce2...` passed
 all 12 checks, and PR #174 merged the HTTP/native/Knowledge vertical as
 `98af78c9...`. Exact `a2e9b551...` privately qualified Archivist's
@@ -36,9 +36,11 @@ its HTTP/native/renderer successor as `c95fcf1a...`. Exact `05400fb3...`
 privately qualified Coordinator's product server/database/broker boundary with
 10/10 exact terminals and public-safe evidence SHA-256 `394112ad...`; hosted
 head `6890a9f5...` passed all 12 checks and PR #181 merged the vertical as
-`3fd5eaed...`. Exact `87924d5f...` now privately qualifies Auditor's product
+`3fd5eaed...`. Exact `87924d5f...` privately qualified Auditor's product
 server/database/broker boundary with 10/10 exact terminals and public-safe
-evidence SHA-256 `b5a31c21...`; hosted review remains pending. Phase 9 merged the
+evidence SHA-256 `b5a31c21...`; hosted head `6bb72953...` passed all six CI jobs
+reported for PR #183, which rebase-merged the tree-identical successor with main
+tip `13d9e3ef...`. Phase 9 merged the
 governed knowledge, tool, retrieval, terminology,
 and two qualified reasoning-route foundations. Phase 10
 Slices 10.1 and 10.2 merged the Rust-supervised lifecycle and exact Qwen rapid/
@@ -372,10 +374,12 @@ public-safe evidence SHA-256 `f26adfc0...`; hosted head `4c8db7c2...` passed all
 12 checks and PR #180 merged it as `c95fcf1a...`. Exact `05400fb3...` privately
 qualified Coordinator's product server/database/broker boundary with public-safe
 evidence SHA-256 `394112ad...`; hosted head `6890a9f5...` passed all 12 checks
-and PR #181 merged it as `3fd5eaed...`. Exact `87924d5f...` privately qualifies
+and PR #181 merged it as `3fd5eaed...`. Exact `87924d5f...` privately qualified
 Auditor's product server/database/broker boundary with public-safe evidence
-SHA-256 `b5a31c21...`; Auditor hosted merge, warm simultaneous two-route
-residency, sustained multi-owner capacity, and production promotion remain open.
+SHA-256 `b5a31c21...`; hosted head `6bb72953...` passed all six CI jobs reported
+for PR #183, which rebase-merged the tree-identical product successor with main
+tip `13d9e3ef...`. Warm simultaneous two-route residency, sustained multi-owner
+capacity, and production promotion remain open.
 One Spark cannot retain the
 unchanged `0.40` Qwen and `0.70` Gemma
 profiles simultaneously; a second owned GPU node/private route remains

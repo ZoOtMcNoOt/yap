@@ -6,8 +6,11 @@ merged through PR #177. Student's separately qualified product vertical later
 merged through PR #178. Exact `6aa33e4d...` privately qualified the Curator
 product server boundary, and PR #179 merged that vertical. Exact `78b2c638...`
 privately qualified the Analyst product server boundary, and PR #180 merged that
-vertical. Exact `05400fb3...` privately qualifies the unmerged Coordinator
-product server/database/broker boundary.
+vertical. Exact `05400fb3...` privately qualified Coordinator, and PR #181
+merged that product vertical. Exact `87924d5f...` privately qualified Auditor's
+product server boundary; hosted head `6bb72953...` passed all six CI jobs
+reported for PR #183 and rebase-merged tree-identically with main tip
+`13d9e3ef...`.
 
 ## Exact candidate
 

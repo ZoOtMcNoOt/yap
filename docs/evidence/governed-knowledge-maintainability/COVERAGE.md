@@ -12,11 +12,12 @@ Phase 9. Earlier phase and checkpoint acceptance is evidence, not an exemption.
 The Phase 9 delta receives deeper inspection, but it is not the coverage limit.
 
 The current read-back below extends the navigation and cohesion inventory
-through the merged Coordinator product boundary and the privately qualified,
-unmerged Auditor product successor over merge `3fd5eaed...`. The threshold
-inventory is recomputed against that successor with this public documentation
-reconciliation applied. The tracked-path and physical-line
-tables below remain the labeled merged Phase 9 inventory anchor; they are not
+through all eight merged product boundaries. Auditor qualified at exact
+executable `87924d5f...`; hosted source head `6bb72953...` passed all six CI jobs
+reported for PR #183 and rebase-merged tree-identically with main tip
+`13d9e3ef...`. The threshold inventory is recomputed against that merged tree
+with this public documentation reconciliation applied. The tracked-path and
+physical-line tables below remain the labeled merged Phase 9 inventory anchor; they are not
 silently relabeled as current. This document does not claim a privately
 qualified native/renderer round trip, knowledge activation, sustained capacity,
 simultaneous full-profile residency, production SLOs, deployment, or production
@@ -170,12 +171,12 @@ The previously recorded Phase 10 Student candidate snapshot remains historical:
 527 in-scope surfaces at or above 250 physical lines, comprising 287 at or above
 350 and 240 from 250 through 349. It is not recomputed against this successor.
 
-Against executable Auditor-product candidate `87924d5f...`, with the current
-public documentation reconciliation applied, the inventory contains 630 in-
+Against merged main tip `13d9e3ef...`, with the current public documentation
+reconciliation applied, the inventory contains 631 in-
 scope tracked source, text, policy, and provenance surfaces at or above 250
-physical lines: 377 at or above 350 and 253 from 250 through 349. The completed
+physical lines: 377 at or above 350 and 254 from 250 through 349. The completed
 checkpoint reviews remain the authority for their historical exact heads. This
-freeze-time read-back adds the Auditor authenticated HTTP runner, native
+freeze-time read-back retains the Auditor authenticated HTTP runner, native
 request/connector owners, report composer, product gate, and affected
 shared server/desktop owners. The mutually exclusive rows below classify every
 one of the 377 decomposition-triggering surfaces. The exact path/line/disposition read-back is
@@ -192,8 +193,8 @@ decisions.
 | `desktop/src-tauri/tests/*` | 2 | Retain the two integration owners for audio foundation and model-download lifecycle; each crosses native components deliberately and owns no production state. |
 | `desktop/src/*` | 5 | Retain the application composer, live-overlay views, shared sidebar primitive, settings-control hook, and bounded Archivist action owner as separate UI owners; native projected state remains authoritative. |
 | `desktop/tests/**` | 16 | Retain each functional E2E, WDIO, release-contract, inventory, or runner configuration owner, including the hand-written dependency-inventory script rather than its generated JSON products. These are scenario/gate compositions, not production authority; the mixed gate contracts already use named child boundaries. |
-| Current/normative `docs/**` excluding completed/archived plans and research | 21 | Retain each ADR, current architecture/status, active decision queue, active delivery plan, runbook, spec, evidence/coverage record, and Voice OS document by taxonomy/decision owner. Stale current-state claims are repaired; these files are not executable modules. |
-| `docs/plans/{archived,completed}/**` and `docs/research/**` | 11 | Retain as immutable historical delivery/evidence records. Rewriting or splitting them would damage provenance; current truth lives in current/normative documents. |
+| Current/normative `docs/**` excluding completed/archived plans and research | 20 | Retain each ADR, current architecture/status, active decision queue, active production-promotion plan, runbook, spec, evidence/coverage record, and Voice OS document by taxonomy/decision owner. Stale current-state claims are repaired; these files are not executable modules. |
+| `docs/plans/{archived,completed}/**` and `docs/research/**` | 12 | Retain as immutable historical delivery/evidence records, including the completed eight-agent roster plan. Rewriting or splitting them would damage provenance; current truth lives in current/normative documents. |
 | `infra/**` | 5 | Retain each process-group, supervisor, loopback proxy, resident lifecycle, and setup owner because containment must remain end to end within its script/process boundary. |
 | `server/librarian-workload-fixtures.json` | 1 | Retain the one frozen synthetic Librarian qualification corpus as a hand-maintained executable contract; it contains no private qualification output. |
 | `server/README.md` | 1 | Retain the server runbook as the single operator navigation surface; executable gates and source modules remain authoritative. |

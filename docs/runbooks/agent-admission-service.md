@@ -218,8 +218,10 @@ Exact product successor `87924d5f...` then privately qualified the authenticated
 Auditor server/database/broker boundary across 10 exact product jobs. Its
 independent live probe held eight complex leases and queued the ninth; the
 product workload itself claims eight synchronized owner calls, not eight
-simultaneous inferences. The product successor remains unmerged pending hosted
-review and is not production-service evidence. See the
+simultaneous inferences. Hosted head `6bb72953...` passed all six CI jobs
+reported for PR #183, which rebase-merged the tree-identical product successor
+with main tip `13d9e3ef...`. This remains bounded workflow evidence, not
+production-service evidence. See the
 [Auditor product record](../evidence/auditor-product-vertical/VERIFICATION.md).
 
 ## Later enablement and recovery

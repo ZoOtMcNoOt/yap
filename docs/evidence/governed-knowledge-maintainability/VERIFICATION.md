@@ -3,9 +3,7 @@
 This record separates inherited merged evidence, focused repair checks, the
 completed and hosted-merged Phase 9 checkpoint gate, historical Phase 10 public
 read-backs, the frozen Librarian, Analyst, Coordinator, and Auditor successors,
-the merged Librarian, Archivist, Student, Curator, Analyst, and Coordinator
-product boundaries, and the privately qualified unmerged Auditor product
-successor. The Curator/profile-
+and all eight merged product boundaries. The Curator/profile-
 capacity core successor is privately
 qualified at exact protected heads and has a public-lock/aggregate result.
 Hosted-green head `593e627b...` passed all 12 checks, and PR #168 merged it as
@@ -22,14 +20,16 @@ public-safe evidence SHA-256 `328f6640...`; hosted head `b983adb7...` passed all
 12 checks and PR #179 merged it as `70303872...`. Exact `78b2c638...` privately
 qualified Analyst's product server boundary with public-safe evidence SHA-256
 `f26adfc0...`; hosted head `4c8db7c2...` passed all 12 checks and PR #180 merged
-it as `c95fcf1a...`. Exact `05400fb3...` privately qualifies Coordinator's
+it as `c95fcf1a...`. Exact `05400fb3...` privately qualified Coordinator's
 product server/database/broker boundary with public-safe evidence SHA-256
 `394112ad...`; hosted head `6890a9f5...` passed all 12 checks and PR #181
-merged the Coordinator vertical as `3fd5eaed...`. Exact `87924d5f...` now
-privately qualifies Auditor's product server boundary with public-safe evidence
-SHA-256 `b5a31c21...`; hosted merge remains pending.
-Historical inventories remain labeled at their exact heads. The final section
-records the exact current Auditor-product-successor threshold read-back.
+merged the Coordinator vertical as `3fd5eaed...`. Exact `87924d5f...` privately
+qualified Auditor's product server boundary with public-safe evidence SHA-256
+`b5a31c21...`; hosted head `6bb72953...` passed all six CI jobs reported for PR
+#183, which rebase-merged the tree-identical successor with main tip
+`13d9e3ef...`. Historical inventories remain labeled at their exact heads. The
+final section records the exact current all-eight merged docs-successor threshold
+read-back.
 
 ## Inherited Phase 9 evidence
 
@@ -590,7 +590,7 @@ entered broker submission; its receipt is not reused.
   skips. Ruff and diff checks were clean.
 - The 250-line inventory enumerated 552 surfaces: 308 at or above 350 lines and
   244 from 250 through 349. Those counts remain the frozen snapshot; the
-  appendix now records the current Auditor successor instead.
+  appendix now records the current all-eight merged docs successor instead.
 
 These checks did not product-promote Librarian and do not prove sustained
 capacity, production SLOs, simultaneous model residency, availability,
@@ -626,8 +626,8 @@ The public portable server suite ran 1,384
 tests: 1,342 passed and 42 were declared skips. The governed fixed membership
 ran 173 tests: 169 passed and four were declared skips. The Analyst successor's
 250-line inventory enumerated 565 surfaces: 318 at or above 350 lines and 247
-from 250 through 349. The exact current Auditor successor tuples supersede
-that historical read-back in
+from 250 through 349. The exact current all-eight merged docs-successor tuples
+supersede that historical read-back in
 [THRESHOLD-DISPOSITION.md](THRESHOLD-DISPOSITION.md).
 
 This internal qualification alone did not product-promote Analyst. Exact
@@ -725,8 +725,10 @@ exact 339 tuples were the freeze-time appendix; the current
 
 This internal-core record alone did not product-promote Auditor. Hosted head
 `937a4129...` passed all 12 checks and PR #172 merged the internal core as
-`1b255e9a...`. Exact product successor `87924d5f...` separately qualifies the
-authenticated product boundary but remains unmerged pending hosted review.
+`1b255e9a...`. Exact product successor `87924d5f...` separately qualified the
+authenticated product boundary; hosted head `6bb72953...` passed all six CI
+jobs reported for PR #183 and rebase-merged tree-identically with main tip
+`13d9e3ef...`.
 Scheduled autonomous execution, action or knowledge mutation, simultaneous
 Qwen/Gemma residency, sustained capacity/fairness, production p50/p95/p99 or an
 SLO, enterprise networking, and deployment remain open. Owner-private tenant/run identities, focus text,
@@ -1027,17 +1029,18 @@ optional-hardware skips. Two full local portable-server attempts stopped at an
 unrelated Windows/WSL proxy-behavior timeout; the isolated test and its complete
 12-test module passed, so this record does not call the local aggregate green.
 
-Against executable candidate `87924d5f...`, with this public documentation
+Against merged main tip `13d9e3ef...`, with this public documentation
 reconciliation applied in the current docs successor, the complete 250-line
-inventory enumerates 630 surfaces: 377 at or above 350 lines
-and 253 from 250 through 349. The exact 377 high-band
+inventory enumerates 631 surfaces: 377 at or above 350 lines
+and 254 from 250 through 349. The exact 377 high-band
 path/line/disposition tuples are reproduced in
 [THRESHOLD-DISPOSITION.md](THRESHOLD-DISPOSITION.md).
 
 This record qualifies only the authenticated Auditor HTTP/database/broker
 boundary. Native/renderer behavior is exact-head public-test evidence and was
-not a private end-to-end client run. The candidate remains unmerged pending
-hosted review. No evidence here proves scheduled autonomy, simultaneous
+not a private end-to-end client run. Hosted head `6bb72953...` passed all six
+CI jobs reported for PR #183 and rebase-merged tree-identically with main tip
+`13d9e3ef...`. No evidence here proves scheduled autonomy, simultaneous
 Qwen/Gemma residency, sustained capacity/fairness, a production p50/p95/p99 or
 SLO, live enterprise identity integration, or deployment. Owner-private
 tenants, subjects, review focus, evidence, reports, findings, citations, model

@@ -3,13 +3,13 @@
 This changelog records product/architecture milestones. Exact test counts and
 immutable evidence belong in phase/checkpoint evidence records.
 
-## Unreleased — Auditor product candidate privately qualified
+## 2026-08-14 — Auditor product vertical merged
 
-- Adds authenticated Auditor review-report jobs, native-owned validation, and an
-  explicit composer for server-derived, source-cited, review-required findings.
+- Adds authenticated Auditor review-report jobs, native-owned validation, and an explicit composer for server-derived, source-cited, review-required findings.
 - Exact `87924d5f...` qualified 10/10 server terminals with evidence
   `b5a31c21...`, restart/read-back, c8 containment, and teardown.
 - Predecessor `50417bfc...` failed before receipt and is terminal/nonreusable.
+- Hosted head `6bb72953...` passed all six PR #183 CI jobs; the tree-identical linear-history merge completed with main tip `13d9e3ef...`.
 - Gemma remains local; Muse stays hosted-only until open weights are available.
 
 ## 2026-08-14 — Coordinator product vertical merged
