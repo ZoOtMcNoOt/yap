@@ -15,7 +15,7 @@ as `ec3af506...`. Hosted-green head `e1899db7...` passed all 12 checks and PR
 head `428d6e48...` passed its private qualification on the unchanged full Qwen
 rapid profile with public-safe evidence SHA-256 `f597cca7...`; hosted-green
 head `b03c6e79...` passed all 12 checks and PR #166 merged the internal core as
-`2254605e...`. Student product exposure remains open; exact predecessor
+`2254605e...`. Student product exposure was still open at that merge; exact predecessor
 `0970d74c...` remains terminal `deterministic-no-student` evidence. Exact route
 head `dab19fe...` qualified the unchanged Qwen/Gemma
 profiles sequentially, exact workflow head `7cd24deb...` qualified Scribe,
@@ -48,8 +48,13 @@ Its private gate matched 10/10 server-side terminals and left zero active
 generations with exact teardown. The native/renderer contract is exact-head
 public-test green rather than part of the private client run. Hosted head
 `69215c43...` passed all 12 required checks, and PR #177 merged the vertical as
-`e397af8b...`. Student/Curator/Analyst/Coordinator/Auditor product exposure and
-the capacity/operations layers remain open.
+`e397af8b...`. Exact executable `778a7545...` now privately qualifies an
+unmerged Student product candidate with authenticated question jobs,
+native-owned bearer/response validation, and a source-bound renderer action
+beside permission-safe Librarian evidence. Its private gate proves the
+authenticated server boundary, not a live native/renderer round trip. Hosted
+review and merge remain pending. Curator/Analyst/Coordinator/Auditor product
+exposure and the capacity/operations layers remain open.
 Phase 7
 implements provider-neutral
 OIDC verification with Entra policy, fail-closed authentication, tenant-scoped
@@ -1112,9 +1117,28 @@ swaps, substitutes, or reduces a model. Exact head `428d6e48...` returned
 `f597cca7...`: all eight owners completed, the unchanged warm profile and broker
 held, PostgreSQL restart/cross-owner/durable audits were exact, and six-part
 teardown completed. Hosted-green head `b03c6e79...` then passed all 12 checks
-and PR #166 merged the internal core as `2254605e...`. Product exposure remains
-open. See the
+and PR #166 merged the internal core as `2254605e...`. At that merge, product
+exposure remained open. See the
 [public verification record](../evidence/student-learning/VERIFICATION.md).
+
+Exact product successor `778a7545d711bd6e3cd34e900d7d85013bdb1404`
+adds authenticated `POST /v1/student-questions` plus owner-scoped `GET` and
+`DELETE`, native-owned bearer transport and exact question/citation/span
+validation, and one renderer action beside a permission-safe Librarian meeting
+evidence item. The renderer supplies the server-owned active generation and
+source concept identity; the server generates the product request ID and alone
+returns the qualified core's source-cited question. Remote failure leaves local
+recording, transcription, History, playback, and copy controls available.
+
+Its owner-private gate returned
+`student-authenticated-product-server-boundary-qualified` with public-safe
+evidence SHA-256 `c46cf7df...`: 11/11 exact terminals across 8 owners, exact
+bearer/owner isolation, exact product/internal request and audit binding, two
+PostgreSQL restart/read-backs, rapid c4 with the fifth queued, and exact
+teardown. The client path is exact-head public-test green; the private gate is
+not a native-to-renderer run or live enterprise identity exchange. This is a
+qualified unmerged candidate; hosted review and merge remain pending. See the
+[Student product record](../evidence/student-product-vertical/VERIFICATION.md).
 
 The merged PR #158 scheduler and its one-active-slot-per-route qualification
 remain exact historical evidence for that head. The current protected successor

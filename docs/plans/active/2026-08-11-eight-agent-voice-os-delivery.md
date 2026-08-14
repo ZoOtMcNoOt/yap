@@ -9,8 +9,8 @@ merged the internal core as `2254605e...`. Exact route head `dab19fe...`,
 workflow head `7cd24deb...`, and aggregate/public-lock head `7f896b34...`
 privately qualified the Curator/profile-capacity successor. Hosted-green head
 `593e627b...` passed all 12 checks, and PR #168 merged it as `284ab96b...`.
-Student/Curator product integration and simultaneous-capacity evidence remain
-open. Hosted head `7505247e...` merged Librarian through PR #169 as
+Student/Curator product integration and simultaneous-capacity evidence were
+still open at that point. Hosted head `7505247e...` merged Librarian through PR #169 as
 `d7a7e003...`. Exact executable `0665c486...` privately qualified Analyst; lock-
 only `8fee7a5c...` publishes the matching batch-invariant route lock. Hosted head
 `da1127f8...` merged Analyst through PR #170 as `52c45d22...`. Exact
@@ -24,11 +24,14 @@ merged its HTTP/native/Knowledge product surface as `98af78c9...`. Exact
 `a2e9b551...` privately qualified Archivist's authenticated staging boundary
 with 10/10 exact server-side terminals, zero activation, and exact teardown.
 Hosted head `69215c43...` passed all 12 checks and PR #177 merged the vertical as
-`e397af8b...`. Every Student/Curator/Analyst/Coordinator/Auditor product surface
-remains open.
+`e397af8b...`. Exact `778a7545...` privately qualified an unmerged Student
+product candidate with 11/11 exact server-side terminals. Curator, Analyst,
+Coordinator, and Auditor product surfaces remain open.
 
-**Current branch:** `agent/phase10-muse-spark-1-2` investigates the requested
-complex-route model successor from the merged Archivist baseline. [Meta's
+**Current branch:** `agent/phase10-student-product` completes hosted review for
+the exact qualified Student product candidate. The requested Muse Spark 1.2
+complex-route successor remains queued immediately after this product merge.
+[Meta's
 August 5 release](https://research.meta.ai/blog/introducing-muse-code-and-muse-spark-1-2)
 offers Muse Spark 1.2 through Meta Model API rather than an admitted local weight
 artifact; no route replacement or qualification is claimed.
@@ -449,7 +452,9 @@ Auditor as `1b255e9a...`, completing the bounded internal roster.
   server boundary, and PR #174 merged its hosted-green native/Knowledge surface.
   Exact `a2e9b551...` qualified the Archivist authenticated server boundary;
   hosted head `69215c43...` passed all 12 checks and PR #177 merged the vertical.
-  Student, Curator, Analyst, Coordinator, and Auditor product surfaces stay open.
+  Exact `778a7545...` privately qualified Student's authenticated product server
+  boundary; hosted review and merge remain pending. Curator, Analyst,
+  Coordinator, and Auditor product surfaces stay open.
 - [ ] Run portable, database, lifecycle, private-model, mixed-route,
   simultaneous-residency, sustained-capacity, security, accessibility, and
   aggregate exact-head gates.

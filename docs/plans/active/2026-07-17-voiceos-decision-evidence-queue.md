@@ -903,7 +903,7 @@ unconfigured.
   with public-safe evidence SHA-256 `f597cca7...`. Exact `0970d74c...` remains
   terminal `deterministic-no-student`. Hosted-green head `b03c6e79...` passed
   all 12 checks and PR #166 merged the internal Student core as `2254605e...`;
-  product exposure remains open. Exact route head `dab19fe...`, workflow head
+  product exposure was still open at that merge. Exact route head `dab19fe...`, workflow head
   `7cd24deb...`, and aggregate/public-lock head `7f896b34...` privately qualified
   the Curator/profile-capacity successor. Hosted-green head `593e627b...` passed
   all 12 checks, and PR #168 merged it as `284ab96b...`. Exact `56b7f5d0...`
@@ -921,7 +921,9 @@ unconfigured.
   `98af78c9...`. Exact `a2e9b551...` privately qualified Archivist's
   authenticated staging boundary with 10/10 exact server-side terminals, zero
   activation, and exact teardown; hosted head `69215c43...` passed all 12 checks
-  and PR #177 merged it as `e397af8b...`. Student, Curator, Analyst,
+  and PR #177 merged it as `e397af8b...`. Exact `778a7545...` privately
+  qualified an unmerged Student product candidate with 11/11 exact server-side
+  terminals; hosted review and merge remain pending. Curator, Analyst,
   Coordinator, and Auditor product surfaces remain open. Proven
   selected-route capacity four/eight is
   not simultaneous-model residency, sustained capacity/SLO, or production

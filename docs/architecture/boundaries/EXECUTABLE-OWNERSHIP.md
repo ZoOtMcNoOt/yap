@@ -1073,7 +1073,20 @@ current prompt/test repair changes protected inputs and is complete-portable-
 test green and privately qualified at exact head `428d6e48...` on the unchanged
 full Qwen rapid profile, with public-safe evidence SHA-256 `f597cca7...`.
 Hosted-green head `b03c6e79...` passed all 12 required checks and PR #166 merged
-the internal core as `2254605e...`. An HTTP/native/UI surface remains open.
+the internal core as `2254605e...`.
+
+Exact product successor `778a7545...` adds `student_question_service.py` and
+`student_product_runtime.py` as the bounded asynchronous product owner,
+`api/student_question_requests.py` as the authenticated HTTP adapter, native
+Rust as bearer/transport/response-validation owner, and the renderer's Student
+workspace as presentation owner. The product wrapper delegates semantic work to
+the unchanged qualified Student core; it creates no second evidence, question,
+citation, proposal, or knowledge authority. Its owner-private gate returned
+`student-authenticated-product-server-boundary-qualified` with 11/11 exact
+terminals and public-safe evidence SHA-256 `c46cf7df...`. This is a privately
+qualified unmerged candidate. Native/renderer behavior is exact-head public-
+test evidence rather than a private client round trip; hosted review and merge
+remain pending.
 
 ### 30. Curator knowledge-proposal core
 

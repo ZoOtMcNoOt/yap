@@ -1,8 +1,9 @@
 # Archivist ingestion verification
 
 **Status:** Focused exact-head implementation, real PostgreSQL verification,
-hosted review, and merge passed; product exposure, Student/Curator integration,
-and the aggregate Phase 10 gate remain pending.
+hosted review, and merge passed. The separate Archivist product vertical later
+merged through PR #177. Student is a privately qualified unmerged product
+candidate; Curator product integration remains pending.
 
 ## Exact candidate
 

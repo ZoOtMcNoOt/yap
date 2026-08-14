@@ -3,7 +3,8 @@
 This record separates inherited merged evidence, focused repair checks, the
 completed and hosted-merged Phase 9 checkpoint gate, historical Phase 10 public
 read-backs, the frozen Librarian, Analyst, Coordinator, and Auditor successors,
-the merged Librarian and Archivist product boundaries. The Curator/profile-
+the merged Librarian and Archivist product boundaries, and the qualified
+unmerged Student product candidate. The Curator/profile-
 capacity successor is privately
 qualified at exact protected heads and has a public-lock/aggregate result.
 Hosted-green head `593e627b...` passed all 12 checks, and PR #168 merged it as
@@ -12,9 +13,11 @@ Hosted-green head `593e627b...` passed all 12 checks, and PR #168 merged it as
 `67d836da...`, and hosted head `937a4129...` merged Auditor through PR #172 as
 `1b255e9a...`. PR #174 later merged Librarian's product vertical. Exact
 `a2e9b551...` qualified Archivist; hosted head `69215c43...` passed all 12 checks
-and PR #177 merged it as `e397af8b...`. Five role product surfaces remain internal-only.
+and PR #177 merged it as `e397af8b...`. Exact `778a7545...` privately qualified
+Student's authenticated product server boundary; hosted review and merge remain
+pending. Four role product surfaces remain internal-only.
 Historical inventories remain labeled at their exact heads. The final section
-records the exact current post-Archivist-merge threshold read-back.
+records the exact current Student-product-successor threshold read-back.
 
 ## Inherited Phase 9 evidence
 
@@ -537,8 +540,8 @@ The frozen pre-merge candidate has the following bounded exact-head evidence:
 - From the repository root,
   `pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ./verification/list-maintainability-threshold-surfaces.ps1 -MinimumLines 250 -Json`
   enumerated 541 tracked regular surfaces: 297 at or above 350 lines and 244
-  from 250 through 349. The separately generated 350-line output is reproduced
-  exactly in [THRESHOLD-DISPOSITION.md](THRESHOLD-DISPOSITION.md).
+  from 250 through 349. That exact 350-line output was the freeze-time appendix;
+  the current [threshold appendix](THRESHOLD-DISPOSITION.md) supersedes it.
 
 The public contracts and admitted exact-head receipts cover the Curator
 explicit-submission workflow,
@@ -653,8 +656,8 @@ format check, exact 336-input candidate admission, focused Coordinator/Rust
 checks, and `git diff --check` were green. Against that executable candidate,
 with this public documentation reconciliation applied, the current 250-line
 inventory enumerates 580 surfaces: 330 at or above 350 lines and 250 from 250
-through 349. The exact 330 path/line/disposition tuples are reproduced in
-[THRESHOLD-DISPOSITION.md](THRESHOLD-DISPOSITION.md).
+through 349. Those exact 330 tuples were the freeze-time appendix; the current
+[threshold appendix](THRESHOLD-DISPOSITION.md) supersedes that historical set.
 
 This record does not product-promote Coordinator. PR #171 merged the internal
 core, while HTTP/native/renderer/UI exposure, autonomous action, simultaneous Qwen/Gemma
@@ -700,9 +703,9 @@ Ruff check, Auditor changed-file format check, exact 333-input candidate
 admission, Cargo format/Clippy/tests, and `git diff --check` were green. Against
 that executable candidate, with this public documentation reconciliation
 applied in the current docs successor, the current 250-line inventory enumerates
-593 surfaces: 339 at or above 350 lines and 254 from 250 through 349. The exact
-339 path/line/disposition tuples are reproduced in
-[THRESHOLD-DISPOSITION.md](THRESHOLD-DISPOSITION.md).
+593 surfaces: 339 at or above 350 lines and 254 from 250 through 349. Those
+exact 339 tuples were the freeze-time appendix; the current
+[threshold appendix](THRESHOLD-DISPOSITION.md) supersedes that historical set.
 
 This record does not product-promote Auditor. Hosted head `937a4129...` passed
 all 12 checks and PR #172 merged the internal core as `1b255e9a...`.
@@ -737,8 +740,8 @@ combined native WDIO 4/4 specs with 15 passes and two declared hardware skips,
 and `git diff --check` were green. Against that executable candidate, with this
 public documentation reconciliation applied, the current 250-line inventory
 enumerates 598 surfaces: 344 at or above 350 lines and 254 from 250 through 349.
-The exact 344 high-band path/line/disposition tuples are reproduced in
-[THRESHOLD-DISPOSITION.md](THRESHOLD-DISPOSITION.md).
+Those exact 344 tuples were the freeze-time appendix; the current
+[threshold appendix](THRESHOLD-DISPOSITION.md) supersedes that historical set.
 
 This record qualifies only the authenticated Librarian HTTP server boundary.
 The native/renderer path was exact-head public-test green but was not part of the
@@ -785,8 +788,8 @@ passed 8/8, and required native WDIO passed 15/15.
 Against that executable successor, with this
 public documentation reconciliation applied, the current 250-line inventory
 enumerates 605 surfaces: 354 at or above 350 lines and 251 from 250 through 349.
-The exact 354 high-band path/line/disposition tuples are reproduced in
-[THRESHOLD-DISPOSITION.md](THRESHOLD-DISPOSITION.md).
+Those exact 354 tuples were the freeze-time appendix; the current
+[threshold appendix](THRESHOLD-DISPOSITION.md) supersedes that historical set.
 
 This record qualifies only the authenticated Archivist HTTP/database/broker
 boundary. Native/renderer behavior is exact-head public-test evidence and was
@@ -798,3 +801,45 @@ SLO, simultaneous Qwen/Gemma residency, enterprise networking, and deployment
 remain open. Owner-private tenants, subjects, source/review bytes, request and
 run identities, database rows, paths, credentials, and individual measurements
 remain outside Git.
+
+## Phase 10 Student product-vertical successor public read-back
+
+Exact executable candidate `778a7545d711bd6e3cd34e900d7d85013bdb1404`
+returned `student-authenticated-product-server-boundary-qualified` with public-
+safe evidence SHA-256
+`c46cf7df12e1038c613a53547a729866d19f10ab69d88d7f2aa75791b2d7b005`.
+The frozen product acceptance-plan SHA-256 is
+`71de1b4f58bf896a1e16a61525311c0669cb1606176b0d45fa75f7e7a47f69ca`;
+the semantic plan SHA-256 is
+`99471659c91618028a3c2e5d58739b8f2635aee1a7d3800c445ac7c855aa6e67`.
+Eight authenticated owners matched all 11 terminals: eight complete, two
+unavailable, one cancelled, and zero failed. The gate proved strict bearer and
+owner isolation, exact product/internal request and result/tool-audit binding,
+server-derived source-cited questions, hidden-only/absent equivalence, two owned
+PostgreSQL restart/read-backs, rapid c4 with a fifth owner queued, worker
+containment, and exact provider/broker/database teardown.
+
+At exact executable `778a7545...`, the focused Student matrix ran 77 tests: 76
+passed and one was an expected skip. The portable server suite ran 1,569 tests:
+1,522 passed and 47 were declared skips. The governed fixed membership ran 173
+tests: 169 passed and four were declared skips. Whole-server Ruff, changed-file
+format checks, desktop 60-file/379-test unit coverage, TypeScript/production
+Vite, desktop Rust 1,243 unit tests (1,232 passed and 11 expected ignored),
+strict Clippy, and `git diff --check` were green. The whole-tree Ruff format
+inventory retains inherited drift outside this slice and is not labeled green.
+
+Against that executable successor, with this public documentation
+reconciliation applied, the current 250-line inventory enumerates 610 surfaces:
+359 at or above 350 lines and 251 from 250 through 349. The exact 359 high-band
+path/line/disposition tuples are reproduced in
+[THRESHOLD-DISPOSITION.md](THRESHOLD-DISPOSITION.md).
+
+This record qualifies only the authenticated Student HTTP/database/broker
+boundary. Native/renderer behavior is exact-head public-test evidence and was
+not a private end-to-end client run. Student creates no proposal or knowledge
+mutation. Hosted review and merge, a live enterprise identity-provider
+exchange, sustained capacity/fairness, production p50/p95/p99 or an SLO,
+simultaneous Qwen/Gemma residency, enterprise networking, deployment, and the
+separate Muse Spark 1.2 decision remain open. Owner-private tenants, subjects,
+source/evidence/question bytes, request and run identities, database rows,
+paths, credentials, and individual measurements remain outside Git.

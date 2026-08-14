@@ -27,6 +27,7 @@ backlog.
 - [Changelog](../CHANGELOG.md)
 - [Librarian product-vertical qualified-candidate verification](evidence/librarian-product-vertical/VERIFICATION.md)
 - [Archivist product-vertical qualified-candidate verification](evidence/archivist-product-vertical/VERIFICATION.md)
+- [Student product-vertical qualified-candidate verification](evidence/student-product-vertical/VERIFICATION.md)
 
 ## Long-term architecture frame
 

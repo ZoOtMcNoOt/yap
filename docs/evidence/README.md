@@ -16,6 +16,7 @@ Current architecture-review evidence:
 - [Librarian permission-safe evidence verification](librarian-permission-safe-evidence/VERIFICATION.md)
 - [Librarian product-vertical verification](librarian-product-vertical/VERIFICATION.md)
 - [Student learning-question verification](student-learning/VERIFICATION.md)
+- [Student product-vertical verification](student-product-vertical/VERIFICATION.md)
 - [Scribe transcript-correction verification](scribe-transcript-correction/VERIFICATION.md)
 - [Governed-knowledge maintainability coverage](governed-knowledge-maintainability/COVERAGE.md)
 - [Governed-knowledge maintainability findings](governed-knowledge-maintainability/FINDINGS.md)

@@ -8,7 +8,7 @@ Phases 1–9 and the post-phase architecture checkpoints are merged. Phase 10 ha
 also merged the Rust-owned supervised-provider lifecycle, immutable Qwen/Gemma
 profiles, bounded already-warm admission, Scribe transcript correction, the
 no-LLM Archivist core, and the internal Student learning-question core through
-PR #166. Student has no HTTP, native, or renderer surface. Hosted-green head
+PR #166. Hosted-green head
 `593e627b...` passed all 12 required checks, and PR #168 merged the qualified
 profile-capacity successor and explicit-submission-only Curator internal core as
 `284ab96b...`. PR #169 then merged the privately qualified no-LLM Librarian
@@ -34,10 +34,13 @@ request, activated zero generations, and completed exact teardown. Hosted head
 `69215c43...` passed all 12 required checks, and PR #177 merged the vertical as
 `e397af8b...`. Native cancellation and quit cleanup now retain ownership through
 an exact terminal
-request/source identity before releasing the connection lease.
-Production identity, simultaneous full-profile residency, sustained capacity,
-enterprise deployment, and the remaining five role product surfaces
-stay explicitly gated.
+request/source identity before releasing the connection lease. Exact executable
+`778a7545...` now privately qualifies an unmerged Student product candidate:
+authenticated question jobs, native-owned bearer and response validation, and
+a source-bound learning-question action beside permission-safe Librarian
+evidence. Hosted review and merge remain pending. Production identity,
+simultaneous full-profile residency, sustained capacity, enterprise deployment,
+and the remaining four unqualified role product surfaces stay explicitly gated.
 
 Start with [current status](docs/CURRENT-STATUS.md). It states what executes,
 what is verified, what is still absent, and what happens next.
@@ -71,11 +74,13 @@ what is verified, what is still absent, and what happens next.
   either ASR provider.
 - The merged team agent plane uses hash-locked Qwen rapid-automation and Gemma
   complex-orchestration vLLM routes with no cross-route fallback. Scribe is the
-  only current desktop-facing LLM workflow, and Librarian owns the merged
+  only merged desktop-facing LLM workflow, and Librarian owns the merged
   Knowledge workspace. Archivist adds no model call: it
   resolves a completed server-batch recording natively and asks the authenticated
-  server to stage its reviewed transcript without activating knowledge. Student,
-  Curator, Analyst, Coordinator, and Auditor remain internal-only. The qualified
+  server to stage its reviewed transcript without activating knowledge. The
+  current Student candidate adds authenticated question jobs and a source-bound
+  learning-question action, but it is not merged; Curator, Analyst, Coordinator,
+  and Auditor remain internal-only. The qualified
   profile-capacity successor admits four rapid or eight complex active distinct
   owners on the selected already-warm route, while preserving one active request
   per owner. Analyst's three exact synchronized repeats establish same-warm-
@@ -93,7 +98,7 @@ what is verified, what is still absent, and what happens next.
 WSS/live server transcription, general media conversion, production
 authentication, persistent multi-user service, enterprise DNS/certificates/
 firewall/ZPA, promoted diarization, simultaneous full-profile residency,
-sustained capacity/SLOs, and the remaining five agent product
+sustained capacity/SLOs, the unmerged Student candidate, and the remaining four agent product
 surfaces are later gates—not hidden current capabilities.
 
 ## Repository map

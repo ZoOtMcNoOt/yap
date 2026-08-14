@@ -102,8 +102,9 @@ This candidate does **not** prove:
 - enterprise deployment or production operation;
 - sustained throughput, p95/p99, simultaneous Qwen/Gemma residency, or a
   production SLO; or
-- product exposure for Archivist, Student, Curator, Analyst, Coordinator, or
-  Auditor.
+- any other role's product exposure. Archivist has separate merged evidence;
+  Student has a separate privately qualified unmerged candidate; Curator,
+  Analyst, Coordinator, and Auditor remain unexposed.
 
 No private DSN, tenant or subject identity, query, evidence text, database row,
 raw latency array, host path, credential, prompt, or model output belongs in

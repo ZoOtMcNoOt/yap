@@ -3,6 +3,23 @@
 This changelog records product/architecture milestones. Exact test counts and
 immutable evidence belong in phase/checkpoint evidence records.
 
+## Unreleased — Student product candidate qualified
+
+- Exact executable `778a7545...` privately qualified the authenticated Student
+  product server boundary with public-safe evidence SHA-256 `c46cf7df...`:
+  11/11 exact terminals across 8 owners, including 8 complete, 2 unavailable,
+  1 cancelled, and 0 failed requests, plus exact authorization, owner isolation,
+  audit, restart, rapid-c4 overflow, containment, and teardown boundaries.
+- The candidate adds authenticated Student question endpoints, native-owned
+  bearer transport and response/citation/span validation, and one source-bound
+  learning-question action beside permission-safe Librarian meeting evidence.
+  It writes no proposal or knowledge mutation and does not launch, swap, or
+  reduce the unchanged full Qwen rapid route.
+- This is an unmerged product candidate. Its private gate is a server-boundary
+  run, not a live native-to-renderer or enterprise identity-provider run. Hosted
+  review, merge, simultaneous residency, sustained capacity/SLO, deployment,
+  and the separate Muse Spark 1.2 decision remain pending.
+
 ## 2026-08-14 — Archivist product vertical merged
 
 - Exact executable `a2e9b551...` adds authenticated asynchronous Archivist
