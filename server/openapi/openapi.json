@@ -697,6 +697,138 @@
         }
       }
     },
+    "/v1/analyst-answers": {
+      "post": {
+        "tags": [
+          "agents"
+        ],
+        "summary": "Submit one permission-safe cited question",
+        "description": "Starts one owner-bound Analyst request. The server obtains current Librarian evidence, admits one complex-route model lease only after the evidence read completes, and derives the answer and citations from that server-owned evidence. The request carries no tenant, subject, route, provider, evidence, or citation authority.",
+        "operationId": "submitAnalystAnswer",
+        "x-yap-runtime-status": "Implemented only when the authenticated warm Analyst runtime verifies",
+        "x-yap-runtime-owner": "Analyst extractive cited answers",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalystRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "The owner-bound cited-answer request was accepted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalystAnswerJobView"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          }
+        }
+      }
+    },
+    "/v1/analyst-answers/{requestId}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/AnalystAnswerRequestId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "agents"
+        ],
+        "summary": "Read one owner-bound cited-answer request",
+        "operationId": "getAnalystAnswer",
+        "x-yap-runtime-status": "Implemented only when the authenticated warm Analyst runtime verifies",
+        "x-yap-runtime-owner": "Analyst extractive cited answers",
+        "responses": {
+          "200": {
+            "description": "The current bounded cited-answer lifecycle projection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalystAnswerJobView"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/AuthenticationUnavailableResponse"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "agents"
+        ],
+        "summary": "Request cancellation of one owner-bound cited answer",
+        "description": "Signals in-flight evidence and model work and returns its cancellation-requested projection; status polling observes terminal acknowledgement.",
+        "operationId": "cancelAnalystAnswer",
+        "x-yap-runtime-status": "Implemented only when the authenticated warm Analyst runtime verifies",
+        "x-yap-runtime-owner": "Analyst extractive cited answers",
+        "responses": {
+          "202": {
+            "description": "Cancellation was requested for the owned cited-answer request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalystAnswerJobView"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          }
+        }
+      }
+    },
     "/v1/student-questions": {
       "post": {
         "tags": [
@@ -1849,6 +1981,18 @@
           "pattern": "^librarian-query-[0-9a-f]{32}$"
         }
       },
+      "AnalystAnswerRequestId": {
+        "name": "requestId",
+        "in": "path",
+        "required": true,
+        "description": "Opaque Analyst product request identity scoped to the authenticated owner.",
+        "schema": {
+          "type": "string",
+          "minLength": 47,
+          "maxLength": 47,
+          "pattern": "^analyst-answer-[0-9a-f]{32}$"
+        }
+      },
       "StudentQuestionRequestId": {
         "name": "requestId",
         "in": "path",
@@ -2272,6 +2416,121 @@
           },
           "evidencePack": {
             "$ref": "#/components/schemas/LibrarianEvidencePack"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+          }
+        }
+      },
+      "AnalystRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "question",
+          "maximumResults",
+          "expectedGenerationSha256"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "question": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "maximumResults": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "expectedGenerationSha256": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      },
+      "AnalystAnswer": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "answer",
+          "citations",
+          "answerSha256",
+          "citationSha256",
+          "evidenceSha256"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "answer": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2008
+          },
+          "citations": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 5,
+            "items": {
+              "$ref": "#/components/schemas/LibrarianEvidenceItem"
+            }
+          },
+          "answerSha256": {
+            "$ref": "#/components/schemas/Sha256"
+          },
+          "citationSha256": {
+            "$ref": "#/components/schemas/Sha256"
+          },
+          "evidenceSha256": {
+            "$ref": "#/components/schemas/Sha256"
+          }
+        }
+      },
+      "AnalystAnswerJobView": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "requestId",
+          "status"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "requestId": {
+            "type": "string",
+            "minLength": 47,
+            "maxLength": 47,
+            "pattern": "^analyst-answer-[0-9a-f]{32}$"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "cancellation-requested",
+              "complete",
+              "evidence-unavailable",
+              "cancelled",
+              "failed"
+            ]
+          },
+          "citedAnswer": {
+            "$ref": "#/components/schemas/AnalystAnswer"
           },
           "reason": {
             "type": "string",
@@ -5405,7 +5664,8 @@
           "librarianQueries",
           "studentQuestions",
           "archivistIngestions",
-          "curatorProposals"
+          "curatorProposals",
+          "analystAnswers"
         ],
         "properties": {
           "batchJobs": {
@@ -5439,6 +5699,10 @@
           "curatorProposals": {
             "type": "boolean",
             "description": "True only when authenticated noncanonical Curator knowledge proposals are configured."
+          },
+          "analystAnswers": {
+            "type": "boolean",
+            "description": "True only when authenticated source-cited Analyst answers are configured."
           }
         }
       },

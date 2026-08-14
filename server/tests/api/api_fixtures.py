@@ -75,6 +75,7 @@ class HealthServerTestCase(unittest.TestCase):
     student_question_service: object | None = None
     archivist_ingestion_service: object | None = None
     curator_proposal_service: object | None = None
+    analyst_answer_service: object | None = None
     lid_preflight_service: object | None = None
     transcript_correction_service: object | None = None
     request_authenticator: object | None = None
@@ -94,6 +95,7 @@ class HealthServerTestCase(unittest.TestCase):
             student_question_service=self.student_question_service,
             archivist_ingestion_service=self.archivist_ingestion_service,
             curator_proposal_service=self.curator_proposal_service,
+            analyst_answer_service=self.analyst_answer_service,
             lid_preflight_service=self.lid_preflight_service,
             transcript_correction_service=self.transcript_correction_service,
             request_authenticator=self.request_authenticator,
@@ -105,6 +107,7 @@ class HealthServerTestCase(unittest.TestCase):
             and self.student_question_service is None
             and self.archivist_ingestion_service is None
             and self.curator_proposal_service is None
+            and self.analyst_answer_service is None
             and self.transcript_correction_service is None
         ):
             self.assertNotIsInstance(self.server, ThreadingHTTPServer)

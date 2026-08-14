@@ -15,6 +15,7 @@ _HEALTH_VIEW = HealthView(
         student_questions=False,
         archivist_ingestions=False,
         curator_proposals=False,
+        analyst_answers=False,
     ),
 )
 
@@ -28,6 +29,7 @@ def health(
     student_questions: bool = False,
     archivist_ingestions: bool = False,
     curator_proposals: bool = False,
+    analyst_answers: bool = False,
 ) -> dict[str, object]:
     if (
         not batch_jobs
@@ -37,6 +39,7 @@ def health(
         and not student_questions
         and not archivist_ingestions
         and not curator_proposals
+        and not analyst_answers
     ):
         return _HEALTH_VIEW.to_wire()
     return HealthView(
@@ -53,5 +56,6 @@ def health(
             student_questions=student_questions,
             archivist_ingestions=archivist_ingestions,
             curator_proposals=curator_proposals,
+            analyst_answers=analyst_answers,
         ),
     ).to_wire()

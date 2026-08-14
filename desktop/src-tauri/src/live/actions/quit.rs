@@ -338,6 +338,12 @@ fn finalize_owned_work_before_quit(app: &tauri::AppHandle) -> Result<(), String>
             "knowledge query shutdown cancellation was incomplete: {error}"
         ));
     }
+    let analyst_owner = app.state::<crate::analyst_answer::AnalystAnswerOwner>();
+    if let Err(error) = cancel_analyst_answers_before_quit(&analyst_owner) {
+        crate::diagnostics::log(&format!(
+            "cited-answer shutdown cancellation was incomplete: {error}"
+        ));
+    }
     let student_owner = app.state::<crate::student_question::StudentQuestionOwner>();
     if let Err(error) = cancel_student_questions_before_quit(&student_owner) {
         crate::diagnostics::log(&format!(
@@ -379,6 +385,18 @@ pub(super) fn cancel_librarian_queries_before_quit(
             .await
             .map_err(|_| {
                 "knowledge query shutdown cancellation exceeded its bounded wait".to_string()
+            })?
+    })
+}
+
+pub(super) fn cancel_analyst_answers_before_quit(
+    owner: &crate::analyst_answer::AnalystAnswerOwner,
+) -> Result<usize, String> {
+    tauri::async_runtime::block_on(async {
+        tokio::time::timeout(Duration::from_secs(5), owner.cancel_active_requests())
+            .await
+            .map_err(|_| {
+                "cited-answer shutdown cancellation exceeded its bounded wait".to_string()
             })?
     })
 }

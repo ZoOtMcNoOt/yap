@@ -309,7 +309,10 @@ describe("Yap desktop shell", () => {
     expect(await $("button=Search knowledge").isEnabled()).toBe(false);
 
     const bodyText = await $("body").getText();
-    expect(bodyText).toContain("Find reviewed evidence");
+    expect(bodyText).toContain("Ask or find reviewed knowledge");
+    expect(bodyText).toContain(
+      "Cited answers need your connected organization server with Analyst enabled.",
+    );
     expect(bodyText).toContain(
       "Knowledge search needs your connected organization server with Librarian enabled.",
     );
@@ -431,6 +434,7 @@ describe("Yap desktop shell", () => {
       expect(connection.state).toBe("ready");
       expect(connection.capabilities).toEqual({
         archivistIngestions: false,
+        analystAnswers: false,
         curatorProposals: false,
         studentQuestions: false,
         batchJobs: false,

@@ -9,7 +9,9 @@ the Curator product vertical. Its owner-private ARM64 gate returned
 `curator-authenticated-product-server-boundary-qualified` with public-safe
 evidence SHA-256
 `328f6640ff945db4ecf224d58861e0c893dcd2f05d2b8ecc70364fb1b1368036`.
-The candidate remains unmerged and still requires unchanged-head hosted review.
+Hosted head `b983adb707dffe693de3a9fef8611c3c52fc371a` passed all 12 required
+checks, and PR #179 merged the product vertical as
+`70303872261667da17becfd06f985bc8cda960bc` on 2026-08-14.
 
 The frozen product acceptance plan is
 `server/curator-product-acceptance.json`, SHA-256
@@ -110,11 +112,11 @@ database row, DSN, host path, individual timing, or private evidence artifact is
 committed. Git records only the exact checked head, public-safe evidence and
 acceptance hashes, aggregate counts, booleans, and bounded outcome.
 
-This exact-head result qualifies the authenticated Curator server boundary; it
+This exact-head result qualifies the authenticated Curator server boundary; the
+unchanged candidate later passed hosted review and merged through PR #179. It
 does not qualify a native/renderer round trip, live enterprise identity-provider
-exchange, hosted review, merge, production deployment, simultaneous Qwen/Gemma
+exchange, production deployment, simultaneous Qwen/Gemma
 residency, sustained capacity, or a p95/p99 SLO. Gemma remains the qualified
-private complex route. Muse Spark is a separate post-merge evaluation and cannot
-replace it until an official deployable version, license/terms, organization
-identity and data-transfer boundary, and exact tool-calling/runtime contract are
-approved and qualified.
+private complex route. Muse Spark 1.2 remains a future hosted-provider watch
+item, not a local-route replacement, because Meta has not published deployable
+open weights for this boundary.

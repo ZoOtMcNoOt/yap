@@ -3,8 +3,8 @@
 This record separates inherited merged evidence, focused repair checks, the
 completed and hosted-merged Phase 9 checkpoint gate, historical Phase 10 public
 read-backs, the frozen Librarian, Analyst, Coordinator, and Auditor successors,
-the merged Librarian, Archivist, and Student product boundaries, and the
-privately qualified unmerged Curator product successor. The Curator/profile-
+the merged Librarian, Archivist, Student, and Curator product boundaries, and
+the privately qualified unmerged Analyst product successor. The Curator/profile-
 capacity core successor is privately
 qualified at exact protected heads and has a public-lock/aggregate result.
 Hosted-green head `593e627b...` passed all 12 checks, and PR #168 merged it as
@@ -16,11 +16,14 @@ Hosted-green head `593e627b...` passed all 12 checks, and PR #168 merged it as
 and PR #177 merged it as `e397af8b...`. Exact `778a7545...` privately qualified
 Student's authenticated product server boundary; hosted head `53ce570b...`
 passed all 12 checks and PR #178 merged it as `6546970b...`. Exact
-`6aa33e4d...` privately qualifies the Curator product server boundary with
-public-safe evidence SHA-256 `328f6640...`; its hosted merge remains pending,
-and Analyst, Coordinator, and Auditor product surfaces remain internal-only.
+`6aa33e4d...` privately qualified the Curator product server boundary with
+public-safe evidence SHA-256 `328f6640...`; hosted head `b983adb7...` passed all
+12 checks and PR #179 merged it as `70303872...`. Exact `78b2c638...` privately
+qualifies Analyst's product server boundary with public-safe evidence SHA-256
+`f26adfc0...`; its hosted merge remains pending, and Coordinator/Auditor product
+surfaces remain internal-only.
 Historical inventories remain labeled at their exact heads. The final section
-records the exact current Curator-product-successor threshold read-back.
+records the exact current Analyst-product-successor threshold read-back.
 
 ## Inherited Phase 9 evidence
 
@@ -858,9 +861,10 @@ question. The owner-private ARM64 exact-head gate matched 10/10 terminals across
 8 owners and returned `curator-authenticated-product-server-boundary-qualified`
 with public-safe evidence SHA-256 `328f6640...`. It observed exact owner
 isolation, unchanged source truth, two PostgreSQL restart/read-backs,
-complex-c8/ninth-owner-queued containment, and complete teardown. The product
-candidate remains unmerged and no hosted-success claim is made; native/renderer
-and live enterprise identity-provider round trips were not privately executed.
+complex-c8/ninth-owner-queued containment, and complete teardown. Hosted head
+`b983adb7...` passed all 12 checks, and PR #179 merged the product vertical as
+`70303872...`; native/renderer and live enterprise identity-provider round trips
+were not privately executed.
 
 The focused server/API/runtime/Curator matrix ran 78 tests with zero failures;
 the focused product-gate contract ran 7 tests with zero failures. The full
@@ -878,9 +882,9 @@ The frozen Curator product acceptance-plan SHA-256 is
 The underlying Curator acceptance and synthetic corpus SHA-256 values remain
 `74f53d7aa45bbc8ba3ee0339235edac792b86323719d3c42e11b26793a089696`
 and `28bfadfbabe50c89dc8cac53a440d0ce7ba30d428682b98154cef63a59dfde1b`.
-Against the qualified successor and this documentation reconciliation, the current
-250-line inventory enumerates 615 surfaces: 364 at or above 350 lines and 251
-from 250 through 349. The exact 364 high-band tuples are reproduced in
+Against the qualified successor and its documentation reconciliation, the
+historical 250-line inventory enumerated 615 surfaces: 364 at or above 350 lines
+and 251 from 250 through 349. The current high-band tuples are reproduced in
 [THRESHOLD-DISPOSITION.md](THRESHOLD-DISPOSITION.md).
 
 This public read-back records the exact-head authenticated server qualification;
@@ -888,7 +892,50 @@ it does not execute the native or renderer surface against a private server,
 activate or mutate canonical knowledge, prove simultaneous model residency,
 establish sustained capacity or an SLO, approve enterprise deployment, or
 replace the qualified Gemma complex route. The separate Muse evaluation remains
-a post-merge model/runtime decision
-and cannot inherit Curator or route evidence. Owner-private tenants, subjects,
+a future hosted-provider watch item because no deployable open weights are
+published for the local route; it cannot inherit Curator or route evidence.
+Owner-private tenants, subjects,
 request/run identities, proposal/evidence bytes, database rows, paths,
 credentials, model output, and individual measurements remain outside Git.
+
+## Phase 10 Analyst product-vertical successor public read-back
+
+Exact executable successor `78b2c638ac3ce5a96cc6b3c42bb8fb302667b517`
+returned `analyst-authenticated-product-server-boundary-qualified` with public-
+safe evidence SHA-256
+`f26adfc034cdc99d667f1a99ca54daf92dc9d885456104f17787cdf2cc96fa44`.
+The frozen product acceptance-plan SHA-256 is
+`466185d7d30928fade2c70855b85eb405978fe729503ace58caec89dd00ac6ee`;
+the qualified Analyst semantic plan and corpus remain
+`559d9a988d6e79ef5847015fed4443fbe79449bc1d010ce7fa580d84476d4b45`
+and `275f8d889dd1d5aae6f981081c24f80cb74860bdf7f784313d8b327b2c254011`.
+Eight authenticated owners matched all 10 product terminals: four complete,
+five unavailable, zero failed, and one cancelled. All four returned answers and
+their citations matched the independent compiler-bound oracle. Authentication,
+owner isolation, hidden-only/absent equivalence, HTTP cancellation, exact
+Analyst/Librarian/tool audits, two PostgreSQL restart/read-backs, zero proposal
+writes, complex c8/ninth-owner-queued containment, worker containment, and
+complete teardown passed.
+
+At exact executable `78b2c638...`, the portable server suite ran 1,603 tests:
+1,556 passed and 47 were declared skips. The governed fixed membership ran 173
+tests: 169 passed and four were declared skips. The focused Analyst matrix ran
+69 tests: 67 passed and two real-PostgreSQL tests were declared skips. Whole-
+server Ruff, desktop 62-file/387-test unit coverage, production TypeScript/Vite,
+desktop Rust formatting and strict Clippy, 1,258 passed main-unit tests with 11
+expected ignored, 27 integration tests, and `git diff --check` were green.
+
+Against executable candidate `78b2c638...`, with this public documentation
+reconciliation applied in the current docs successor, the complete 250-line
+inventory enumerates 620 surfaces: 369 at or above 350 lines and 251 from 250
+through 349. The exact 369 high-band path/line/disposition tuples are reproduced
+in [THRESHOLD-DISPOSITION.md](THRESHOLD-DISPOSITION.md).
+
+This record qualifies only the authenticated Analyst HTTP/database/broker
+boundary. Native/renderer behavior is exact-head public-test evidence and was
+not a private end-to-end client run. The candidate remains unmerged pending
+hosted review. No evidence here proves simultaneous Qwen/Gemma residency,
+sustained capacity/fairness, a production p50/p95/p99 or SLO, live enterprise
+identity integration, or deployment. Owner-private tenants, subjects,
+questions, evidence, answers, citations, model output, database rows, paths,
+credentials, and individual measurements remain outside Git.

@@ -88,6 +88,7 @@ describe("client workflow projections", () => {
         jobStatus: false,
         transcriptCorrection: false,
         librarianQueries: false,
+        analystAnswers: false,
         archivistIngestions: false,
         studentQuestions: false,
         curatorProposals: false,

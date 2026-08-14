@@ -35,6 +35,7 @@ class RequestLoggingTests(HealthServerTestCase):
                 "studentQuestions": False,
                 "archivistIngestions": False,
                 "curatorProposals": False,
+                "analystAnswers": False,
             },
         }
         self.assertEqual(status, 200)

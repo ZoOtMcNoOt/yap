@@ -11,6 +11,7 @@
     "librarianQueries": false,
     "studentQuestions": false,
     "archivistIngestions": false,
-    "curatorProposals": false
+    "curatorProposals": false,
+    "analystAnswers": false
   }
 }

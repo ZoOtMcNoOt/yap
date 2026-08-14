@@ -53,13 +53,20 @@ authenticated product boundary; hosted head `53ce570b...` passed all 12 checks,
 and PR #178 merged the HTTP/native/renderer vertical as `6546970b...`. Its
 private gate covers the authenticated server boundary, not a live native/
 renderer round trip or enterprise identity exchange. Exact executable
-`6aa33e4d...` privately qualified the current Curator successor's explicit
+`6aa33e4d...` privately qualified Curator's explicit
 reviewed-proposal HTTP jobs, native-owned bearer and lifecycle handling, and
 source-bound review action after a completed Student question. Its 10/10 exact
-server terminals returned public-safe evidence SHA-256 `328f6640...`; the
-candidate remains unmerged and its private gate did not execute a native/
-renderer round trip or live enterprise identity exchange. Analyst, Coordinator,
-and Auditor still have no HTTP, native, renderer, or desktop product surface.
+server terminals returned public-safe evidence SHA-256 `328f6640...`. Hosted
+head `b983adb7...` passed all 12 checks, and PR #179 merged that product vertical
+as `70303872...`; its private gate did not execute a native/renderer round trip
+or live enterprise identity exchange. Exact `78b2c638...` now privately
+qualifies Analyst's authenticated cited-answer server boundary: 10/10 exact
+product terminals, 4 exact server-derived cited answers, strict owner isolation,
+two PostgreSQL restart/read-backs, fail-closed cancellation, and exact teardown.
+The native/renderer Analyst successor is public-test green but remains unmerged;
+its private gate likewise does not claim a client round trip or live enterprise
+identity exchange. Coordinator and Auditor still have no HTTP, native, renderer,
+or desktop product surface.
 
 This is not live-only dictation or a Wispr Flow clone. Batch recordings remain the target core loop once the trusted server route exists; live capture is the implemented compact, explicit companion path.
 

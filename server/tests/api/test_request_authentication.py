@@ -74,6 +74,7 @@ class RequestAuthenticationTests(HealthServerTestCase):
                 "studentQuestions": False,
                 "archivistIngestions": False,
                 "curatorProposals": False,
+                "analystAnswers": False,
             },
         )
         self.assertEqual(self.authenticator.headers, [])

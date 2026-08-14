@@ -4,6 +4,7 @@ import { Repeat } from "@phosphor-icons/react/Repeat";
 import { XCircle } from "@phosphor-icons/react/XCircle";
 import { useEffect, useState } from "react";
 
+import { AnalystAnswerComposer } from "@/components/analyst/analyst-answer-composer";
 import { LibrarianEvidenceResults } from "@/components/librarian/librarian-evidence-results";
 import { useLibrarianQuery } from "@/components/librarian/use-librarian-query";
 import { StudentQuestionComposer } from "@/components/student/student-question-composer";
@@ -15,10 +16,12 @@ import { Spinner } from "@/components/ui/spinner";
 import type { LibrarianEvidenceItem } from "@/librarian";
 
 export function LibrarianPanel({
+  analystAvailable = false,
   available,
   curatorAvailable = false,
   studentAvailable = false,
 }: {
+  analystAvailable?: boolean;
   available: boolean;
   curatorAvailable?: boolean;
   studentAvailable?: boolean;
@@ -43,10 +46,10 @@ export function LibrarianPanel({
           <Books data-icon="inline-start" />
           Organization knowledge
         </Badge>
-        <CardTitle className="mt-3 text-2xl">Find reviewed evidence</CardTitle>
+        <CardTitle className="mt-3 text-2xl">Ask or find reviewed knowledge</CardTitle>
         <CardDescription className="max-w-3xl leading-6">
-          Search only the knowledge your organization currently authorizes. Yap returns source
-          excerpts, not a generated answer, and does not reveal whether hidden matches exist.
+          Ask for an extractive cited answer or search the knowledge your organization currently
+          authorizes. Hidden matches are never revealed.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-5 p-4 sm:p-5">
@@ -58,6 +61,15 @@ export function LibrarianPanel({
             </AlertDescription>
           </Alert>
         ) : null}
+
+        <AnalystAnswerComposer available={analystAvailable} />
+
+        <div className="border-t border-border/60 pt-5">
+          <h3 className="text-base font-semibold">Search exact source excerpts</h3>
+          <p className="mt-1 text-sm leading-6 text-muted-foreground">
+            Librarian returns permission-safe source text without generating an answer.
+          </p>
+        </div>
 
         <form
           className="grid gap-3"

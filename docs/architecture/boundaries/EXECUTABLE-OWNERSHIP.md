@@ -1093,10 +1093,10 @@ vertical as `6546970b...`.
 - **Status:** privately qualified internal core at exact head `7cd24deb...` with
   public-safe evidence SHA-256 `b60df1e2...`; hosted-green head `593e627b...`
   passed all 12 checks, and PR #168 merged it as `284ab96b...`. Exact
-  `6aa33e4d...` privately qualifies the current HTTP/native/renderer product
-  candidate's authenticated server boundary with public-safe evidence SHA-256
-  `328f6640...`; unchanged-head hosted review and merge remain pending. No
-  active-knowledge or production promotion exists.
+  `6aa33e4d...` privately qualified the HTTP/native/renderer product boundary
+  with public-safe evidence SHA-256 `328f6640...`; hosted head `b983adb7...`
+  passed all 12 checks, and PR #179 merged it as `70303872...`. No active-
+  knowledge or production promotion exists.
 - **Entry point:** `yap_server/agents/curator_service.py` owns an internal
   complex-route workflow for only `explicit-proposal` and
   `reviewed-student-answer` submissions.
@@ -1134,8 +1134,9 @@ Curator core and introduces no second evidence, proposal, citation, or
 activation authority. Exact product head `6aa33e4d...` matched 10/10 server
 terminals, preserved source truth, read back durable state across two PostgreSQL
 restarts, contained complex c8 plus a queued ninth owner, and completed exact
-teardown. It remains an unmerged candidate, and the private receipt does not
-qualify native/renderer or live enterprise identity exchange. See
+teardown. Hosted head `b983adb7...` passed all 12 checks and PR #179 merged the
+vertical as `70303872...`; the private receipt does not qualify native/renderer
+or live enterprise identity exchange. See
 the [Curator product record](../../evidence/curator-product-vertical/VERIFICATION.md).
 
 ### 31. Librarian permission-safe evidence core
@@ -1174,7 +1175,9 @@ See the [Librarian verification record](../../evidence/librarian-permission-safe
 - **Status:** privately qualified merged internal core. Exact executable head
   `0665c486...` supplied qualification; lock-only `8fee7a5c...` publishes the
   matching route lock; hosted head `da1127f8...` merged through PR #170 as
-  `52c45d22...`. All product surfaces remain pending.
+  `52c45d22...`. Exact `78b2c638...` privately qualifies the authenticated
+  product server boundary with public-safe evidence SHA-256 `f26adfc0...`; the
+  native/renderer successor remains unmerged pending hosted review.
 - **Entry point:** `yap_server/agents/analyst_service.py` owns one bounded
   authenticated interactive complex-route request composed through
   `analyst_runtime.py`.
@@ -1192,12 +1195,23 @@ See the [Librarian verification record](../../evidence/librarian-permission-safe
 - **Duplicate owner:** none. Librarian owns retrieval; the verifier owns current
   authorization; `AnalystService` owns workflow termination; the Analyst result-
   audit ledger owns durable outcome identity; the broker owns admission.
+- **Product composition:** `analyst_answer_service.py` and
+  `analyst_product_runtime.py` own bounded asynchronous product jobs;
+  `api/analyst_answer_requests.py` is the authenticated HTTP adapter. Native
+  `analyst_answer.rs` and `server_connector/analyst.rs` own credentials,
+  request lifecycle, exact citation/result validation, cancellation, and quit
+  containment. React receives only validated product state and never a bearer
+  token or internal request/evidence hashes.
 
 Three synchronized repeat waves matched 24 of 24 normal invocations, all 29
 terminals matched, and 12 answers contained 15 server-owned citations. Exact
 `63c3d9fd...` remains terminal no-receipt evidence from the superseded schedule-
 sensitive runtime and is not reused. See the
 [Analyst verification record](../../evidence/analyst-grounded-cited-answers/VERIFICATION.md).
+The separate 10-request product gate matched 4 complete, 5 unavailable, and 1
+cancelled terminal with exact answers/citations, owner isolation, two database
+restart/read-backs, complex capacity containment, and teardown. See the
+[Analyst product record](../../evidence/analyst-product-vertical/VERIFICATION.md).
 
 ### 33. Coordinator source-cited proposal-bundle core
 

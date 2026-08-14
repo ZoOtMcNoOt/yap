@@ -26,24 +26,29 @@ with 10/10 exact server-side terminals, zero activation, and exact teardown.
 Hosted head `69215c43...` passed all 12 checks and PR #177 merged the vertical as
 `e397af8b...`. Exact `778a7545...` privately qualified Student with 11/11 exact
 server-side terminals; hosted head `53ce570b...` passed all 12 checks and PR
-#178 merged it as `6546970b...`. Exact `6aa33e4d...` privately qualifies the
+#178 merged it as `6546970b...`. Exact `6aa33e4d...` privately qualified the
 Curator product server boundary with 10/10 exact terminals and public-safe
-evidence SHA-256 `328f6640...`; Curator hosted merge and Analyst, Coordinator,
-and Auditor product surfaces remain open.
+evidence SHA-256 `328f6640...`; hosted head `b983adb7...` passed all 12 checks
+and PR #179 merged the vertical as `70303872...`. Exact `78b2c638...` now
+privately qualifies Analyst's authenticated product server boundary with 10/10
+exact terminals and public-safe evidence SHA-256 `f26adfc0...`; its hosted merge
+plus Coordinator and Auditor product surfaces remain open.
 
-**Current branch:** `agent/phase10-curator-product` follows the merged Student
-vertical and implements Curator's bounded product surface. Exact
-`6aa33e4d...` passed the fresh clean owner-private ARM64 gate; unchanged-head
-hosted review remains required before merge. The
-requested Muse Spark replacement remains a separate evaluation: the official
-Meta material currently available to this branch documents Muse Spark 1.1 via
-the hosted Meta Model API, not an admitted local/offline 1.2 artifact. No route
-replacement or qualification is claimed.
+**Current branch:** `agent/phase10-analyst-product` follows the merged Curator
+vertical and implements and privately qualifies Analyst's bounded product
+server surface; unchanged-head hosted review/merge remains. The requested Muse
+replacement decision is closed for this slice: Meta's official
+[Muse Spark 1.2](https://developer.meta.com/ai/models/muse-spark/) page exposes
+the model through the hosted Meta Model API with a one-million-token context,
+but publishes no open-weight artifact for the organization-owned private DGX
+route. The exact qualified Gemma complex profile therefore remains unchanged;
+Muse Spark 1.2 is recorded as a later hosted-provider candidate rather than a
+local replacement.
 
-**Base:** Student product merge
-`6546970ba3613fe55458b54c334a687cb7ff823e` from PR #178, with executable
-qualification retained at exact `778a7545...` and hosted review at exact
-`53ce570b...`.
+**Base:** Curator product merge
+`70303872261667da17becfd06f985bc8cda960bc` from PR #179, with executable
+qualification retained at exact `6aa33e4d...` and hosted review at exact
+`b983adb7...`.
 
 **Applied decisions:** [ADR 0031](../../adr/0031-eight-agent-voice-os-roster.md),
 [ADR 0030](../../adr/0030-rust-supervised-provider-service-lifecycle.md),
@@ -458,18 +463,21 @@ Auditor as `1b255e9a...`, completing the bounded internal roster.
   hosted head `69215c43...` passed all 12 checks and PR #177 merged the vertical.
   Exact `778a7545...` privately qualified Student's authenticated product server
   boundary; hosted head `53ce570b...` passed all 12 checks and PR #178 merged
-  the vertical as `6546970b...`. Exact `6aa33e4d...` privately qualifies the
-  Curator product server boundary; hosted review/merge and the Analyst,
-  Coordinator, and Auditor product surfaces stay open.
-- [ ] Immediately after the Curator product successor passes hosted review and
-  merges, run a separate Muse replacement decision gate. Require an
+  the vertical as `6546970b...`. Exact `6aa33e4d...` privately qualified the
+  Curator product server boundary; hosted head `b983adb7...` passed all 12
+  checks and PR #179 merged it as `70303872...`. Exact `78b2c638...` privately
+  qualified Analyst's product server boundary with 10/10 exact terminals; its
+  hosted merge plus Coordinator and Auditor product surfaces stay open.
+- [x] Immediately after the Curator product successor passed hosted review and
+  merged, run a separate Muse replacement decision gate. Require an
   exact official deployable version and artifact, acceptable license/terms,
   organization identity and data-transfer approval, local/private runtime
   support, strict one-tool behavior, and full-route lifecycle/capacity plus
-  affected-workflow requalification before replacing Gemma. If only the hosted
-  Muse Spark 1.1 preview is available, retain qualified Gemma and continue the
-  Analyst, Coordinator, and Auditor product plan without blocking on a model
-  name.
+  affected-workflow requalification before replacing Gemma. Official Muse
+  Spark 1.2 is available through the hosted Meta Model API, but its model page
+  publishes no open-weight artifact for the private DGX route. Retain qualified
+  Gemma and continue the Analyst, Coordinator, and Auditor product plan without
+  blocking on the model name; treat Muse as a later hosted-provider evaluation.
 - [ ] Run portable, database, lifecycle, private-model, mixed-route,
   simultaneous-residency, sustained-capacity, security, accessibility, and
   aggregate exact-head gates.

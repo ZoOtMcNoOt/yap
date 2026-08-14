@@ -9,6 +9,10 @@ from yap_server.agents.archivist_runtime import (
     ArchivistRuntime,
     build_archivist_runtime,
 )
+from yap_server.agents.analyst_product_runtime import (
+    AnalystProductRuntime,
+    build_analyst_product_runtime,
+)
 from yap_server.agents.curator_product_runtime import (
     CuratorProductRuntime,
     build_curator_product_runtime,
@@ -48,6 +52,7 @@ _RUNTIME_CLEANUP_TIMEOUT_SECONDS = 30.0
 _ARCHIVIST_RUNTIME_CLEANUP_TIMEOUT_SECONDS = 66.0
 _STUDENT_PRODUCT_RUNTIME_CLEANUP_TIMEOUT_SECONDS = 66.0
 _CURATOR_PRODUCT_RUNTIME_CLEANUP_TIMEOUT_SECONDS = 66.0
+_ANALYST_PRODUCT_RUNTIME_CLEANUP_TIMEOUT_SECONDS = 90.0
 
 
 def _fail_stop_worker_containment() -> None:
@@ -139,6 +144,19 @@ def _close_curator_product_runtime_or_fail_stop(
         _fail_stop_worker_containment()
 
 
+def _close_analyst_product_runtime_or_fail_stop(
+    runtime: AnalystProductRuntime,
+) -> None:
+    try:
+        run_cleanup_before_deadline(
+            runtime.close,
+            timeout_seconds=_ANALYST_PRODUCT_RUNTIME_CLEANUP_TIMEOUT_SECONDS,
+            thread_name="yap-server-analyst-product-cleanup",
+        )
+    except BaseException:
+        _fail_stop_worker_containment()
+
+
 def _close_owned_resources(
     live_transport: PrivateLiveWebSocketServer | None,
     runtime: BatchRuntime | None,
@@ -148,6 +166,7 @@ def _close_owned_resources(
     archivist_runtime: ArchivistRuntime | None = None,
     student_product_runtime: StudentProductRuntime | None = None,
     curator_product_runtime: CuratorProductRuntime | None = None,
+    analyst_product_runtime: AnalystProductRuntime | None = None,
 ) -> BaseException | None:
     cleanup_error: BaseException | None = None
     if live_transport is not None:
@@ -165,6 +184,8 @@ def _close_owned_resources(
         _close_student_product_runtime_or_fail_stop(student_product_runtime)
     if curator_product_runtime is not None:
         _close_curator_product_runtime_or_fail_stop(curator_product_runtime)
+    if analyst_product_runtime is not None:
+        _close_analyst_product_runtime_or_fail_stop(analyst_product_runtime)
     if runtime is not None:
         _close_runtime_or_fail_stop(runtime)
     if authorization_runtime is not None:
@@ -187,6 +208,7 @@ def main() -> None:
     archivist_runtime: ArchivistRuntime | None = None
     student_product_runtime: StudentProductRuntime | None = None
     curator_product_runtime: CuratorProductRuntime | None = None
+    analyst_product_runtime: AnalystProductRuntime | None = None
     authorization_runtime: RequestAuthorizationRuntime | None = None
     live_transport: PrivateLiveWebSocketServer | None = None
     try:
@@ -211,6 +233,10 @@ def main() -> None:
             authenticated_team_mode=settings.authentication.required,
         )
         curator_product_runtime = build_curator_product_runtime(
+            os.environ,
+            authenticated_team_mode=settings.authentication.required,
+        )
+        analyst_product_runtime = build_analyst_product_runtime(
             os.environ,
             authenticated_team_mode=settings.authentication.required,
         )
@@ -251,6 +277,7 @@ def main() -> None:
             archivist_runtime,
             student_product_runtime,
             curator_product_runtime,
+            analyst_product_runtime,
         )
         if cleanup_error is not None:
             raise SystemExit("Yap private server startup cleanup failed.") from None
@@ -267,6 +294,7 @@ def main() -> None:
             archivist_runtime,
             student_product_runtime,
             curator_product_runtime,
+            analyst_product_runtime,
         )
         raise SystemExit("Yap private server startup failed.") from None
 
@@ -302,6 +330,11 @@ def main() -> None:
                 if curator_product_runtime is not None
                 else None
             ),
+            analyst_answer_service=(
+                analyst_product_runtime.service
+                if analyst_product_runtime is not None
+                else None
+            ),
         )
     except KeyboardInterrupt:
         return
@@ -317,6 +350,7 @@ def main() -> None:
             archivist_runtime,
             student_product_runtime,
             curator_product_runtime,
+            analyst_product_runtime,
         )
         if cleanup_error is not None:
             raise RuntimeError("Yap private server cleanup failed.") from cleanup_error

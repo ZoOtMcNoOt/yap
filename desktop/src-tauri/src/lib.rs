@@ -1,3 +1,4 @@
+mod analyst_answer;
 mod app;
 mod archivist_ingestion;
 mod atomic_file;

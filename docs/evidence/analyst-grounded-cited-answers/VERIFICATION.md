@@ -7,8 +7,11 @@ internal Analyst core. Lock-only successor
 qualification lock. Hosted head
 `da1127f82bf3a5e3ea05c0752a2a7e6d1a72328a` passed all 12 required checks,
 and PR #170 merged the core as
-`52c45d2284176f60905f5c3934a0fb878c3a1dd3`. HTTP/native/renderer/UI
-exposure, production operation, and deployment remain pending.
+`52c45d2284176f60905f5c3934a0fb878c3a1dd3`. Exact product successor
+`78b2c638...` separately privately qualifies the authenticated server boundary
+with public-safe evidence SHA-256 `f26adfc0...`; its HTTP/native/renderer
+successor remains unmerged pending hosted review. Production operation and
+deployment remain pending.
 
 ## Exact qualified candidate
 
@@ -90,7 +93,10 @@ evidence above plus three exact warm-provider repeats.
 
 ## Deliberate limits
 
-Analyst is a qualified merged internal core, not a product-exposed workflow.
+This record qualifies the merged internal core; it does not by itself qualify a
+product-exposed workflow. The separate
+[Analyst product record](../analyst-product-vertical/VERIFICATION.md) binds the
+current authenticated server-boundary successor, which remains unmerged.
 The merged roster contains Scribe, Archivist, Student, Curator, Librarian,
 Analyst, Coordinator, and Auditor. No evidence here proves
 simultaneous Qwen/Gemma residency, sustained multi-user capacity or fairness,
