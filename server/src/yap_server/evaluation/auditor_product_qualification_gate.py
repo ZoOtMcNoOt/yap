@@ -1,4 +1,3 @@
-
 """Qualify the authenticated Auditor cited-report product boundary."""
 
 from __future__ import annotations
@@ -299,7 +298,6 @@ class _QualificationAuthenticator:
             return self._observed_headers.count(authorization)
 
 
-
 class _ActiveProductRequests:
     def __init__(self) -> None:
         self._lock = threading.Lock()
@@ -323,7 +321,7 @@ class _CancellationModel:
         self.started = threading.Event()
         self.cancelled = threading.Event()
 
-    def report(self, request, evidence, *, cancellation):
+    def review(self, request, evidence, *, cancellation):
         del request, evidence
         self.started.set()
         if not cancellation.wait(5.0):
@@ -627,7 +625,6 @@ def _normal_invocations(
     acceptance,
 ) -> tuple[AuditorQualificationInvocation, ...]:
     invocations = build_auditor_qualification_invocations(
-
         corpus.corpus,
         acceptance,
         tenant_id=corpus.tenant_id,
@@ -928,7 +925,6 @@ def _evaluate_product_observations(
         "unavailableCount": sum(
             item.observed is not None and item.observed.status == "evidence-unavailable"
             for item in observations
-
         ),
         "failedCount": sum(
             item.observed is not None and item.observed.status == "failed"
@@ -960,7 +956,10 @@ def _evaluate_product_observations(
             and item.observed.report is not None
             and item.observed.report.canonical is False
             and item.observed.report.requires_review is True
-            and all(finding.requires_review is True for finding in item.observed.report.findings)
+            and all(
+                finding.requires_review is True
+                for finding in item.observed.report.findings
+            )
             for item in reports
         ),
         "hiddenOnlyIndistinguishable": (
@@ -1196,7 +1195,6 @@ def _build_cancellation_runtime(
                 candidate_lock_sha256=profile.candidate_lock_sha256,
             ),
         ),
-
     )
     return AuditorProductRuntime(service=AuditorReportService(auditor=core))
 
@@ -1500,7 +1498,6 @@ def run_auditor_product_qualification_gate(
     try:
         started = database.start(timeout_seconds=120)
         with tempfile.TemporaryDirectory(
-
             prefix="yap-auditor-product-qualification-"
         ) as value:
             private_root = Path(value)
