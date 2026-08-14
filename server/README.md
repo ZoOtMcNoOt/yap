@@ -1097,7 +1097,8 @@ hidden/absent equivalence, two PostgreSQL restart/read-backs, exact Curator
 lineage and audit rows, complex c8/ninth-owner-queued containment, and complete
 teardown. Public-safe evidence SHA-256 is `394112ad...`. See the
 [Coordinator product record](../docs/evidence/coordinator-product-vertical/VERIFICATION.md).
-The candidate remains unmerged pending hosted review. Its private gate does not
+Hosted head `6890a9f5...` passed all 12 required checks, and PR #181 merged the
+vertical as `3fd5eaed...`. Its private gate does not
 qualify a native/renderer round trip or live enterprise identity-provider
 exchange. Autonomous action, simultaneous residency, sustained capacity, a
 production SLO, and deployment remain pending.
@@ -1128,9 +1129,34 @@ Auditor admission, then observed admission resume after that work became
 terminal. It did not cancel or preempt accepted non-idle work. See the
 [Auditor verification record](../docs/evidence/auditor-source-cited-review-findings/VERIFICATION.md).
 Hosted head `937a4129...` passed all 12 checks and PR #172 merged Auditor as
-`1b255e9a...`. Scheduled autonomous execution, HTTP/native/renderer/UI exposure,
-simultaneous residency, sustained capacity, a production SLO, and deployment
-remain pending.
+`1b255e9a...`.
+
+Exact successor `87924d5f...` composes the core into one product vertical. In
+authenticated team mode it exposes:
+
+- `POST /v1/auditor-reports` to create one bounded review request;
+- `GET /v1/auditor-reports/{requestId}` to read only the authenticated owner's
+  state; and
+- `DELETE /v1/auditor-reports/{requestId}` to request cancellation.
+
+Enable it explicitly with `YAP_AUDITOR_RUNTIME=warm_gemma`, absolute
+`YAP_AUDITOR_ADMISSION_SOCKET`, `YAP_AUDITOR_PROFILE`,
+`YAP_AUDITOR_CANDIDATE_LOCK`, and `YAP_AUDITOR_KNOWLEDGE_DSN_FILE` paths.
+Incomplete or non-authenticated configuration fails closed. Native Rust owns
+bearer exchange, one connection lease, request/report/finding/citation
+validation, cancellation, and quit containment; React receives only validated
+report state. The owner-private product gate matched 10/10 terminals across 8
+owners: 4 exact server-derived noncanonical review-required reports, 5
+unavailable results, 0 failures, and 1 fail-closed cancellation. It also proved
+owner isolation, hidden/absent equivalence, two PostgreSQL restart/read-backs,
+exact Auditor/tool audits, zero proposal or source writes, complex c8/ninth-
+owner-queued containment, and complete teardown. Public-safe evidence SHA-256
+is `b5a31c21...`. See the
+[Auditor product record](../docs/evidence/auditor-product-vertical/VERIFICATION.md).
+The candidate remains unmerged pending hosted review. Its private gate does not
+qualify a native/renderer round trip or live enterprise identity-provider
+exchange. Scheduled autonomous execution, simultaneous residency, sustained
+capacity, a production SLO, and deployment remain pending.
 
 ## Local checks
 

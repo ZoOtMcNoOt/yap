@@ -31,6 +31,7 @@ backlog.
 - [Curator product-vertical verification](evidence/curator-product-vertical/VERIFICATION.md)
 - [Analyst product-vertical exact-head verification](evidence/analyst-product-vertical/VERIFICATION.md)
 - [Coordinator product-vertical exact-head verification](evidence/coordinator-product-vertical/VERIFICATION.md)
+- [Auditor product-vertical exact-head verification](evidence/auditor-product-vertical/VERIFICATION.md)
 
 ## Long-term architecture frame
 
@@ -126,6 +127,7 @@ instructions. Detailed historical task reports live under
 
 - [Evidence policy and index](evidence/README.md)
 - [Auditor source-cited review-findings verification](evidence/auditor-source-cited-review-findings/VERIFICATION.md)
+- [Auditor product-vertical verification](evidence/auditor-product-vertical/VERIFICATION.md)
 - [Coordinator proposal-bundle verification](evidence/coordinator-proposal-bundles/VERIFICATION.md)
 - [Executable ownership findings](evidence/executable-ownership-review/FINDINGS.md)
 - [Reviewed file inventory](evidence/executable-ownership-review/FILE-INVENTORY.md)

@@ -12,6 +12,7 @@ Current architecture-review evidence:
 - [Analyst grounded cited-answer verification](analyst-grounded-cited-answers/VERIFICATION.md)
 - [Analyst product-vertical verification](analyst-product-vertical/VERIFICATION.md)
 - [Auditor source-cited review-findings verification](auditor-source-cited-review-findings/VERIFICATION.md)
+- [Auditor product-vertical verification](auditor-product-vertical/VERIFICATION.md)
 - [Coordinator proposal-bundle verification](coordinator-proposal-bundles/VERIFICATION.md)
 - [Coordinator product-vertical verification](coordinator-product-vertical/VERIFICATION.md)
 - [Curator knowledge-proposal verification](curator-knowledge-proposals/VERIFICATION.md)

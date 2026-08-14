@@ -195,8 +195,9 @@ one deadline expiry, and one pre-cancelled unsubmitted ticket. Hosted head
 the authenticated Coordinator server/database/broker boundary across 10 exact
 product jobs. Its independent live probe held eight complex leases and queued
 the ninth; the product workload itself claims eight synchronized owner calls,
-not eight simultaneous inferences. The product successor remains unmerged
-pending hosted review, and neither receipt is production-service evidence. See the
+not eight simultaneous inferences. Hosted head `6890a9f5...` passed all 12
+checks and PR #181 merged the product successor as `3fd5eaed...`; neither
+receipt is production-service evidence. See the
 [Coordinator evidence](../evidence/coordinator-proposal-bundles/VERIFICATION.md).
 See also the
 [Coordinator product record](../evidence/coordinator-product-vertical/VERIFICATION.md).
@@ -212,6 +213,14 @@ passed all 12 checks and PR #172 merged Auditor as `1b255e9a...`. This qualifies
 a merged internal workflow, not a product endpoint, scheduled autonomous review,
 or production service. See the
 [Auditor evidence](../evidence/auditor-source-cited-review-findings/VERIFICATION.md).
+
+Exact product successor `87924d5f...` then privately qualified the authenticated
+Auditor server/database/broker boundary across 10 exact product jobs. Its
+independent live probe held eight complex leases and queued the ninth; the
+product workload itself claims eight synchronized owner calls, not eight
+simultaneous inferences. The product successor remains unmerged pending hosted
+review and is not production-service evidence. See the
+[Auditor product record](../evidence/auditor-product-vertical/VERIFICATION.md).
 
 ## Later enablement and recovery
 

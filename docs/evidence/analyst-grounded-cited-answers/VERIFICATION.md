@@ -8,10 +8,10 @@ qualification lock. Hosted head
 `da1127f82bf3a5e3ea05c0752a2a7e6d1a72328a` passed all 12 required checks,
 and PR #170 merged the core as
 `52c45d2284176f60905f5c3934a0fb878c3a1dd3`. Exact product successor
-`78b2c638...` separately privately qualifies the authenticated server boundary
-with public-safe evidence SHA-256 `f26adfc0...`; its HTTP/native/renderer
-successor remains unmerged pending hosted review. Production operation and
-deployment remain pending.
+`78b2c638...` separately privately qualified the authenticated server boundary
+with public-safe evidence SHA-256 `f26adfc0...`; hosted head `4c8db7c2...`
+passed all 12 required checks, and PR #180 merged the HTTP/native/renderer
+vertical as `c95fcf1a...`. Production operation and deployment remain pending.
 
 ## Exact qualified candidate
 

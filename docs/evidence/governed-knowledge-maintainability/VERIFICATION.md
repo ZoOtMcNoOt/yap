@@ -3,8 +3,9 @@
 This record separates inherited merged evidence, focused repair checks, the
 completed and hosted-merged Phase 9 checkpoint gate, historical Phase 10 public
 read-backs, the frozen Librarian, Analyst, Coordinator, and Auditor successors,
-the merged Librarian, Archivist, Student, Curator, and Analyst product boundaries,
-and the privately qualified unmerged Coordinator product successor. The Curator/profile-
+the merged Librarian, Archivist, Student, Curator, Analyst, and Coordinator
+product boundaries, and the privately qualified unmerged Auditor product
+successor. The Curator/profile-
 capacity core successor is privately
 qualified at exact protected heads and has a public-lock/aggregate result.
 Hosted-green head `593e627b...` passed all 12 checks, and PR #168 merged it as
@@ -23,9 +24,12 @@ qualified Analyst's product server boundary with public-safe evidence SHA-256
 `f26adfc0...`; hosted head `4c8db7c2...` passed all 12 checks and PR #180 merged
 it as `c95fcf1a...`. Exact `05400fb3...` privately qualifies Coordinator's
 product server/database/broker boundary with public-safe evidence SHA-256
-`394112ad...`; its hosted merge remains pending, and Auditor remains internal-only.
+`394112ad...`; hosted head `6890a9f5...` passed all 12 checks and PR #181
+merged the Coordinator vertical as `3fd5eaed...`. Exact `87924d5f...` now
+privately qualifies Auditor's product server boundary with public-safe evidence
+SHA-256 `b5a31c21...`; hosted merge remains pending.
 Historical inventories remain labeled at their exact heads. The final section
-records the exact current Coordinator-product-successor threshold read-back.
+records the exact current Auditor-product-successor threshold read-back.
 
 ## Inherited Phase 9 evidence
 
@@ -626,8 +630,10 @@ from 250 through 349. The exact current Auditor successor tuples supersede
 that historical read-back in
 [THRESHOLD-DISPOSITION.md](THRESHOLD-DISPOSITION.md).
 
-This is internal qualification, not hosted merge or product exposure. It does
-not prove simultaneous Qwen/Gemma residency, sustained capacity/fairness,
+This internal qualification alone did not product-promote Analyst. Exact
+product successor `78b2c638...` later qualified the authenticated product
+boundary, and PR #180 merged it as `c95fcf1a...`. Neither result proves
+simultaneous Qwen/Gemma residency, sustained capacity/fairness,
 production p50/p95/p99 or an SLO, cross-start/global determinism, enterprise
 networking, or deployment.
 
@@ -667,10 +673,12 @@ inventory enumerates 580 surfaces: 330 at or above 350 lines and 250 from 250
 through 349. Those exact 330 tuples were the freeze-time appendix; the current
 [threshold appendix](THRESHOLD-DISPOSITION.md) supersedes that historical set.
 
-This record does not product-promote Coordinator. PR #171 merged the internal
-core, while HTTP/native/renderer/UI exposure, autonomous action, simultaneous Qwen/Gemma
-residency, sustained capacity/fairness, production p50/p95/p99 or an SLO,
-enterprise networking, and deployment remain open. Owner-private tenant/run
+This internal-core record alone did not product-promote Coordinator. Exact
+product successor `05400fb3...` later qualified the authenticated product
+boundary, and PR #181 merged it as `3fd5eaed...`. Autonomous action,
+simultaneous Qwen/Gemma residency, sustained capacity/fairness, production
+p50/p95/p99 or an SLO, enterprise networking, and deployment remain open.
+Owner-private tenant/run
 identities, prompts, model output, proposal and citation bytes, database rows,
 paths, DSN, and individual measurements remain outside Git.
 
@@ -709,18 +717,19 @@ passed and 47 were declared skips. The governed fixed membership ran 173 tests:
 tests: 50 passed and two real-PostgreSQL tests were declared skips. Whole-server
 Ruff check, Auditor changed-file format check, exact 333-input candidate
 admission, Cargo format/Clippy/tests, and `git diff --check` were green. Against
-that executable candidate, with this public documentation reconciliation
-applied in the current docs successor, the current 250-line inventory enumerates
+that executable candidate, with its public documentation reconciliation applied
+in that docs successor, the then-current 250-line inventory enumerated
 593 surfaces: 339 at or above 350 lines and 254 from 250 through 349. Those
 exact 339 tuples were the freeze-time appendix; the current
 [threshold appendix](THRESHOLD-DISPOSITION.md) supersedes that historical set.
 
-This record does not product-promote Auditor. Hosted head `937a4129...` passed
-all 12 checks and PR #172 merged the internal core as `1b255e9a...`.
-HTTP/native/renderer/UI exposure, scheduled autonomous execution, action or
-knowledge mutation, simultaneous Qwen/Gemma residency, sustained capacity/
-fairness, production p50/p95/p99 or an SLO, enterprise networking, and
-deployment remain open. Owner-private tenant/run identities, focus text,
+This internal-core record alone did not product-promote Auditor. Hosted head
+`937a4129...` passed all 12 checks and PR #172 merged the internal core as
+`1b255e9a...`. Exact product successor `87924d5f...` separately qualifies the
+authenticated product boundary but remains unmerged pending hosted review.
+Scheduled autonomous execution, action or knowledge mutation, simultaneous
+Qwen/Gemma residency, sustained capacity/fairness, production p50/p95/p99 or an
+SLO, enterprise networking, and deployment remain open. Owner-private tenant/run identities, focus text,
 prompts, model output, evidence/finding/citation bytes, database rows, paths,
 DSN, and individual measurements remain outside Git.
 
@@ -839,8 +848,8 @@ inventory retains inherited drift outside this slice and is not labeled green.
 Against that executable successor, with its Student product documentation
 reconciliation applied, the historical 250-line inventory enumerated 610 surfaces:
 359 at or above 350 lines and 251 from 250 through 349. The exact 359 high-band
-path/line/disposition tuples are reproduced in
-[THRESHOLD-DISPOSITION.md](THRESHOLD-DISPOSITION.md).
+tuples were the freeze-time appendix; the current
+[threshold appendix](THRESHOLD-DISPOSITION.md) supersedes that historical set.
 
 This record qualifies only the authenticated Student HTTP/database/broker
 boundary. Native/renderer behavior is exact-head public-test evidence and was
@@ -848,8 +857,9 @@ not a private end-to-end client run. Student creates no proposal or knowledge
 mutation. Hosted head `53ce570b...` later passed all 12 checks and PR #178
 merged the product vertical as `6546970b...`. A live enterprise identity-
 provider exchange, sustained capacity/fairness, production p50/p95/p99 or an SLO,
-simultaneous Qwen/Gemma residency, enterprise networking, deployment, and the
-separate requested Muse Spark replacement decision remain open. Owner-private tenants, subjects,
+simultaneous Qwen/Gemma residency, enterprise networking, and deployment remain
+open. The later Muse decision retained Gemma locally and recorded Muse only as a
+future hosted-provider watch item. Owner-private tenants, subjects,
 source/evidence/question bytes, request and run identities, database rows,
 paths, credentials, and individual measurements remain outside Git.
 
@@ -886,8 +896,9 @@ The underlying Curator acceptance and synthetic corpus SHA-256 values remain
 and `28bfadfbabe50c89dc8cac53a440d0ce7ba30d428682b98154cef63a59dfde1b`.
 Against the qualified successor and its documentation reconciliation, the
 historical 250-line inventory enumerated 615 surfaces: 364 at or above 350 lines
-and 251 from 250 through 349. The current high-band tuples are reproduced in
-[THRESHOLD-DISPOSITION.md](THRESHOLD-DISPOSITION.md).
+and 251 from 250 through 349. Those exact 364 tuples were the freeze-time
+appendix; the current [threshold appendix](THRESHOLD-DISPOSITION.md) supersedes
+that historical set.
 
 This public read-back records the exact-head authenticated server qualification;
 it does not execute the native or renderer surface against a private server,
@@ -927,11 +938,11 @@ server Ruff, desktop 62-file/387-test unit coverage, production TypeScript/Vite,
 desktop Rust formatting and strict Clippy, 1,258 passed main-unit tests with 11
 expected ignored, 27 integration tests, and `git diff --check` were green.
 
-Against executable candidate `78b2c638...`, with this public documentation
-reconciliation applied in the current docs successor, the complete 250-line
+Against executable candidate `78b2c638...`, with its public documentation
+reconciliation applied in that docs successor, the complete 250-line
 inventory enumerates 620 surfaces: 369 at or above 350 lines and 251 from 250
-through 349. The exact 369 high-band path/line/disposition tuples are reproduced
-in [THRESHOLD-DISPOSITION.md](THRESHOLD-DISPOSITION.md).
+through 349. Those exact 369 tuples were the freeze-time appendix; the current
+[threshold appendix](THRESHOLD-DISPOSITION.md) supersedes that historical set.
 
 This record qualifies only the authenticated Analyst HTTP/database/broker
 boundary. Native/renderer behavior is exact-head public-test evidence and was
@@ -968,19 +979,69 @@ checks ran 41 tests. Whole-server Ruff, desktop 63-file/391-test unit coverage,
 production TypeScript/Vite, desktop Rust formatting, strict Clippy and locked
 tests, documentation truth/links, and `git diff --check` were green.
 
-Against executable candidate `05400fb3...`, with this public documentation
-reconciliation applied in the current docs successor, the complete 250-line
+Against executable candidate `05400fb3...`, with its public documentation
+reconciliation applied in that docs successor, the complete 250-line
 inventory enumerates 625 surfaces: 373 at or above 350 lines and 252 from 250
-through 349. The exact 373 high-band path/line/disposition tuples are reproduced
-in [THRESHOLD-DISPOSITION.md](THRESHOLD-DISPOSITION.md).
+through 349. Those exact 373 tuples were the freeze-time appendix; the current
+[threshold appendix](THRESHOLD-DISPOSITION.md) supersedes that historical set.
 
 This record qualifies only the authenticated Coordinator HTTP/database/broker
 boundary. Native/renderer behavior is exact-head public-test evidence and was
-not a private end-to-end client run. The candidate remains unmerged pending
-hosted review. No evidence here proves autonomous action, simultaneous
+not a private end-to-end client run. Hosted head `6890a9f5...` passed all 12
+required checks, and PR #181 merged the vertical as `3fd5eaed...`. No evidence
+here proves autonomous action, simultaneous
 Qwen/Gemma residency, sustained capacity/fairness, a production p50/p95/p99 or
 SLO, live enterprise identity integration, or deployment. Owner-private
 tenants, subjects, objectives, proposals, bundles, citations, model output,
 database rows, paths, credentials, and individual measurements remain outside
 Git. Gemma remains the qualified local complex route; Muse Spark 1.2 remains a
 future hosted-provider watch item until deployable open weights are available.
+
+## Phase 10 Auditor product-vertical successor public read-back
+
+Exact executable successor `87924d5f975ff8ceef13b32f2a9e0a0c86f046f5`
+returned `auditor-authenticated-product-server-boundary-qualified` with
+public-safe evidence SHA-256
+`b5a31c215d21ab713c51ae7d9704d8984f67c01381e5ed861ce3e7d18f994d5c`.
+The frozen product acceptance-plan SHA-256 is
+`0c07a80df0e4ed167b97115d3d5050a21ef81324abfae43df509ed0ee98a1a46`;
+the qualified Auditor semantic plan and corpus remain
+`0f8d01369da66b7d5d177e718ce736e950d690c08fe1d97e8c67dfdf28de1ee2`
+and `30860909f44232f3227f63e77491efc0e55b6ea91048690f4dc23e55b57dca5a`.
+Eight authenticated owners matched all 10 product terminals: four complete,
+five unavailable, zero failed, and one cancelled. All four returned reports,
+their findings, and their two-citation bindings matched the independent
+compiler-bound oracle. Authentication, owner isolation, hidden-only/absent
+equivalence, HTTP cancellation, exact result/tool audits, two PostgreSQL
+restart/read-backs, complex c8/ninth-owner-queued containment, worker
+containment, and exact teardown passed.
+
+At exact executable `87924d5f...`, the focused Auditor product/core matrix ran
+73 tests: 71 passed and two declared real-PostgreSQL skips. The governed fixed
+membership ran 173 tests: 169 passed and four declared skips. Whole-server Ruff,
+the changed-file format check, and `git diff --check` were green. The parent
+implementation matrix also passed desktop 64-file/395-test unit coverage,
+production TypeScript/Vite, 42 Playwright checks, desktop Rust formatting,
+strict Clippy and locked tests, and native WDIO with 15 passes plus two declared
+optional-hardware skips. Two full local portable-server attempts stopped at an
+unrelated Windows/WSL proxy-behavior timeout; the isolated test and its complete
+12-test module passed, so this record does not call the local aggregate green.
+
+Against executable candidate `87924d5f...`, with this public documentation
+reconciliation applied in the current docs successor, the complete 250-line
+inventory enumerates 630 surfaces: 377 at or above 350 lines
+and 253 from 250 through 349. The exact 377 high-band
+path/line/disposition tuples are reproduced in
+[THRESHOLD-DISPOSITION.md](THRESHOLD-DISPOSITION.md).
+
+This record qualifies only the authenticated Auditor HTTP/database/broker
+boundary. Native/renderer behavior is exact-head public-test evidence and was
+not a private end-to-end client run. The candidate remains unmerged pending
+hosted review. No evidence here proves scheduled autonomy, simultaneous
+Qwen/Gemma residency, sustained capacity/fairness, a production p50/p95/p99 or
+SLO, live enterprise identity integration, or deployment. Owner-private
+tenants, subjects, review focus, evidence, reports, findings, citations, model
+output, database rows, paths, credentials, and individual measurements remain
+outside Git. Gemma remains the qualified local complex route; Muse Spark 1.2
+remains a future hosted-provider watch item until deployable open weights are
+available.

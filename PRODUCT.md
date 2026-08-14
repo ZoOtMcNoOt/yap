@@ -66,12 +66,17 @@ two PostgreSQL restart/read-backs, fail-closed cancellation, and exact teardown.
 Hosted head `4c8db7c2...` passed all 12 required checks, and PR #180 merged the
 native/renderer Analyst successor as `c95fcf1a...`; its private gate did not
 claim a client round trip or live enterprise identity exchange. Exact
-`05400fb3...` now privately qualifies Coordinator's authenticated proposal-
+`05400fb3...` privately qualified Coordinator's authenticated proposal-
 bundle server boundary: 10/10 exact product terminals, 5 exact server-derived
 noncanonical review-required bundles, strict owner isolation, two PostgreSQL
-restart/read-backs, fail-closed cancellation, and exact teardown. Its native/
-renderer successor is public-test green but unmerged. Auditor still has no HTTP,
-native, renderer, or desktop product surface.
+restart/read-backs, fail-closed cancellation, and exact teardown. Hosted head
+`6890a9f5...` passed all 12 required checks, and PR #181 merged the native/
+renderer vertical as `3fd5eaed...`. Exact `87924d5f...` now privately
+qualifies Auditor's authenticated report server boundary: 10/10 exact product
+terminals, 4 exact server-derived noncanonical review-required reports, strict
+owner isolation, two PostgreSQL restart/read-backs, fail-closed cancellation,
+and exact teardown. Its native/renderer successor is focused-public green but
+unmerged and does not schedule reviews or mutate source or knowledge state.
 
 This is not live-only dictation or a Wispr Flow clone. Batch recordings remain the target core loop once the trusted server route exists; live capture is the implemented compact, explicit companion path.
 

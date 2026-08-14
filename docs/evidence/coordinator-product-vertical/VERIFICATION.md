@@ -9,7 +9,9 @@ qualifies the Coordinator product vertical. Its owner-private ARM64 gate
 returned `coordinator-authenticated-product-server-boundary-qualified` with
 public-safe evidence SHA-256
 `394112ade3727f4e40fbec0b5083e23d7889a0318553026227f0c4a0e6c4bd89`.
-The candidate remains unmerged and requires unchanged-head hosted review.
+Hosted head `6890a9f5d7d92687675ad0f48339dd24d97fee12` passed all 12 required
+checks, and PR #181 merged the product vertical as
+`3fd5eaed2e3d47a6e765b5467345ba26a424af23`.
 
 The frozen product acceptance plan is
 `server/coordinator-product-acceptance.json`, SHA-256
@@ -94,10 +96,11 @@ evidence, bundle, citation, model output, database row, DSN, host path,
 individual timing, or private receipt is committed. Git records only exact
 revisions, public-safe hashes, aggregate counts, booleans, and bounded outcomes.
 
-This result qualifies the authenticated Coordinator server/database/broker
-boundary. It does not qualify a private native/renderer round trip, live
-enterprise identity-provider exchange, hosted review, merge, production
-deployment, simultaneous Qwen/Gemma residency, sustained capacity, or a
-p50/p95/p99 SLO. Gemma remains the qualified local complex route. Muse Spark
-1.2 is recorded only as a future hosted-provider watch item because deployable
-open weights are not available for this local/offline boundary.
+This result qualifies the merged authenticated Coordinator
+server/database/broker boundary. Its private gate did not execute a private
+native/renderer round trip or live enterprise identity-provider exchange and
+does not qualify production deployment, simultaneous Qwen/Gemma residency,
+sustained capacity, or a p50/p95/p99 SLO. Gemma remains the qualified local
+complex route. Muse Spark 1.2 is recorded only as a future hosted-provider
+watch item because deployable open weights are not available for this
+local/offline boundary.
