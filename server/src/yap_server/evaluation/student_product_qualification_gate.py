@@ -1789,11 +1789,11 @@ def _restart_database(
 def _require_exact_teardown(teardown: Mapping[str, bool]) -> None:
     required = {
         "containerAbsent",
-        "networkAbsent",
-        "volumeAbsent",
-        "processAbsent",
         "listenerAbsent",
-        "databaseAbsent",
+        "networkAbsent",
+        "ownedProcessAbsent",
+        "sameLabelOwnersAbsent",
+        "volumeAbsent",
     }
     if set(teardown) != required or not all(teardown.values()):
         raise RuntimeError("Student product database teardown differs")

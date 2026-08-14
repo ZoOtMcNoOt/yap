@@ -499,11 +499,11 @@ class StudentProductQualificationGateTests(unittest.TestCase):
         database.start.return_value = started
         database.stop.return_value = {
             "containerAbsent": True,
-            "networkAbsent": True,
-            "volumeAbsent": True,
-            "processAbsent": True,
             "listenerAbsent": True,
-            "databaseAbsent": True,
+            "networkAbsent": True,
+            "ownedProcessAbsent": True,
+            "sameLabelOwnersAbsent": True,
+            "volumeAbsent": True,
         }
         runtime = mock.Mock()
         corpus = SimpleNamespace(
