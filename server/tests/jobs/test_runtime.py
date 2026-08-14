@@ -919,6 +919,7 @@ class ServerMainTests(unittest.TestCase):
             asr_capabilities=runtime.asr_capabilities,
             transcript_correction_service=None,
             librarian_query_service=None,
+            student_question_service=None,
             archivist_ingestion_service=None,
         )
         self.assertTrue(runtime.closed)
