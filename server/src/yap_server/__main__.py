@@ -13,6 +13,10 @@ from yap_server.agents.librarian_runtime import (
     LibrarianRuntime,
     build_librarian_runtime,
 )
+from yap_server.agents.student_product_runtime import (
+    StudentProductRuntime,
+    build_student_product_runtime,
+)
 from yap_server.agents.transcript_correction_runtime import (
     TranscriptCorrectionRuntime,
     build_transcript_correction_runtime,
@@ -38,6 +42,7 @@ from yap_server.pools.cleanup_deadline import run_cleanup_before_deadline
 _SHUTDOWN_FAILURE_EXIT_CODE = 70
 _RUNTIME_CLEANUP_TIMEOUT_SECONDS = 30.0
 _ARCHIVIST_RUNTIME_CLEANUP_TIMEOUT_SECONDS = 66.0
+_STUDENT_PRODUCT_RUNTIME_CLEANUP_TIMEOUT_SECONDS = 66.0
 
 
 def _fail_stop_worker_containment() -> None:
@@ -103,6 +108,19 @@ def _close_archivist_runtime_or_fail_stop(
         _fail_stop_worker_containment()
 
 
+def _close_student_product_runtime_or_fail_stop(
+    runtime: StudentProductRuntime,
+) -> None:
+    try:
+        run_cleanup_before_deadline(
+            runtime.close,
+            timeout_seconds=_STUDENT_PRODUCT_RUNTIME_CLEANUP_TIMEOUT_SECONDS,
+            thread_name="yap-server-student-product-cleanup",
+        )
+    except BaseException:
+        _fail_stop_worker_containment()
+
+
 def _close_owned_resources(
     live_transport: PrivateLiveWebSocketServer | None,
     runtime: BatchRuntime | None,
@@ -110,6 +128,7 @@ def _close_owned_resources(
     transcript_correction_runtime: TranscriptCorrectionRuntime | None = None,
     librarian_runtime: LibrarianRuntime | None = None,
     archivist_runtime: ArchivistRuntime | None = None,
+    student_product_runtime: StudentProductRuntime | None = None,
 ) -> BaseException | None:
     cleanup_error: BaseException | None = None
     if live_transport is not None:
@@ -123,6 +142,8 @@ def _close_owned_resources(
         _close_librarian_runtime_or_fail_stop(librarian_runtime)
     if archivist_runtime is not None:
         _close_archivist_runtime_or_fail_stop(archivist_runtime)
+    if student_product_runtime is not None:
+        _close_student_product_runtime_or_fail_stop(student_product_runtime)
     if runtime is not None:
         _close_runtime_or_fail_stop(runtime)
     if authorization_runtime is not None:
@@ -143,6 +164,7 @@ def main() -> None:
     transcript_correction_runtime: TranscriptCorrectionRuntime | None = None
     librarian_runtime: LibrarianRuntime | None = None
     archivist_runtime: ArchivistRuntime | None = None
+    student_product_runtime: StudentProductRuntime | None = None
     authorization_runtime: RequestAuthorizationRuntime | None = None
     live_transport: PrivateLiveWebSocketServer | None = None
     try:
@@ -159,6 +181,10 @@ def main() -> None:
             authenticated_team_mode=settings.authentication.required,
         )
         librarian_runtime = build_librarian_runtime(
+            os.environ,
+            authenticated_team_mode=settings.authentication.required,
+        )
+        student_product_runtime = build_student_product_runtime(
             os.environ,
             authenticated_team_mode=settings.authentication.required,
         )
@@ -197,6 +223,7 @@ def main() -> None:
             transcript_correction_runtime,
             librarian_runtime,
             archivist_runtime,
+            student_product_runtime,
         )
         if cleanup_error is not None:
             raise SystemExit("Yap private server startup cleanup failed.") from None
@@ -211,6 +238,7 @@ def main() -> None:
             transcript_correction_runtime,
             librarian_runtime,
             archivist_runtime,
+            student_product_runtime,
         )
         raise SystemExit("Yap private server startup failed.") from None
 
@@ -233,6 +261,11 @@ def main() -> None:
             librarian_query_service=(
                 librarian_runtime.service if librarian_runtime is not None else None
             ),
+            student_question_service=(
+                student_product_runtime.service
+                if student_product_runtime is not None
+                else None
+            ),
             archivist_ingestion_service=(
                 archivist_runtime.service if archivist_runtime is not None else None
             ),
@@ -249,6 +282,7 @@ def main() -> None:
             transcript_correction_runtime,
             librarian_runtime,
             archivist_runtime,
+            student_product_runtime,
         )
         if cleanup_error is not None:
             raise RuntimeError("Yap private server cleanup failed.") from cleanup_error

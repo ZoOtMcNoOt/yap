@@ -9,6 +9,7 @@ class ServerCapabilities:
     job_status: bool
     transcript_correction: bool
     librarian_queries: bool
+    student_questions: bool
     archivist_ingestions: bool
 
     def to_wire(self) -> dict[str, bool]:
@@ -18,6 +19,7 @@ class ServerCapabilities:
             "jobStatus": self.job_status,
             "transcriptCorrection": self.transcript_correction,
             "librarianQueries": self.librarian_queries,
+            "studentQuestions": self.student_questions,
             "archivistIngestions": self.archivist_ingestions,
         }
 

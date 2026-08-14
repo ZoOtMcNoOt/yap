@@ -2,17 +2,38 @@ import { Books } from "@phosphor-icons/react/Books";
 import { MagnifyingGlass } from "@phosphor-icons/react/MagnifyingGlass";
 import { Repeat } from "@phosphor-icons/react/Repeat";
 import { XCircle } from "@phosphor-icons/react/XCircle";
+import { useEffect, useState } from "react";
 
 import { LibrarianEvidenceResults } from "@/components/librarian/librarian-evidence-results";
 import { useLibrarianQuery } from "@/components/librarian/use-librarian-query";
+import { StudentQuestionComposer } from "@/components/student/student-question-composer";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
+import type { LibrarianEvidenceItem } from "@/librarian";
 
-export function LibrarianPanel({ available }: { available: boolean }) {
+export function LibrarianPanel({
+  available,
+  studentAvailable = false,
+}: {
+  available: boolean;
+  studentAvailable?: boolean;
+}) {
   const query = useLibrarianQuery({ available });
+  const [studentSource, setStudentSource] = useState<LibrarianEvidenceItem>();
+
+  useEffect(() => {
+    if (!query.evidence || !studentSource) return;
+    const remainsCurrent = query.evidence.items.some((item) =>
+      item.conceptId === studentSource.conceptId
+      && item.sourceRevision === studentSource.sourceRevision
+      && item.charStart === studentSource.charStart
+      && item.charEnd === studentSource.charEnd);
+    if (!remainsCurrent) setStudentSource(undefined);
+  }, [query.evidence, studentSource]);
+
   return (
     <Card className="surface-workspace-inset min-w-0 bg-card py-0">
       <CardHeader className="p-4 sm:p-5">
@@ -92,7 +113,23 @@ export function LibrarianPanel({ available }: { available: boolean }) {
           </Alert>
         ) : null}
 
-        {query.evidence ? <LibrarianEvidenceResults pack={query.evidence} /> : null}
+        {query.evidence ? (
+          <LibrarianEvidenceResults
+            onCreateLearningPrompt={setStudentSource}
+            pack={query.evidence}
+            studentAvailable={studentAvailable}
+          />
+        ) : null}
+
+        {query.evidence && studentSource ? (
+          <StudentQuestionComposer
+            available={studentAvailable}
+            generationSha256={query.evidence.generationSha256}
+            item={studentSource}
+            key={`${query.evidence.evidenceSha256}:${studentSource.conceptId}`}
+            onClose={() => setStudentSource(undefined)}
+          />
+        ) : null}
       </CardContent>
     </Card>
   );

@@ -290,6 +290,8 @@ export default function App() {
         <LibrarianPanel
           available={settings.serverSnapshot.state === "ready"
             && settings.serverSnapshot.capabilities.librarianQueries}
+          studentAvailable={settings.serverSnapshot.state === "ready"
+            && settings.serverSnapshot.capabilities.studentQuestions}
         />
       ) : null}
     </>

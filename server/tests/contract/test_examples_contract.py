@@ -336,6 +336,7 @@ class ContractTests(unittest.TestCase):
             job_status=False,
             transcript_correction=False,
             librarian_queries=False,
+            student_questions=False,
             archivist_ingestions=False,
         )
         view = HealthView(
@@ -354,6 +355,7 @@ class ContractTests(unittest.TestCase):
                 "jobStatus": False,
                 "transcriptCorrection": False,
                 "librarianQueries": False,
+                "studentQuestions": False,
                 "archivistIngestions": False,
             },
         )

@@ -3,8 +3,8 @@
 ## Status
 
 Exact executable candidate
-`a2e9b55157799749ffc4eca32a92feabe63fba8e` is privately qualified as an
-unmerged Archivist product candidate. Its owner-private ARM64 gate returned
+`a2e9b55157799749ffc4eca32a92feabe63fba8e` privately qualified the Archivist
+product vertical. Its owner-private ARM64 gate returned
 `archivist-authenticated-product-vertical-qualified` with public-safe evidence
 SHA-256 `9ec9e37353c2c89198f374efe0f474b8284e077455b4168eb345d6a1e7a76a4f`.
 The frozen acceptance plan SHA-256 is
@@ -28,7 +28,9 @@ This record qualifies the authenticated HTTP/server, durable recording-source,
 Server-IO admission, reviewed-capture, and deterministic staging boundary. It
 does not qualify a private native-to-renderer round trip or a live enterprise
 identity-provider exchange. Those client contracts are exact-head public-test
-evidence and still require hosted review on the final candidate.
+evidence. Hosted head `69215c43437c75d7ca2498154a80c4ae5bb749ed`
+passed all 12 required checks, and PR #177 merged the vertical as
+`e397af8b29737fa21197c7058c659eab2ad0a00b` on 2026-08-14.
 
 ## Executable product boundary
 
@@ -119,7 +121,9 @@ At exact executable successor `a2e9b551...`:
 - the owner-private gate reran from a clean immutable checkout and returned the
   current evidence hash above with exact provider/broker/database teardown.
 
-Hosted checks still must pass the final documentation successor before merge.
+Hosted head `69215c43437c75d7ca2498154a80c4ae5bb749ed` passed all 12 required
+checks before PR #177 merged the vertical as
+`e397af8b29737fa21197c7058c659eab2ad0a00b`.
 
 ## Claim limits and privacy
 
@@ -130,7 +134,6 @@ only the checked head, plan/evidence hashes, aggregate counts, booleans, and the
 bounded conclusions above.
 
 Archivist stages reviewed knowledge; it does not embed or activate it. This
-candidate does not establish simultaneous Qwen/Gemma residency, sustained
+merged vertical does not establish simultaneous Qwen/Gemma residency, sustained
 capacity, an enterprise identity exchange, production operations, or deployment
-approval. Hosted exact-head checks, review, and merge remain required before the
-product surface is described as merged.
+approval. Product deployment and promotion remain separate gates.

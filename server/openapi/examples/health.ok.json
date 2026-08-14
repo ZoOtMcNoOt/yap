@@ -9,6 +9,7 @@
     "jobStatus": false,
     "transcriptCorrection": false,
     "librarianQueries": false,
+    "studentQuestions": false,
     "archivistIngestions": false
   }
 }

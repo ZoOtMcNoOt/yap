@@ -246,7 +246,7 @@ head `428d6e48...` then returned `student-learning-questions-qualified` with
 public-safe evidence SHA-256 `f597cca7...`; exact `0970d74c...` remains terminal
 `deterministic-no-student`. Hosted-green head `b03c6e79...` passed all 12 checks
 and PR #166 merged the internal Student core as `2254605e...`; product exposure
-remains open. Exact route head `dab19fe...` returned
+was still open at that merge. Exact route head `dab19fe...` returned
 `required-workload-routes-qualified` with public-safe evidence SHA-256
 `96228914...`. Exact workflow head `7cd24deb...` requalified Scribe and Student
 and qualified the nonmutating Curator core with public-safe evidence
@@ -269,11 +269,15 @@ Auditor's idle-only source-cited review-findings internal core. Hosted head
 product vertical's authenticated server boundary; hosted head `67a79ce2...`
 passed all 12 checks and PR #174 merged it as `98af78c9...`. Archivist, Student,
 Curator, Analyst, Coordinator, and Auditor were still internal-only at that
-merge. Exact `a2e9b551...` now privately qualifies an unmerged Archivist
+merge. Exact `a2e9b551...` privately qualified the Archivist
 authenticated staging candidate with public-safe evidence SHA-256 `9ec9e373...`:
 10/10 exact server-side terminals, 9 staged, 1 cancelled, 0 active generations,
-and exact teardown. Hosted Archivist review/merge plus Student, Curator,
-Analyst, Coordinator, and Auditor product exposure remain open. Proven selected-route
+and exact teardown. Hosted head `69215c43...` passed all 12 required checks,
+and PR #177 merged the vertical as `e397af8b...`. Exact `778a7545...` privately
+qualified an unmerged Student product candidate with 11/11 exact server-side
+terminals, authenticated question endpoints, native-owned transport/validation,
+and a source-bound renderer action. Hosted review and merge remain pending.
+Curator, Analyst, Coordinator, and Auditor product exposure remains open. Proven selected-route
 limits of four rapid/eight complex are not simultaneous-model,
 sustained-capacity, or production-SLO evidence. One Spark cannot retain both
 unchanged full profiles simultaneously, so warm two-route promotion requires a

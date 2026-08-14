@@ -697,6 +697,138 @@
         }
       }
     },
+    "/v1/student-questions": {
+      "post": {
+        "tags": [
+          "agents"
+        ],
+        "summary": "Submit source-cited learning questions for one meeting",
+        "description": "Starts one owner-bound Student request for an exact already-authorized meeting concept and knowledge generation. The request carries no tenant, subject, route, provider, evidence, or citation authority.",
+        "operationId": "submitStudentQuestion",
+        "x-yap-runtime-status": "Implemented only when the authenticated warm Student runtime verifies",
+        "x-yap-runtime-owner": "Student source-cited learning questions",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StudentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "The owner-bound learning-question request was accepted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentQuestionJobView"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          }
+        }
+      }
+    },
+    "/v1/student-questions/{requestId}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/StudentQuestionRequestId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "agents"
+        ],
+        "summary": "Read one owner-bound learning-question request",
+        "operationId": "getStudentQuestion",
+        "x-yap-runtime-status": "Implemented only when the authenticated warm Student runtime verifies",
+        "x-yap-runtime-owner": "Student source-cited learning questions",
+        "responses": {
+          "200": {
+            "description": "The current bounded lifecycle projection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentQuestionJobView"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/AuthenticationUnavailableResponse"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "agents"
+        ],
+        "summary": "Request cancellation of one owner-bound learning request",
+        "description": "Signals the in-flight evidence/model work and returns its cancellation-requested projection; status polling observes terminal acknowledgement.",
+        "operationId": "cancelStudentQuestion",
+        "x-yap-runtime-status": "Implemented only when the authenticated warm Student runtime verifies",
+        "x-yap-runtime-owner": "Student source-cited learning questions",
+        "responses": {
+          "202": {
+            "description": "Cancellation was requested for the owned learning request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentQuestionJobView"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          }
+        }
+      }
+    },
     "/v1/archivist-ingestions": {
       "post": {
         "tags": [
@@ -1585,6 +1717,18 @@
           "pattern": "^librarian-query-[0-9a-f]{32}$"
         }
       },
+      "StudentQuestionRequestId": {
+        "name": "requestId",
+        "in": "path",
+        "required": true,
+        "description": "Opaque Student product request identity scoped to the authenticated owner.",
+        "schema": {
+          "type": "string",
+          "minLength": 49,
+          "maxLength": 49,
+          "pattern": "^student-question-[0-9a-f]{32}$"
+        }
+      },
       "ArchivistIngestionRequestId": {
         "name": "requestId",
         "in": "path",
@@ -1984,6 +2128,201 @@
           },
           "evidencePack": {
             "$ref": "#/components/schemas/LibrarianEvidencePack"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+          }
+        }
+      },
+      "StudentRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "conversationConceptId",
+          "expectedGenerationSha256",
+          "topic"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 2
+          },
+          "conversationConceptId": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 137,
+            "pattern": "^meetings/[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+          },
+          "expectedGenerationSha256": {
+            "$ref": "#/components/schemas/Sha256"
+          },
+          "topic": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[^?\\r\\n]+$"
+          }
+        }
+      },
+      "StudentSourceCitation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "conceptId",
+          "sourceRevision",
+          "contentSha256",
+          "charStart",
+          "charEnd"
+        ],
+        "properties": {
+          "conceptId": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 137,
+            "pattern": "^meetings/[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+          },
+          "sourceRevision": {
+            "$ref": "#/components/schemas/Sha256"
+          },
+          "contentSha256": {
+            "$ref": "#/components/schemas/Sha256"
+          },
+          "charStart": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9223372036854775807
+          },
+          "charEnd": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9223372036854775807
+          }
+        }
+      },
+      "StudentQuestionSupport": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sourceCitation",
+          "supportQuote",
+          "supportCharStart",
+          "supportCharEnd"
+        ],
+        "properties": {
+          "sourceCitation": {
+            "$ref": "#/components/schemas/StudentSourceCitation"
+          },
+          "supportQuote": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "supportCharStart": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9223372036854775807
+          },
+          "supportCharEnd": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9223372036854775807
+          }
+        }
+      },
+      "StudentQuestion": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "sourceSubject",
+          "question",
+          "sourceSupports"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 3
+          },
+          "sourceSubject": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "question": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "sourceSupports": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 1,
+            "items": {
+              "$ref": "#/components/schemas/StudentQuestionSupport"
+            }
+          }
+        }
+      },
+      "StudentQuestionJobView": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "requestId",
+          "status",
+          "conversationConceptId",
+          "generationSha256",
+          "questions",
+          "outputBudgetExhausted"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "requestId": {
+            "type": "string",
+            "minLength": 49,
+            "maxLength": 49,
+            "pattern": "^student-question-[0-9a-f]{32}$"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "cancellation-requested",
+              "complete",
+              "evidence-unavailable",
+              "cancelled",
+              "failed"
+            ]
+          },
+          "conversationConceptId": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 137,
+            "pattern": "^meetings/[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+          },
+          "generationSha256": {
+            "$ref": "#/components/schemas/Sha256"
+          },
+          "evidenceSha256": {
+            "$ref": "#/components/schemas/Sha256"
+          },
+          "questions": {
+            "type": "array",
+            "maxItems": 1,
+            "items": {
+              "$ref": "#/components/schemas/StudentQuestion"
+            }
+          },
+          "outputBudgetExhausted": {
+            "type": "boolean"
           },
           "reason": {
             "type": "string",
@@ -4734,6 +5073,7 @@
           "jobStatus",
           "transcriptCorrection",
           "librarianQueries",
+          "studentQuestions",
           "archivistIngestions"
         ],
         "properties": {
@@ -4756,6 +5096,10 @@
           "librarianQueries": {
             "type": "boolean",
             "description": "True only when authenticated permission-safe Librarian queries are configured."
+          },
+          "studentQuestions": {
+            "type": "boolean",
+            "description": "True only when authenticated source-cited Student learning questions are configured."
           },
           "archivistIngestions": {
             "type": "boolean",

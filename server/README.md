@@ -776,7 +776,7 @@ and source/generation staging without embedding or activation. Exact core head
 cancellation, and zero-residue checks; hosted head `e1899db7...` merged it
 through PR #165 as `2a7ec819...`.
 
-Exact product candidate `a2e9b551...` composes that core behind:
+Exact product head `a2e9b551...` composes that core behind:
 
 - `POST /v1/archivist-ingestions` for one authenticated durable recording job;
 - `GET /v1/archivist-ingestions/{requestId}` for owner-scoped state; and
@@ -806,10 +806,12 @@ owners, 10/10 exact terminals, 9 staged requests, 1 queued cancellation, 8
 source admissions/staged generations, 0 active generations, exact replay, two
 PostgreSQL restart/read-backs, and exact teardown. Public server/native/renderer
 checks are green. The private gate does not include a native-to-renderer round
-trip or live enterprise identity-provider exchange. See the
+trip or live enterprise identity-provider exchange. Hosted head `69215c43...`
+passed all 12 required checks, and PR #177 merged the vertical as `e397af8b...`.
+See the
 [product-vertical verification record](../docs/evidence/archivist-product-vertical/VERIFICATION.md).
-Hosted review and merge remain pending; sustained capacity, production SLO,
-knowledge activation, and deployment are not claimed.
+Sustained capacity, production SLO, knowledge activation, and deployment are
+not claimed.
 
 ## Student learning questions
 
@@ -885,9 +887,24 @@ is reused. The current repair changes no model, full profile, output cap, retry
 behavior, queue bound, timeout, or acceptance threshold.
 
 The [public verification record](../docs/evidence/student-learning/VERIFICATION.md)
-contains the exact public-safe identities and limits. Student still has no HTTP
-endpoint, native adapter, renderer/UI workflow, or production promotion. A
-second owned GPU node/private route remains required before both
+contains the exact internal-core identities and limits.
+
+Exact product successor `778a7545d711bd6e3cd34e900d7d85013bdb1404`
+adds authenticated `POST /v1/student-questions` and owner-scoped `GET`/`DELETE`
+status and cancellation, native-owned bearer transport and exact response/
+citation/span validation, and one source-bound renderer action beside a
+permission-safe Librarian meeting-evidence item. Its owner-private gate returned
+`student-authenticated-product-server-boundary-qualified` with public-safe
+evidence SHA-256 `c46cf7df...`: 11/11 exact terminals across 8 owners, exact
+authorization and owner isolation, product/internal request binding, two
+PostgreSQL restart/read-backs, rapid c4 with the fifth queued, and exact
+teardown. Student creates no proposal or knowledge mutation. This is a
+privately qualified unmerged candidate; its private evidence covers the server
+boundary rather than a live native/renderer or enterprise identity-provider
+run. See the
+[product verification record](../docs/evidence/student-product-vertical/VERIFICATION.md).
+
+A second owned GPU node/private route remains required before both
 unchanged full Qwen and Gemma services can be kept warm together. Student does
 not reduce the pinned full profile, and request-time model swapping remains
 prohibited.

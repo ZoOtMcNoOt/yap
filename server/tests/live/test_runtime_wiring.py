@@ -107,6 +107,10 @@ class LiveRuntimeWiringTests(unittest.TestCase):
                 service=object(),
                 close=Mock(),
             )
+            student_runtime = SimpleNamespace(
+                service=object(),
+                close=Mock(),
+            )
             live_transport = Mock()
             live_transport.start.return_value = live_transport
 
@@ -139,6 +143,11 @@ class LiveRuntimeWiringTests(unittest.TestCase):
                 ) as build_librarian,
                 patch.object(
                     server_main,
+                    "build_student_product_runtime",
+                    return_value=student_runtime,
+                ) as build_student,
+                patch.object(
+                    server_main,
                     "private_live_port_from_env",
                     return_value=19_001,
                 ),
@@ -163,7 +172,12 @@ class LiveRuntimeWiringTests(unittest.TestCase):
         live_transport.close.assert_called_once_with()
         authorization_runtime.close.assert_called_once_with()
         librarian_runtime.close.assert_called_once_with()
+        student_runtime.close.assert_called_once_with()
         build_librarian.assert_called_once_with(
+            server_main.os.environ,
+            authenticated_team_mode=True,
+        )
+        build_student.assert_called_once_with(
             server_main.os.environ,
             authenticated_team_mode=True,
         )
@@ -174,6 +188,7 @@ class LiveRuntimeWiringTests(unittest.TestCase):
             lid_preflight_service=None,
             asr_capabilities=None,
             librarian_query_service=librarian_runtime.service,
+            student_question_service=student_runtime.service,
             archivist_ingestion_service=None,
             transcript_correction_service=None,
         )
@@ -201,6 +216,11 @@ class LiveRuntimeWiringTests(unittest.TestCase):
             patch.object(
                 server_main,
                 "build_librarian_runtime",
+                return_value=None,
+            ),
+            patch.object(
+                server_main,
+                "build_student_product_runtime",
                 return_value=None,
             ),
             patch.object(server_main, "PrivateLiveWebSocketServer") as live_server,
@@ -266,6 +286,11 @@ class LiveRuntimeWiringTests(unittest.TestCase):
                 ),
                 patch.object(
                     server_main,
+                    "build_student_product_runtime",
+                    return_value=None,
+                ),
+                patch.object(
+                    server_main,
                     "build_batch_runtime",
                     return_value=batch_runtime,
                 ),
@@ -300,6 +325,7 @@ class LiveRuntimeWiringTests(unittest.TestCase):
             asr_capabilities=batch_runtime.asr_capabilities,
             transcript_correction_service=None,
             librarian_query_service=None,
+            student_question_service=None,
             archivist_ingestion_service=archivist_runtime.service,
         )
         archivist_runtime.close.assert_called_once_with()

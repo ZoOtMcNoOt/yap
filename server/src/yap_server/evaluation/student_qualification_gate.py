@@ -194,6 +194,7 @@ def run_student_qualification_gate(
                 started.dsn,
                 corpus,
                 private_runtime_root / "okf",
+                tenant_id=_TENANT_ID,
             )
             restarted = database.restart(timeout_seconds=120)
             if (
@@ -214,7 +215,10 @@ def run_student_qualification_gate(
                 },
                 authenticated_team_mode=True,
             )
-            if runtime is None or runtime.maximum_output_tokens != _MAXIMUM_OUTPUT_TOKENS:
+            if (
+                runtime is None
+                or runtime.maximum_output_tokens != _MAXIMUM_OUTPUT_TOKENS
+            ):
                 raise RuntimeError("Student qualification runtime is unavailable")
             cross_owner_view = _run_cross_owner_hidden(
                 runtime.service,
@@ -274,12 +278,8 @@ def run_student_qualification_gate(
         "maximumSequences": profile.maximum_sequences,
         "brokerActiveCapacity": capacity_evidence["admittedOwnerCount"],
         "admissionBrokerBinarySha256": expected_broker_sha256,
-        "brokerRapidProfileObserved": capacity_evidence[
-            "expectedRouteObserved"
-        ],
-        "brokerExpectedCapacityObserved": capacity_evidence[
-            "expectedCapacityObserved"
-        ],
+        "brokerRapidProfileObserved": capacity_evidence["expectedRouteObserved"],
+        "brokerExpectedCapacityObserved": capacity_evidence["expectedCapacityObserved"],
         "fifthOwnerQueued": capacity_evidence["overflowOwnerQueued"],
         "capacityProbeContained": capacity_evidence["contained"],
         "capacityProbeProviderIdentityUnchanged": capacity_evidence[
@@ -320,6 +320,8 @@ def _initialize_student_knowledge(
     dsn: str,
     corpus: StudentQualificationCorpus,
     root: Path,
+    *,
+    tenant_id: str,
 ) -> CompiledKnowledgeGeneration:
     root.mkdir(mode=0o700)
     meetings = root / "meetings"
@@ -332,20 +334,20 @@ def _initialize_student_knowledge(
     )
     for case in corpus.cases:
         (meetings / f"{case.case_id}.md").write_text(
-            _concept_document(case, corpus.corpus_sha256),
+            _concept_document(case, corpus.corpus_sha256, tenant_id=tenant_id),
             encoding="utf-8",
         )
         (permissions / f"{case.case_id}.yml").write_text(
-            _permission_document(case.case_id, case.owner_id),
+            _permission_document(case.case_id, case.owner_id, tenant_id=tenant_id),
             encoding="utf-8",
         )
     generation = compile_okf_bundle(
         root,
-        tenant_id=_TENANT_ID,
+        tenant_id=tenant_id,
         source_revision=corpus.corpus_sha256,
     )
     curator = AuthenticatedPrincipal(
-        tenant_id=_TENANT_ID,
+        tenant_id=tenant_id,
         subject_id=_CURATOR_ID,
         client_id="student-qualification",
         scopes=frozenset(),
@@ -370,7 +372,7 @@ def _initialize_student_knowledge(
         embedding = (1.0,) + (0.0,) * 767
         store_generation_embeddings(
             connection,
-            tenant_id=_TENANT_ID,
+            tenant_id=tenant_id,
             generation_sha256=generation.generation_sha256,
             embedding_model_id="student-qualification",
             embedding_model_revision=corpus.corpus_sha256,
@@ -378,7 +380,7 @@ def _initialize_student_knowledge(
         )
         activate_complete_generation(
             connection,
-            tenant_id=_TENANT_ID,
+            tenant_id=tenant_id,
             generation_sha256=generation.generation_sha256,
         )
     return generation
@@ -398,7 +400,9 @@ def _expected_student_evidence(
         chunks = chunks_by_concept.get(case.concept_id, [])
         if concept is None or not 1 <= len(chunks) <= 8:
             raise RuntimeError("Student qualification compiled evidence differs")
-        ordered = tuple(sorted(chunks, key=lambda item: (item.char_start, item.chunk_id)))
+        ordered = tuple(
+            sorted(chunks, key=lambda item: (item.char_start, item.chunk_id))
+        )
         if any(chunk.text not in case.body for chunk in ordered):
             raise RuntimeError("Student qualification compiled body differs")
         expected[case.case_id] = tuple(
@@ -476,9 +480,7 @@ def _verify_student_database_state(
     warm_state = result.private_evidence.get("warmState")
     warm_before = warm_state.get("before") if isinstance(warm_state, dict) else None
     provider_generation = (
-        warm_before.get("processGeneration")
-        if isinstance(warm_before, dict)
-        else None
+        warm_before.get("processGeneration") if isinstance(warm_before, dict) else None
     )
     if (
         isinstance(provider_generation, bool)
@@ -532,9 +534,7 @@ def _verify_student_database_state(
         )
         outcome = outcome_by_status[item["status"]]
         count = len(item["questions"])
-        expected_terminal_audits.append(
-            (case.owner_id, outcome, item["reason"], count)
-        )
+        expected_terminal_audits.append((case.owner_id, outcome, item["reason"], count))
         expected_workflow_audits.append(
             (
                 case.owner_id,
@@ -665,14 +665,19 @@ def _verify_student_database_state(
     return checks
 
 
-def _concept_document(case: StudentQualificationCase, source_revision: str) -> str:
+def _concept_document(
+    case: StudentQualificationCase,
+    source_revision: str,
+    *,
+    tenant_id: str,
+) -> str:
     case_id = case.case_id
     title = case.title
     body = case.body
     return f"""---
 type: Meeting
 title: {title}
-resource: yap://tenant/{_TENANT_ID}/meeting/{case_id}
+resource: yap://tenant/{tenant_id}/meeting/{case_id}
 timestamp: 2026-08-12T16:00:00Z
 yap_schema: 1
 provenance: {{source: student-public-synthetic, source_revision: {source_revision}}}
@@ -683,9 +688,9 @@ provenance: {{source: student-public-synthetic, source_revision: {source_revisio
 """
 
 
-def _permission_document(case_id: str, owner_id: str) -> str:
+def _permission_document(case_id: str, owner_id: str, *, tenant_id: str) -> str:
     return f"""path_prefix: meetings/{case_id}
-audience: {{users: [{{tenant_id: {_TENANT_ID}, subject_id: {owner_id}}}]}}
+audience: {{users: [{{tenant_id: {tenant_id}, subject_id: {owner_id}}}]}}
 purposes: [knowledge.read]
 classification: internal
 denials: {{users: []}}
@@ -796,7 +801,9 @@ def _new_private_evidence_destination(
         or requested == repository_root
         or repository_root in requested.parents
     ):
-        raise ValueError("Student evidence destination must be new and outside the repository")
+        raise ValueError(
+            "Student evidence destination must be new and outside the repository"
+        )
     existing = requested.parent
     while not existing.exists():
         if existing.is_symlink() or existing.parent == existing:
@@ -805,12 +812,20 @@ def _new_private_evidence_destination(
             )
         existing = existing.parent
     if existing.is_symlink() or existing.resolve(strict=True) != existing:
-        raise ValueError("Student evidence destination must be new and outside the repository")
+        raise ValueError(
+            "Student evidence destination must be new and outside the repository"
+        )
     return requested
 
 
 def _write_new_private_text(path: Path, value: str) -> None:
-    if path.exists() or path.is_symlink() or not value or "\n" in value or "\r" in value:
+    if (
+        path.exists()
+        or path.is_symlink()
+        or not value
+        or "\n" in value
+        or "\r" in value
+    ):
         raise ValueError("Student private runtime credential is invalid")
     descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     with os.fdopen(descriptor, "w", encoding="utf-8", newline="\n") as output:

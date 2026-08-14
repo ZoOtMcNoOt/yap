@@ -33,6 +33,10 @@ from .librarian_query_requests import (
     LibrarianQueryRequestMixin,
     LibrarianQueryServiceProtocol,
 )
+from .student_question_requests import (
+    StudentQuestionRequestMixin,
+    StudentQuestionServiceProtocol,
+)
 from .lid_requests import LidPreflightServiceProtocol, LidRequestMixin
 from .request_io import (
     BoundedRequestBody,
@@ -48,6 +52,8 @@ from .routes import (
     LID_PREFLIGHT_PATH,
     LIBRARIAN_QUERIES_PATH,
     LIBRARIAN_QUERY_PATH,
+    STUDENT_QUESTIONS_PATH,
+    STUDENT_QUESTION_PATH,
     SUPPORTED_HTTP_VERSIONS,
     TRANSCRIPT_CORRECTION_PATH,
     TRANSCRIPT_CORRECTIONS_PATH,
@@ -66,6 +72,7 @@ _REQUEST_LOGGER = logging.getLogger("yap_server.requests")
 
 class _HealthRequestHandler(
     ArchivistIngestionRequestMixin,
+    StudentQuestionRequestMixin,
     LibrarianQueryRequestMixin,
     TranscriptCorrectionRequestMixin,
     LidRequestMixin,
@@ -85,6 +92,7 @@ class _HealthRequestHandler(
         job_service: RecordingJobService | None,
         lid_preflight_service: LidPreflightServiceProtocol | None,
         librarian_query_service: LibrarianQueryServiceProtocol | None,
+        student_question_service: StudentQuestionServiceProtocol | None,
         archivist_ingestion_service: ArchivistIngestionServiceProtocol | None,
         transcript_correction_service: TranscriptCorrectionServiceProtocol | None,
         asr_capabilities: Mapping[str, object] | None,
@@ -96,6 +104,7 @@ class _HealthRequestHandler(
         self._job_service = job_service
         self._lid_preflight_service = lid_preflight_service
         self._librarian_query_service = librarian_query_service
+        self._student_question_service = student_question_service
         self._archivist_ingestion_service = archivist_ingestion_service
         self._transcript_correction_service = transcript_correction_service
         self._asr_capabilities = asr_capabilities
@@ -188,6 +197,7 @@ class _HealthRequestHandler(
                         self._transcript_correction_service is not None
                     ),
                     librarian_queries=(self._librarian_query_service is not None),
+                    student_questions=(self._student_question_service is not None),
                     archivist_ingestions=(
                         self._archivist_ingestion_service is not None
                     ),
@@ -254,6 +264,21 @@ class _HealthRequestHandler(
             self._dispatch_librarian_query_request(path)
             return
 
+        is_student_question_route = (
+            path == STUDENT_QUESTIONS_PATH
+            or STUDENT_QUESTION_PATH.fullmatch(path) is not None
+        )
+        if is_student_question_route:
+            if self._student_question_service is None:
+                self._send_error(
+                    HTTPStatus.NOT_IMPLEMENTED,
+                    code="NOT_IMPLEMENTED",
+                    message="Learning questions are not configured.",
+                )
+                return
+            self._dispatch_student_question_request(path)
+            return
+
         is_archivist_ingestion_route = (
             path == ARCHIVIST_INGESTIONS_PATH
             or ARCHIVIST_INGESTION_PATH.fullmatch(path) is not None
@@ -312,6 +337,7 @@ def create_server(
     job_service: RecordingJobService | None = None,
     lid_preflight_service: LidPreflightServiceProtocol | None = None,
     librarian_query_service: LibrarianQueryServiceProtocol | None = None,
+    student_question_service: StudentQuestionServiceProtocol | None = None,
     archivist_ingestion_service: ArchivistIngestionServiceProtocol | None = None,
     transcript_correction_service: TranscriptCorrectionServiceProtocol | None = None,
     asr_capabilities: Mapping[str, object] | None = None,
@@ -349,6 +375,7 @@ def create_server(
         job_service=job_service,
         lid_preflight_service=lid_preflight_service,
         librarian_query_service=librarian_query_service,
+        student_question_service=student_question_service,
         archivist_ingestion_service=archivist_ingestion_service,
         transcript_correction_service=transcript_correction_service,
         asr_capabilities=asr_capabilities,
@@ -359,6 +386,7 @@ def create_server(
             job_service is not None
             or lid_preflight_service is not None
             or librarian_query_service is not None
+            or student_question_service is not None
             or archivist_ingestion_service is not None
             or transcript_correction_service is not None
         ),
@@ -376,6 +404,7 @@ def serve(
     request_authenticator: RequestAuthenticator | None = None,
     lid_preflight_service: LidPreflightServiceProtocol | None = None,
     librarian_query_service: LibrarianQueryServiceProtocol | None = None,
+    student_question_service: StudentQuestionServiceProtocol | None = None,
     archivist_ingestion_service: ArchivistIngestionServiceProtocol | None = None,
     transcript_correction_service: TranscriptCorrectionServiceProtocol | None = None,
     asr_capabilities: Mapping[str, object] | None = None,
@@ -386,6 +415,7 @@ def serve(
         job_service=job_service,
         lid_preflight_service=lid_preflight_service,
         librarian_query_service=librarian_query_service,
+        student_question_service=student_question_service,
         archivist_ingestion_service=archivist_ingestion_service,
         transcript_correction_service=transcript_correction_service,
         asr_capabilities=asr_capabilities,

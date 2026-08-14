@@ -1021,14 +1021,15 @@ Exact source candidate `3ec9885e...` passed focused unit checks, the complete
 1,207-test portable server suite, and two real PostgreSQL retry/restart/
 cross-owner/cancellation tests with exact six-part teardown. Hosted-green head
 `e1899db7...` passed all 12 checks and PR #165 merged the core as
-`2a7ec819...`. Exact product candidate `a2e9b551...` privately qualified its
+`2a7ec819...`. Exact product head `a2e9b551...` privately qualified its
 authenticated server/database/broker boundary with public-safe evidence SHA-256
 `9ec9e373...`: 10/10 exact terminals, 9 staged, 1 queued cancellation, 0 active
 generations, exact replay, and complete teardown. Native/renderer behavior is
 exact-head public-test green, including terminal cancellation/quit
-reconciliation before the native connection lease is released; hosted review
-and merge remain pending. The private gate is not a native-to-renderer run or
-live enterprise identity exchange.
+reconciliation before the native connection lease is released. Hosted head
+`69215c43...` passed all 12 required checks, and PR #177 merged the vertical as
+`e397af8b...`. The private gate is not a native-to-renderer run or live
+enterprise identity exchange.
 
 ### 29. Student learning-question workflow
 
@@ -1072,7 +1073,20 @@ current prompt/test repair changes protected inputs and is complete-portable-
 test green and privately qualified at exact head `428d6e48...` on the unchanged
 full Qwen rapid profile, with public-safe evidence SHA-256 `f597cca7...`.
 Hosted-green head `b03c6e79...` passed all 12 required checks and PR #166 merged
-the internal core as `2254605e...`. An HTTP/native/UI surface remains open.
+the internal core as `2254605e...`.
+
+Exact product successor `778a7545...` adds `student_question_service.py` and
+`student_product_runtime.py` as the bounded asynchronous product owner,
+`api/student_question_requests.py` as the authenticated HTTP adapter, native
+Rust as bearer/transport/response-validation owner, and the renderer's Student
+workspace as presentation owner. The product wrapper delegates semantic work to
+the unchanged qualified Student core; it creates no second evidence, question,
+citation, proposal, or knowledge authority. Its owner-private gate returned
+`student-authenticated-product-server-boundary-qualified` with 11/11 exact
+terminals and public-safe evidence SHA-256 `c46cf7df...`. This is a privately
+qualified unmerged candidate. Native/renderer behavior is exact-head public-
+test evidence rather than a private client round trip; hosted review and merge
+remain pending.
 
 ### 30. Curator knowledge-proposal core
 

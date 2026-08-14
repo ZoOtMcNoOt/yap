@@ -9,8 +9,8 @@ merged the internal core as `2254605e...`. Exact route head `dab19fe...`,
 workflow head `7cd24deb...`, and aggregate/public-lock head `7f896b34...`
 privately qualified the Curator/profile-capacity successor. Hosted-green head
 `593e627b...` passed all 12 checks, and PR #168 merged it as `284ab96b...`.
-Student/Curator product integration and simultaneous-capacity evidence remain
-open. Hosted head `7505247e...` merged Librarian through PR #169 as
+Student/Curator product integration and simultaneous-capacity evidence were
+still open at that point. Hosted head `7505247e...` merged Librarian through PR #169 as
 `d7a7e003...`. Exact executable `0665c486...` privately qualified Analyst; lock-
 only `8fee7a5c...` publishes the matching batch-invariant route lock. Hosted head
 `da1127f8...` merged Analyst through PR #170 as `52c45d22...`. Exact
@@ -21,19 +21,25 @@ PR #172 merged it as `1b255e9a...`. All eight bounded internal role cores are
 merged. Exact `e2ba1864...` privately qualified Librarian's authenticated HTTP
 server boundary; hosted head `67a79ce2...` passed all 12 checks and PR #174
 merged its HTTP/native/Knowledge product surface as `98af78c9...`. Exact
-`a2e9b551...` privately qualified an unmerged Archivist authenticated staging
-candidate with 10/10 exact server-side terminals, zero activation, and exact
-teardown. Its hosted merge and every Student/Curator/Analyst/Coordinator/Auditor
-product surface remain open.
+`a2e9b551...` privately qualified Archivist's authenticated staging boundary
+with 10/10 exact server-side terminals, zero activation, and exact teardown.
+Hosted head `69215c43...` passed all 12 checks and PR #177 merged the vertical as
+`e397af8b...`. Exact `778a7545...` privately qualified an unmerged Student
+product candidate with 11/11 exact server-side terminals. Curator, Analyst,
+Coordinator, and Auditor product surfaces remain open.
 
-**Current branch:** `agent/phase10-archivist-product` implements and qualifies the
-Archivist product vertical. The executable qualification remains attributed to
-exact `a2e9b551...`; hosted review and merge remain pending.
+**Current branch:** `agent/phase10-student-product` completes hosted review for
+the exact qualified Student product candidate. The requested Muse Spark 1.2
+complex-route successor remains queued immediately after this product merge.
+[Meta's
+August 5 release](https://research.meta.ai/blog/introducing-muse-code-and-muse-spark-1-2)
+offers Muse Spark 1.2 through Meta Model API rather than an admitted local weight
+artifact; no route replacement or qualification is claimed.
 
-**Base:** Librarian product documentation closure
-`1bbdb07ea395392a093051962bf6f726cf26fe51` from PR #175, descended from the
-Librarian product merge `98af78c940ea801a37103f615002658f90626fb3`
-and the merged Auditor internal core at `1b255e9a...`.
+**Base:** Archivist product merge
+`e397af8b29737fa21197c7058c659eab2ad0a00b` from PR #177, with executable
+qualification retained at exact `a2e9b551...` and hosted review at exact
+`69215c43...`.
 
 **Applied decisions:** [ADR 0031](../../adr/0031-eight-agent-voice-os-roster.md),
 [ADR 0030](../../adr/0030-rust-supervised-provider-service-lifecycle.md),
@@ -307,7 +313,8 @@ activated 0 generations, and completed exact teardown. The private gate proves
 the authenticated server/database/broker boundary; native/renderer behavior is
 exact-head public-test green. See the
 [product verification record](../../evidence/archivist-product-vertical/VERIFICATION.md).
-Hosted review and merge remain pending.
+Hosted head `69215c43...` passed all 12 required checks, and PR #177 merged the
+vertical as `e397af8b...`.
 
 Student adds one internal BACKGROUND_LLM workflow on the already-warm rapid
 route. It reads one owner-scoped, permission-safe admitted conversation
@@ -443,9 +450,11 @@ Auditor as `1b255e9a...`, completing the bounded internal roster.
   commands with role-specific UI states, retry/cancel controls, and graceful
   degradation. Exact `e2ba1864...` qualified this for Librarian's authenticated
   server boundary, and PR #174 merged its hosted-green native/Knowledge surface.
-  Exact `a2e9b551...` qualified the Archivist authenticated server boundary and
-  its native/renderer contract is public-test green; hosted merge remains open.
-  Student, Curator, Analyst, Coordinator, and Auditor product surfaces stay open.
+  Exact `a2e9b551...` qualified the Archivist authenticated server boundary;
+  hosted head `69215c43...` passed all 12 checks and PR #177 merged the vertical.
+  Exact `778a7545...` privately qualified Student's authenticated product server
+  boundary; hosted review and merge remain pending. Curator, Analyst,
+  Coordinator, and Auditor product surfaces stay open.
 - [ ] Run portable, database, lifecycle, private-model, mixed-route,
   simultaneous-residency, sustained-capacity, security, accessibility, and
   aggregate exact-head gates.

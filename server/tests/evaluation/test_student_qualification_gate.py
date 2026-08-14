@@ -77,8 +77,7 @@ class StudentQualificationGateTests(unittest.TestCase):
                 mock.Mock(spec=gate.StudentExpectedEvidence)
                 for _ in (
                     range(2)
-                    if case.case_id
-                    in {"instruction-is-data", "librarian-boundary"}
+                    if case.case_id in {"instruction-is-data", "librarian-boundary"}
                     else range(1)
                 )
             )
@@ -95,6 +94,28 @@ class StudentQualificationGateTests(unittest.TestCase):
             ("owner-08", "conversation-evidence", "succeeded", 2),
             audits,
         )
+
+    def test_qualification_documents_bind_the_explicit_fresh_tenant(self) -> None:
+        corpus = gate.load_student_qualification_corpus(
+            REPOSITORY_ROOT / "server/student-workload-fixtures.json"
+        )
+        case = corpus.cases[0]
+        tenant_id = "student-product-fresh-tenant"
+
+        concept = gate._concept_document(
+            case,
+            corpus.corpus_sha256,
+            tenant_id=tenant_id,
+        )
+        permission = gate._permission_document(
+            case.case_id,
+            case.owner_id,
+            tenant_id=tenant_id,
+        )
+
+        self.assertIn(f"yap://tenant/{tenant_id}/meeting/{case.case_id}", concept)
+        self.assertIn(f"tenant_id: {tenant_id}", permission)
+        self.assertNotIn(gate._TENANT_ID, concept + permission)
 
     def test_gate_restarts_database_tears_down_and_keeps_public_safe(self) -> None:
         events: list[str] = []
@@ -202,9 +223,7 @@ class StudentQualificationGateTests(unittest.TestCase):
                     mock.patch.object(
                         gate, "admit_checked_candidate", return_value=Candidate()
                     ),
-                    mock.patch.object(
-                        gate, "_candidate_input_paths", return_value=()
-                    ),
+                    mock.patch.object(gate, "_candidate_input_paths", return_value=()),
                     mock.patch.object(gate, "_require_private_arm64_host"),
                     mock.patch.object(
                         gate,
@@ -238,9 +257,7 @@ class StudentQualificationGateTests(unittest.TestCase):
                         "load_knowledge_database_runtime_lock",
                         return_value=mock.Mock(lock_sha256="7" * 64),
                     ),
-                    mock.patch.object(
-                        gate, "OwnedPostgresKnowledgeRuntime", Database
-                    ),
+                    mock.patch.object(gate, "OwnedPostgresKnowledgeRuntime", Database),
                     mock.patch.object(
                         gate, "_initialize_student_knowledge", return_value=generation
                     ),

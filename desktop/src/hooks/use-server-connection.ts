@@ -23,6 +23,7 @@ const initialServerSnapshot: ServerConnectionSnapshot = {
     transcriptCorrection: false,
     librarianQueries: false,
     archivistIngestions: false,
+    studentQuestions: false,
   },
   errorCode: null,
 };
