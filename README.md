@@ -1,188 +1,107 @@
+<img src="desktop/public/yap-mark.svg" alt="Yap speech and waveform mark" width="64" height="64">
+
 # Yap
 
-Yap is a private, desktop-first transcription system: a Tauri/React client with
-an explicit local live fallback and a durable batch path to a private GPU
-server.
+**A private workspace for turning recordings into text you can use.**
 
-Phases 1–9 and the post-phase architecture checkpoints are merged. Phase 10 has
-also merged the Rust-owned supervised-provider lifecycle, immutable Qwen/Gemma
-profiles, bounded already-warm admission, Scribe transcript correction, the
-no-LLM Archivist core, and the internal Student learning-question core through
-PR #166. Hosted-green head
-`593e627b...` passed all 12 required checks, and PR #168 merged the qualified
-profile-capacity successor and explicit-submission-only Curator internal core as
-`284ab96b...`. PR #169 then merged the privately qualified no-LLM Librarian
-core as `d7a7e003...` from hosted head `7505247e...`. Hosted head
-`da1127f8...` passed all 12 required checks, and PR #170 merged the qualified
-Analyst internal core as `52c45d22...`. Hosted head `53ee0152...` passed all
-12 required checks, and PR #171 merged the qualified Coordinator internal core
-as `67d836da...`. Exact executable candidate `08b06f6d...` privately qualified
-Auditor's idle-only, source-cited review-findings internal core. Hosted head
-`937a4129...` passed all 12 required checks, and PR #172 merged Auditor as
-`1b255e9a...`. All eight bounded internal role cores are now merged.
+Bring an interview, meeting or field recording. Queue it, review the transcript,
+save corrections, and carry the useful parts into your work. Yap keeps the
+original recording and transcript alongside what you change.
 
-Scribe, Librarian, Archivist, Student, Curator, Analyst, Coordinator, and Auditor
-are the eight merged product surfaces. Exact
-executable
-`e2ba1864...` privately qualified Librarian's authenticated HTTP server boundary;
-hosted head `67a79ce2...` passed all 12 required checks, and PR #174 merged the
-HTTP/native/Knowledge vertical as `98af78c9...`. Exact executable
-`a2e9b551...` privately qualified the Archivist product vertical:
-authenticated HTTP staging, native-owned job/result transport, and one explicit
-**Stage for knowledge** action for completed server-batch transcripts. Its
-10/10 exact private terminals staged nine requests, cancelled one queued
-request, activated zero generations, and completed exact teardown. Hosted head
-`69215c43...` passed all 12 required checks, and PR #177 merged the vertical as
-`e397af8b...`. Native cancellation and quit cleanup now retain ownership through
-an exact terminal
-request/source identity before releasing the connection lease. Exact executable
-`778a7545...` privately qualified the Student product vertical:
-authenticated question jobs, native-owned bearer and response validation, and
-a source-bound learning-question action beside permission-safe Librarian
-evidence. Hosted head `53ce570b...` passed all 12 required checks, and PR #178
-merged the vertical as `6546970b...`. Exact executable `6aa33e4d...` then
-privately qualified the authenticated Curator proposal server boundary across
-10/10 exact terminals with public-safe evidence SHA-256 `328f6640...`. Hosted
-head `b983adb7...` passed all 12 checks, and PR #179 merged the vertical as
-`70303872...`. Exact executable `78b2c638...` privately qualified the
-authenticated Analyst cited-answer server boundary across 10/10 exact product
-terminals with public-safe evidence SHA-256 `f26adfc0...`; hosted head
-`4c8db7c2...` passed all 12 required checks, and PR #180 merged the HTTP/native/
-renderer successor as `c95fcf1a...`. Exact `05400fb3...` privately qualified
-Coordinator's authenticated proposal-bundle server boundary across 10/10 exact
-product terminals with public-safe evidence SHA-256 `394112ad...`; hosted head
-`6890a9f5...` passed all 12 required checks, and PR #181 merged the vertical as
-`3fd5eaed...`. Exact `87924d5f...` privately qualified Auditor's
-authenticated source-cited review-report server boundary across 10/10 exact
-product terminals with public-safe evidence SHA-256 `b5a31c21...`; hosted head
-`6bb72953...` passed all six hosted CI jobs reported for PR #183, which
-rebase-merged the tree-identical successor with main tip `13d9e3ef...`.
-Production identity, simultaneous full-profile residency, sustained capacity,
-and enterprise deployment stay explicitly gated.
+Built by **Grant McNatt** with Tauri, React and Rust.
 
-Start with [current status](docs/CURRENT-STATUS.md). It states what executes,
-what is verified, what is still absent, and what happens next.
+[Get started](#get-started) · [Product](PRODUCT.md) · [Documentation](docs/README.md) · [Current status](docs/CURRENT-STATUS.md)
 
-## Current product boundary
+![Yap Home with a saved transcript, navigation and processing status](docs/evidence/design-refresh/2026-10-03/after/01-home.png)
 
-- One installed desktop app owns tray/window lifecycle, native capture,
-  deliberate shortcuts, local Nemotron fallback, durable imported jobs,
-  connector state, authorized paths, and transcript History.
-- One tray-owned island window expands on hover; native code owns its exact
-  bounds and visible hit region.
-- Imported Phase 5 jobs admit canonical mono PCM16/16 kHz WAV, publish an
-  immutable Yap-owned spool, and persist create/upload/commit/status/result/
-  cancel progress in native SQLite.
-- The active Phase 6 path records deterministic normalization and optional
-  explicitly installed/hash-verified Silero source-time evidence without
-  deleting source audio; bounded client/server stage attempts survive retry and
-  restart.
-- The development server binds to numeric loopback. A user-managed SSH forward
-  can connect it to the private GB-class node; Yap does not create an external
-  application endpoint.
-- The merged reference worker uses the digest-pinned NVIDIA PyTorch 26.06 base,
-  Python 3.12, the locked NVIDIA Torch/CUDA stack, and transient raw
-  Transformers inference. It remains the correctness/rollback baseline rather
-  than a persistent serving engine.
-- Cohere batch has a digest-pinned NVIDIA vLLM candidate behind the bounded
-  worker contract. Nemotron retains its Transformers correctness path and a
-  separate resident NeMo finalized-ASR candidate. Their checked launchers keep
-  each container on an exact-head internal bridge with no published provider
-  port or external egress. Candidate-safety evidence does not itself promote
-  either ASR provider.
-- The merged team agent plane uses hash-locked Qwen rapid-automation and Gemma
-  complex-orchestration vLLM routes with no cross-route fallback. Scribe,
-  Student, and Curator are merged desktop-facing LLM workflows, and Librarian
-  owns the merged Knowledge workspace. Archivist adds no model call: it
-  resolves a completed server-batch recording natively and asks the authenticated
-  server to stage its reviewed transcript without activating knowledge. The
-  merged Student surface adds authenticated question jobs and a source-bound
-  learning-question action. PR #179 merged Curator's explicit reviewed proposal
-  submission, owner-scoped status/cancellation, and review-required
-  noncanonical result. PR #180 merged Analyst's authenticated cited-answer
-  product surface. PR #181 merged Coordinator's authenticated proposal-bundle
-  server/native/renderer vertical. Exact `87924d5f...` privately qualified
-  Auditor's authenticated report server boundary; hosted head `6bb72953...`
-  passed all six PR checks, and PR #183 rebase-merged the product vertical with
-  main tip `13d9e3ef...`.
-  The qualified
-  profile-capacity successor admits four rapid or eight complex active distinct
-  owners on the selected already-warm route, while preserving one active request
-  per owner. Analyst's three exact synchronized repeats establish same-warm-
-  process batch invariance, not cross-start/global determinism, simultaneous
-  residency, sustained capacity, or a production SLO. Coordinator separately
-  matched three synchronized eight-owner service waves and returned only
-  server-derived, noncanonical, review-required proposal bundles.
-  Auditor matched three synchronized eight-owner idle-only service waves,
-  returned only server-derived noncanonical review-required findings, and
-  proved that active or queued non-idle work blocks it until that work is
-  terminal.
-- Result identity, hashes, paths, sizes, authority, and transcript bytes are
-  verified natively before History presents completion.
+*Browser preview of the refreshed interface, using synthetic records. See the
+[design review](docs/evidence/design-refresh/2026-10-03/review.md) for screens,
+references and motion checks.*
 
-WSS/live server transcription, general media conversion, production
-authentication, persistent multi-user service, enterprise DNS/certificates/
-firewall/ZPA, promoted diarization, simultaneous full-profile residency,
-sustained capacity/SLOs, and production operations are later gates—not hidden current
-capabilities.
+## From recording to working knowledge
 
-## Repository map
+- **Bring your recordings.** Import files into a durable queue with progress,
+  cancellation and retry. Work resumes through the configured organization server.
+- **Read, correct and keep the original.** Find saved transcripts, copy or export
+  text, and save corrections as separate revisions. Accepted corrections can be
+  reopened and exported offline.
+- **Follow the sources.** Search your organization's knowledge, explore cited
+  connections, and inspect proposals with their exact source excerpts. Publishing
+  knowledge remains an explicit human review step.
+- **Dictate on your device.** Start an explicit local session with an installed
+  model. The compact top-edge island keeps recording controls close at hand.
 
-```text
-desktop/     Tauri 2 + React desktop app and native/runtime tests
-server/      Python 3.12 contract, durable batch service, router, and worker
-infra/       Private server-node bootstrap and policy
-docs/        Current architecture/status, ADRs, specs, plans, runbooks, evidence
+Imported recordings use an **organization-owned server**. Local dictation runs on
+your device. Connecting and signing in are explicit; an outage keeps imports
+queued and leaves saved reading and local controls available.
+
+## Where the project stands
+
+Yap is in active development. UI journeys, native boundaries, file preparation and
+database workflows can be tested without model hardware. Actual transcription
+quality, Windows behavior and enterprise deployment still require qualification
+in their intended environments. [Current status](docs/CURRENT-STATUS.md) records
+the checks and remaining work.
+
+Current import support covers WAV, MP3, FLAC, Ogg Vorbis, and **M4A/MP4 with one
+mono/stereo AAC-LC audio track**. Video in a supported MP4 is ignored. Container
+and codec restrictions are documented in [Product](PRODUCT.md); AAC distribution
+patent clearance remains a release decision.
+
+Our [single project goal](docs/plans/active/2026-10-02-yap-project-hill-climb.md)
+is to finish the full product through working, verified increments. The
+[roadmap](docs/roadmap/ROADMAP.md) preserves the complete feature inventory,
+including formats, speaker workflows, richer exports and the Voice OS direction.
+
+## Get started
+
+### Preview the interface
+
+Use **Node 24** and **pnpm 11.7.0**. From the repository root:
+
+```bash
+cd desktop
+pnpm install --frozen-lockfile
+pnpm dev
 ```
 
-Runtime data belongs under Tauri's canonical app-data directory. On Windows
-that is `%APPDATA%\com.mcnatg1.yap`. The stock NSIS installer lifecycle is
-tested only in a disposable Windows environment.
+Open the local address printed by Vite. This is a browser preview: recording,
+native file access and organization sign-in need the desktop app. Inference needs
+the corresponding model or configured server.
 
-## Desktop development
+### Develop the desktop and server
 
-Requirements: Node 24, pnpm 11.7.0, Rust 1.96, and PowerShell Core 7.4+ for
-repo-owned Windows automation.
+The native stack uses Rust 1.96; server development uses Python 3.12 and uv.
+Windows automation requires PowerShell Core 7.4 or newer.
 
-```powershell
-cd C:\dev\cohere-transcribe-local\desktop
-corepack pnpm@11.7.0 install --frozen-lockfile
-pnpm test
-pnpm build
-pnpm tauri dev
+On the managed Debian 13 cloud workspace, the setup script installs the remaining
+tools and locked dependencies:
+
+```bash
+bash verification/setup-cloud-dev.sh
+source verification/cloud-env.sh
+pnpm --dir desktop test
+pnpm --dir desktop build
+pnpm --dir desktop test:e2e
 ```
 
-See [desktop/README.md](desktop/README.md) for focused Playwright, WDIO, and
-installer commands. Do not run the installer lifecycle in an everyday Windows
-profile.
+The [cloud guide](docs/runbooks/cloud-development.md) covers native builds,
+local PostgreSQL and server checks. Start with [desktop development](desktop/README.md)
+for Windows or [server development](server/README.md) for service configuration.
+These development checks do not need a GPU or model weights.
 
-## Server development
+## Find your way around
 
-The portable service supports Python `>=3.12,<3.13`.
+| Area | What lives here |
+| --- | --- |
+| [`desktop/`](desktop/README.md) | The interface, native client and desktop tests |
+| [`server/`](server/README.md) | Transcription and knowledge services, contracts and orchestration |
+| `infra/` | Private-server deployment and service supervision |
+| `verification/` | Development checks and release qualification |
+| [`docs/`](docs/README.md) | Setup guides, architecture, decisions and evidence |
 
-```powershell
-$env:PYTHONPATH = (Resolve-Path "server/src").Path
-uv run --isolated --no-project --python 3.12 --with pytest pytest server/tests
-```
-
-See [server/README.md](server/README.md) and the
-[server-node runbook](docs/runbooks/yap-server-node-setup.md). The GB10 gate is
-an exact-head release boundary, not a routine local test.
-
-## Canonical documentation
-
-- [Current status](docs/CURRENT-STATUS.md)
-- [Current architecture](docs/architecture/CURRENT-ARCHITECTURE.md)
-- [Long-term Voice OS architecture frame](docs/VOICE-OS-ARCHITECTURE.md)
-- [Executable ownership map](docs/architecture/boundaries/EXECUTABLE-OWNERSHIP.md)
-- [Roadmap](docs/roadmap/ROADMAP.md)
-- [ADR index and implementation status](docs/adr/README.md)
-- [Public security posture](docs/security/SECURITY-POSTURE.md)
-- [Third-party provenance](docs/provenance/THIRD-PARTY.md)
-- [Executable ownership review findings](docs/evidence/executable-ownership-review/FINDINGS.md)
-- [Documentation index](docs/README.md)
-- [Changelog](CHANGELOG.md)
-
-Product and visual intent remain in [PRODUCT.md](PRODUCT.md) and
-[DESIGN.md](DESIGN.md). If a historical plan conflicts with current code or a
-canonical document, the executable system and accepted ADR/spec win.
+For the wider picture, read [Design](DESIGN.md), the
+[current architecture](docs/architecture/CURRENT-ARCHITECTURE.md) and the
+[Voice OS direction](docs/VOICE-OS-ARCHITECTURE.md). [Security](docs/security/SECURITY-POSTURE.md),
+[third-party provenance](docs/provenance/THIRD-PARTY.md) and the
+[changelog](CHANGELOG.md) have their own records.
