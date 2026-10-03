@@ -298,3 +298,41 @@ fn proposal_transport_sends_only_owned_reference_and_dispatcher_identity() {
         .contains("authorization: bearer private-token\r\n"));
     assert!(!incoming.contains("conceptId=") && !incoming.contains("subject="));
 }
+
+#[test]
+fn discard_uses_authenticated_delete_and_strict_reference_bound_receipt() {
+    let request = ConnectionsRequest::Discard {
+        proposal_id: "f".repeat(64),
+    };
+    let receipt = serde_json::json!({"schemaVersion":1,"proposalId":"f".repeat(64),
+        "generationSha256":"a".repeat(64),"status":"discarded"});
+    let (result, incoming) = exchange_request(&request, "200 OK", receipt.to_string(), None, false);
+    assert!(matches!(result, Ok(ConnectionsResponse::Discarded(_))));
+    assert!(incoming.starts_with(&format!(
+        "DELETE /v1/knowledge/connection-proposal?proposalId={} HTTP/1.1",
+        "f".repeat(64)
+    )));
+    assert!(incoming
+        .to_lowercase()
+        .contains("authorization: bearer private-token\r\n"));
+    assert!(!incoming.contains("subjectId") && !incoming.contains("generationSha256="));
+    for (field, value) in [
+        ("proposalId", serde_json::json!("b".repeat(64))),
+        ("status", serde_json::json!("proposed")),
+        ("status", serde_json::json!("published")),
+        ("generationSha256", serde_json::json!("invalid")),
+        ("schemaVersion", serde_json::json!(2)),
+        ("authority", serde_json::json!("human_confirmed")),
+        ("sources", serde_json::json!([])),
+    ] {
+        let mut malformed = receipt.clone();
+        malformed[field] = value;
+        assert!(decode(&request, &serde_json::to_vec(&malformed).unwrap()).is_err());
+    }
+    assert!(
+        serde_json::from_value::<ConnectionsRequest>(serde_json::json!({
+            "action":"discard", "proposalId":"f".repeat(64), "subjectId":"forged"
+        }))
+        .is_err()
+    );
+}

@@ -22,6 +22,13 @@ export type ConnectionProposal = {
   }[];
 };
 
+export type ConnectionProposalDisposition = {
+  schemaVersion: 1;
+  generationSha256: string;
+  proposalId: string;
+  status: "discarded";
+};
+
 export type ConnectionNode = {
   conceptId: string;
   type: string;
@@ -58,10 +65,12 @@ export type KnowledgeNeighborhood = ConceptPage & {
 };
 export type ConnectionsRequest =
   | { action: "proposal"; proposalId: string }
+  | { action: "discard"; proposalId: string }
   | { action: "browse"; search: string }
   | { action: "read"; conceptId: string; generationSha256: string };
 export type ConnectionsResponse =
   | { kind: "proposal"; value: ConnectionProposal }
+  | { kind: "discarded"; value: ConnectionProposalDisposition }
   | { kind: "topics"; value: ConceptPage }
   | { kind: "neighborhood"; value: KnowledgeNeighborhood };
 export type ConnectionsReceipt = {
@@ -90,10 +99,18 @@ export async function knowledgeConnections(
         ? "topics"
         : request.action === "proposal"
           ? "proposal"
-          : "neighborhood") ||
+          : request.action === "discard"
+            ? "discarded"
+            : "neighborhood") ||
     (request.action === "proposal" &&
       receipt.response.kind === "proposal" &&
       receipt.response.value.proposalId !== request.proposalId) ||
+    (request.action === "discard" &&
+      receipt.response.kind === "discarded" &&
+      (receipt.response.value.proposalId !== request.proposalId ||
+        receipt.response.value.schemaVersion !== 1 ||
+        receipt.response.value.status !== "discarded" ||
+        !/^[0-9a-f]{64}$/.test(receipt.response.value.generationSha256))) ||
     (request.action === "read" &&
       receipt.response.value.generationSha256 !== request.generationSha256)
   )

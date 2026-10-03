@@ -72,9 +72,10 @@ def allowed_methods(path: str) -> frozenset[str] | None:
     if path in {
         "/v1/knowledge/concepts",
         "/v1/knowledge/connections",
-        "/v1/knowledge/connection-proposal",
     }:
         return frozenset({"GET"})
+    if path == "/v1/knowledge/connection-proposal":
+        return frozenset({"GET", "DELETE"})
     if path == TERMINOLOGY_SCOPES_PATH:
         return frozenset({"GET"})
     if path == TERMINOLOGY_PATH:

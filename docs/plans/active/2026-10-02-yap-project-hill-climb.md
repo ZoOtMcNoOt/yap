@@ -139,9 +139,9 @@ issues or promote unqualified models/platforms.
 passed all six jobs. The completed integration branch was retired; `main` is
 the shared integration branch. Issue #92 and the full project goal remain open.
 
-## Current increment: core server dependency integrity
+## Completed increment: core server dependency integrity
 
-**Status:** In progress. Auditing the exact Python lock exposed published
+**Status:** Software verified and merged. Auditing the exact Python lock exposed published
 advisories in PyJWT, cryptography and httpx2. Repair the supported core before
 continuing human publication/rebuild recovery. Model runtime overlays have a
 separate dependency boundary and cannot inherit a clean core result.
@@ -149,7 +149,7 @@ separate dependency boundary and cannot inherit a clean core result.
 - [x] Lock compatible published fixes, preserving hashes, strict identity policy and third-party licenses.
 - [x] Add a repeatable core audit covering every locked registry version, including platform markers and optional/development groups; refuse findings, skipped packages and unavailable evidence without ignores.
 - [x] Verify valid identity flows, malformed token rejection, MCP and the full portable server suite without models; record remaining runtime findings separately.
-- [ ] Review, commit/push and integrate through all green exact-head jobs, then retire the temporary branch and continue the software queue.
+- [x] Review, commit/push and integrate through all green exact-head jobs, then retire the temporary branch and continue the software queue.
 
 [Core server evidence](../../evidence/server-dependencies/2026-10-03/verification.md)
 records the four patched versions, complete 40-version audit, 53 identity cases,
@@ -157,6 +157,30 @@ records the four patched versions, complete 40-version audit, 53 identity cases,
 with no skips. Historical model receipts keep their original dependency hashes;
 changed dependencies require renewed qualification. NeMo overlay findings remain
 open and cannot inherit the clean core result.
+
+[PR #201](https://github.com/ZoOtMcNoOt/yap/pull/201) merged at `85d87c0f` with
+the identical tree tested at `7622a5a6`; all six jobs in
+[run 536](https://github.com/ZoOtMcNoOt/yap/actions/runs/37121648208) passed.
+The iteration branch and superseded Dependabot PR #200 are retired; the latter's
+exact tip remains under `archive/dependency-proposal-200-2026-10-03`.
+
+## Current increment: owner-controlled proposal discard
+
+**Status:** Five software outcomes locally verified; hosted integration is
+pending. Review now confirms discard of owned connection proposals, retains history
+and sources, and handles uncertain delivery with an idempotent retry. Published
+knowledge stays unchanged and no model runs.
+
+- [x] Authenticate an explicit bounded discard of only the caller's relationship proposal; unknown, foreign and other-type references share an unavailable result. Obsolete owned proposals can be retired without reading hidden source contents.
+- [x] Keep discard idempotent, preserve provenance/sources/graph, release unresolved capacity and atomically commit the tombstone with its content-free success audit; failures cannot report a false success or resurrect a proposal.
+- [x] Bound service admission and SQL work; bind native dispatch/results to the exact current connection/sign-in and main window, with strict typed receipts and no caller-supplied identity.
+- [x] Add accessible explicit confirmation and a durable discarded result in Review proposals, preserving navigation, local controls and narrow layouts.
+- [x] Support retry after uncertain delivery without claiming a cancelled write; account changes hide old evidence and cannot apply a delayed result to the new account.
+- [ ] Verify real Postgres/API, native and browser journeys, review/push and integrate through all exact-head checks; continue human publication/rebuilding and the full queue.
+
+
+[Discard evidence and screens](../../evidence/connection-proposal-discard/2026-10-03/verification.md)
+record the real SQL, native and browser checks and target limits.
 
 ## Execution record
 
@@ -193,5 +217,7 @@ open and cannot inherit the clean core result.
 | 2026-10-03 | Hosted Windows frontend, browser, release contracts, strict Clippy and native app build pass. Native tests exposed staging-file sharing during verified model installation; verification now retains the owned handle. Corrected canonical export paths, last-handle cleanup and cancellation-size observation in tests, and refreshed native Knowledge copy assertions. Linux native 1,363 units and eight documentation/license/provenance checks renew. | Renew exact-head Windows native tests and WDIO, then integrate PR #199. Keep #92 open for actual RDP/session-lock qualification. |
 | 2026-10-03 | Run 530 passes Windows native 1,367 + 27, strict Clippy, native WDIO and both connector runtimes; server, identity and orchestrator pass. The 184-case browser suite reports 152 passes before the old 15-minute job deadline cancels it. Raised the bounded frontend job budget to 25 minutes; per-test/assertion timeouts and population stay unchanged. | Renew all checks on the updated integration commit, then merge PR #199 and retire the temporary branch. |
 | 2026-10-03 | Run 531 exposed concurrent timestamp-only fixture directory collisions in the orchestrator. Added process-local atomic sequences using the existing supervised-service pattern, retaining exclusive private creation. All 46 default contracts and strict all-target/all-feature Clippy pass locally. | Renew exact-head hosted checks, integrate PR #199 and retire its temporary branch; retain the full product queue and physical qualification handoffs. |
+
+| 2026-10-03 | Owner-controlled discard completes the model-free server/native/UI path. Atomic tombstones/audits, retained provenance, 64-proposal capacity release, uncertain retries and account isolation pass actual PostgreSQL checks. Linux native 1,364 + 27, frontend 393, browser 189 + one Windows-only skip, build and contracts pass; confirmation/confirmed screens retained. | Push and integrate through all exact-head hosted checks, then retire the iteration branch and continue human publication/rebuilding and the full queue. |
 
 Attribute project work to Grant McNatt. Preserve third-party attribution/provenance; do not add AI branding or coauthor trailers.

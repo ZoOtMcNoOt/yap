@@ -24,7 +24,10 @@ from .knowledge_tool_contract import (
 )
 from .okf_source import MAX_OKF_DOCUMENT_BYTES
 from .knowledge_tool_audit import record_knowledge_tool_audit
-from .knowledge_proposals import read_connection_proposal_in_transaction
+from .knowledge_proposals import (
+    discard_knowledge_proposal,
+    read_connection_proposal_in_transaction,
+)
 from .postgres_relationship_retrieval import (
     KnowledgeConnectionNode,
     KnowledgeRelationshipResult,
@@ -45,7 +48,7 @@ class KnowledgeConnectionsError(Exception):
 
 
 class KnowledgeConnectionsService:
-    """Read reviewed relationships without invoking a reasoning/embedding model."""
+    """Browse reviewed knowledge and manage owned proposals without a model."""
 
     def __init__(self, connection_factory: PrivatePostgresConnectionFactory) -> None:
         self._connection_factory = connection_factory
@@ -117,6 +120,104 @@ class KnowledgeConnectionsService:
                 "Connection proposal reference is invalid.",
             )
         return self._query(principal, proposal_id=proposal_id)
+
+    def discard(
+        self, *, principal: AuthenticatedPrincipal, proposal_id: str
+    ) -> dict[str, object]:
+        if not valid_sha256(proposal_id):
+            raise KnowledgeConnectionsError(
+                400, "INVALID_KNOWLEDGE_CONNECTIONS", "Proposal reference is invalid."
+            )
+        if not self._requests.acquire(blocking=False):
+            raise KnowledgeConnectionsError(
+                429,
+                "KNOWLEDGE_CONNECTIONS_BUSY",
+                "Knowledge connections are busy. Try again.",
+                True,
+            )
+        started = time.monotonic()
+        try:
+            with self._connection_factory() as connection:
+                try:
+                    with connection.transaction():
+                        connection.execute("SET LOCAL statement_timeout = '5s'")
+                        connection.execute("SET LOCAL lock_timeout = '1s'")
+                        # Match the journal's lock order before touching a row.
+                        connection.execute(
+                            "SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))",
+                            (principal.tenant_id,),
+                        )
+                        row = connection.execute(
+                            """SELECT proposal_id FROM yap_knowledge_proposals
+                               WHERE tenant_id = %s AND proposer_subject_id = %s
+                                 AND proposal_id = %s AND proposal_type = 'relationship'""",
+                            (principal.tenant_id, principal.subject_id, proposal_id),
+                        ).fetchone()
+                        if row is None:
+                            raise KnowledgeConnectionsError(
+                                404,
+                                "KNOWLEDGE_PROPOSAL_UNAVAILABLE",
+                                "This connection proposal is unavailable.",
+                            )
+                        disposition = discard_knowledge_proposal(
+                            connection,
+                            principal=principal.key,
+                            proposal_id=proposal_id,
+                        )
+                        if not valid_sha256(disposition.generation_sha256):
+                            raise ValueError("proposal generation is invalid")
+                        self._record_discard_audit(
+                            connection,
+                            principal,
+                            "succeeded",
+                            started,
+                            disposition.generation_sha256,
+                        )
+                        return {
+                            "schemaVersion": 1,
+                            "proposalId": disposition.proposal_id,
+                            "generationSha256": disposition.generation_sha256,
+                            "status": "discarded",
+                        }
+                except Exception:
+                    with connection.transaction():
+                        self._record_discard_audit(connection, principal, "failed", started)
+                    raise
+        except KnowledgeConnectionsError:
+            raise
+        except Exception:
+            raise KnowledgeConnectionsError(
+                503,
+                "KNOWLEDGE_CONNECTIONS_UNAVAILABLE",
+                "Proposal discard could not be confirmed. Try again.",
+                True,
+            ) from None
+        finally:
+            self._requests.release()
+
+    @staticmethod
+    def _record_discard_audit(
+        connection: Connection[object],
+        principal: AuthenticatedPrincipal,
+        outcome: str,
+        started: float,
+        generation: str | None = None,
+    ) -> None:
+        # Failure audits run in a new transaction after rollback.
+        connection.execute("SET LOCAL statement_timeout = '5s'")
+        connection.execute("SET LOCAL lock_timeout = '1s'")
+        record_knowledge_tool_audit(
+            connection,
+            principal=principal.key,
+            agent_id="knowledge-explorer",
+            operation="discard-connection-proposal",
+            outcome=outcome,
+            result_count=1 if outcome == "succeeded" else 0,
+            generation_sha256=generation,
+            permission_hash=None,
+            authorization_hash=None,
+            duration_milliseconds=max(0, int((time.monotonic() - started) * 1_000)),
+        )
 
     def _query(
         self,
