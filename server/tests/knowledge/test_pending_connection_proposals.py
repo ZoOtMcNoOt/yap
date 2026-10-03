@@ -36,7 +36,7 @@ class PendingConnectionProposalTests(CuratorConnectionFixture, unittest.TestCase
                 (self.tenant,),
             ).fetchall()
 
-    def fail(self, status):
+    def assert_pending_fails(self, status):
         with self.assertRaises(runtime.KnowledgeConnectionsError) as caught:
             self.pending()
         self.assertEqual(caught.exception.status, status)
@@ -135,7 +135,7 @@ class PendingConnectionProposalTests(CuratorConnectionFixture, unittest.TestCase
                 "UPDATE yap_knowledge_proposals SET proposal_id = 'corrupt-reference' WHERE tenant_id = %s",
                 (self.tenant,),
             )
-        self.fail(503)
+        self.assert_pending_fails(503)
         self.assertEqual(self.audit(), [("failed", 0, None, None, None)])
 
     def test_excess_capacity_refuses_partial_truth_and_releases_admission(self):
@@ -157,7 +157,7 @@ class PendingConnectionProposalTests(CuratorConnectionFixture, unittest.TestCase
                         for index in range(64)
                     ],
                 )
-        self.fail(503)
+        self.assert_pending_fails(503)
         self.assertEqual(self.audit(), [("failed", 0, None, None, None)])
         with connect() as connection:
             connection.execute(
@@ -172,7 +172,7 @@ class PendingConnectionProposalTests(CuratorConnectionFixture, unittest.TestCase
                 "UPDATE yap_knowledge_proposals SET created_at = 'infinity' WHERE tenant_id = %s",
                 (self.tenant,),
             )
-        self.fail(503)
+        self.assert_pending_fails(503)
         self.assertEqual(self.audit(), [("failed", 0, None, None, None)])
 
     def test_audit_failure_and_busy_admission_never_mutate_the_journal(self):
@@ -180,7 +180,7 @@ class PendingConnectionProposalTests(CuratorConnectionFixture, unittest.TestCase
         self.service._requests.acquire()
         self.service._requests.acquire()
         try:
-            self.fail(429)
+            self.assert_pending_fails(429)
         finally:
             self.service._requests.release()
             self.service._requests.release()
@@ -195,7 +195,7 @@ class PendingConnectionProposalTests(CuratorConnectionFixture, unittest.TestCase
         with patch.object(
             runtime, "record_knowledge_tool_audit", side_effect=fail_success
         ):
-            self.fail(503)
+            self.assert_pending_fails(503)
         self.assertEqual(self.audit(), [("failed", 0, None, None, None)])
         self.assertEqual((self.stored_connection_rows(), self.graph_identity()), before)
         self.assertEqual(len(self.pending()["proposals"]), 1)
