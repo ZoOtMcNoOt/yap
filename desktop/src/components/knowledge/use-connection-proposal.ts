@@ -86,6 +86,7 @@ export function useConnectionProposal(
         !available ||
         !owned ||
         running.current ||
+        (action === "proposal" && discardUnconfirmed) ||
         !/^[0-9a-f]{64}$/.test(proposalId)
       )
         return;
@@ -159,7 +160,7 @@ export function useConnectionProposal(
         }
       }
     },
-    [available, owned, reference, snapshot.authorityRevision],
+    [available, owned, reference, discardUnconfirmed, snapshot.authorityRevision],
   );
   useEffect(() => {
     if (
@@ -170,12 +171,12 @@ export function useConnectionProposal(
       !owned
     )
       return;
+    if (running.current?.action === "discard" || discardUnconfirmed) {
+      consumed.current = handoff;
+      setQueuedHandoff(handoff);
+      return;
+    }
     if (running.current) {
-      if (running.current.action === "discard") {
-        consumed.current = handoff;
-        setQueuedHandoff(handoff);
-        return;
-      }
       if (deferred.current !== handoff) {
         deferred.current = handoff;
         epoch.current += 1;
@@ -199,6 +200,7 @@ export function useConnectionProposal(
     void run(handoff.reference);
   }, [
     available,
+    discardUnconfirmed,
     handoff,
     owned,
     pending,
@@ -257,6 +259,7 @@ export function useConnectionProposal(
     run,
     cancel,
     canRead:
-      available && owned && !pending && !disposition && /^[0-9a-f]{64}$/.test(reference.trim()),
+      available && owned && !pending && !disposition && !discardUnconfirmed &&
+      /^[0-9a-f]{64}$/.test(reference.trim()),
   };
 }

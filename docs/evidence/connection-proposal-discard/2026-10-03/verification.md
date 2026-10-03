@@ -64,6 +64,14 @@ cases also pass at 360 pixels. Frontend units
 and production build renew. This correction requires fresh
 exact-head hosted checks; the earlier green run does not qualify changed code.
 
+A follow-up case reproduces a second overlap on `1b6b9bdf`: a handoff arriving
+*after* the lost receipt replaced the retry reference. Handoffs now also wait while
+discard remains unconfirmed. Reopening the old proposal cannot clear that state;
+only retrying discard resolves it. All 53 related browser journeys pass (2.8 minutes),
+including keyboard recovery at 360 pixels. Frontend units/build and seven
+documentation/population contracts renew. The final head needs all six hosted jobs
+before integration.
+
 ## Screens and flow
 
 The [browser journeys](../../../../desktop/tests/e2e/connection-proposal-inspection.spec.ts)
