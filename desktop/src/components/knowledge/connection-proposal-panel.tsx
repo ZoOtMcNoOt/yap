@@ -177,6 +177,26 @@ export function ConnectionProposalPanel({
             <AlertDescription>{proposal.error}</AlertDescription>
           </Alert>
         ) : null}
+        {proposal.queuedHandoff ? (
+          <Alert>
+            <AlertDescription className="grid gap-2">
+              <p>
+                {proposal.pending || proposal.discardUnconfirmed
+                  ? "Another saved connection is ready. Confirm this discard before opening it."
+                  : "Another saved connection is ready to inspect."}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-fit max-w-full whitespace-normal"
+                disabled={!proposal.canOpenQueued}
+                onClick={proposal.openQueued}
+              >
+                Open new saved connection
+              </Button>
+            </AlertDescription>
+          </Alert>
+        ) : null}
         {view && source && target ? (
           <article
             className="grid min-w-0 grid-cols-1 gap-4"

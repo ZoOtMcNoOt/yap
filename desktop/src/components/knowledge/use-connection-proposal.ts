@@ -30,15 +30,21 @@ export function useConnectionProposal(
   const [disposition, setDisposition] = useState<ConnectionProposalDisposition>();
   const [discardUnconfirmed, setDiscardUnconfirmed] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [queuedHandoff, setQueuedHandoff] = useState<ProposalHandoff>();
   function setReference(value: string) {
     updateReference(value);
     setDisposition(undefined);
     setDiscardUnconfirmed(false);
     setConfirming(false);
+    setQueuedHandoff(undefined);
     setError("");
   }
   const epoch = useRef(0);
-  const running = useRef<{ id: string; cancelSent: boolean } | null>(null);
+  const running = useRef<{
+    id: string;
+    action: "proposal" | "discard";
+    cancelSent: boolean;
+  } | null>(null);
   const consumed = useRef<ProposalHandoff | undefined>(undefined);
   const deferred = useRef<ProposalHandoff | undefined>(undefined);
   const stop = useCallback(() => {
@@ -55,6 +61,7 @@ export function useConnectionProposal(
       setDisposition(undefined);
       setDiscardUnconfirmed(false);
       setConfirming(false);
+      setQueuedHandoff(undefined);
       setError("");
       if (changed) updateReference("");
     },
@@ -84,7 +91,7 @@ export function useConnectionProposal(
         return;
       const id = crypto.randomUUID();
       const started = ++epoch.current;
-      running.current = { id, cancelSent: false };
+      running.current = { id, action, cancelSent: false };
       setPendingAction(action);
       setConfirming(false);
       if (action === "proposal") {
@@ -118,7 +125,7 @@ export function useConnectionProposal(
             ? failure.code
             : "unavailable";
         if (action === "discard") {
-          setDiscardUnconfirmed(true);
+          setDiscardUnconfirmed(code !== "denied" && code !== "notFound");
           if (code === "denied" || code === "identityChanged" || code === "notFound")
             setView(undefined);
           setError(
@@ -164,6 +171,11 @@ export function useConnectionProposal(
     )
       return;
     if (running.current) {
+      if (running.current.action === "discard") {
+        consumed.current = handoff;
+        setQueuedHandoff(handoff);
+        return;
+      }
       if (deferred.current !== handoff) {
         deferred.current = handoff;
         epoch.current += 1;
@@ -179,6 +191,7 @@ export function useConnectionProposal(
     }
     deferred.current = undefined;
     consumed.current = handoff;
+    setQueuedHandoff(undefined);
     updateReference(handoff.reference);
     setDisposition(undefined);
     setDiscardUnconfirmed(false);
@@ -224,6 +237,18 @@ export function useConnectionProposal(
     discardUnconfirmed: owned && discardUnconfirmed,
     confirming: available && owned && confirming,
     setConfirming,
+    queuedHandoff: owned ? queuedHandoff : undefined,
+    canOpenQueued:
+      available && owned && !pending && !discardUnconfirmed &&
+      queuedHandoff?.authorityRevision === snapshot.authorityRevision,
+    openQueued: () => {
+      if (
+        !available || !owned || !queuedHandoff || pending || discardUnconfirmed ||
+        queuedHandoff.authorityRevision !== snapshot.authorityRevision
+      ) return;
+      setReference(queuedHandoff.reference);
+      void run(queuedHandoff.reference);
+    },
     discard: () => run(reference, "discard"),
     canDiscard:
       available && owned && !pending && !disposition &&

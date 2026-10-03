@@ -20,7 +20,7 @@ Installed and exercised: Node 24.19, pnpm 11.7.0, Python 3.12.14 with locked uv 
 | --- | --- |
 | Desktop frontend unit tests | 393 passed, 2 declared Windows-only skips |
 | TypeScript/Vite production build | Passed |
-| Browser workflows with system Chromium | 189 passed, 1 declared Windows-only skip; includes proposal discard |
+| Browser workflows with system Chromium | 189 passed, 1 declared Windows-only skip; 52 related journeys renewed after handoff correction |
 | Linux Tauri native debug build, no installer bundle | Passed; platform-specific unused-code warnings remain |
 | Desktop Rust tests | 1,364 unit + 27 integration passed, 11 declared model/hardware ignores |
 | Orchestrator release build and strict Clippy | Passed |
@@ -79,7 +79,8 @@ now targets **owner-controlled proposal discard**. The local implementation adds
 explicit confirmation, owner-only idempotent discard and uncertain-delivery retries
 through the API, native client and review interface. It retains the journal,
 sources and published graph while freeing pending proposal capacity. [Local evidence](evidence/connection-proposal-discard/2026-10-03/verification.md)
-records checks and screens; hosted integration is pending. Canonical publication and rebuild
+records checks, screens and the reproduced handoff correction; hosted integration
+is pending. Canonical publication and rebuild
 recovery remain open. The full goal stays active.
 
 ## Recent verified work

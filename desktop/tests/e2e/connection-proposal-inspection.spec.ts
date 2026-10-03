@@ -422,3 +422,42 @@ test("identity changes close confirmation and ignore delayed discard receipts", 
   await expect(page.getByText(/Proposal discarded\. Its history/)).toHaveCount(0);
   await expect(page.getByRole("article", { name: "Saved connection proposal" })).toHaveCount(0);
 });
+
+for (const delivery of ["confirmed", "lost"])
+  test(`new handoffs retain an in-flight discard and its ${delivery} receipt recovery`, async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 900 });
+    await installProposalInspectionBridge(page);
+    await enter(page);
+    const oldReference = "f".repeat(64);
+    await page.getByLabel("Connection proposal reference").fill(oldReference);
+    await page.getByRole("button", { name: "Open connection proposal" }).click();
+    await expect(page.getByRole("article", { name: "Saved connection proposal" })).toBeVisible();
+    await control(page, "delay");
+    if (delivery === "lost") await control(page, "mode", "lostDiscardReceipt");
+    await confirmDiscard(page);
+    await createConnection(page);
+    const next = page.getByRole("button", { name: "Open new saved connection" });
+    await expect(page.getByLabel("Connection proposal reference")).toHaveValue(oldReference);
+    expect(await page.evaluate(() => (globalThis as any).__proposalInspection.calls
+      .filter((c: any) => c.command === "cancel_knowledge_connections").length)).toBe(0);
+    await expect(next).toBeDisabled();
+    await control(page, "release");
+    if (delivery === "lost") {
+      await expect(page.getByText(/It may already have completed/)).toBeVisible();
+      await expect(next).toBeDisabled();
+      await expect(page.getByLabel("Connection proposal reference")).toHaveValue(oldReference);
+      await confirmDiscard(page);
+    }
+    await expect(page.getByText(/Proposal discarded\. Its history/)).toBeVisible();
+    await expect(next).toBeEnabled();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+    await next.click();
+    await expect(page.getByLabel("Connection proposal reference")).toHaveValue(proposalReference);
+    await expect(page.getByRole("article", { name: "Saved connection proposal" })).toBeVisible();
+    const calls = await page.evaluate(() => (globalThis as any).__proposalInspection.calls);
+    expect(calls.filter((c: any) => c.args.request?.action === "discard")
+      .map((c: any) => c.args.request.proposalId)).toEqual(
+        delivery === "lost" ? [oldReference, oldReference] : [oldReference],
+      );
+    expect(calls.some((c: any) => c.command === "cancel_knowledge_connections")).toBe(false);
+  });
