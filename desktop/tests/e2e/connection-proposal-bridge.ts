@@ -35,6 +35,10 @@ export async function installProposalInspectionBridge(page: Page) {
         );
       const calls: Array<{ command: string; args: any }> = [];
       let mode = "success";
+      let saved = [
+        { proposalId: reference, createdAtUtc: "2026-10-03T12:00:00.000000Z" },
+        { proposalId: "f".repeat(64), createdAtUtc: "2026-10-02T09:30:00.000000Z" },
+      ];
       const discarded = new Set<string>();
       let delayed = false;
       let delayedCancellation = false;
@@ -43,6 +47,7 @@ export async function installProposalInspectionBridge(page: Page) {
       Object.assign(globalThis, {
         __proposalInspection: {
           calls,
+          saved(value: typeof saved) { saved = value; },
           mode(value: string) {
             mode = value;
           },
@@ -103,12 +108,22 @@ export async function installProposalInspectionBridge(page: Page) {
             },
             text,
           });
-          const receipt = action === "discard" ? {
+          const receipt = action === "pending" ? {
             authorityRevision: revision,
-            response: { kind: "discarded", value: {
-              schemaVersion: 1, proposalId: args.request.proposalId,
-              generationSha256: "a".repeat(64), status: "discarded",
-            } },
+            response: {
+              kind: "pending", value: {
+                schemaVersion: 1,
+                proposals: saved.filter((item) => !discarded.has(item.proposalId)),
+              }
+            },
+          } : action === "discard" ? {
+            authorityRevision: revision,
+            response: {
+              kind: "discarded", value: {
+                schemaVersion: 1, proposalId: args.request.proposalId,
+                generationSha256: "a".repeat(64), status: "discarded",
+              }
+            },
           } : {
             authorityRevision: revision,
             response: {

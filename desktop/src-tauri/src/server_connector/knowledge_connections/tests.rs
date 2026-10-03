@@ -336,3 +336,79 @@ fn discard_uses_authenticated_delete_and_strict_reference_bound_receipt() {
         .is_err()
     );
 }
+
+#[test]
+fn pending_discovery_uses_authenticated_get_without_identity_or_query_selectors() {
+    let request = ConnectionsRequest::Pending {};
+    let receipt = serde_json::json!({"schemaVersion":1,"proposals":[{
+        "proposalId":"f".repeat(64),"createdAtUtc":"2026-10-03T12:00:00.123456Z"
+    }]});
+    let (result, incoming) = exchange_request(&request, "200 OK", receipt.to_string(), None, false);
+    assert!(matches!(result, Ok(ConnectionsResponse::Pending(_))));
+    assert!(incoming.starts_with("GET /v1/knowledge/connection-proposals HTTP/1.1"));
+    assert!(incoming
+        .to_lowercase()
+        .contains("authorization: bearer private-token\r\n"));
+    for field in [
+        "subjectId",
+        "tenantId",
+        "proposalId",
+        "limit",
+        "generationSha256",
+    ] {
+        assert!(!incoming.contains(field));
+        assert!(
+            serde_json::from_value::<ConnectionsRequest>(serde_json::json!({
+            "action":"pending", (field):"forged"
+            }))
+            .is_err()
+        );
+    }
+}
+
+#[test]
+fn pending_discovery_refuses_corrupt_duplicate_excess_or_source_bearing_metadata() {
+    let request = ConnectionsRequest::Pending {};
+    let entry =
+        serde_json::json!({"proposalId":"f".repeat(64),"createdAtUtc":"2026-10-03T12:00:00Z"});
+    let receipt = serde_json::json!({"schemaVersion":1,"proposals":[entry]});
+    assert!(decode(&request, br#"{"schemaVersion":1,"proposals":[]}"#).is_ok());
+    for (field, value) in [
+        ("proposalId", serde_json::json!("invalid")),
+        ("createdAtUtc", serde_json::json!("2026-02-30T12:00:00Z")),
+        (
+            "createdAtUtc",
+            serde_json::json!("2026-10-03T12:00:00+01:00"),
+        ),
+        ("createdAtUtc", serde_json::json!("infinity")),
+        ("sources", serde_json::json!([])),
+        ("subjectId", serde_json::json!("foreign")),
+    ] {
+        let mut malformed = receipt.clone();
+        malformed["proposals"][0][field] = value;
+        assert!(decode(&request, &serde_json::to_vec(&malformed).unwrap()).is_err());
+    }
+    for (field, value) in [
+        ("schemaVersion", serde_json::json!(2)),
+        ("hasMore", serde_json::json!(true)),
+        ("generationSha256", serde_json::json!("a".repeat(64))),
+    ] {
+        let mut malformed = receipt.clone();
+        malformed[field] = value;
+        assert!(decode(&request, &serde_json::to_vec(&malformed).unwrap()).is_err());
+    }
+    let duplicate = serde_json::json!({"schemaVersion":1,"proposals":[entry,entry]});
+    assert!(decode(&request, &serde_json::to_vec(&duplicate).unwrap()).is_err());
+    let mut full = serde_json::json!({"schemaVersion":1,"proposals":[]});
+    for index in 0..64 {
+        full["proposals"]
+            .as_array_mut()
+            .unwrap()
+            .push(serde_json::json!({
+                "proposalId":format!("{index:064x}"),"createdAtUtc":"2026-10-03T12:00:00Z"
+            }));
+    }
+    assert!(decode(&request, &serde_json::to_vec(&full).unwrap()).is_ok());
+    full["proposals"].as_array_mut().unwrap().push(entry);
+    assert!(decode(&request, &serde_json::to_vec(&full).unwrap()).is_err());
+}

@@ -167,17 +167,18 @@ exact tip remains under `archive/dependency-proposal-200-2026-10-03`.
 
 ## Current increment: discover owned pending connections
 
-**Status:** Not implemented; 0/6 outcomes verified. Review opens a pasted reference
-or an explicit Curator handoff; it has no owned proposal list yet. Add a readable,
-explicitly loaded list of the owner's pending connections, using the same journal,
-connection authority and permission-checked source reader. Canonical publication
-and rebuilding remain separate open work.
+**Status:** 5/6 software outcomes verified locally; hosted integration pending. Review now
+explicitly loads a dated list through the existing journal and connection owner.
+Selecting a proposal opens permission-checked source inspection; copied references
+and Curator handoffs remain available. [Evidence](../../evidence/saved-connection-proposals/2026-10-03/verification.md)
+records the checks and integration status. Canonical publication and rebuilding
+remain separate open work.
 
-- [ ] Return only the authenticated tenant/subject's pending relationship references and creation times. Include no candidate/source content, caller identity selectors or foreign counts. Bound the complete list to 64 and refuse invalid/excess metadata instead of returning partial truth.
-- [ ] Exercise real model-free PostgreSQL reads and content-free auditing within the existing admission, SQL timeouts and response budget. Listing cannot change the journal or published graph.
-- [ ] Add strict main-window/current-lease native list receipts. Validate hashes, UTC timestamps, duplicates and the 64-item limit; add no renderer credentials or native command.
-- [ ] Explicitly load/refresh an accessible owned list. Selecting an item opens existing permission-checked inspection. Empty, failed and offline states retain local controls and pasted-reference recovery.
-- [ ] Remove a row locally only after confirmed discard; retain it after uncertain delivery. Contain identity changes and delayed reads, preserve pending-write/retry ownership, and verify keyboard access and narrow layouts with one native request owner.
+- [x] Return only the authenticated tenant/subject's pending relationship references and creation times. Include no candidate/source content, caller identity selectors or foreign counts. Bound the complete list to 64 and refuse invalid/excess metadata instead of returning partial truth.
+- [x] Exercise real model-free PostgreSQL reads and content-free auditing within the existing admission, SQL timeouts and response budget. Listing cannot change the journal or published graph.
+- [x] Add strict main-window/current-lease native list receipts. Validate hashes, UTC timestamps, duplicates and the 64-item limit; add no renderer credentials or native command.
+- [x] Explicitly load/refresh an accessible owned list. Selecting an item opens existing permission-checked inspection. Empty, failed and offline states retain local controls and pasted-reference recovery.
+- [x] Remove a row locally only after confirmed discard; retain it after uncertain delivery. Contain identity changes and delayed reads, preserve pending-write/retry ownership, and verify keyboard access and narrow layouts with one native request owner.
 - [ ] Verify real SQL/API/native/browser cases and screens, review/push, then integrate through all exact-head jobs before retiring the branch. Continue publication/rebuilding and the full queue.
 
 [Reviewed interaction references](../../evidence/ui-completion/2026-10-02-design-references.md#saved-proposal-discovery)
@@ -229,3 +230,5 @@ through current permission-checked inspection.
 | 2026-10-03 | PR #202 merges after run 541 passes all six jobs: Windows native 1,368 + 27, frontend 395 and all 193 browser workflows, native WDIO, server, identity and service lifecycle. Main has the identical tested tree; the original reviewed head is retained and the branch retired. Discard completes 6/6 software outcomes. | Discover owned pending proposals through the existing journal/native/UI owners, then continue canonical publication/rebuilding and the full queue. Issue #92 still needs actual RDP/session-lock qualification. |
 
 Attribute project work to Grant McNatt. Preserve third-party attribution/provenance; do not add AI branding or coauthor trailers.
+
+| 2026-10-03 | Owned proposal discovery verifies five local software outcomes: owner-only dated metadata, bounded read/audits, strict native receipts, keyboard inspection and confirmed-only cleanup. Actual SQL/API 20, Linux native 1,366 + 27, frontend 396 and 50 related browser cases pass; 31 inspection/discovery cases renew visible-detail focus. The portable server passes 1,640 with 114 declared exclusions. | Push the reviewed increment, renew all six exact-head jobs and integrate before retiring the branch; publication/rebuilding and real PostgreSQL CI remain open. |

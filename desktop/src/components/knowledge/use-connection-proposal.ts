@@ -5,6 +5,7 @@ import {
   knowledgeConnections,
   type ConnectionProposal,
   type ConnectionProposalDisposition,
+  type PendingConnectionProposals,
 } from "@/knowledge-connections";
 import type { ServerConnectionSnapshot } from "@/server";
 
@@ -23,8 +24,10 @@ export function useConnectionProposal(
   const [reference, updateReference] = useState("");
   const [view, setView] = useState<ConnectionProposal>();
   const [error, setError] = useState("");
+  const [saved, setSaved] = useState<PendingConnectionProposals>();
+  const [listError, setListError] = useState("");
   const [pendingAction, setPendingAction] = useState<
-    "proposal" | "discard" | null
+    "pending" | "proposal" | "discard" | null
   >(null);
   const pending = pendingAction !== null;
   const [disposition, setDisposition] = useState<ConnectionProposalDisposition>();
@@ -32,6 +35,7 @@ export function useConnectionProposal(
   const [confirming, setConfirming] = useState(false);
   const [queuedHandoff, setQueuedHandoff] = useState<ProposalHandoff>();
   function setReference(value: string) {
+    if (pending || discardUnconfirmed) return;
     updateReference(value);
     setDisposition(undefined);
     setDiscardUnconfirmed(false);
@@ -42,7 +46,7 @@ export function useConnectionProposal(
   const epoch = useRef(0);
   const running = useRef<{
     id: string;
-    action: "proposal" | "discard";
+    action: "pending" | "proposal" | "discard";
     cancelSent: boolean;
   } | null>(null);
   const consumed = useRef<ProposalHandoff | undefined>(undefined);
@@ -55,13 +59,16 @@ export function useConnectionProposal(
   }, []);
   const invalidate = useCallback(
     (changed: boolean) => {
+      const writing = running.current?.action === "discard";
       epoch.current += 1;
       void stop()?.catch(() => undefined);
       setView(undefined);
       setDisposition(undefined);
-      setDiscardUnconfirmed(false);
+      setDiscardUnconfirmed((previous) => changed ? false : previous || writing);
       setConfirming(false);
-      setQueuedHandoff(undefined);
+      if (changed) setQueuedHandoff(undefined);
+      setSaved(undefined);
+      setListError("");
       setError("");
       if (changed) updateReference("");
     },
@@ -80,14 +87,14 @@ export function useConnectionProposal(
     [stop],
   );
   const run = useCallback(
-    async (value = reference, action: "proposal" | "discard" = "proposal") => {
+    async (value = reference, action: "pending" | "proposal" | "discard" = "proposal") => {
       const proposalId = value.trim();
       if (
         !available ||
         !owned ||
         running.current ||
-        (action === "proposal" && discardUnconfirmed) ||
-        !/^[0-9a-f]{64}$/.test(proposalId)
+        (action !== "discard" && discardUnconfirmed) ||
+        (action !== "pending" && !/^[0-9a-f]{64}$/.test(proposalId))
       )
         return;
       const id = crypto.randomUUID();
@@ -100,20 +107,29 @@ export function useConnectionProposal(
         setDisposition(undefined);
         setDiscardUnconfirmed(false);
       }
-      setError("");
+      if (action === "pending") {
+        setSaved(undefined);
+        setListError("");
+      } else setError("");
       try {
         const receipt = await knowledgeConnections(
           id,
-          { action, proposalId },
+          action === "pending" ? { action } : { action, proposalId },
           snapshot.authorityRevision,
         );
         if (started !== epoch.current) return;
-        if (action === "discard") {
+        if (action === "pending") {
+          if (receipt.response.kind !== "pending") throw { code: "invalidResponse" };
+          setSaved(receipt.response.value);
+        } else if (action === "discard") {
           if (receipt.response.kind !== "discarded")
             throw { code: "invalidResponse" };
           setDisposition(receipt.response.value);
           setView(undefined);
           setDiscardUnconfirmed(false);
+          setSaved((page) => page ? {
+            ...page, proposals: page.proposals.filter((item) => item.proposalId !== proposalId),
+          } : undefined);
         } else {
           if (receipt.response.kind !== "proposal")
             throw { code: "invalidResponse" };
@@ -125,6 +141,24 @@ export function useConnectionProposal(
           typeof failure === "object" && failure && "code" in failure
             ? failure.code
             : "unavailable";
+        if (action === "pending") {
+          if (code === "identityChanged") {
+            setView(undefined);
+            setDisposition(undefined);
+            setQueuedHandoff(undefined);
+            updateReference("");
+          }
+          setListError(
+            code === "identityChanged"
+              ? "Your server or sign-in changed. Check your connection before loading saved proposals."
+              : code === "denied"
+                ? "Your organization has not granted access to saved proposals."
+                : code === "invalidResponse"
+                  ? "The server returned an inconsistent proposal list. Check your server and try again."
+                  : "Saved proposals could not be loaded. Check your connection and try again.",
+          );
+          return;
+        }
         if (action === "discard") {
           setDiscardUnconfirmed(code !== "denied" && code !== "notFound");
           if (code === "denied" || code === "identityChanged" || code === "notFound")
@@ -211,12 +245,16 @@ export function useConnectionProposal(
   async function cancel() {
     if (pendingAction === "discard") return;
     const cancelled = ++epoch.current;
-    setError("Proposal inspection cancelled. You can try again.");
+    const listing = pendingAction === "pending";
+    const report = listing ? setListError : setError;
+    report(listing
+      ? "Saved proposal loading cancelled. You can try again."
+      : "Proposal inspection cancelled. You can try again.");
     try {
       await stop();
     } catch {
       if (cancelled !== epoch.current) return;
-      setError(
+      report(
         "Cancellation could not be confirmed. Waiting for this read to finish.",
       );
     }
@@ -230,6 +268,18 @@ export function useConnectionProposal(
         ? view
         : undefined,
     error: owned ? error : "",
+    saved: available && owned ? saved : undefined,
+    listError: owned ? listError : "",
+    loading: pendingAction === "pending",
+    canLoad: available && owned && !pending && !discardUnconfirmed,
+    load: () => run("", "pending"),
+    canSelect: available && owned && !pending && !discardUnconfirmed,
+    select: (value: string) => {
+      if (!available || !owned || pending || discardUnconfirmed ||
+        !saved?.proposals.some((item) => item.proposalId === value)) return;
+      setReference(value);
+      void run(value);
+    },
     pending,
     discarding: pendingAction === "discard",
     disposition:

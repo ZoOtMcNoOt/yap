@@ -19,6 +19,7 @@ const MAXIMUM_SOURCE_CHARACTERS: u64 = 1_000_000;
     deny_unknown_fields
 )]
 pub(crate) enum ConnectionsRequest {
+    Pending {},
     Proposal {
         proposal_id: String,
     },
@@ -37,6 +38,7 @@ pub(crate) enum ConnectionsRequest {
 impl ConnectionsRequest {
     fn is_valid(&self) -> bool {
         match self {
+            Self::Pending {} => true,
             Self::Proposal { proposal_id } | Self::Discard { proposal_id } => hash(proposal_id),
             Self::Browse { search } => {
                 search.chars().count() <= 128
@@ -133,10 +135,25 @@ pub(crate) struct KnowledgeNeighborhood {
 #[derive(Debug, Serialize)]
 #[serde(tag = "kind", content = "value", rename_all = "camelCase")]
 pub(crate) enum ConnectionsResponse {
+    Pending(PendingConnectionProposals),
     Proposal(ConnectionProposal),
     Discarded(ConnectionProposalDisposition),
     Topics(ConceptPage),
     Neighborhood(KnowledgeNeighborhood),
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct PendingConnectionProposals {
+    schema_version: u8,
+    proposals: Vec<PendingConnectionProposal>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct PendingConnectionProposal {
+    proposal_id: String,
+    created_at_utc: String,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -252,6 +269,28 @@ fn decode(
         return Err(invalid());
     }
     match request {
+        ConnectionsRequest::Pending {} => {
+            let page: PendingConnectionProposals =
+                serde_json::from_slice(body).map_err(|_| invalid())?;
+            let mut references = HashSet::new();
+            if page.schema_version != 1
+                || page.proposals.len() > 64
+                || page.proposals.iter().any(|entry| {
+                    !hash(&entry.proposal_id)
+                        || !references.insert(entry.proposal_id.as_str())
+                        || entry.created_at_utc.len() > 64
+                        || !entry.created_at_utc.ends_with('Z')
+                        || time::OffsetDateTime::parse(
+                            &entry.created_at_utc,
+                            &time::format_description::well_known::Rfc3339,
+                        )
+                        .is_err()
+                })
+            {
+                return Err(invalid());
+            }
+            Ok(ConnectionsResponse::Pending(page))
+        }
         ConnectionsRequest::Discard { proposal_id } => {
             let disposition: ConnectionProposalDisposition =
                 serde_json::from_slice(body).map_err(|_| invalid())?;
@@ -408,6 +447,9 @@ impl ConnectionsClient {
         }
         let mut url = self.base_url.clone();
         match request {
+            ConnectionsRequest::Pending {} => {
+                url.set_path("/v1/knowledge/connection-proposals");
+            }
             ConnectionsRequest::Proposal { proposal_id }
             | ConnectionsRequest::Discard { proposal_id } => {
                 url.set_path("/v1/knowledge/connection-proposal");

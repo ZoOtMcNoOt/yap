@@ -54,6 +54,7 @@ const MINIMUM_TESTS_PER_SPEC = Object.freeze({
   "personalization.spec.ts": 16,
   "playback-authorization.spec.ts": 4,
   "recording-journey.spec.ts": 5,
+  "saved-connection-proposals.spec.ts": 10,
   "transcript-correction.spec.ts": 1,
   "transcript-export.spec.ts": 5,
   "workspace-acceptance.spec.ts": 11,

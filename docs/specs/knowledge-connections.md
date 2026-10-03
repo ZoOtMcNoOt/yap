@@ -8,15 +8,16 @@ Connections reads the current reviewed Postgres knowledge generation without inv
 | --- | --- |
 | `GET /v1/knowledge/concepts?search=…` | Up to 12 authorized topics, stable concept-ID order, literal case-insensitive title search. The required search may be empty, otherwise it has at most 128 trimmed characters. |
 | `GET /v1/knowledge/connections?conceptId=…&generationSha256=…` | The authorized topic and up to 16 incoming/outgoing canonical edges, at most 17 nodes. The generation must match the preceding topic view. |
+| `GET /v1/knowledge/connection-proposals` | Complete list of up to 64 owned pending relationship references and UTC creation times; no body, query selectors or source content. |
 | `GET /v1/knowledge/connection-proposal?proposalId=…` | One owned, proposed typed Curator connection with two exact source excerpts. The required reference is 64 lowercase hexadecimal characters. |
 | `DELETE /v1/knowledge/connection-proposal?proposalId=…` | Idempotently discard an owned relationship proposal. No body; return a bounded disposition without source text. |
 
-All endpoints authenticate organization identity. Reading fixes purpose to `knowledge.read`; discard checks ownership without granting source access. Callers cannot select a tenant, subject, agent grant, limit or purpose. Both edge endpoints must be visible before selection, limits and `hasMore`. Hidden and unknown topics share a 404; a changed generation returns 409 and requires fresh topic discovery. Empty authorized discovery returns an empty page; missing reviewed storage returns 503. Disabled service routes return 501. Other methods return 405.
+All endpoints authenticate organization identity. Source reading fixes purpose to `knowledge.read`; journal discovery and discard check ownership without granting source access. Callers cannot select a tenant, subject, agent grant, limit or purpose. Both edge endpoints must be visible before selection, limits and `hasMore`. Hidden and unknown topics share a 404; a changed generation returns 409 and requires fresh topic discovery. Empty authorized discovery returns an empty page; missing reviewed storage returns 503. Disabled service routes return 501. Other methods return 405.
 
 Every edge carries its type, authority (`asserted`, `human_confirmed`, `derived`) and exact source path, revision and SHA-256. Paired character offsets (within the existing one-million-byte source ceiling) identify source-text links; paired nulls identify declared metadata without inventing a quote. `agent_proposed` relationships are excluded. Responses are limited to 64 KiB, with no partial result on invalid or excessive metadata. Success and failed admitted reads write content-free tool audits; application request logs omit query strings, source text and tokens. Private reverse proxies must likewise omit query strings when logging these routes.
 
 The native bridge owns origin, bearer credentials and the main-window boundary.
-Every request, including initial browsing and discard, requires `authorityRevision` from the
+Every request, including initial browsing, journal discovery and discard, requires `authorityRevision` from the
 shared native `ServerConnectionSnapshot`. Its generation owner changes on
 identity/configuration changes; ordinary health checks retain the revision.
 Native dispatch compares it to the captured lease; publishing its result to the
@@ -100,6 +101,30 @@ changes clear them and hide private evidence immediately. New handoffs cancel an
 older read and wait for its completion. Same-owner offline drafts remain editable,
 with remote reading disabled. See [inspection evidence](../evidence/connection-proposal-inspection/2026-10-03/verification.md).
 
+
+## Discover saved proposals
+
+In **Review proposals**, choose **Load saved proposals** or **Refresh saved proposals**.
+The dated list belongs to the authenticated tenant and subject. Select a row to
+inspect its exact sources under current permissions. Titles and source content
+are returned only by inspection; an owned reference can remain discoverable after
+its source access or generation changes. Such a proposal can still be discarded.
+Copied references remain available under **Open a proposal reference**.
+
+Discovery reads the existing journal with the same admission, timeouts and
+response limit. It returns the entire owner list, up to 64 entries, in newest-first
+order with reference tie-breaking. A 65th row or invalid metadata refuses the
+whole response. The strict receipt has only `schemaVersion: 1` and `proposals`,
+whose entries have `proposalId` and `createdAtUtc`. Content-free audits retain
+only the result count and trusted owner; no graph or journal row changes.
+
+Offline or identity changes hide the list. Cancel remains visible during both
+list and source reads, and the single native slot stays occupied until completion.
+A completed inspection moves focus to the visible reading pane, without taking
+focus from another task. Confirmed discard removes only its row; uncertain
+confirmation keeps its exact retry reference and blocks refresh, selection and
+manual editing until retry resolves it. [Evidence](../evidence/saved-connection-proposals/2026-10-03/verification.md)
+records actual SQL/native checks separately from browser fixtures.
 
 ## Discard a saved proposal
 

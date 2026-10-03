@@ -11,10 +11,10 @@ class KnowledgeConnectionsRequestMixin:
         assert self._knowledge_connections_service is not None
         assert self._principal is not None
         try:
-            if self.command == "DELETE" and int(
-                self.headers.get("Content-Length", "0")
-            ) != 0:
-                raise ValueError("discard takes only a proposal reference")
+            if (
+                self.command == "DELETE" or path == "/v1/knowledge/connection-proposals"
+            ) and int(self.headers.get("Content-Length", "0")) != 0:
+                raise ValueError("proposal journal requests take no body")
             query = parse_qs(
                 urlsplit(self.path).query,
                 keep_blank_values=True,
@@ -23,7 +23,9 @@ class KnowledgeConnectionsRequestMixin:
                 max_num_fields=2,
             )
             fields = (
-                {"proposalId"}
+                set()
+                if path == "/v1/knowledge/connection-proposals"
+                else {"proposalId"}
                 if path == "/v1/knowledge/connection-proposal"
                 else {"search"}
                 if path == "/v1/knowledge/concepts"
@@ -33,7 +35,11 @@ class KnowledgeConnectionsRequestMixin:
                 len(values) != 1 for values in query.values()
             ):
                 raise ValueError("knowledge query is invalid")
-            if path == "/v1/knowledge/connection-proposal":
+            if path == "/v1/knowledge/connection-proposals":
+                result = self._knowledge_connections_service.pending(
+                    principal=self._principal
+                )
+            elif path == "/v1/knowledge/connection-proposal":
                 operation = (
                     self._knowledge_connections_service.discard
                     if self.command == "DELETE"
