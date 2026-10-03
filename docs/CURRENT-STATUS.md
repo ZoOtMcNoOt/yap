@@ -14,9 +14,12 @@ The managed cloud workspace provides four CPU cores, 16 GiB RAM, and an initiall
 
 Installed and exercised: Node 24.19, pnpm 11.7.0, Python 3.12.14 with locked uv dependencies, Rust 1.96 with Clippy/rustfmt, PowerShell 7.6, GTK/WebKit/audio/tray build libraries, CMake, Chromium, Docker, Xvfb, and Tini. Native dependencies are installed into a user-owned prefix. See [cloud development](runbooks/cloud-development.md) for setup and commands.
 
-## Verification
+## Earlier local verification baseline
 
-| Check | Current result |
+These recorded local checks precede the current increment. Later merged receipts
+and current export checks are linked below.
+
+| Check | Recorded result |
 | --- | --- |
 | Desktop frontend unit tests | 393 passed, 2 declared Windows-only skips |
 | TypeScript/Vite production build | Passed |
@@ -70,8 +73,9 @@ Earlier dependency/consolidation results remain in the [desktop evidence](eviden
 
 The [execution queue](plans/active/2026-10-02-yap-project-hill-climb.md#current-increment-export-a-connection-review-package)
 now targets **exporting a source-bound connection review package**. Inspection and
-discard are verified; this next step carries the exact proposal and citations into
-human Git review. Its six acceptance outcomes are defined; implementation is pending.
+discard are verified; the implemented export carries the exact proposal and citations
+into human Git review. [Five local software outcomes pass](evidence/connection-review-export/2026-10-03/verification.md);
+reviewed exact-head integration remains pending.
 Canonical publication and generation rebuilding remain separate open outcomes.
 
 The [complete PostgreSQL gate](evidence/governed-postgres-ci/2026-10-03/verification.md)

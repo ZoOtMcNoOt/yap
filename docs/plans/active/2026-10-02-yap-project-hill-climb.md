@@ -169,18 +169,18 @@ exact tip remains under `archive/dependency-proposal-200-2026-10-03`.
 
 ## Current increment: export a connection review package
 
-**Status:** 0/6 software outcomes; acceptance defined. Owners can inspect or
-discard a pending connection, but cannot carry its exact candidate and evidence
-into the canonical Git review workflow. Finish an explicit source-bound export
-through the existing inspection, native connection and new-file owners. The
+**Status:** 5/6 local software outcomes; exact-head integration pending. Owners can
+export an inspected candidate and its exact evidence into human Git review through
+the existing native connection and new-file owners. [Verification and screens](../../evidence/connection-review-export/2026-10-03/verification.md)
+retain the checks and limits. The
 package remains a proposal; authenticated canonical review, complete embedding
 projection, publication and rebuilding remain separate open outcomes.
 
-- [ ] Define a bounded, versioned review package containing the immutable proposal reference, generation, typed candidate and two exact source revision/hash/span citations. Keep proposed rationale distinct from quoted evidence; include no credentials or inferred approval.
-- [ ] Build it from current authenticated inspection through the existing server route. Native code validates the receipt and displayed proposal/generation under the current main-window connection lease; renderer content cannot become source authority.
-- [ ] Offer an explicit new-file destination. Revalidate after selection, preserve existing files and internal data, and refuse stale, revoked, changed-owner or discarded evidence before publication. Retain write ownership through completion; do not report cancellation while a write can continue.
-- [ ] Connect a readable, keyboard-accessible export action to Review proposals. Success, cancelled picker, unavailable/expired connection, retained uncertainty, failed destination and account changes keep local controls and source navigation usable; inspect narrow and wide layouts.
-- [ ] Verify actual native transport/file invariants and browser recovery with deterministic evidence, using existing dependencies and retained source provenance. Document how the package enters human Git review and its limits; it does not mutate the canonical graph.
+- [x] Define a bounded, versioned review package containing the immutable proposal reference, generation, typed candidate and two exact source revision/hash/span citations. Keep proposed rationale distinct from quoted evidence; include no credentials or inferred approval.
+- [x] Build it from current authenticated inspection through the existing server route. Native code validates the receipt and displayed proposal/generation under the current main-window connection lease; renderer content cannot become source authority.
+- [x] Offer an explicit new-file destination. Revalidate after selection, preserve existing files and internal data, and refuse stale, revoked, changed-owner or discarded evidence before publication. Retain write ownership through completion; do not report cancellation while a write can continue.
+- [x] Connect a readable, keyboard-accessible export action to Review proposals. Success, cancelled picker, unavailable/expired connection, retained uncertainty, failed destination and account changes keep local controls and source navigation usable; inspect narrow and wide layouts.
+- [x] Verify actual native transport/file invariants and browser recovery with deterministic evidence, using existing dependencies and retained source provenance. Document how the package enters human Git review and its limits; it does not mutate the canonical graph.
 - [ ] Review/push and integrate through every exact-head job, retain the reviewed head and retire the branch. Continue actual canonical publication/rebuilding and the full software queue.
 
 ## Execution record

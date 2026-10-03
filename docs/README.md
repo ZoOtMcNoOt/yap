@@ -39,6 +39,8 @@ the goal orders the work. Earlier plans and evidence remain available through th
   interfaces. Each server feature still needs its explicitly configured runtime.
 - [Knowledge connections](specs/knowledge-connections.md) explains source-cited
   relationships, proposals and human publication boundaries.
+- [Connection review packages](specs/connection-review-package.md) explains exporting
+  cited proposals into your organization's Git review workflow.
 
 Code and observed behavior establish what executes. Specifications and accepted
 decisions describe requirements. Current status and evidence distinguish

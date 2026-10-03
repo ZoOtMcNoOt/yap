@@ -112,6 +112,7 @@ pub(crate) fn register(builder: tauri::Builder<tauri::Wry>) -> tauri::Builder<ta
         crate::transcript_correction::start_transcript_correction,
         crate::terminology::terminology,
         crate::knowledge_connections::knowledge_connections,
+        crate::knowledge_connections::review_export::export_connection_review_package,
         crate::knowledge_connections::cancel_knowledge_connections,
         crate::transcript_correction::transcript_correction_status,
         crate::transcript_correction::cancel_transcript_correction,

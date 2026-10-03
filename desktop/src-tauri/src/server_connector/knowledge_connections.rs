@@ -184,6 +184,45 @@ pub(crate) struct ConnectionProposal {
     sources: Vec<ProposalSource>,
 }
 
+impl ConnectionProposal {
+    pub(crate) fn review_package(
+        &self,
+        displayed_generation: &str,
+    ) -> Result<String, ConnectionsError> {
+        if !hash(displayed_generation) || self.generation_sha256 != displayed_generation {
+            return Err(ConnectionsError::new("knowledgeChanged", false));
+        }
+        // This type enters the product only through strict authenticated decoding.
+        // Export evidence, not session/grant fingerprints or inferred approval.
+        #[derive(Serialize)]
+        #[serde(rename_all = "camelCase")]
+        struct ReviewPackage<'a> {
+            schema_version: u8,
+            kind: &'static str,
+            status: &'a ProposalStatus,
+            proposal_id: &'a str,
+            generation_sha256: &'a str,
+            candidate: &'a ProposalCandidate,
+            sources: &'a [ProposalSource],
+        }
+        let mut text = serde_json::to_string_pretty(&ReviewPackage {
+            schema_version: 1,
+            kind: "connection-review",
+            status: &self.status,
+            proposal_id: &self.proposal_id,
+            generation_sha256: &self.generation_sha256,
+            candidate: &self.candidate,
+            sources: &self.sources,
+        })
+        .map_err(|_| invalid())?;
+        text.push('\n');
+        if text.len() > MAXIMUM_RESPONSE_BYTES {
+            return Err(invalid());
+        }
+        Ok(text)
+    }
+}
+
 // HTTP/native projections use camelCase; the persisted Curator candidate stays
 // unchanged. Validation delegates to the shared storage contract.
 #[derive(Debug, Deserialize, Serialize)]

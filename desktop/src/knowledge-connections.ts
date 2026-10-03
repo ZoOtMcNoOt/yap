@@ -144,6 +144,30 @@ export async function knowledgeConnections(
 export function cancelKnowledgeConnections(requestId: string) {
   return invoke<void>("cancel_knowledge_connections", { requestId });
 }
+export type ConnectionReviewExport =
+  | { status: "cancelled" }
+  | { status: "saved"; path: string };
+export async function exportConnectionReviewPackage(
+  proposalId: string,
+  generationSha256: string,
+  authorityRevision: string,
+): Promise<ConnectionReviewExport> {
+  const receipt = await invoke<{
+    authorityRevision: string;
+    proposalId: string;
+    generationSha256: string;
+    result: ConnectionReviewExport;
+  }>("export_connection_review_package", { proposalId, generationSha256, authorityRevision });
+  if (!receipt || receipt.authorityRevision !== authorityRevision)
+    throw { code: "identityChanged" };
+  if (receipt.proposalId !== proposalId || receipt.generationSha256 !== generationSha256 ||
+    !receipt.result ||
+    (receipt.result.status !== "cancelled" && receipt.result.status !== "saved") ||
+    (receipt.result.status === "saved" && (typeof receipt.result.path !== "string" ||
+      !receipt.result.path || receipt.result.path.length > 32_768 || receipt.result.path.includes("\0"))))
+    throw { code: "exportUnconfirmed" };
+  return receipt.result;
+}
 export function connectionsError(error: unknown) {
   const code =
     typeof error === "object" && error !== null && "code" in error

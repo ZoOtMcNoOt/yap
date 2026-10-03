@@ -1,4 +1,4 @@
-//! Explicit native-owned export of validated original and accepted transcripts.
+//! Shared file ownership and destination rules for explicit native exports.
 
 use std::{
     path::{Path, PathBuf},
@@ -11,7 +11,7 @@ use tokio::sync::{OwnedSemaphorePermit, Semaphore};
 
 pub(crate) mod accepted_correction;
 
-fn export_permit() -> Result<OwnedSemaphorePermit, String> {
+pub(crate) fn export_permit() -> Result<OwnedSemaphorePermit, String> {
     static LIMITER: OnceLock<Arc<Semaphore>> = OnceLock::new();
     Arc::clone(LIMITER.get_or_init(|| Arc::new(Semaphore::new(1))))
         .try_acquire_owned()
@@ -70,7 +70,7 @@ fn export_selected_transcript(
     read_current: impl FnOnce() -> Result<String, String>,
 ) -> Result<TranscriptExport, String> {
     validate_text(original)?;
-    let destination = export_destination(selected, app_data)?;
+    let destination = export_destination(selected, app_data, ExportKind::Transcript)?;
     let current = read_current()?;
     if current != original {
         return Err(
@@ -100,23 +100,40 @@ fn validate_text(text: &str) -> Result<(), String> {
     Ok(())
 }
 
-fn export_destination(selected: &Path, app_data: &Path) -> Result<PathBuf, String> {
+pub(crate) enum ExportKind {
+    Transcript,
+    ConnectionReview,
+}
+
+pub(crate) fn export_destination(
+    selected: &Path,
+    app_data: &Path,
+    kind: ExportKind,
+) -> Result<PathBuf, String> {
+    let (extension, description) = match kind {
+        ExportKind::Transcript => ("txt", "transcript"),
+        ExportKind::ConnectionReview => ("json", "review package"),
+    };
     if !selected.is_absolute() {
-        return Err("Choose an absolute local destination for the transcript.".into());
+        return Err(format!(
+            "Choose an absolute local destination for the {description}."
+        ));
     }
     let mut selected = selected.to_path_buf();
     if selected.extension().is_none() {
-        selected.set_extension("txt");
+        selected.set_extension(extension);
     }
     if !selected
         .extension()
-        .is_some_and(|ext| ext.eq_ignore_ascii_case("txt"))
+        .is_some_and(|ext| ext.eq_ignore_ascii_case(extension))
     {
-        return Err("Export uses UTF-8 text. Choose a .txt filename.".into());
+        return Err(format!(
+            "Export uses UTF-8 text. Choose a .{extension} filename."
+        ));
     }
     let name = selected
         .file_name()
-        .ok_or_else(|| "Choose a filename for the transcript.".to_string())?;
+        .ok_or_else(|| format!("Choose a filename for the {description}."))?;
     let parent = selected
         .parent()
         .and_then(|path| path.canonicalize().ok())
