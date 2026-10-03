@@ -59,13 +59,13 @@ not duplicated. The MIT license and exact reviewed Git/source hashes are retaine
 No driver code is copied into Yap; the optional driver is outside the production
 graph. This is an unreleased, immutable test dependency. Replace it with a
 compatible published version only after that version passes native WDIO checks.
-The actual hosted Windows compile/runtime renewal remains a required merge gate.
+The actual hosted Windows compile/runtime renewal passed in run 532, below.
 
 Run 526 also passed 182 Windows browser cases and failed two recording-journey
 clipboard assertions solely on OS CRLF transport versus the fixture's LF.
 Those assertions now normalize only CRLF; they retain all other content and the
 existing byte-exact export checks. The affected eleven browser cases are renewed
-locally, and full Windows browser renewal remains a hosted gate.
+locally; run 532 subsequently passed all 184 Windows browser cases.
 
 ## Issue #92
 
@@ -173,7 +173,22 @@ already used by supervised-service fixtures, so repeated clock timestamps cannot
 choose the same path within a process. Exclusive creation and private permissions
 remain enforced. Production code is unchanged; all 46 default orchestrator
 contracts and strict all-target/all-feature Clippy pass locally. The corrected
-integration commit renews every hosted job before merge.
+integration commit renewed every hosted job before merge, as recorded below.
+
+## Final integration
+
+[Run 532](https://github.com/ZoOtMcNoOt/yap/actions/runs/37118650222) passed all six
+jobs at `02da8f11d845f598ce4f59270d8a94e076ac9e33`: 1,367 Windows native units +
+27 integration cases, strict Clippy and both actual connector runtimes, native
+WDIO, 392 frontend units, all 184 browser cases, 71 release contracts, server,
+identity and 54 Linux orchestrator cases. Windows server testing passed 1,600
+cases with 135 declared exclusions. These receipts supersede the integration
+failures above without qualifying physical RDP/session-lock behavior or models.
+
+[PR #199](https://github.com/ZoOtMcNoOt/yap/pull/199) rebased onto `main` as
+`dbdd8d1752f260ca37623b74f0f87d86241175cc`; its tree equals the tested `02da8f11`
+tree. The temporary branch is retired. Issue #92 stays open for its actual
+Windows session checks.
 
 [Audit policy](../../../runbooks/dependency-audit-policy.md) records the remaining
 findings and removal conditions. The [single goal](../../../plans/active/2026-10-02-yap-project-hill-climb.md)

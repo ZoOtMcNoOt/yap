@@ -30,6 +30,24 @@ CI also checks the complete locked Windows dependency graph through the
 [Windows boundary guard](../../verification/test-windows-rust-dependency-boundary.ps1).
 Failure to inspect that graph is a failure, not evidence of absence.
 
+Audit the core Python server from the repository root with Python 3.12 and uv:
+
+```bash
+python verification/audit-server-dependencies.py
+```
+
+This exports the locked core to PEP 751 with all extras and development groups,
+checks that every PyPI package version in `server/uv.lock` is represented, and
+runs isolated `pip-audit==2.10.1` with `--strict`. The pinned auditor checks every
+exported version without filtering platform markers. Findings, skipped/unknown
+packages, unreviewed sources, incomplete exports and unavailable advisory data
+fail the gate. There are no advisory ignores. Audit tools are not installed in
+the server environment, and the command downloads no models.
+
+This gate covers the core lock, not model overlays or container base images.
+The [core server evidence](../evidence/server-dependencies/2026-10-03/verification.md)
+records fixed versions, behavioral checks and separate unresolved NeMo findings.
+
 ## Current dependency refresh
 
 The locked refresh passes the frontend high/critical gate with **one low finding**
@@ -37,16 +55,16 @@ and the Rust vulnerability gate with **zero vulnerability-class findings** and
 two reviewed warning-class findings. There are no advisory ignores.
 [Verification](../evidence/dependency-refresh/2026-10-03/verification.md) records
 consumer checks and target limits; [PR #199](https://github.com/ZoOtMcNoOt/yap/pull/199)
-records required hosted integration checks.
+records the merged integration; all six exact-head jobs passed in run 532.
 
 | Dependency path | Selected update | Reason or remaining check |
 | --- | --- | --- |
 | Older glob dependencies | `brace-expansion@1` → `1.1.21`; `@2` → `2.1.7` | Keep fixes within the existing major lines. |
 | WebdriverIO HTTP dependencies | `undici@6` → `6.28.1`; `@7` → `7.29.1` | Compatible patched releases for both transitive lines. |
 | YAML parser | `js-yaml@4` → `4.3.2` | Apply the available patched release. |
-| Desktop automation | WebdriverIO `9.32`, Tauri service/plugin `1.4` | Real adapter checks pass; Windows desktop journeys remain a hosted gate. |
+| Desktop automation | WebdriverIO `9.32`, Tauri service/plugin `1.4` | Real adapter and hosted Windows native WDIO checks pass; the optional test driver retains the immutable compatibility fix described in the evidence. |
 | Mocha through WebdriverIO | Scoped `mocha@10` → `11.8.0` override | Removes the affected `braces` path through Chokidar 4; actual async hooks, retry, skip and success/failure reporting checks pass. |
-| Desktop runtime | Tauri/API/CLI `2.12.1`, Tao `0.37.1` | Upstream removes the global mutex path implicated in [issue #92](https://github.com/ZoOtMcNoOt/yap/issues/92); actual Windows testing remains open. |
+| Desktop runtime | Tauri/API/CLI `2.12.1`, Tao `0.37.1` | Upstream removes the global mutex path implicated in [issue #92](https://github.com/ZoOtMcNoOt/yap/issues/92); actual RDP/session-lock checks remain open. |
 | Rust TLS | `rustls` `0.23.45` | Patched release for `RUSTSEC-2026-0285`. |
 | Rust event listeners | `event-listener` `5.4.2` | Patched release for warning-class `RUSTSEC-2026-0221`. |
 

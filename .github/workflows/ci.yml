@@ -583,7 +583,10 @@ jobs:
         run: uv sync --locked --exact --extra evaluation --extra test --python (Get-Command python.exe).Source --no-python-downloads
       - name: Lint the Python server
         working-directory: server
-        run: uv run --locked ruff check . ../infra/yap-server-node/owned-process-supervisor.py
+        run: uv run --locked ruff check . ../infra/yap-server-node/owned-process-supervisor.py ../verification/audit-server-dependencies.py
+      - name: Audit every locked core server dependency
+        working-directory: ${{ github.workspace }}
+        run: python verification/audit-server-dependencies.py
       - name: Run the portable Python 3.12 server suite
         run: ./verification/test-portable-python-server.ps1
       - name: Verify exact GitHub-hosted checkout remained unchanged

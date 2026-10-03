@@ -25,11 +25,12 @@ Installed and exercised: Node 24.19, pnpm 11.7.0, Python 3.12.14 with locked uv 
 | Desktop Rust tests | 1,363 unit + 27 integration passed, 11 declared model/hardware ignores |
 | Orchestrator release build and strict Clippy | Passed |
 | Orchestrator tests under Tini | 54 tests passed, including all 8 supervised-service integration cases |
-| Portable Python server suite in isolated Ubuntu | 1,639 passed, 96 platform/fixture/database skips (1,735 total) |
+| Portable Python server suite in isolated Ubuntu | 1,640 passed, 96 platform/fixture/database skips (1,736 total); patched core dependencies |
 | Local Postgres/pgvector knowledge suite | 19 passed, no skips; Postgres 17.11 and pgvector 0.8.0 development runtime |
 | Personal/shared terminology database, authenticated HTTP and policy/configuration | 28 passed, no skips; full focused correction/OpenAPI/startup checks total 53 passed |
-| Governed knowledge portable suite | 176 passed, no skips; includes explicit team-management authority and MCP relationship proof |
+| Governed knowledge portable suite | 177 passed, no skips; includes changed-dependency qualification refusal |
 | Python Ruff | Passed |
+| Complete core Python dependency audit | 40 locked versions, no known findings or skips; strict gate added to CI |
 | Setup script repeated in the same workspace | Passed |
 | Native Linux headless launch with mapped WebKit helpers | Remained running for 12 seconds; startup smoke only |
 | Documentation contracts | 4 passed on the final working tree |
@@ -38,23 +39,24 @@ Installed and exercised: Node 24.19, pnpm 11.7.0, Python 3.12.14 with locked uv 
 | Native rustfmt and diff whitespace | Passed |
 | Shipped dependency inventory/license checks | 3 passed |
 
-The dependency refresh renews native/frontend/browser/application checks; saved connection inspection retains the latest server and real-database/service receipts.
-Hosted Windows run 529 additionally passed 392 frontend units, 184 browser
-workflows, 71 release contracts and strict desktop Clippy. Its native file-ownership
-and stale-copy smoke failures are addressed in the
-[dependency evidence](evidence/dependency-refresh/2026-10-03/verification.md#windows-file-ownership-renewal);
-Run 530 passes all 1,367 Windows native units, 27 integration cases, native WDIO
-and both actual connector checks. Its browser suite reported 152 passing cases
-before the old job deadline cancelled it; the frontend budget is increased to
-25 minutes, retaining per-test timeouts. All checks on the updated commit remain
-required before merging PR #199.
+The dependency refresh renews native/frontend/browser/application checks; saved connection inspection retains the latest real-database/service receipts.
+[Hosted run 532](https://github.com/ZoOtMcNoOt/yap/actions/runs/37118650222)
+passed all six jobs on `02da8f11`: 1,367 Windows native units + 27 integration
+cases, strict Clippy, native WDIO and both actual connector runtimes; 392 frontend
+units, all 184 browser workflows and 71 release contracts; 1,600 portable Windows
+server cases with 135 declared skips; identity and 54 Linux orchestrator cases.
+[PR #199](https://github.com/ZoOtMcNoOt/yap/pull/199) merged to
+`dbdd8d1752f260ca37623b74f0f87d86241175cc` with the identical tested tree.
+The [dependency evidence](evidence/dependency-refresh/2026-10-03/verification.md)
+retains earlier failures and their verified repairs.
 Nine new inspection database/HTTP
 cases join the prior 51 new-feature database exclusions, all verified against
 real local Postgres. The isolated suite retains 36 preexisting skips. The
 expanded regression passes 102 cases, including existing Curator journal checks.
-Orchestrator and the headless startup smoke retain their earlier environment
-receipts. These are working-tree development checks, not reviewed release-head,
-model or enterprise qualification.
+The local orchestrator release build and headless startup smoke retain their
+earlier environment receipts. Hosted run 532 establishes exact-head software
+verification; neither local nor hosted checks establish model or enterprise
+qualification.
 
 ## Changes made to enable development
 
@@ -67,6 +69,15 @@ model or enterprise qualification.
 
 ## Current increment
 
+The [core Python dependency increment](evidence/server-dependencies/2026-10-03/verification.md)
+repairs published advisories and adds a strict audit of every locked core package
+version. Separate NeMo overlay findings remain open; a clean core audit cannot
+qualify a model runtime or its base image. The dependency change also requires
+renewed model qualification; historical receipts retain their original hashes.
+See the [execution queue](plans/active/2026-10-02-yap-project-hill-climb.md#current-increment-core-server-dependency-integrity).
+
+## Recent verified work
+
 [AAC M4A/MP4 import](evidence/aac-import/2026-10-03/verification.md) verifies six
 software outcomes through existing native selection and preparation owners.
 Actual encoded fixtures retain presentation duration, content and original files;
@@ -78,15 +89,15 @@ Documentation entry points are refreshed; the complete prior server narrative
 remains in a linked archive. [Repository consolidation](evidence/repository-consolidation/2026-10-03/verification.md)
 preserves all 27 original branch tips under one archive tag, closes nine stale
 dependency PRs and removes 26 branches. Development work and documentation are
-pushed through [PR #199](https://github.com/ZoOtMcNoOt/yap/pull/199); its status
-records required exact-head integration checks.
+merged through [PR #199](https://github.com/ZoOtMcNoOt/yap/pull/199) after all six
+exact-head jobs passed. Its temporary branch is retired; `main` remains the
+shared integration branch.
 The [dependency refresh](evidence/dependency-refresh/2026-10-03/verification.md)
 removes the 11 high npm findings: one low finding remains, with no ignores. Rust
 has zero vulnerability-class findings and two reviewed warnings. The working
 lockfile uses official Tauri 2.12.1 / Tao 0.37.1, whose Windows source removes the
 global mutex implicated in [issue #92](https://github.com/ZoOtMcNoOt/yap/issues/92).
-That issue stays open until actual Windows RDP/session-lock checks pass. Exact-head
-hosted checks precede integration.
+That issue stays open until actual Windows RDP/session-lock checks pass.
 
 
 [Saved connection inspection](evidence/connection-proposal-inspection/2026-10-03/verification.md)
