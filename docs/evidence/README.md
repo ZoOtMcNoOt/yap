@@ -49,6 +49,7 @@ Current product-completion evidence:
 - [Accepted correction reopening and offline recovery](accepted-correction-recovery/2026-10-03/verification.md)
 - [Accepted correction UTF-8 export](accepted-correction-export/2026-10-03/verification.md)
 - [Saved connection source inspection](connection-proposal-inspection/2026-10-03/verification.md)
+- [Owned connection proposal discard](connection-proposal-discard/2026-10-03/verification.md): confirmation, retained history, atomic auditing and uncertain-delivery recovery.
 - [Repository consolidation and preserved branch history](repository-consolidation/2026-10-03/verification.md)
 - [Mobbin design references](ui-completion/2026-10-02-design-references.md)
 

@@ -36,9 +36,9 @@ committed write: the UI offers an idempotent retry and makes no cancellation cla
   unused-code warnings remain.
 - Frontend: 393 unit passes, two declared Windows-only skips; production build
   passes. Six new browser journeys cover confirmation, narrow layouts, retries,
-  stale proposals and identity changes. The full regression passes 189 workflows
-  with one declared Windows-only skip (9.2 minutes); four renewed confirmation
-  checks also verify restored keyboard focus and retained success after Enter.
+  stale proposals and identity changes. The pre-handoff-correction baseline at
+  `f8c0606e` passes 189 workflows with one Windows-only skip (9.2 minutes); four
+  renewed confirmation checks verify restored focus and retained success after Enter.
 - Portable Ubuntu server: 1,744 cases, 1,640 passes and 104 declared exclusions.
   Ruff, native formatting, dependency inventory and four documentation contracts pass.
 - Hosted release contract set: 66 passes, five declared Windows-only skips. The
@@ -59,7 +59,8 @@ and replace its recovery reference. Two new browser cases reproduce the replaced
 reference on that head and pass with queued handoff handling. The write is retained;
 its reference remains available for uncertain-delivery retry. After confirmation,
 the owner explicitly opens the queued proposal. All 52 related review/Curator/Knowledge
-browser journeys pass; both handoff cases also pass at 360 pixels. Frontend units
+browser journeys pass on the corrected implementation `a68a789d`; both handoff
+cases also pass at 360 pixels. Frontend units
 and production build renew. This correction requires fresh
 exact-head hosted checks; the earlier green run does not qualify changed code.
 
