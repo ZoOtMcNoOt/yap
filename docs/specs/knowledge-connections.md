@@ -9,17 +9,18 @@ Connections reads the current reviewed Postgres knowledge generation without inv
 | `GET /v1/knowledge/concepts?search=…` | Up to 12 authorized topics, stable concept-ID order, literal case-insensitive title search. The required search may be empty, otherwise it has at most 128 trimmed characters. |
 | `GET /v1/knowledge/connections?conceptId=…&generationSha256=…` | The authorized topic and up to 16 incoming/outgoing canonical edges, at most 17 nodes. The generation must match the preceding topic view. |
 | `GET /v1/knowledge/connection-proposal?proposalId=…` | One owned, proposed typed Curator connection with two exact source excerpts. The required reference is 64 lowercase hexadecimal characters. |
+| `DELETE /v1/knowledge/connection-proposal?proposalId=…` | Idempotently discard an owned relationship proposal. No body; return a bounded disposition without source text. |
 
-All endpoints authenticate organization identity and fix purpose to `knowledge.read`. Callers cannot select a tenant, subject, agent grant, limit or purpose. Both edge endpoints must be visible before selection, limits and `hasMore`. Hidden and unknown topics share a 404; a changed generation returns 409 and requires fresh topic discovery. Empty authorized discovery returns an empty page; missing reviewed storage returns 503. Disabled service routes return 501. Other methods return 405.
+All endpoints authenticate organization identity. Reading fixes purpose to `knowledge.read`; discard checks ownership without granting source access. Callers cannot select a tenant, subject, agent grant, limit or purpose. Both edge endpoints must be visible before selection, limits and `hasMore`. Hidden and unknown topics share a 404; a changed generation returns 409 and requires fresh topic discovery. Empty authorized discovery returns an empty page; missing reviewed storage returns 503. Disabled service routes return 501. Other methods return 405.
 
 Every edge carries its type, authority (`asserted`, `human_confirmed`, `derived`) and exact source path, revision and SHA-256. Paired character offsets (within the existing one-million-byte source ceiling) identify source-text links; paired nulls identify declared metadata without inventing a quote. `agent_proposed` relationships are excluded. Responses are limited to 64 KiB, with no partial result on invalid or excessive metadata. Success and failed admitted reads write content-free tool audits; application request logs omit query strings, source text and tokens. Private reverse proxies must likewise omit query strings when logging these routes.
 
 The native bridge owns origin, bearer credentials and the main-window boundary.
-Every read, including initial browsing, requires `authorityRevision` from the
+Every request, including initial browsing and discard, requires `authorityRevision` from the
 shared native `ServerConnectionSnapshot`. Its generation owner changes on
 identity/configuration changes; ordinary health checks retain the revision.
-Native dispatch compares it to the captured lease, and commit requires that lease
-to remain current. No separate authority probe or unbound discovery is used.
+Native dispatch compares it to the captured lease; publishing its result to the
+UI requires that lease to remain current. This cannot undo a server write. No separate authority probe or unbound discovery is used.
 Parsing rejects unknown fields, inconsistent generations, duplicate/unrelated
 nodes or edges, mismatched source proof and excess bounds.
 
@@ -29,7 +30,7 @@ change. An unchanged owner can draft offline, with submissions disabled until
 its capability is available. Pending submission/cancellation keeps the form
 locked until its promise releases. See the [ownership evidence](../evidence/connection-owned-knowledge/2026-10-03-verification.md).
 
-The UI provides topic discovery, bounded graph/list views, keyboard source inspection, copied citations, neighbor exploration and an eight-topic back path. It retains the existing four Knowledge tasks and their drafts. Changed/denied views clear old results; temporary failures can retry. Native cancellation drops the HTTP read and prevents its result from returning to the UI. It does not undo server SQL that has already started; SQL is read-only, with a five-second per-statement timeout and one-second lock timeout. The desktop request has a 20-second deadline and one concurrent read; the service permits two concurrent reads.
+The UI provides topic discovery, bounded graph/list views, keyboard source inspection, copied citations, neighbor exploration and an eight-topic back path. It retains the existing four Knowledge tasks and their drafts. Changed/denied views clear old results; temporary failures can retry. Native cancellation drops the HTTP request and prevents its result from returning to the UI. Reads are read-only; dropping a request cannot undo a server write already committed. SQL has a five-second per-statement timeout and one-second lock timeout. The desktop request has a 20-second deadline and one concurrent request; the service permits two concurrent requests.
 
 ## Agent proposals
 
@@ -98,3 +99,25 @@ cancellation and admission limits. UI task changes preserve owned drafts; accoun
 changes clear them and hide private evidence immediately. New handoffs cancel an
 older read and wait for its completion. Same-owner offline drafts remain editable,
 with remote reading disabled. See [inspection evidence](../evidence/connection-proposal-inspection/2026-10-03/verification.md).
+
+
+## Discard a saved proposal
+
+Choose **Discard proposal…**, then confirm or keep the suggestion in the accessible
+dialog. Owners can also discard obsolete proposals without reopening sources they
+can no longer read. Unknown, foreign and other-type references share 404.
+
+Discard retains the journal, exact citations and provenance, marks the row
+`discarded`, and releases one slot in the 64-pending-proposal owner limit. It commits
+with a content-free success audit in the same transaction. Audit failure rolls back
+the change. Repeating the reference returns the same disposition and retains the
+original discard timestamp; replaying its creation cannot resurrect it. The typed
+receipt contains only `schemaVersion: 1`, `proposalId`, `generationSha256` and
+`status: discarded`. Published edges and the active generation stay unchanged.
+
+The UI reports success only after a valid receipt for the current connection and
+reference. It offers no write-cancellation claim while discard is pending. Lost
+confirmation may mean the server already committed; retrying the same reference
+confirms its disposition. Changing account or server closes the dialog, hides old
+evidence and ignores delayed results. Local controls and source navigation remain
+available. Canonical publication and rebuilding still use a separate review process.

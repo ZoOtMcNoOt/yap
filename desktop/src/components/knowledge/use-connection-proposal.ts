@@ -4,6 +4,7 @@ import {
   cancelKnowledgeConnections,
   knowledgeConnections,
   type ConnectionProposal,
+  type ConnectionProposalDisposition,
 } from "@/knowledge-connections";
 import type { ServerConnectionSnapshot } from "@/server";
 
@@ -19,10 +20,23 @@ export function useConnectionProposal(
 ) {
   const available =
     snapshot.state === "ready" && snapshot.capabilities.knowledgeConnections;
-  const [reference, setReference] = useState("");
+  const [reference, updateReference] = useState("");
   const [view, setView] = useState<ConnectionProposal>();
   const [error, setError] = useState("");
-  const [pending, setPending] = useState(false);
+  const [pendingAction, setPendingAction] = useState<
+    "proposal" | "discard" | null
+  >(null);
+  const pending = pendingAction !== null;
+  const [disposition, setDisposition] = useState<ConnectionProposalDisposition>();
+  const [discardUnconfirmed, setDiscardUnconfirmed] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  function setReference(value: string) {
+    updateReference(value);
+    setDisposition(undefined);
+    setDiscardUnconfirmed(false);
+    setConfirming(false);
+    setError("");
+  }
   const epoch = useRef(0);
   const running = useRef<{ id: string; cancelSent: boolean } | null>(null);
   const consumed = useRef<ProposalHandoff | undefined>(undefined);
@@ -38,8 +52,11 @@ export function useConnectionProposal(
       epoch.current += 1;
       void stop()?.catch(() => undefined);
       setView(undefined);
+      setDisposition(undefined);
+      setDiscardUnconfirmed(false);
+      setConfirming(false);
       setError("");
-      if (changed) setReference("");
+      if (changed) updateReference("");
     },
     [stop],
   );
@@ -56,7 +73,7 @@ export function useConnectionProposal(
     [stop],
   );
   const run = useCallback(
-    async (value = reference) => {
+    async (value = reference, action: "proposal" | "discard" = "proposal") => {
       const proposalId = value.trim();
       if (
         !available ||
@@ -68,25 +85,53 @@ export function useConnectionProposal(
       const id = crypto.randomUUID();
       const started = ++epoch.current;
       running.current = { id, cancelSent: false };
-      setPending(true);
-      setView(undefined);
+      setPendingAction(action);
+      setConfirming(false);
+      if (action === "proposal") {
+        setView(undefined);
+        setDisposition(undefined);
+        setDiscardUnconfirmed(false);
+      }
       setError("");
       try {
         const receipt = await knowledgeConnections(
           id,
-          { action: "proposal", proposalId },
+          { action, proposalId },
           snapshot.authorityRevision,
         );
         if (started !== epoch.current) return;
-        if (receipt.response.kind !== "proposal")
-          throw { code: "invalidResponse" };
-        setView(receipt.response.value);
+        if (action === "discard") {
+          if (receipt.response.kind !== "discarded")
+            throw { code: "invalidResponse" };
+          setDisposition(receipt.response.value);
+          setView(undefined);
+          setDiscardUnconfirmed(false);
+        } else {
+          if (receipt.response.kind !== "proposal")
+            throw { code: "invalidResponse" };
+          setView(receipt.response.value);
+        }
       } catch (failure) {
         if (started !== epoch.current) return;
         const code =
           typeof failure === "object" && failure && "code" in failure
             ? failure.code
             : "unavailable";
+        if (action === "discard") {
+          setDiscardUnconfirmed(true);
+          if (code === "denied" || code === "identityChanged" || code === "notFound")
+            setView(undefined);
+          setError(
+            code === "notFound"
+              ? "This proposal is unavailable for your account. Check its reference."
+              : code === "denied"
+                ? "Your organization has not granted permission to discard this proposal."
+                : code === "identityChanged"
+                  ? "Your server or sign-in changed. Discard could not be confirmed. Check your connection."
+                  : "Discard could not be confirmed. It may already have completed. Retry the same reference to confirm its status.",
+          );
+          return;
+        }
         setError(
           code === "knowledgeChanged"
             ? "Knowledge changed since this proposal was created. Search current sources and propose the connection again."
@@ -103,7 +148,7 @@ export function useConnectionProposal(
       } finally {
         if (running.current?.id === id) {
           running.current = null;
-          setPending(false);
+          setPendingAction(null);
         }
       }
     },
@@ -125,13 +170,19 @@ export function useConnectionProposal(
         void stop()?.catch(() => undefined);
         setView(undefined);
         setError("");
-        setReference(handoff.reference);
+        updateReference(handoff.reference);
+        setDisposition(undefined);
+        setDiscardUnconfirmed(false);
+        setConfirming(false);
       }
       return;
     }
     deferred.current = undefined;
     consumed.current = handoff;
-    setReference(handoff.reference);
+    updateReference(handoff.reference);
+    setDisposition(undefined);
+    setDiscardUnconfirmed(false);
+    setConfirming(false);
     void run(handoff.reference);
   }, [
     available,
@@ -143,6 +194,7 @@ export function useConnectionProposal(
     stop,
   ]);
   async function cancel() {
+    if (pendingAction === "discard") return;
     const cancelled = ++epoch.current;
     setError("Proposal inspection cancelled. You can try again.");
     try {
@@ -164,10 +216,22 @@ export function useConnectionProposal(
         : undefined,
     error: owned ? error : "",
     pending,
+    discarding: pendingAction === "discard",
+    disposition:
+      available && owned && disposition?.proposalId === reference.trim()
+        ? disposition
+        : undefined,
+    discardUnconfirmed: owned && discardUnconfirmed,
+    confirming: available && owned && confirming,
+    setConfirming,
+    discard: () => run(reference, "discard"),
+    canDiscard:
+      available && owned && !pending && !disposition &&
+      /^[0-9a-f]{64}$/.test(reference.trim()),
     requestId: running.current?.id,
     run,
     cancel,
     canRead:
-      available && owned && !pending && /^[0-9a-f]{64}$/.test(reference.trim()),
+      available && owned && !pending && !disposition && /^[0-9a-f]{64}$/.test(reference.trim()),
   };
 }

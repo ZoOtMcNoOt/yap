@@ -10,6 +10,7 @@ HTTP_OPERATIONS = {
     ("/v1/knowledge/concepts", "get"): "browseKnowledgeTopics",
     ("/v1/knowledge/connections", "get"): "readKnowledgeConnections",
     ("/v1/knowledge/connection-proposal", "get"): "inspectKnowledgeConnectionProposal",
+    ("/v1/knowledge/connection-proposal", "delete"): "discardKnowledgeConnectionProposal",
     ("/v1/terminology/scopes", "get"): "discoverTerminologyScopes",
     ("/v1/terminology", "get"): "listTerminology",
     ("/v1/terminology", "post"): "createTerminology",
@@ -71,6 +72,10 @@ OPERATION_RUNTIME = {
         "Authenticated permission-safe knowledge connections",
     ),
     ("/v1/knowledge/connection-proposal", "get"): (
+        "Implemented when explicit authenticated knowledge connections Postgres configuration verifies",
+        "Authenticated permission-safe knowledge connections",
+    ),
+    ("/v1/knowledge/connection-proposal", "delete"): (
         "Implemented when explicit authenticated knowledge connections Postgres configuration verifies",
         "Authenticated permission-safe knowledge connections",
     ),

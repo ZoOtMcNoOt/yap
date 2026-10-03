@@ -11,6 +11,10 @@ class KnowledgeConnectionsRequestMixin:
         assert self._knowledge_connections_service is not None
         assert self._principal is not None
         try:
+            if self.command == "DELETE" and int(
+                self.headers.get("Content-Length", "0")
+            ) != 0:
+                raise ValueError("discard takes only a proposal reference")
             query = parse_qs(
                 urlsplit(self.path).query,
                 keep_blank_values=True,
@@ -30,7 +34,12 @@ class KnowledgeConnectionsRequestMixin:
             ):
                 raise ValueError("knowledge query is invalid")
             if path == "/v1/knowledge/connection-proposal":
-                result = self._knowledge_connections_service.proposal(
+                operation = (
+                    self._knowledge_connections_service.discard
+                    if self.command == "DELETE"
+                    else self._knowledge_connections_service.proposal
+                )
+                result = operation(
                     principal=self._principal, proposal_id=query["proposalId"][0]
                 )
             elif path == "/v1/knowledge/concepts":

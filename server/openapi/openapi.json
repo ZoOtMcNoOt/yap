@@ -2797,6 +2797,60 @@
           }
         ],
         "x-yap-runtime-owner": "Authenticated permission-safe knowledge connections"
+      },
+      "delete": {
+        "tags": [
+          "knowledge"
+        ],
+        "operationId": "discardKnowledgeConnectionProposal",
+        "summary": "Discard an owned saved connection proposal",
+        "description": "Idempotently discard one relationship proposal belonging to the authenticated principal, including obsolete or source-hidden proposals. Unknown, wrong-type and foreign-owner references share 404. Retain the journal and source provenance, release unresolved proposal capacity, and commit a content-free success audit atomically. No canonical approval or generation activation occurs. Retry the same reference if confirmation is lost.",
+        "x-yap-runtime-status": "Implemented when explicit authenticated knowledge connections Postgres configuration verifies",
+        "responses": {
+          "200": {
+            "description": "Confirmed discarded proposal; repeated requests return the same disposition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeConnectionProposalDisposition"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          }
+        },
+        "parameters": [
+          {
+            "name": "proposalId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          }
+        ],
+        "x-yap-runtime-owner": "Authenticated permission-safe knowledge connections"
       }
     }
   },
@@ -8429,6 +8483,36 @@
                 }
               }
             }
+          }
+        }
+      },
+      "KnowledgeConnectionProposalDisposition": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "generationSha256",
+          "proposalId",
+          "status"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "generationSha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "proposalId": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "discarded"
+            ]
           }
         }
       }

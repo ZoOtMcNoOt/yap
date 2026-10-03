@@ -18,16 +18,17 @@ Installed and exercised: Node 24.19, pnpm 11.7.0, Python 3.12.14 with locked uv 
 
 | Check | Current result |
 | --- | --- |
-| Desktop frontend unit tests | 388 passed, 2 declared skips |
+| Desktop frontend unit tests | 393 passed, 2 declared Windows-only skips |
 | TypeScript/Vite production build | Passed |
-| Browser workflows with system Chromium | 183 passed, 1 declared Windows-only skip; refreshed locked dependencies |
+| Browser workflows with system Chromium | 189 passed, 1 declared Windows-only skip; includes proposal discard |
 | Linux Tauri native debug build, no installer bundle | Passed; platform-specific unused-code warnings remain |
-| Desktop Rust tests | 1,363 unit + 27 integration passed, 11 declared model/hardware ignores |
+| Desktop Rust tests | 1,364 unit + 27 integration passed, 11 declared model/hardware ignores |
 | Orchestrator release build and strict Clippy | Passed |
 | Orchestrator tests under Tini | 54 tests passed, including all 8 supervised-service integration cases |
-| Portable Python server suite in isolated Ubuntu | 1,640 passed, 96 platform/fixture/database skips (1,736 total); patched core dependencies |
+| Portable Python server suite in isolated Ubuntu | 1,640 passed, 104 platform/fixture/database skips (1,744 total) |
 | Local Postgres/pgvector knowledge suite | 19 passed, no skips; Postgres 17.11 and pgvector 0.8.0 development runtime |
 | Personal/shared terminology database, authenticated HTTP and policy/configuration | 28 passed, no skips; full focused correction/OpenAPI/startup checks total 53 passed |
+| Proposal discard, inspection and related PostgreSQL/API regression | 52 passed, no skips; final ten discard/API cases renewed |
 | Governed knowledge portable suite | 177 passed, no skips; includes changed-dependency qualification refusal |
 | Python Ruff | Passed |
 | Complete core Python dependency audit | 40 locked versions, no known findings or skips; strict gate added to CI |
@@ -39,22 +40,26 @@ Installed and exercised: Node 24.19, pnpm 11.7.0, Python 3.12.14 with locked uv 
 | Native rustfmt and diff whitespace | Passed |
 | Shipped dependency inventory/license checks | 3 passed |
 
-The dependency refresh renews native/frontend/browser/application checks; saved connection inspection retains the latest real-database/service receipts.
-[Hosted run 532](https://github.com/ZoOtMcNoOt/yap/actions/runs/37118650222)
-passed all six jobs on `02da8f11`: 1,367 Windows native units + 27 integration
-cases, strict Clippy, native WDIO and both actual connector runtimes; 392 frontend
-units, all 184 browser workflows and 71 release contracts; 1,600 portable Windows
-server cases with 135 declared skips; identity and 54 Linux orchestrator cases.
-[PR #199](https://github.com/ZoOtMcNoOt/yap/pull/199) merged to
-`dbdd8d1752f260ca37623b74f0f87d86241175cc` with the identical tested tree.
-The [dependency evidence](evidence/dependency-refresh/2026-10-03/verification.md)
-retains earlier failures and their verified repairs.
+[Hosted run 536](https://github.com/ZoOtMcNoOt/yap/actions/runs/37121648208)
+passed all six jobs on `7622a5a654193dfd23c54219177fa72e73c35323`: 1,367 Windows
+native units + 27 integration cases (11 declared ignores), native WDIO and both
+actual connector runtimes; 392 frontend units, all 184 browser workflows and 71
+release contracts; 1,601 portable Windows server cases with 135 declared
+exclusions; the complete 40-version core audit; Linux identity and all 54
+orchestrator cases. [PR #201](https://github.com/ZoOtMcNoOt/yap/pull/201) merged
+to `85d87c0fc7bebbeff877c97a8c6f1fc77ff0d7be` with the identical tested tree.
+The [core server evidence](evidence/server-dependencies/2026-10-03/verification.md)
+retains local checks, the earlier checkout failure and its verified repair.
+Earlier [run 532](https://github.com/ZoOtMcNoOt/yap/actions/runs/37118650222)
+closed the desktop dependency/consolidation work through PR #199; its
+[evidence](evidence/dependency-refresh/2026-10-03/verification.md) preserves those
+dated results and repairs.
 Nine new inspection database/HTTP
 cases join the prior 51 new-feature database exclusions, all verified against
 real local Postgres. The isolated suite retains 36 preexisting skips. The
 expanded regression passes 102 cases, including existing Curator journal checks.
 The local orchestrator release build and headless startup smoke retain their
-earlier environment receipts. Hosted run 532 establishes exact-head software
+earlier environment receipts. Hosted run 536 establishes exact-head software
 verification; neither local nor hosted checks establish model or enterprise
 qualification.
 
@@ -69,14 +74,27 @@ qualification.
 
 ## Current increment
 
-The [core Python dependency increment](evidence/server-dependencies/2026-10-03/verification.md)
-repairs published advisories and adds a strict audit of every locked core package
-version. Separate NeMo overlay findings remain open; a clean core audit cannot
-qualify a model runtime or its base image. The dependency change also requires
-renewed model qualification; historical receipts retain their original hashes.
-See the [execution queue](plans/active/2026-10-02-yap-project-hill-climb.md#current-increment-core-server-dependency-integrity).
+The [execution queue](plans/active/2026-10-02-yap-project-hill-climb.md#current-increment-owner-controlled-proposal-discard)
+now targets **owner-controlled proposal discard**. The local implementation adds
+explicit confirmation, owner-only idempotent discard and uncertain-delivery retries
+through the API, native client and review interface. It retains the journal,
+sources and published graph while freeing pending proposal capacity. [Local evidence](evidence/connection-proposal-discard/2026-10-03/verification.md)
+records checks and screens; hosted integration is pending. Canonical publication and rebuild
+recovery remain open. The full goal stays active.
 
 ## Recent verified work
+
+The [core Python dependency increment](evidence/server-dependencies/2026-10-03/verification.md)
+is verified and merged through PR #201. Only PyJWT, cryptography, httpx2 and
+httpcore2 versions changed; all 40 core versions pass the strict audit. The
+completed branch and superseded PR #200 are retired, with the latter's tip
+preserved under `archive/dependency-proposal-200-2026-10-03`.
+
+NeMo's pinned upstream constraints exclude the published Hydra/Lightning fixes;
+those overlay findings remain open. A clean core audit does not qualify a model
+runtime or its base image. Historical model receipts retain their original JSON
+and hashes; current dependencies require renewed qualification. The linked core
+evidence records the exact upstream constraints and inspected source hash.
 
 [AAC M4A/MP4 import](evidence/aac-import/2026-10-03/verification.md) verifies six
 software outcomes through existing native selection and preparation owners.
@@ -120,7 +138,7 @@ The [shared design](evidence/design-refresh/2026-10-03/review.md) retains seven
 verified outcomes and the island. [Connections](evidence/knowledge-connections/2026-10-03/verification.md)
 remains six of seven overall outcomes; [Curator](evidence/curator-connections/2026-10-03/verification.md)
 verifies its six proposal outcomes. Actual reasoning, authorized human canonical
-publication and rebuilding remain open. Further formats, older correction revisions and supervised ASR/live work remain queued after dependency/integration checks.
+publication and rebuilding remain open. Further formats, older correction revisions and supervised ASR/live work remain in the active queue.
 
 [Connection-owned Knowledge views](evidence/connection-owned-knowledge/2026-10-03-verification.md)
 verify five outcomes for native revision binding, private-state clearing and

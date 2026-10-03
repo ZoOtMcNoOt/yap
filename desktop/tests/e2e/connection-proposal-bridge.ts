@@ -35,6 +35,7 @@ export async function installProposalInspectionBridge(page: Page) {
         );
       const calls: Array<{ command: string; args: any }> = [];
       let mode = "success";
+      const discarded = new Set<string>();
       let delayed = false;
       let delayedCancellation = false;
       let rejectCancellation: (() => void) | undefined;
@@ -69,7 +70,15 @@ export async function installProposalInspectionBridge(page: Page) {
           calls.push({ command, args });
           if (args.authorityRevision !== revision)
             throw { code: "identityChanged" };
+          const action = args.request.action;
+          if (mode === "lostDiscardReceipt" && action === "discard") {
+            discarded.add(args.request.proposalId);
+            mode = "success";
+            throw { code: "unavailable" };
+          }
           if (mode !== "success") throw { code: mode };
+          if (action === "proposal" && discarded.has(args.request.proposalId))
+            throw { code: "notFound" };
           const source = (id: string, title: string, start: number) => ({
             node: {
               conceptId: id,
@@ -88,7 +97,13 @@ export async function installProposalInspectionBridge(page: Page) {
             },
             text,
           });
-          const receipt = {
+          const receipt = action === "discard" ? {
+            authorityRevision: revision,
+            response: { kind: "discarded", value: {
+              schemaVersion: 1, proposalId: args.request.proposalId,
+              generationSha256: "a".repeat(64), status: "discarded",
+            } },
+          } : {
             authorityRevision: revision,
             response: {
               kind: "proposal",
@@ -114,6 +129,7 @@ export async function installProposalInspectionBridge(page: Page) {
               },
             },
           };
+          if (action === "discard") discarded.add(args.request.proposalId);
           if (delayed) {
             delayed = false;
             return new Promise((resolve) => {

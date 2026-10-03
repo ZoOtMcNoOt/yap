@@ -1,6 +1,6 @@
 # Core server dependency integrity
 
-**Owner:** Grant McNatt. **Date:** 2026-10-03. **Status:** Local software checks passed; hosted integration pending.
+**Owner:** Grant McNatt. **Date:** 2026-10-03. **Status:** Software verified and merged.
 
 The exact core lock reported advisories in PyJWT, cryptography and httpx2.
 Supported published updates replace only four package versions; all other core
@@ -65,8 +65,7 @@ The audit, frozen installation, Ruff, 53 authentication cases, 12 qualification
 contracts and all four documentation contracts pass. The isolated portable
 server suite passes 1,640 cases with 96 declared platform/database exclusions
 (1,736 total). All 177 governed portable contracts and the 102-case real
-Postgres/service/API regression pass with no skips. Hosted exact-head results
-remain pending.
+Postgres/service/API regression pass with no skips.
 The first isolated attempts exhausted disk space; disposable native build caches
 were cleared before retry. No source, dependency cache, model or user data was
 removed to obtain space.
@@ -83,7 +82,33 @@ Hosted run 535 passed the new complete audit, then failed the regression because
 its shallow checkout contained the later baseline but lacked the original model
 qualification tree. The existing CI history-fetch step now admits both exact
 commits, including `0665c486398d2803ba33ebbb6e6dedddcd844dbd`. This retains the
-original receipt boundary; final hosted checks are renewed on the updated head.
+original receipt boundary; run 536 below verifies the repaired checkout.
+
+## Hosted integration
+
+[Run 536](https://github.com/ZoOtMcNoOt/yap/actions/runs/37121648208) passed all six
+jobs at `7622a5a654193dfd23c54219177fa72e73c35323`:
+
+| Check | Result |
+| --- | --- |
+| Windows native | 1,367 units + 27 integration cases passed; 11 declared ignores |
+| Native desktop and connectors | WDIO and both actual connector runtimes passed |
+| Frontend and browser | 392 units, all 184 workflows (16.8 minutes) and 71 release contracts passed |
+| Windows portable server | 1,601 passed, 135 declared exclusions; 1,736 total |
+| Complete core audit | All 40 locked versions; no known findings or skips |
+| Linux identity and orchestration | Identity checks and all 54 orchestrator cases passed |
+
+[PR #201](https://github.com/ZoOtMcNoOt/yap/pull/201) merged as
+`85d87c0fc7bebbeff877c97a8c6f1fc77ff0d7be`, with the identical tested tree.
+The completed iteration branch was retired. Superseded dependency [PR #200](https://github.com/ZoOtMcNoOt/yap/pull/200)
+was closed after preserving its exact tip
+`778bf7509ad482160988f591f1a75f4931bf84fe` under the annotated tag
+`archive/dependency-proposal-200-2026-10-03`.
+
+Frozen model qualification JSON and hashes remain unchanged. These software
+checks do not qualify the upgraded environment for inference; current dependencies
+require renewed model qualification. [Issue #92](https://github.com/ZoOtMcNoOt/yap/issues/92)
+remains open for actual Windows RDP/session-lock responsiveness checks.
 
 ## Separate runtime findings
 
@@ -99,7 +124,20 @@ The NeMo overlay remains unresolved:
 | lightning 2.4.0 | PYSEC-2026-3972 | Advisory metadata lists no fixed version; review checkpoint-loading authority and current upstream releases. |
 | lightning 2.4.0 / pytorch-lightning 2.6.5 | PYSEC-2026-3624 / PYSEC-2026-3967 (same GHSA-qqmf-gpg7-g8gw) | 2.6.6; verify NeMo compatibility and the locked runtime/license boundary before changing the overlay. |
 
+The pinned [NeMo dependency declaration](https://github.com/NVIDIA/NeMo/blob/ba2cd63ef8de8a3183a3c02b310c66d616b9a991/pyproject.toml)
+requires `hydra-core>1.3,<=1.3.2` and `lightning>2.2.1,<=2.4.0`. Its inspected
+source SHA-256 is:
+
+```text
+8695e8902fe9f3314d0ecc3fd7950b329b5273d97709e22a3bb54f1ac84fa17c
+```
+
+Those constraints exclude patched Hydra 1.3.4 and Lightning 2.6.6. This records
+an incompatibility, not a runtime fix: no override relaxes the pinned constraints.
+A compatible upstream/runtime change still needs software checks and renewed
+model/ARM64 qualification.
+
 These findings remain release inputs. The clean core gate does not clear them,
 qualify a container base image or establish production security. Runtime repair
-and software compatibility work remain in the single active project queue;
+and software compatibility work remain in the [single active project queue](../../../plans/active/2026-10-02-yap-project-hill-climb.md);
 real model/ARM64 behavior and enterprise qualification retain their own evidence.

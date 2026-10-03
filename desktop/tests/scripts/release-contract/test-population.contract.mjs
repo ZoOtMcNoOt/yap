@@ -40,7 +40,7 @@ const MINIMUM_TESTS_PER_SPEC = Object.freeze({
   "app-shortcuts.spec.ts": 1,
   "app.spec.ts": 6,
   "archivist-ingestion.spec.ts": 1,
-  "connection-proposal-inspection.spec.ts": 8,
+  "connection-proposal-inspection.spec.ts": 12,
   "connection-proposals.spec.ts": 7,
   "connections.spec.ts": 9,
   "correction-journey.spec.ts": 2,

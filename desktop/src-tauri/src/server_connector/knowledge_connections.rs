@@ -22,6 +22,9 @@ pub(crate) enum ConnectionsRequest {
     Proposal {
         proposal_id: String,
     },
+    Discard {
+        proposal_id: String,
+    },
     Browse {
         search: String,
     },
@@ -34,7 +37,7 @@ pub(crate) enum ConnectionsRequest {
 impl ConnectionsRequest {
     fn is_valid(&self) -> bool {
         match self {
-            Self::Proposal { proposal_id } => hash(proposal_id),
+            Self::Proposal { proposal_id } | Self::Discard { proposal_id } => hash(proposal_id),
             Self::Browse { search } => {
                 search.chars().count() <= 128
                     && search.trim() == search
@@ -131,8 +134,24 @@ pub(crate) struct KnowledgeNeighborhood {
 #[serde(tag = "kind", content = "value", rename_all = "camelCase")]
 pub(crate) enum ConnectionsResponse {
     Proposal(ConnectionProposal),
+    Discarded(ConnectionProposalDisposition),
     Topics(ConceptPage),
     Neighborhood(KnowledgeNeighborhood),
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct ConnectionProposalDisposition {
+    schema_version: u8,
+    generation_sha256: String,
+    proposal_id: String,
+    status: DiscardedStatus,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
+enum DiscardedStatus {
+    Discarded,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -233,6 +252,18 @@ fn decode(
         return Err(invalid());
     }
     match request {
+        ConnectionsRequest::Discard { proposal_id } => {
+            let disposition: ConnectionProposalDisposition =
+                serde_json::from_slice(body).map_err(|_| invalid())?;
+            if disposition.schema_version != 1
+                || !hash(&disposition.generation_sha256)
+                || !hash(&disposition.proposal_id)
+                || disposition.proposal_id != *proposal_id
+            {
+                return Err(invalid());
+            }
+            Ok(ConnectionsResponse::Discarded(disposition))
+        }
         ConnectionsRequest::Proposal { proposal_id } => {
             let proposal: ConnectionProposal =
                 serde_json::from_slice(body).map_err(|_| invalid())?;
@@ -377,7 +408,8 @@ impl ConnectionsClient {
         }
         let mut url = self.base_url.clone();
         match request {
-            ConnectionsRequest::Proposal { proposal_id } => {
+            ConnectionsRequest::Proposal { proposal_id }
+            | ConnectionsRequest::Discard { proposal_id } => {
                 url.set_path("/v1/knowledge/connection-proposal");
                 url.query_pairs_mut().append_pair("proposalId", proposal_id);
             }
@@ -395,13 +427,14 @@ impl ConnectionsClient {
                     .append_pair("generationSha256", generation_sha256);
             }
         }
+        let outgoing = if matches!(request, ConnectionsRequest::Discard { .. }) {
+            self.authenticated.delete(url)
+        } else {
+            self.authenticated.get(url)
+        };
         let mut response = self
             .authenticated
-            .send(
-                self.authenticated
-                    .get(url)
-                    .header(reqwest::header::ACCEPT, "application/json"),
-            )
+            .send(outgoing.header(reqwest::header::ACCEPT, "application/json"))
             .await
             .map_err(map_dispatch)?;
         let status = response.status().map_err(map_authorization)?;

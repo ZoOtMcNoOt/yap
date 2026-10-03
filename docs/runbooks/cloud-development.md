@@ -186,8 +186,11 @@ Connections needs no Librarian/reasoning runtime. After explicit connection and
 sign-in, open Knowledge → Connections → Browse topics. The existing permission
 projection admits only the token principal's visible topics for `knowledge.read`.
 Knowledge → Review proposals also opens an owned saved connection reference
-without a model. Both endpoints must remain visible in the current generation.
-This setting does not grant new knowledge access or enable proposal publication.
+without a model. Reading requires both endpoints to remain visible in the current
+generation. **Discard proposal…** retires an owned suggestion after confirmation,
+including obsolete proposals, while retaining history and sources. Retry the same
+reference if confirmation is lost. This setting grants no new source access or
+canonical publication.
 See the [contract and limits](../specs/knowledge-connections.md).
 
 Focused development checks use the private local Postgres environment:
@@ -198,7 +201,9 @@ source .tools/postgres/env
 PYTHONPATH=server/src:server server/.venv/bin/python -m unittest \
   tests.knowledge.test_knowledge_connections_runtime \
   tests.knowledge.test_postgres_knowledge_connections \
-  tests.api.test_knowledge_connections_api
+  tests.api.test_knowledge_connections_api \
+  tests.knowledge.test_connection_proposal_discard \
+  tests.api.test_connection_proposal_inspection_api
 ```
 
 These checks create synthetic reviewed generations and vectors only in isolated

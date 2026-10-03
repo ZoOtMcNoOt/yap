@@ -332,3 +332,93 @@ test("a late cancellation failure cannot attach to a new account's inspection", 
     page.getByRole("article", { name: "Saved connection proposal" }),
   ).toBeVisible();
 });
+
+async function confirmDiscard(page: Page) {
+  await page.getByRole("button", { name: /^(Discard proposal…|Try discard again…)$/ }).click();
+  const dialog = page.getByRole("alertdialog", { name: "Discard this connection proposal?" });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "Discard proposal", exact: true }).click();
+}
+
+for (const width of [360, 720, 1440])
+  test(`discard needs explicit confirmation and preserves navigation at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await installProposalInspectionBridge(page);
+    await enter(page);
+    await read(page);
+    await page.getByRole("button", { name: "Discard proposal…", exact: true }).click();
+    const dialog = page.getByRole("alertdialog");
+    await expect(dialog).toBeVisible();
+    await page.screenshot({ path: test.info().outputPath("discard-confirmation.png") });
+    await dialog.getByRole("button", { name: "Keep proposal" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(dialog).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Discard proposal…", exact: true })).toBeFocused();
+    expect(await page.evaluate(() => (globalThis as any).__proposalInspection.calls
+      .filter((c: any) => c.args.request?.action === "discard").length)).toBe(0);
+    await confirmDiscard(page);
+    await expect(page.getByText(/Proposal discarded\. Its history/)).toBeVisible();
+    await page.screenshot({ path: test.info().outputPath("discard-confirmed.png") });
+    await expect(page.getByRole("article", { name: "Saved connection proposal" })).toHaveCount(0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    const mutations = await page.evaluate(() => (globalThis as any).__proposalInspection.calls
+      .filter((c: any) => c.args.request?.action === "discard"));
+    expect(mutations).toHaveLength(1);
+    expect(mutations[0].args.request).toEqual({ action: "discard", proposalId: proposalReference });
+    expect(mutations[0].args.authorityRevision).toBe("1");
+    await page.getByRole("button", { name: "Search current sources" }).click();
+    await expect(page.getByRole("tab", { name: "Search sources", exact: true })).toHaveAttribute("data-state", "active");
+  });
+
+test("lost discard confirmation retries the same reference instead of claiming cancelled or failed write", async ({ page }) => {
+  await installProposalInspectionBridge(page);
+  await enter(page);
+  await read(page);
+  await control(page, "mode", "lostDiscardReceipt");
+  await confirmDiscard(page);
+  await expect(page.getByText(/It may already have completed/)).toBeVisible();
+  await expect(page.getByText(/Proposal discarded\. Its history/)).toHaveCount(0);
+  await confirmDiscard(page);
+  await expect(page.getByText(/Proposal discarded\. Its history/)).toBeVisible();
+  await page.getByLabel("Connection proposal reference").focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByText(/Proposal discarded\. Its history/)).toBeVisible();
+  const calls = await page.evaluate(() => (globalThis as any).__proposalInspection.calls);
+  expect(calls.filter((c: any) => c.args.request?.action === "discard")
+    .map((c: any) => c.args.request.proposalId)).toEqual([proposalReference, proposalReference]);
+  await page.getByLabel("Connection proposal reference").fill("f".repeat(64));
+  await expect(page.getByText(/Proposal discarded\. Its history/)).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Discard proposal…", exact: true })).toBeEnabled();
+});
+
+test("obsolete owned proposals can be discarded without reopening unavailable source evidence", async ({ page }) => {
+  await installProposalInspectionBridge(page);
+  await enter(page);
+  await control(page, "mode", "knowledgeChanged");
+  await read(page);
+  await expect(page.getByText(/Knowledge changed since this proposal/)).toBeVisible();
+  await control(page, "mode", "success");
+  await confirmDiscard(page);
+  await expect(page.getByText(/Proposal discarded\. Its history/)).toBeVisible();
+});
+
+test("identity changes close confirmation and ignore delayed discard receipts", async ({ page }) => {
+  await installProposalInspectionBridge(page);
+  await enter(page);
+  await read(page);
+  await page.getByRole("button", { name: "Discard proposal…", exact: true }).click();
+  await journey(page, "recheckConnection", "2");
+  await expect(page.getByRole("alertdialog")).toHaveCount(0);
+  expect(await page.evaluate(() => (globalThis as any).__proposalInspection.calls
+    .filter((c: any) => c.args.request?.action === "discard").length)).toBe(0);
+  await read(page);
+  await control(page, "delay");
+  await confirmDiscard(page);
+  await expect(page.getByText("Discarding saved proposal…", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Cancel", exact: true })).toHaveCount(0);
+  await journey(page, "recheckConnection", "3");
+  await control(page, "release");
+  await expect(page.getByLabel("Connection proposal reference")).toHaveValue("");
+  await expect(page.getByText(/Proposal discarded\. Its history/)).toHaveCount(0);
+  await expect(page.getByRole("article", { name: "Saved connection proposal" })).toHaveCount(0);
+});
