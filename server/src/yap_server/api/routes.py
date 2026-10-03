@@ -72,6 +72,7 @@ def allowed_methods(path: str) -> frozenset[str] | None:
     if path in {
         "/v1/knowledge/concepts",
         "/v1/knowledge/connections",
+        "/v1/knowledge/connection-proposals",
     }:
         return frozenset({"GET"})
     if path == "/v1/knowledge/connection-proposal":

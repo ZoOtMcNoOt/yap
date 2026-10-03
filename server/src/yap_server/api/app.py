@@ -269,6 +269,7 @@ class _HealthRequestHandler(
             "/v1/knowledge/concepts",
             "/v1/knowledge/connections",
             "/v1/knowledge/connection-proposal",
+            "/v1/knowledge/connection-proposals",
         }:
             if self._knowledge_connections_service is None:
                 self._send_error(

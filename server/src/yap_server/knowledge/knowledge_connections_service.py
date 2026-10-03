@@ -26,6 +26,7 @@ from .okf_source import MAX_OKF_DOCUMENT_BYTES
 from .knowledge_tool_audit import record_knowledge_tool_audit
 from .knowledge_proposals import (
     discard_knowledge_proposal,
+    list_pending_connection_proposals_in_transaction,
     read_connection_proposal_in_transaction,
 )
 from .postgres_relationship_retrieval import (
@@ -110,6 +111,9 @@ class KnowledgeConnectionsService:
             expected_generation_sha256=expected_generation_sha256,
         )
 
+    def pending(self, *, principal: AuthenticatedPrincipal) -> dict[str, object]:
+        return self._query(principal, pending=True)
+
     def proposal(
         self, *, principal: AuthenticatedPrincipal, proposal_id: str
     ) -> dict[str, object]:
@@ -181,7 +185,9 @@ class KnowledgeConnectionsService:
                         }
                 except Exception:
                     with connection.transaction():
-                        self._record_discard_audit(connection, principal, "failed", started)
+                        self._record_discard_audit(
+                            connection, principal, "failed", started
+                        )
                     raise
         except KnowledgeConnectionsError:
             raise
@@ -227,6 +233,7 @@ class KnowledgeConnectionsService:
         concept_id: str | None = None,
         expected_generation_sha256: str | None = None,
         proposal_id: str | None = None,
+        pending: bool = False,
     ) -> dict[str, object]:
         if not self._requests.acquire(blocking=False):
             raise KnowledgeConnectionsError(
@@ -247,14 +254,19 @@ class KnowledgeConnectionsService:
                         expected_generation_sha256=expected_generation_sha256,
                         started=started,
                         proposal_id=proposal_id,
+                        pending=pending,
                     )
                 except Exception:
                     with connection.transaction():
+                        connection.execute("SET LOCAL statement_timeout = '5s'")
+                        connection.execute("SET LOCAL lock_timeout = '1s'")
                         record_knowledge_tool_audit(
                             connection,
                             principal=principal.key,
                             agent_id="knowledge-explorer",
-                            operation="read-connection-proposal"
+                            operation="list-connection-proposals"
+                            if pending
+                            else "read-connection-proposal"
                             if proposal_id is not None
                             else "browse-connections"
                             if concept_id is None
@@ -309,10 +321,35 @@ class KnowledgeConnectionsService:
         expected_generation_sha256: str | None,
         started: float,
         proposal_id: str | None,
+        pending: bool,
     ) -> dict[str, object]:
         with connection.transaction():
             connection.execute("SET LOCAL statement_timeout = '5s'")
             connection.execute("SET LOCAL lock_timeout = '1s'")
+            if pending:
+                wire = list_pending_connection_proposals_in_transaction(
+                    connection, principal=principal.key
+                )
+                if (
+                    len(json.dumps(wire, ensure_ascii=True).encode("utf-8"))
+                    > MAXIMUM_CONNECTION_RESPONSE_BYTES
+                ):
+                    raise ValueError("proposal discovery exceeds its response budget")
+                record_knowledge_tool_audit(
+                    connection,
+                    principal=principal.key,
+                    agent_id="knowledge-explorer",
+                    operation="list-connection-proposals",
+                    outcome="succeeded",
+                    result_count=len(wire["proposals"]),
+                    generation_sha256=None,
+                    permission_hash=None,
+                    authorization_hash=None,
+                    duration_milliseconds=max(
+                        0, int((time.monotonic() - started) * 1_000)
+                    ),
+                )
+                return wire
             common = dict(
                 principal=principal.key,
                 purpose="knowledge.read",

@@ -104,7 +104,8 @@ class ConnectionProposalInspectionApiTests(
         contract_schema_support.assert_schema_subset(
             result,
             document["components"]["schemas"]["KnowledgeConnectionProposalDisposition"],
-            document_name="openapi.json", documents={"openapi.json": document},
+            document_name="openapi.json",
+            documents={"openapi.json": document},
         )
         self.assertEqual(result["status"], "discarded")
         self.assertEqual(self.inspect(method="DELETE")[2], result)
@@ -117,13 +118,64 @@ class ConnectionProposalInspectionApiTests(
         for query in [
             {"proposalId": [self.reference, self.reference]},
             {"proposalId": self.reference, "subjectId": "bob"},
-            {"proposalId": "invalid"}, {},
+            {"proposalId": "invalid"},
+            {},
         ]:
             self.assertEqual(self.inspect(query, method="DELETE")[0], 400)
         status, _, _ = self._request(
-            "/v1/knowledge/connection-proposal?" + urlencode({"proposalId": self.reference}),
-            method="DELETE", headers={"Authorization": "Bearer alice"},
+            "/v1/knowledge/connection-proposal?"
+            + urlencode({"proposalId": self.reference}),
+            method="DELETE",
+            headers={"Authorization": "Bearer alice"},
             data=b'{"subjectId":"bob"}',
         )
         self.assertEqual(status, 400)
         self.assertEqual(self.stored_connection_rows(), before)
+
+    def test_pending_list_is_authenticated_owned_schema_bound_and_no_store(self):
+        path = "/v1/knowledge/connection-proposals"
+        self.assertEqual(self._request(path)[0], 401)
+        status, _, body = self._request(path, headers={"Authorization": "Bearer bob"})
+        self.assertEqual(status, 200)
+        self.assertEqual(json.loads(body), {"schemaVersion": 1, "proposals": []})
+        before = self.stored_connection_rows(), self.graph_identity()
+        status, headers, body = self._request(
+            path, headers={"Authorization": "Bearer alice"}
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(headers["Cache-Control"], "no-store")
+        result = json.loads(body)
+        document = contract_schema_support.load_json(
+            Path(__file__).parents[2] / "openapi/openapi.json"
+        )
+        contract_schema_support.assert_schema_subset(
+            result,
+            document["components"]["schemas"]["PendingKnowledgeConnectionProposals"],
+            document_name="openapi.json",
+            documents={"openapi.json": document},
+        )
+        self.assertEqual(result["proposals"][0]["proposalId"], self.reference)
+        self.assertEqual((self.stored_connection_rows(), self.graph_identity()), before)
+        self.assertNotIn(self.reference, "\n".join(self.logger.messages))
+        self.inspect(method="DELETE")
+        status, _, body = self._request(path, headers={"Authorization": "Bearer alice"})
+        self.assertEqual(status, 200)
+        self.assertEqual(json.loads(body)["proposals"], [])
+
+    def test_pending_list_rejects_body_identity_selectors_and_write_methods(self):
+        path = "/v1/knowledge/connection-proposals"
+        headers = {"Authorization": "Bearer alice"}
+        before = self.stored_connection_rows(), self.graph_identity()
+        for query in [
+            "subjectId=bob",
+            "tenantId=other",
+            "limit=1",
+            "proposalId=" + self.reference,
+            "subjectId=alice&subjectId=bob",
+        ]:
+            self.assertEqual(self._request(path + "?" + query, headers=headers)[0], 400)
+        self.assertEqual(
+            self._request(path, headers=headers, data=b'{"subjectId":"bob"}')[0], 400
+        )
+        self.assertEqual(self._request(path, method="DELETE", headers=headers)[0], 405)
+        self.assertEqual((self.stored_connection_rows(), self.graph_identity()), before)

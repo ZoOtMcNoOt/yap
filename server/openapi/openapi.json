@@ -2677,7 +2677,7 @@
           "knowledge"
         ],
         "operationId": "readKnowledgeConnections",
-        "summary": "Read one topic\u2019s reviewed connections",
+        "summary": "Read one topic’s reviewed connections",
         "description": "Trusted organization identity selects the permission-filtered active knowledge generation. No model is invoked. Search is literal and bounded; connections contain incoming and outgoing canonical relationships with authority and source proof. Agent proposals are excluded. Responses are limited to 65536 bytes. Unknown and unavailable topics share a 404. Refresh topics on generation conflict.",
         "x-yap-runtime-status": "Implemented when explicit authenticated knowledge connections Postgres configuration verifies",
         "responses": {
@@ -2850,6 +2850,48 @@
             }
           }
         ],
+        "x-yap-runtime-owner": "Authenticated permission-safe knowledge connections"
+      }
+    },
+    "/v1/knowledge/connection-proposals": {
+      "get": {
+        "tags": [
+          "knowledge"
+        ],
+        "operationId": "listPendingKnowledgeConnectionProposals",
+        "summary": "List owned pending connection proposal references",
+        "description": "Return the complete bounded list of the authenticated tenant and subject's pending relationship proposal references and UTC creation times, newest first. No body or query selectors are accepted. Source and candidate content remain unavailable until permission-checked inspection. Old or hidden-source journal records can still be discovered for owner-controlled discard. Refuse corrupt metadata or more than 64 returned records instead of partial success. No model, journal mutation or published graph change occurs; content-free auditing and SQL admission retain the knowledge connections bounds.",
+        "x-yap-runtime-status": "Implemented when explicit authenticated knowledge connections Postgres configuration verifies",
+        "responses": {
+          "200": {
+            "description": "Complete list of the caller's pending relationship metadata, with at most 64 entries.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingKnowledgeConnectionProposals"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          }
+        },
         "x-yap-runtime-owner": "Authenticated permission-safe knowledge connections"
       }
     }
@@ -8513,6 +8555,45 @@
             "enum": [
               "discarded"
             ]
+          }
+        }
+      },
+      "PendingKnowledgeConnectionProposals": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "proposals"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "proposals": {
+            "type": "array",
+            "maxItems": 64,
+            "uniqueItems": true,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "proposalId",
+                "createdAtUtc"
+              ],
+              "properties": {
+                "proposalId": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                "createdAtUtc": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "Z$",
+                  "maxLength": 64
+                }
+              }
+            }
           }
         }
       }

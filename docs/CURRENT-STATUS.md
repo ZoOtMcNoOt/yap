@@ -69,11 +69,10 @@ Earlier dependency/consolidation results remain in the [desktop evidence](eviden
 ## Current increment
 
 The [execution queue](plans/active/2026-10-02-yap-project-hill-climb.md#current-increment-discover-owned-pending-connections)
-now targets **discovering owned pending connections**. Review opens a pasted
-reference or an explicit Curator handoff; it has no owned proposal list yet. The
-next increment will let the owner load a dated list and open permission-checked
-source inspection. Its six
-acceptance outcomes are defined; implementation has not started.
+now targets **discovering owned pending connections**. The dated list, private
+server/native boundary and permission-checked selection are implemented. Five local software outcomes are verified;
+hosted integration is pending; [evidence](evidence/saved-connection-proposals/2026-10-03/verification.md)
+keeps local checks separate from the merged baseline below.
 
 Owner-controlled discard is merged and software verified. It retains journal,
 source and graph history, frees pending capacity and recovers uncertain delivery

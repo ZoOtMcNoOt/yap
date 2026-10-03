@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timezone
 import hashlib
 import json
 import re
@@ -434,6 +435,63 @@ def store_knowledge_proposal_in_transaction(
         authorized.authorization_hash,
         "proposed",
     )
+
+
+def list_pending_connection_proposals_in_transaction(
+    connection: Connection[object], *, principal: PrincipalKey
+) -> dict[str, object]:
+    """List owned journal metadata without granting access to source contents."""
+    if connection.info.transaction_status == TransactionStatus.IDLE:
+        raise RuntimeError("proposal discovery requires an owned transaction")
+    if not isinstance(principal, PrincipalKey):
+        raise TypeError("proposal discovery principal is invalid")
+    connection.execute(
+        "SELECT pg_advisory_xact_lock_shared(hashtextextended(%s, 0))",
+        (principal.tenant_id,),
+    )
+    connection.execute(
+        "SELECT pg_advisory_xact_lock_shared(hashtextextended(%s, 1))",
+        (
+            json.dumps(
+                [principal.tenant_id, principal.subject_id], separators=(",", ":")
+            ),
+        ),
+    )
+    rows = connection.execute(
+        """SELECT proposal_id, created_at FROM yap_knowledge_proposals
+           WHERE tenant_id = %s AND proposer_subject_id = %s
+             AND proposal_type = 'relationship' AND status = 'proposed'
+           ORDER BY created_at DESC, proposal_id
+           LIMIT %s""",
+        (
+            principal.tenant_id,
+            principal.subject_id,
+            MAX_UNRESOLVED_PROPOSALS_PER_SUBJECT + 1,
+        ),
+    ).fetchall()
+    if len(rows) > MAX_UNRESOLVED_PROPOSALS_PER_SUBJECT:
+        raise ValueError("proposal discovery capacity invariant differs")
+    proposals: list[dict[str, object]] = []
+    references: set[str] = set()
+    for reference, created_at in rows:
+        if (
+            not isinstance(reference, str)
+            or not _SHA256.fullmatch(reference)
+            or reference in references
+            or not isinstance(created_at, datetime)
+            or created_at.utcoffset() is None
+        ):
+            raise ValueError("proposal discovery metadata is invalid")
+        references.add(reference)
+        proposals.append(
+            {
+                "proposalId": reference,
+                "createdAtUtc": created_at.astimezone(timezone.utc)
+                .isoformat(timespec="microseconds")
+                .replace("+00:00", "Z"),
+            }
+        )
+    return {"schemaVersion": 1, "proposals": proposals}
 
 
 def read_connection_proposal_in_transaction(
@@ -1046,6 +1104,7 @@ __all__ = [
     "PostgresCoordinatorEvidenceReader",
     "discard_knowledge_proposal",
     "install_knowledge_proposal_schema",
+    "list_pending_connection_proposals_in_transaction",
     "read_coordinator_evidence_in_transaction",
     "store_knowledge_proposal",
     "store_knowledge_proposal_in_transaction",

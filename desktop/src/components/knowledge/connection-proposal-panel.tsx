@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { MagnifyingGlass } from "@phosphor-icons/react/MagnifyingGlass";
 import {
   useConnectionProposal,
@@ -34,6 +35,10 @@ export function ConnectionProposalPanel({
 }) {
   const proposal = useConnectionProposal(snapshot, handoff);
   const view = proposal.view;
+  const detail = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (view && detail.current?.offsetParent !== null) detail.current?.focus();
+  }, [view]);
   const source = view?.sources.find(
     (item) => item.node.conceptId === view.candidate.sourceConceptId,
   );
@@ -48,11 +53,11 @@ export function ConnectionProposalPanel({
       >
         <div>
           <h3 className="text-lg font-semibold" id="connection-review-title">
-            Inspect a saved connection
+            Saved connection proposals
           </h3>
           <p className="mt-1 text-sm leading-6 text-muted-foreground">
-            Open a proposal reference to read its exact sources. Inspection does
-            not publish knowledge.
+            Load your pending proposals, then open one to read its exact sources.
+            Inspection does not publish knowledge.
           </p>
         </div>
         {!proposal.available ? (
@@ -63,77 +68,92 @@ export function ConnectionProposalPanel({
             </AlertDescription>
           </Alert>
         ) : null}
-        <form
-          className="grid min-w-0 grid-cols-1 gap-2"
-          onSubmit={(event) => {
-            event.preventDefault();
-            if (proposal.canRead) void proposal.run();
-          }}
-        >
-          <label
-            className="text-sm font-medium"
-            htmlFor="connection-proposal-reference"
-          >
-            Connection proposal reference
-          </label>
-          <Input
-            id="connection-proposal-reference"
-            autoComplete="off"
-            spellCheck={false}
-            maxLength={64}
-            disabled={proposal.pending}
-            value={proposal.reference}
-            onChange={(event) => proposal.setReference(event.target.value)}
-            placeholder="Paste the reference copied after Curator review"
-          />
-          <p className="text-xs leading-5 text-muted-foreground">
-            A 64-character reference belonging to your current account.
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {proposal.pending && !proposal.discarding ? (
-              <RequestCancelButton
-                onCancel={proposal.cancel}
-                requestId={proposal.requestId}
-              />
-            ) : !proposal.pending ? (
-              <Button
-                type="submit"
-                className="max-w-full whitespace-normal"
-                aria-label={
-                  proposal.error
-                    ? "Try again: Open connection proposal"
-                    : "Open connection proposal"
-                }
-                disabled={!proposal.canRead}
-              >
-                <MagnifyingGlass data-icon="inline-start" />
-                {proposal.error ? "Try again" : "Open connection proposal"}
-              </Button>
-            ) : null}
-            {!proposal.disposition ? (
-              <AlertDialogTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="max-w-full whitespace-normal"
-                  disabled={!proposal.canDiscard}
-                >
-                  {proposal.discardUnconfirmed
-                    ? "Try discard again…"
-                    : "Discard proposal…"}
-                </Button>
-              </AlertDialogTrigger>
-            ) : null}
-            <Button
-              className="max-w-full whitespace-normal"
-              type="button"
-              variant="outline"
-              onClick={onSearchSources}
-            >
-              Search current sources
+        <div className="flex flex-wrap gap-2">
+          {proposal.loading ? (
+            <RequestCancelButton onCancel={proposal.cancel} requestId={proposal.requestId} />
+          ) : (
+            <Button type="button" variant="outline" disabled={!proposal.canLoad}
+              className="max-w-full whitespace-normal" onClick={() => void proposal.load()}>
+              {proposal.saved ? "Refresh saved proposals" : "Load saved proposals"}
             </Button>
-          </div>
-        </form>
+          )}
+        </div>
+        {proposal.listError ? (
+          <Alert variant="destructive"><AlertDescription>{proposal.listError}</AlertDescription></Alert>
+        ) : null}
+        {proposal.saved ? (
+          proposal.saved.proposals.length ? (
+            <ul aria-label="Pending connection proposals"
+              className="grid max-h-64 min-w-0 gap-1 overflow-y-auto rounded-lg border border-border p-1">
+              {proposal.saved.proposals.map((item) => (
+                <li className="min-w-0" key={item.proposalId}>
+                  <Button type="button" variant="ghost" disabled={!proposal.canSelect}
+                    aria-label={`Open saved proposal ${item.proposalId}`}
+                    aria-pressed={proposal.reference === item.proposalId}
+                    title={item.proposalId}
+                    className="h-auto w-full min-w-0 flex-wrap justify-between gap-2 px-3 py-2 text-left aria-pressed:bg-accent"
+                    onClick={() => proposal.select(item.proposalId)}>
+                    <span className="font-mono text-xs">{item.proposalId.slice(0, 8)}…{item.proposalId.slice(-6)}</span>
+                    <time className="text-xs font-normal text-muted-foreground" dateTime={item.createdAtUtc}>
+                      {new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(item.createdAtUtc))}
+                    </time>
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm leading-6 text-muted-foreground" role="status">
+              No pending connection proposals. Search current sources to explore another connection.
+            </p>
+          )
+        ) : null}
+        <details className="min-w-0 rounded-lg border border-border px-3 py-2">
+          <summary className="cursor-pointer text-sm font-medium focus-visible:rounded focus-visible:outline-2 focus-visible:outline-ring">
+            Open a proposal reference
+          </summary>
+          <form className="mt-3 grid min-w-0 grid-cols-1 gap-2"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (proposal.canRead) void proposal.run();
+            }}>
+            <label className="text-sm font-medium" htmlFor="connection-proposal-reference">
+              Connection proposal reference
+            </label>
+            <Input id="connection-proposal-reference" autoComplete="off" spellCheck={false}
+              maxLength={64} disabled={proposal.pending || proposal.discardUnconfirmed} value={proposal.reference}
+              onChange={(event) => proposal.setReference(event.target.value)}
+              placeholder="Paste the reference copied after Curator review" />
+            <p className="text-xs leading-5 text-muted-foreground">
+              A 64-character reference belonging to your current account.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {!proposal.pending ? (
+                <Button type="submit" className="max-w-full whitespace-normal"
+                  aria-label={proposal.error ? "Try again: Open connection proposal" : "Open connection proposal"}
+                  disabled={!proposal.canRead}>
+                  <MagnifyingGlass data-icon="inline-start" />
+                  {proposal.error ? "Try again" : "Open connection proposal"}
+                </Button>
+              ) : null}
+            </div>
+          </form>
+        </details>
+        <div className="flex flex-wrap gap-2">
+          {proposal.pending && !proposal.discarding && !proposal.loading ? (
+            <RequestCancelButton onCancel={proposal.cancel} requestId={proposal.requestId} />
+          ) : null}
+          {!proposal.disposition ? (
+            <AlertDialogTrigger asChild>
+              <Button type="button" variant="outline" className="max-w-full whitespace-normal"
+                disabled={!proposal.canDiscard}>
+                {proposal.discardUnconfirmed ? "Try discard again…" : "Discard proposal…"}
+              </Button>
+            </AlertDialogTrigger>
+          ) : null}
+          <Button className="max-w-full whitespace-normal" type="button" variant="outline" onClick={onSearchSources}>
+            Search current sources
+          </Button>
+        </div>
         {proposal.pending ? (
           <p
             className="flex items-center gap-2 text-sm text-muted-foreground"
@@ -142,7 +162,7 @@ export function ConnectionProposalPanel({
             <Spinner />
             {proposal.discarding
               ? "Discarding saved proposal…"
-              : "Reading saved proposal…"}
+              : proposal.loading ? "Loading saved proposals…" : "Reading saved proposal…"}
           </p>
         ) : null}
         <AlertDialogContent>
@@ -168,7 +188,7 @@ export function ConnectionProposalPanel({
           <Alert role="status">
             <AlertDescription>
               Proposal discarded. Its history and sources remain saved; published
-              knowledge is unchanged. Open another reference or search current sources.
+              knowledge is unchanged. Open another saved proposal or search current sources.
             </AlertDescription>
           </Alert>
         ) : null}
@@ -199,7 +219,9 @@ export function ConnectionProposalPanel({
         ) : null}
         {view && source && target ? (
           <article
-            className="grid min-w-0 grid-cols-1 gap-4"
+            ref={detail}
+            tabIndex={-1}
+            className="grid min-w-0 grid-cols-1 gap-4 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
             aria-label="Saved connection proposal"
           >
             <Badge

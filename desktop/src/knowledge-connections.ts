@@ -29,6 +29,11 @@ export type ConnectionProposalDisposition = {
   status: "discarded";
 };
 
+export type PendingConnectionProposals = {
+  schemaVersion: 1;
+  proposals: { proposalId: string; createdAtUtc: string }[];
+};
+
 export type ConnectionNode = {
   conceptId: string;
   type: string;
@@ -64,11 +69,13 @@ export type KnowledgeNeighborhood = ConceptPage & {
   relationships: ConnectionRelationship[];
 };
 export type ConnectionsRequest =
+  | { action: "pending" }
   | { action: "proposal"; proposalId: string }
   | { action: "discard"; proposalId: string }
   | { action: "browse"; search: string }
   | { action: "read"; conceptId: string; generationSha256: string };
 export type ConnectionsResponse =
+  | { kind: "pending"; value: PendingConnectionProposals }
   | { kind: "proposal"; value: ConnectionProposal }
   | { kind: "discarded"; value: ConnectionProposalDisposition }
   | { kind: "topics"; value: ConceptPage }
@@ -95,7 +102,9 @@ export async function knowledgeConnections(
     throw { code: "identityChanged" };
   if (
     receipt.response.kind !==
-      (request.action === "browse"
+    (request.action === "pending"
+      ? "pending"
+      : request.action === "browse"
         ? "topics"
         : request.action === "proposal"
           ? "proposal"
@@ -112,9 +121,24 @@ export async function knowledgeConnections(
         receipt.response.value.status !== "discarded" ||
         !/^[0-9a-f]{64}$/.test(receipt.response.value.generationSha256))) ||
     (request.action === "read" &&
+      receipt.response.kind === "neighborhood" &&
       receipt.response.value.generationSha256 !== request.generationSha256)
   )
     throw { code: "invalidResponse" };
+  if (receipt.response.kind === "pending") {
+    const page = receipt.response.value;
+    if (
+      page.schemaVersion !== 1 ||
+      !Array.isArray(page.proposals) ||
+      page.proposals.length > 64 ||
+      new Set(page.proposals.map((entry) => entry.proposalId)).size !== page.proposals.length ||
+      page.proposals.some((entry) =>
+        typeof entry.proposalId !== "string" || !/^[0-9a-f]{64}$/.test(entry.proposalId) ||
+        typeof entry.createdAtUtc !== "string" || entry.createdAtUtc.length > 64 ||
+        !entry.createdAtUtc.endsWith("Z") || !Number.isFinite(Date.parse(entry.createdAtUtc)),
+      )
+    ) throw { code: "invalidResponse" };
+  }
   return receipt;
 }
 export function cancelKnowledgeConnections(requestId: string) {

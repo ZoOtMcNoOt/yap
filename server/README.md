@@ -47,7 +47,7 @@ Having an API contract does not make the corresponding service available.
 | Organization identity | Validated access tokens, owner isolation, purpose grants and revocation | [Identity setup](../docs/runbooks/yap-server-node-setup.md#phase-7-application-authentication-mode) and [IT handoff](../docs/runbooks/entra-identity-conformance-handoff.md) |
 | Private live admission | Authenticated WebSocket admission on a separate loopback listener | [Live event contract](openapi/live-events.schema.json); live ASR and production HTTPS/WSS remain open |
 | Terminology | Personal and explicitly configured team/organization preferred spellings | [Terminology setup](../docs/runbooks/cloud-development.md#enable-terminology-on-a-private-server) and [API](../docs/specs/terminology-api.md) |
-| Knowledge connections | Permission-filtered topics, cited relationships and saved proposal inspection | [Connections setup](../docs/runbooks/cloud-development.md) and [contract](../docs/specs/knowledge-connections.md) |
+| Knowledge connections | Permission-filtered topics, cited relationships, owned proposal discovery and inspection | [Connections setup](../docs/runbooks/cloud-development.md) and [contract](../docs/specs/knowledge-connections.md) |
 | Reviewed knowledge | Compile reviewed sources, stage Postgres/pgvector generations and retrieve authorized evidence | [Architecture](../docs/architecture/CURRENT-ARCHITECTURE.md) and [knowledge evidence](../docs/evidence/README.md) |
 | Reviewed agent workflows | Corrections, cited answers, proposals and review reports | Runtime configuration below; [provider supervision](../docs/runbooks/provider-supervisor-service.md) and [admission](../docs/runbooks/agent-admission-service.md) |
 

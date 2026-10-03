@@ -10,6 +10,7 @@ async function enter(page: Page) {
   await page
     .getByRole("tab", { name: "Review proposals", exact: true })
     .click();
+  await page.locator("summary").filter({ hasText: "Open a proposal reference" }).click();
   await expect(page.getByLabel("Connection proposal reference")).toBeEnabled();
 }
 async function read(page: Page) {
