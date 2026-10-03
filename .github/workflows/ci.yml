@@ -562,13 +562,18 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: |
           $Reference = 'f7fc37e3ecf673d5e8998cf13d8393ef1e7899b3'
-          git.exe fetch --no-tags --depth=1 origin $Reference
+          $QualifiedHead = '0665c486398d2803ba33ebbb6e6dedddcd844dbd'
+          git.exe fetch --no-tags --depth=1 origin $Reference $QualifiedHead
           if ($LASTEXITCODE -ne 0) {
             throw 'The frozen agent-route evidence baseline could not be fetched.'
           }
           git.exe cat-file -e "$Reference^{commit}"
           if ($LASTEXITCODE -ne 0) {
             throw 'The frozen agent-route evidence baseline is not a commit.'
+          }
+          git.exe cat-file -e "$QualifiedHead^{commit}"
+          if ($LASTEXITCODE -ne 0) {
+            throw 'The historical model qualification head is not a commit.'
           }
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:

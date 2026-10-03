@@ -79,6 +79,12 @@ bytes and rejects a changed lock. No historical receipt is rewritten or treated
 as qualification for the upgraded environment. The required portable
 qualification contract population increases from 176 to 177; no check is skipped.
 
+Hosted run 535 passed the new complete audit, then failed the regression because
+its shallow checkout contained the later baseline but lacked the original model
+qualification tree. The existing CI history-fetch step now admits both exact
+commits, including `0665c486398d2803ba33ebbb6e6dedddcd844dbd`. This retains the
+original receipt boundary; final hosted checks are renewed on the updated head.
+
 ## Separate runtime findings
 
 Auditing exact declared overlay pins without installing weights found no known
