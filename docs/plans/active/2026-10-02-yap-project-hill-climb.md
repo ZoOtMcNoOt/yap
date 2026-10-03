@@ -229,6 +229,7 @@ through current permission-checked inspection.
 
 | 2026-10-03 | PR #202 merges after run 541 passes all six jobs: Windows native 1,368 + 27, frontend 395 and all 193 browser workflows, native WDIO, server, identity and service lifecycle. Main has the identical tested tree; the original reviewed head is retained and the branch retired. Discard completes 6/6 software outcomes. | Discover owned pending proposals through the existing journal/native/UI owners, then continue canonical publication/rebuilding and the full queue. Issue #92 still needs actual RDP/session-lock qualification. |
 
-Attribute project work to Grant McNatt. Preserve third-party attribution/provenance; do not add AI branding or coauthor trailers.
 
 | 2026-10-03 | Owned proposal discovery verifies five local software outcomes: owner-only dated metadata, bounded read/audits, strict native receipts, keyboard inspection and confirmed-only cleanup. Actual SQL/API 20, Linux native 1,366 + 27, frontend 396 and 50 related browser cases pass; 31 inspection/discovery cases renew visible-detail focus. The portable server passes 1,640 with 114 declared exclusions. | Push the reviewed increment, renew all six exact-head jobs and integrate before retiring the branch; publication/rebuilding and real PostgreSQL CI remain open. |
+
+Attribute project work to Grant McNatt. Preserve third-party attribution/provenance; do not add AI branding or coauthor trailers.
