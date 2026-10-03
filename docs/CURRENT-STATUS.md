@@ -70,9 +70,11 @@ Earlier dependency/consolidation results remain in the [desktop evidence](eviden
 
 The [execution queue](plans/active/2026-10-02-yap-project-hill-climb.md#current-increment-complete-the-postgresql-ci-gate)
 now targets a **complete, skip-free PostgreSQL CI gate**. Hosted portable checks
-exclude real database cases; the dedicated local gate covers only four modules.
-The next increment runs every database-backed knowledge/agent/API module on an
-owned disposable runtime, preserving production authority and qualification limits.
+exclude real database cases. The new required gate runs all 23 knowledge/agent/API
+modules: **117 cases pass without skips** against a fresh owned PostgreSQL 17.11/
+pgvector 0.8.7 runtime. Four of five software outcomes are verified locally;
+[hosted integration is pending](evidence/governed-postgres-ci/2026-10-03/verification.md).
+It preserves production authority and qualification limits.
 
 Owned connection discovery is merged and **6/6 software verified**. [PR #203](https://github.com/ZoOtMcNoOt/yap/pull/203)
 and [run 544](https://github.com/ZoOtMcNoOt/yap/actions/runs/37133293613) pass all six jobs:

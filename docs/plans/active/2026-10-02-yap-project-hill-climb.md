@@ -53,7 +53,7 @@ The rows below cover the full roadmap. Their order is the initial priority; revi
 | Scribe and governed knowledge | Supported eight-role UI journeys are fixture verified. Audit real service persistence and permission-safe integration, raw-preserving corrections, citations, proposal acceptance/publication, revocation and multi-principal isolation; close software gaps across every role. | Production corpus, real reasoning models, model-benefit evidence and organizational publication governance require actual inputs. |
 | Organization identity | Native token authority and owner isolation exist. Verify explicit sign-in/out, capability denial, session expiry, revocation and offline local independence; prepare actual provider/cache/policy checks. Never add Yap credentials or caller-selected identity. | WAM/Entra, tenant registration, audience and conditional-access policy require Windows and IT. |
 | UI, accessibility and documentation | Preserve the 30-area baseline; apply the same usability/recovery checks to every added feature. Keep one queue, readable product/setup guidance and source-linked decisions. Preserve historical goals/features and third-party attribution. | Physical focus/input/hit testing remains target-platform work. |
-| Release and operations | Audit existing observability, redaction, dependency/provenance, SBOM, packaging, backup/deletion, disaster recovery, deployment and rollback paths. Implement missing software and run disposable rehearsals; perform focused correctness/security review. Add a skip-free real PostgreSQL CI gate: current hosted checks exclude database cases, while local regression remains repeatable. | Production retention, monitoring/SLO approval, target installer and deployment/drills need accountable environments. |
+| Release and operations | Audit existing observability, redaction, dependency/provenance, SBOM, packaging, backup/deletion, disaster recovery, deployment and rollback paths. Implement missing software and run disposable rehearsals; perform focused correctness/security review. The complete skip-free real PostgreSQL gate is locally verified; hosted integration remains pending. | Production retention, monitoring/SLO approval, target installer and deployment/drills need accountable environments. |
 | Repository and storage boundaries | Preserve [ADR 0018](../../adr/0018-three-repo-topology.md) and [ADR 0022](../../adr/0022-google-okf-permission-safe-projections.md). Make deployment/access boundaries work before splitting repositories. Add Redis/object storage/Neo4j only for a measured gap. | Organization access and hosting decisions need their owners; diagrams alone do not justify dependencies. |
 
 ## Software-verified increments
@@ -169,16 +169,17 @@ exact tip remains under `archive/dependency-proposal-200-2026-10-03`.
 
 ## Current increment: complete the PostgreSQL CI gate
 
-**Status:** Acceptance defined; implementation follows the verified discovery baseline.
-Hosted portable checks exclude real database cases, and the dedicated local gate
-covers only four modules/19 cases. Complete the model-free regression gate before
+**Status:** 4/5 software outcomes verified locally; hosted integration pending.
+The gate now requires all 23 modules/117 cases against an owned disposable runtime.
+[Evidence](../../evidence/governed-postgres-ci/2026-10-03/verification.md) records
+fresh-database execution, fixture corrections and isolation. Complete this gate before
 expanding canonical publication and rebuilding. Preserve every production
 permission, source-admission and generation requirement.
 
-- [ ] Require every database-backed knowledge, agent and authenticated API module: all 23 modules/117 cases must execute successfully with no skips, expected failures or incomplete receipts.
-- [ ] Own a digest-pinned disposable PostgreSQL/pgvector runtime with fresh credentials, loopback-only routing, bounded startup/tests and cleanup. Ignore inherited database/Docker routes and remove only this run's container.
-- [ ] Make fixtures self-contained on a fresh database. Reproduce existing failures independently; correct synthetic evidence/schema setup without weakening production authority or model behavior.
-- [ ] Add the same unconditional gate to existing Linux CI, using locked Python dependencies. Verify local execution, runtime provenance, documentation and the release contract that keeps it required.
+- [x] Require every database-backed knowledge, agent and authenticated API module: all 23 modules/117 cases must execute successfully with no skips, expected failures or incomplete receipts.
+- [x] Own a digest-pinned disposable PostgreSQL/pgvector runtime with fresh credentials, loopback-only routing, bounded startup/tests and cleanup. Ignore inherited database/Docker routes and remove only this run's container.
+- [x] Make fixtures self-contained on a fresh database. Reproduce existing failures independently; correct synthetic evidence/schema setup without weakening production authority or model behavior.
+- [x] Add the same unconditional gate to existing Linux CI, using locked Python dependencies. Verify local execution, runtime provenance, documentation and the release contract that keeps it required.
 - [ ] Review/push and integrate only after all exact-head jobs pass; preserve the reviewed head and retire the temporary branch. Continue publication/rebuilding and every available workstream.
 
 ## Execution record
@@ -229,5 +230,7 @@ permission, source-admission and generation requirement.
 | 2026-10-03 | Owned proposal discovery verifies five local software outcomes: owner-only dated metadata, bounded read/audits, strict native receipts, keyboard inspection and confirmed-only cleanup. Actual SQL/API 20, Linux native 1,366 + 27, frontend 396 and 50 related browser cases pass; 31 inspection/discovery cases renew visible-detail focus. The portable server passes 1,640 with 114 declared exclusions. | Push the reviewed increment, renew all six exact-head jobs and integrate before retiring the branch; publication/rebuilding and real PostgreSQL CI remain open. |
 
 | 2026-10-03 | PR #203 merges after run 544 passes all six exact-head jobs: Windows native 1,370 + 27, frontend 398, all 205 browser cases, native WDIO, server, identity and service lifecycle. Main has the identical tested tree; the reviewed head is retained and branch retired. Discovery completes 6/6 software outcomes. | Finish the complete skip-free PostgreSQL CI gate, then continue canonical publication/rebuilding and the full queue. Issue #92 remains open for actual Windows RDP/session-lock qualification. |
+
+| 2026-10-03 | The complete PostgreSQL gate requires 23 modules/117 cases and passes against fresh owned runtimes, including refusal of inherited Docker/database routes. Corrected existing Auditor evidence and missing Curator cleanup schema fixtures. The Linux CI step is unconditional; 72 release contracts run (67 local passes/five Windows-only skips), with Ruff and docs checks passing. | Integrate after all exact-head hosted checks pass; retain the reviewed head, retire the branch and continue canonical publication/rebuilding and the full queue. |
 
 Attribute project work to Grant McNatt. Preserve third-party attribution/provenance; do not add AI branding or coauthor trailers.

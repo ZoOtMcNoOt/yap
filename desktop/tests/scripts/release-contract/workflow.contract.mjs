@@ -632,3 +632,18 @@ test("CI runs the exact checksum-verified RustSec audit script", async () => {
   assert.match(source, /audit --target-os windows --target-arch x86_64/);
   assert.match(source, /Remove-Item -LiteralPath \$WorkRoot -Recurse -Force/);
 });
+
+
+test("Linux hosted closure runs the complete required PostgreSQL gate", async () => {
+  const ci = await readWorkflow(".github/workflows/ci.yml");
+  const { job, steps } = workflowSteps(ci, "mock-oidc");
+  const gate = steps.find((step) => step.name === "Run required governed PostgreSQL suite without skips");
+  const setup = steps.find((step) => step.name === "Populate the exact mock OIDC dependency environment");
+  assert.ok(gate, "real PostgreSQL tests must be part of hosted closure");
+  assert.equal(gate.shell, "bash");
+  assert.equal(gate.if, undefined);
+  assert.equal(gate["continue-on-error"], undefined);
+  assert.equal(job["continue-on-error"], undefined);
+  assert.equal(normalizedRunBody(gate.run), "server/.venv/bin/python verification/run-disposable-governed-postgres-suite.py");
+  assert.match(setup.run, /uv sync --locked --exact --extra evaluation --extra test/);
+});
