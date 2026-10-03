@@ -1,7 +1,7 @@
 //! Shared file ownership and destination rules for explicit native exports.
 
 use std::{
-    path::{Path, PathBuf},
+    path::Path,
     sync::{Arc, OnceLock},
 };
 
@@ -89,7 +89,7 @@ fn export_selected_transcript(
         }
     })?;
     Ok(TranscriptExport::Saved {
-        path: destination.to_string_lossy().into_owned(),
+        path: destination.path().to_string_lossy().into_owned(),
     })
 }
 
@@ -111,7 +111,7 @@ pub(crate) fn export_destination(
     selected: &Path,
     app_data: &Path,
     kind: ExportKind,
-) -> Result<PathBuf, String> {
+) -> Result<crate::atomic_text::NewFileDestination, String> {
     let (extension, description) = match kind {
         ExportKind::Transcript => ("txt", "transcript"),
         ExportKind::ConnectionReview => ("json", "review package"),
@@ -149,7 +149,9 @@ pub(crate) fn export_destination(
     if parent.starts_with(protected) {
         return Err("Choose a destination outside Yap's internal data folder.".into());
     }
-    Ok(parent.join(name))
+    crate::atomic_text::NewFileDestination::open(&parent.join(name)).map_err(|_| {
+        "The export folder could not be retained. Choose another destination.".to_string()
+    })
 }
 
 #[cfg(test)]

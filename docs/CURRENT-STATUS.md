@@ -71,15 +71,19 @@ Earlier dependency/consolidation results remain in the [desktop evidence](eviden
 
 ## Current increment
 
-The [execution queue](plans/active/2026-10-02-yap-project-hill-climb.md#current-local-increment-truthful-transcript-export-recovery)
-now targets **truthful transcript export recovery**. Original and accepted exports
-explain unconfirmed completion and destination inspection before retry; malformed
-receipts cannot claim success/cancellation. Narrow saved-export feedback enters
-view only while its export action retains focus. Five of six software outcomes
-pass locally: 1,377 native units + 27 integrations (11 declared ignores), 404
-frontend units (two Windows-only skips), production build and all 38 related
-browser cases. [Recovery evidence/screens](evidence/transcript-export-recovery/2026-10-03/verification.md)
-retain the real post-commit reproduction and integration limits.
+The [current increment](plans/active/2026-10-02-yap-project-hill-climb.md#current-local-increment-retain-the-admitted-export-directory)
+retains the admitted folder for original, accepted-correction and connection-review
+exports. Actual Linux files reproduced a parent replacement redirecting an export
+into internal Yap data. Directory ownership fixes that redirection; 1,383 native
+units and 27 integrations pass, with 11 declared model/hardware ignores. All 36
+related browser export cases, Linux lint and release/documentation checks pass.
+Five of six outcomes are locally verified; Windows and reviewed hosted integration
+remain pending in the [directory evidence](evidence/export-directory-ownership/2026-10-03/verification.md).
+
+The earlier [completion recovery](evidence/transcript-export-recovery/2026-10-03/verification.md)
+increment retains its passing 1,377 + 27 native, 404 frontend, production-build
+and 38 related-browser checks. Those dated checks remain separate from the new
+directory increment; no renderer changes are introduced here.
 
 **Earlier accepted corrections** now support offline reading, copying and export.
 The selector preserves original transcripts, latest acceptance and saved history;

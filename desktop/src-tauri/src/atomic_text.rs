@@ -6,6 +6,9 @@ use std::{
 
 use crate::atomic_file;
 
+mod new_file;
+pub(crate) use new_file::NewFileDestination;
+
 pub(crate) fn write(path: &Path, text: &str) -> std::io::Result<()> {
     let file_name = path
         .file_name()
@@ -21,8 +24,8 @@ pub(crate) fn write(path: &Path, text: &str) -> std::io::Result<()> {
     publish(path, text, atomic_file::replace_same_directory)
 }
 
-pub(crate) fn write_new(path: &Path, text: &str) -> std::io::Result<()> {
-    publish(path, text, atomic_file::rename_same_directory_no_replace)
+pub(crate) fn write_new(destination: &NewFileDestination, text: &str) -> std::io::Result<()> {
+    destination.publish(text, |destination, staging| destination.commit_new(staging))
 }
 
 fn publish(
@@ -95,20 +98,22 @@ mod tests {
         ));
         std::fs::create_dir(&root).unwrap();
         let destination = root.join("review.txt");
+        let admitted = NewFileDestination::open(&destination).unwrap();
         let text = "Reviewed café — 日本語\nDose: 25 mg.";
-        let result = publish(&destination, text, |staging, destination| {
-            atomic_file::rename_same_directory_no_replace(staging, destination)?;
+        let result = admitted.publish(text, |destination, staging| {
+            destination.commit_new(staging)?;
             Err(std::io::Error::other("commit acknowledgement unavailable"))
         });
         assert_eq!(result.unwrap_err().kind(), ErrorKind::Other);
         assert_eq!(std::fs::read(&destination).unwrap(), text.as_bytes());
         assert_eq!(std::fs::read_dir(&root).unwrap().count(), 1);
         assert_eq!(
-            write_new(&destination, "replacement").unwrap_err().kind(),
+            write_new(&admitted, "replacement").unwrap_err().kind(),
             ErrorKind::AlreadyExists
         );
         assert_eq!(std::fs::read(&destination).unwrap(), text.as_bytes());
         assert_eq!(std::fs::read_dir(&root).unwrap().count(), 1);
+        drop(admitted);
         std::fs::remove_dir_all(root).unwrap();
     }
 }

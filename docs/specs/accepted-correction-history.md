@@ -29,6 +29,8 @@ when its corrected text matches another revision.
 Choose a new `.txt` file outside Yap's internal data folder. The default filename
 is `transcript-corrected-rN.txt`. Export preserves the selected text's exact UTF-8
 bytes and adds `.txt` if you omit an extension. Existing destinations are preserved.
+Yap retains the native folder during the export. An unavailable or changed folder
+can leave completion unconfirmed; inspect the destination before explicitly retrying.
 
 The native worker reads the selected revision before the picker and again after
 selection. A changed original, changed revision/count, or invalid history prevents
@@ -69,6 +71,8 @@ native source owners and the shared new-file export owner retain those decisions
 
 ## Verification and remaining work
 
+[Directory ownership](../evidence/export-directory-ownership/2026-10-03/verification.md)
+records actual folder-substitution checks and platform limits.
 [Selection evidence](../evidence/accepted-correction-selection/2026-10-03/verification.md)
 records local checks and screen captures. [Export recovery](../evidence/transcript-export-recovery/2026-10-03/verification.md) records its separate verification status. Earlier
 [latest-only recovery](../evidence/accepted-correction-recovery/2026-10-03/verification.md)

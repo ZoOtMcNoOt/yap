@@ -1,0 +1,18 @@
+running 1 test
+test file_actions::export::tests::export_cannot_follow_a_substituted_destination_into_internal_data ... FAILED
+
+failures:
+
+---- file_actions::export::tests::export_cannot_follow_a_substituted_destination_into_internal_data stdout ----
+
+thread 'file_actions::export::tests::export_cannot_follow_a_substituted_destination_into_internal_data' (746690) panicked at src/file_actions/export/tests.rs:301:5:
+destination substitution redirected publication into internal data: Ok(Saved { path: "/tmp/yap-export-746689-1791066584458758953-0/exports/redirected.txt" })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    file_actions::export::tests::export_cannot_follow_a_substituted_destination_into_internal_data
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1388 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--lib`

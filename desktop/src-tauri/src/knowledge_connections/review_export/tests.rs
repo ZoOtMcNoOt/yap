@@ -3,7 +3,7 @@ use crate::server_connector::AuthenticatedRequestDispatcher;
 use std::{
     io::{Read, Write},
     net::TcpListener,
-    path::PathBuf,
+    path::{Path, PathBuf},
     thread,
 };
 
@@ -31,11 +31,12 @@ impl Fixture {
         Self { root, data, output }
     }
     fn publish(&self, target: &Path) -> Result<ReviewExport, ConnectionsError> {
+        let destination = export_destination(target, &self.data, ExportKind::ConnectionReview)
+            .map_err(|_| ConnectionsError::new("destination", true))?;
         publish_package(
             "{\"evidence\":\"知識🦀\"}\n",
             "{\"evidence\":\"知識🦀\"}\n",
-            target,
-            &self.data,
+            &destination,
         )
     }
 }
@@ -108,8 +109,10 @@ fn existing_work_and_unrelated_staging_are_preserved() {
 fn evidence_change_or_invalid_destination_cannot_publish() {
     let fixture = Fixture::new();
     let target = fixture.output.join("review.json");
+    let destination =
+        export_destination(&target, &fixture.data, ExportKind::ConnectionReview).unwrap();
     assert_eq!(
-        publish_package("old evidence", "new evidence", &target, &fixture.data)
+        publish_package("old evidence", "new evidence", &destination)
             .unwrap_err()
             .code,
         "knowledgeChanged"
@@ -167,14 +170,17 @@ fn wire() -> serde_json::Value {
 #[test]
 fn authenticated_reinspection_refuses_revoked_discarded_stale_or_changed_evidence_before_publication(
 ) {
-    for scenario in [
+    let scenarios = [
         "success",
         "denied",
         "discarded",
         "identity",
         "generation",
         "evidence",
-    ] {
+        #[cfg(unix)]
+        "destination",
+    ];
+    for scenario in scenarios {
         let fixture = Fixture::new();
         let target = fixture.output.join("review.json");
         let listener = TcpListener::bind(("127.0.0.1", 0)).unwrap();
@@ -193,12 +199,21 @@ fn authenticated_reinspection_refuses_revoked_discarded_stale_or_changed_evidenc
             "identity" => "401 Unauthorized",
             _ => "200 OK",
         };
+        #[cfg(unix)]
+        let directories = (
+            fixture.output.clone(),
+            fixture.root.join("retained"),
+            fixture.data.clone(),
+        );
         let server = thread::spawn(move || {
             let mut requests = Vec::new();
-            for (status, body) in [
+            for (index, (status, body)) in [
                 ("200 OK", initial.to_string()),
                 (status, changed.to_string()),
-            ] {
+            ]
+            .into_iter()
+            .enumerate()
+            {
                 let (mut stream, _) = listener.accept().unwrap();
                 let mut incoming = Vec::new();
                 let mut chunk = [0u8; 4096];
@@ -213,6 +228,13 @@ fn authenticated_reinspection_refuses_revoked_discarded_stale_or_changed_evidenc
                     }
                 }
                 requests.push(String::from_utf8(incoming).unwrap());
+                #[cfg(unix)]
+                if index == 1 && scenario == "destination" {
+                    std::fs::rename(&directories.0, &directories.1).unwrap();
+                    std::os::unix::fs::symlink(&directories.2, &directories.0).unwrap();
+                }
+                #[cfg(not(unix))]
+                let _ = index;
                 write!(stream, "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",body.len()).unwrap();
             }
             requests
@@ -230,9 +252,11 @@ fn authenticated_reinspection_refuses_revoked_discarded_stale_or_changed_evidenc
                 .unwrap();
         // Exercise the picker interval through authenticated reinspection and actual
         // publication. Native lease invalidation has a separate connector test.
+        let destination =
+            export_destination(&target, &fixture.data, ExportKind::ConnectionReview).unwrap();
         let result =
             tauri::async_runtime::block_on(current_package(&client, &request, &"a".repeat(64)))
-                .and_then(|current| publish_package(&admitted, &current, &target, &fixture.data));
+                .and_then(|current| publish_package(&admitted, &current, &destination));
         if scenario == "success" {
             assert!(result.is_ok());
             assert_eq!(std::fs::read_to_string(&target).unwrap(), admitted);
@@ -243,6 +267,7 @@ fn authenticated_reinspection_refuses_revoked_discarded_stale_or_changed_evidenc
                     "denied" => "denied",
                     "discarded" => "notFound",
                     "identity" => "identityChanged",
+                    "destination" => "exportUnconfirmed",
                     _ => "knowledgeChanged",
                 }
             );

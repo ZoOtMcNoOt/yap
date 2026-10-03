@@ -25,6 +25,11 @@ The candidate, evidence and generation must still match. Lost access, discard or
 a changed account/server prevents a new export. A package is not a permission
 grant or proof of a reviewer's current access.
 
+The shared native owner retains the destination directory before reinspection
+and throughout publication; a replaced path cannot redirect operations into its
+substitute. [Directory evidence](../evidence/export-directory-ownership/2026-10-03/verification.md)
+records actual checks and the remaining Windows qualification.
+
 ## If export does not finish
 
 | What you see | What to do |

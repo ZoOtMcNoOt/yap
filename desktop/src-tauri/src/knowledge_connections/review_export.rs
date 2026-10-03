@@ -8,7 +8,7 @@ use crate::server_connector::{
     ServerConnector,
 };
 use serde::Serialize;
-use std::{path::Path, time::Duration};
+use std::time::Duration;
 use tauri::Manager;
 use tauri_plugin_dialog::DialogExt;
 
@@ -48,15 +48,12 @@ async fn current_package(
 fn publish_package(
     admitted: &str,
     current: &str,
-    selected: &Path,
-    app_data: &Path,
+    destination: &crate::atomic_text::NewFileDestination,
 ) -> Result<ReviewExport, ConnectionsError> {
     if admitted != current {
         return Err(ConnectionsError::new("knowledgeChanged", false));
     }
-    let destination = export_destination(selected, app_data, ExportKind::ConnectionReview)
-        .map_err(|_| ConnectionsError::new("destination", true))?;
-    crate::atomic_text::write_new(&destination, current).map_err(|error| {
+    crate::atomic_text::write_new(destination, current).map_err(|error| {
         ConnectionsError::new(
             if error.kind() == std::io::ErrorKind::AlreadyExists {
                 "destinationExists"
@@ -67,7 +64,7 @@ fn publish_package(
         )
     })?;
     Ok(ReviewExport::Saved {
-        path: destination.to_string_lossy().into_owned(),
+        path: destination.path().to_string_lossy().into_owned(),
     })
 }
 
@@ -124,6 +121,12 @@ pub(crate) async fn export_connection_review_package(
         let selected = selected
             .into_path()
             .map_err(|_| ConnectionsError::new("destination", true))?;
+        let destination = export_destination(
+            &selected,
+            &crate::paths::app_data_dir(),
+            ExportKind::ConnectionReview,
+        )
+        .map_err(|_| ConnectionsError::new("destination", true))?;
         let current = tauri::async_runtime::block_on(current_package(
             lease.client(),
             &request,
@@ -131,13 +134,7 @@ pub(crate) async fn export_connection_review_package(
         ))?;
         app.state::<ServerConnector>()
             .with_current_knowledge_connections_lease(&lease, || {
-                publish_package(
-                    &admitted,
-                    &current,
-                    &selected,
-                    &crate::paths::app_data_dir(),
-                )
-                .map(receipt)
+                publish_package(&admitted, &current, &destination).map(receipt)
             })
             .map_err(|_| ConnectionsError::new("identityChanged", false))?
     })

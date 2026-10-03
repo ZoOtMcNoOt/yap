@@ -247,7 +247,7 @@ record 1,375 native units + 27 integrations, 404 frontend units and all 231
 Linux browser passes (one declared Windows-only skip), plus the reproduced
 same-text acceptance and repeated pending-selection failures and their fixes.
 
-## Current local increment: truthful transcript export recovery
+## Awaiting integration: truthful transcript export recovery
 
 **Status:** 5/6 software outcomes checked locally; reviewed hosted integration pending.
 Original and accepted exports now explain unconfirmed write/join completion and
@@ -269,6 +269,30 @@ reproductions; 1,377 native units + 27 integrations, 404 frontend units, all 38
 related browser cases, production build and release checks pass. Complete
 canonical human publication/rebuilding and supervised ASR remain available
 software work; timed/speaker export, history repair and target checks stay queued.
+
+## Current local increment: retain the admitted export directory
+
+**Status:** 5/6 outcomes verified locally; reviewed exact-head integration pending.
+A real Linux regression reproduces an external export parent replaced by a link
+to internal Yap data. Native directory ownership now retains the admitted folder
+through creation, exclusive publication, sync and cleanup. Exact bytes,
+source/history checks, existing-file protection and uncertainty guidance remain
+intact. [Directory evidence](../../evidence/export-directory-ownership/2026-10-03/verification.md)
+records actual checks; Windows and hosted integration remain pending.
+
+- [x] Bind the canonical, external destination to native directory identity before the source recheck; refuse changed/linked/replaced directories without publishing into their substitutes.
+- [x] Keep creation, exclusive publication, directory sync and staging cleanup on that admitted directory. Windows directory leases retain ancestor identities; Unix operations use the owned directory descriptor.
+- [x] Preserve exact UTF-8 bytes, no-replace behavior, unrelated staging, source/history and explicit worker ownership. Unknown completion retains the existing inspection guidance.
+- [x] Reproduce and verify selected-parent/ancestor substitution and publication-time replacement with actual files; changed paths never create or clean files in their replacements.
+- [x] Run applicable native/transport/frontend/export/contracts and inspect changes; record Linux, hosted Windows and physical-target boundaries accurately.
+- [ ] Commit and push the verified iteration; integrate only reviewed six-job green exact heads when GitHub access returns. Continue the entire software queue.
+
+Final Linux checks pass: 1,383 native units + 27 integrations, all 36 related
+browser export flows, 72 release contracts (67 passes/five Windows-only skips),
+Linux lint and 14 documentation/license/provenance/population checks. Existing
+renderer/full-browser receipts stay dated baselines. No hosted Windows, physical
+picker/filesystem, model or enterprise behavior is qualified. Push and reviewed
+integration remain pending access; the entire software queue continues.
 
 ## Execution record
 
