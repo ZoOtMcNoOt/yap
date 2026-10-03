@@ -167,6 +167,14 @@ and assertion five-second timeouts, test population and final exact-head guard
 remain unchanged. The updated integration commit must pass every required job;
 the cancelled run is not a green frontend receipt.
 
+Run 531 exposed a parallel orchestrator fixture collision at exclusive directory
+creation. Broker and lifecycle test directories now include the atomic sequence
+already used by supervised-service fixtures, so repeated clock timestamps cannot
+choose the same path within a process. Exclusive creation and private permissions
+remain enforced. Production code is unchanged; all 46 default orchestrator
+contracts and strict all-target/all-feature Clippy pass locally. The corrected
+integration commit renews every hosted job before merge.
+
 [Audit policy](../../../runbooks/dependency-audit-policy.md) records the remaining
 findings and removal conditions. The [single goal](../../../plans/active/2026-10-02-yap-project-hill-climb.md)
 remains active after this increment.

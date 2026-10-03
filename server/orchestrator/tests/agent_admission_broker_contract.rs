@@ -5,6 +5,7 @@ use std::fs;
 use std::os::unix::fs::PermissionsExt;
 use std::os::unix::net::UnixListener as StdUnixListener;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use serde_json::{json, Value};
@@ -17,6 +18,8 @@ use yap_server_orchestrator::{
     parse_agent_admission_arguments, run_agent_admission_broker, write_private_snapshot,
     LifecycleState, ProviderService, ServiceSnapshot,
 };
+
+static TEMP_NONCE: AtomicU64 = AtomicU64::new(0);
 
 #[tokio::test]
 async fn private_broker_admits_queues_cancels_and_cleans_up() {
@@ -246,8 +249,9 @@ fn private_temp_directory() -> PathBuf {
         .duration_since(UNIX_EPOCH)
         .unwrap()
         .as_nanos();
+    let sequence = TEMP_NONCE.fetch_add(1, Ordering::Relaxed);
     let root = std::env::temp_dir().join(format!(
-        "yap-agent-admission-broker-{}-{nonce}",
+        "yap-agent-admission-broker-{}-{nonce}-{sequence}",
         std::process::id()
     ));
     fs::create_dir(&root).unwrap();
