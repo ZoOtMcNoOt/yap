@@ -20,7 +20,7 @@ Installed and exercised: Node 24.19, pnpm 11.7.0, Python 3.12.14 with locked uv 
 | --- | --- |
 | Desktop frontend unit tests | 393 passed, 2 declared Windows-only skips |
 | TypeScript/Vite production build | Passed |
-| Browser workflows with system Chromium | 189 passed, 1 declared Windows-only skip; 52 related journeys renewed after handoff correction |
+| Browser workflows with system Chromium | Pre-correction baseline: 189 passed, 1 Windows-only skip; 52 related journeys renewed on corrected code |
 | Linux Tauri native debug build, no installer bundle | Passed; platform-specific unused-code warnings remain |
 | Desktop Rust tests | 1,364 unit + 27 integration passed, 11 declared model/hardware ignores |
 | Orchestrator release build and strict Clippy | Passed |
