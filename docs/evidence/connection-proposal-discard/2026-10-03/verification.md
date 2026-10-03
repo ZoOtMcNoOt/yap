@@ -1,7 +1,7 @@
 # Discard a saved connection
 
-**Owner:** Grant McNatt. **Date:** 2026-10-03. **Status:** Local software checks pass;
-hosted integration is pending.
+**Owner:** Grant McNatt. **Date:** 2026-10-03. **Status:** Six software outcomes verified;
+merged through [PR #202](https://github.com/ZoOtMcNoOt/yap/pull/202).
 
 Knowledge → Review proposals now offers **Discard proposal…** with explicit
 confirmation. Keeping the proposal sends no write. Confirmation retires an owned
@@ -22,6 +22,23 @@ schema `1`, valid generation hash and `discarded` status. It rejects source cont
 and publication claims in the disposition. Changing identity closes confirmation,
 hides private evidence and ignores delayed results. A lost receipt may follow a
 committed write: the UI offers an idempotent retry and makes no cancellation claim.
+
+## Acceptance: 6/6 software outcomes
+
+- Authenticate bounded discard of the caller's relationship proposal. Unknown,
+  foreign and other-type references share an unavailable result; obsolete owned
+  suggestions can be retired without reading hidden sources.
+- Keep discard idempotent, retain provenance/sources/graph, free pending capacity
+  and commit the tombstone with its content-free audit. Failures neither report
+  false success nor resurrect a proposal.
+- Bound service admission/SQL; bind strict native receipts to the current
+  connection/sign-in and main window. Never accept caller-supplied identity.
+- Require accessible confirmation and preserve a clear discarded result, source
+  navigation, local controls and narrow layouts.
+- Retain the retry reference across handoffs during or after uncertain delivery.
+  Account changes hide old evidence and contain delayed results.
+- Verify real PostgreSQL/API, native and browser journeys; review, push and merge
+  after all exact-head checks pass, then retire the temporary branch.
 
 ## Verification
 
@@ -44,7 +61,8 @@ committed write: the UI offers an idempotent retry and makes no cancellation cla
 - Hosted release contract set: 66 passes, five declared Windows-only skips. The
   separate Windows process-contract set was attempted on Linux and reports two
   platform failures (optional-diagnostics admission and Job Object containment);
-  it does not qualify Windows behavior. Hosted Windows checks remain pending.
+  it does not qualify Windows behavior. The final Windows result is recorded
+  under [Hosted integration](#hosted-integration).
 
 Browser/native projections are deterministic fixtures. PostgreSQL exercises real
 SQL in isolated synthetic tenants. These checks do not qualify inference, enterprise
@@ -69,8 +87,26 @@ A follow-up case reproduces a second overlap on `1b6b9bdf`: a handoff arriving
 discard remains unconfirmed. Reopening the old proposal cannot clear that state;
 only retrying discard resolves it. All 53 related browser journeys pass (2.8 minutes),
 including keyboard recovery at 360 pixels. Frontend units/build and seven
-documentation/population contracts renew. The final head needs all six hosted jobs
-before integration.
+documentation/population contracts renew. All six final-head hosted jobs passed
+after these local checks; their receipt is recorded below.
+
+## Hosted integration
+
+[Run 541](https://github.com/ZoOtMcNoOt/yap/actions/runs/37127757876) passes all six
+jobs on `853261129f3c720d97ee2b5556fae00f8934da3e`: Windows native 1,368 units and
+27 integrations (11 declared ignores), strict Clippy, native WDIO and both actual
+connector runtimes; frontend 395 units, all 193 browser workflows (19.6 minutes),
+71 release contracts and two WDIO adapter contracts; portable server 1,601 passes
+and 143 declared exclusions (1,744 total); Linux identity and all 54 orchestrator
+cases. The complete 40-version core Python audit reports no findings or skips.
+The existing frontend audit policy retains one low-severity finding.
+
+The resolved review thread and final documentation review have no outstanding
+findings. Rebase merge produced main `b32e7b7ad603b26c1606dcee8c2e3bd5efe6815a`,
+with the identical tested tree `704f556756a2f75793b5e404b6fd254b65674af2`.
+The original PR head is retained; its temporary branch is deleted. These checks
+qualify software behavior only. Inference, enterprise deployment and physical
+RDP/session-lock recovery remain open; issue #92 is not closed.
 
 ## Screens and flow
 

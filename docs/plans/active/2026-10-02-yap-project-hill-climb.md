@@ -53,7 +53,7 @@ The rows below cover the full roadmap. Their order is the initial priority; revi
 | Scribe and governed knowledge | Supported eight-role UI journeys are fixture verified. Audit real service persistence and permission-safe integration, raw-preserving corrections, citations, proposal acceptance/publication, revocation and multi-principal isolation; close software gaps across every role. | Production corpus, real reasoning models, model-benefit evidence and organizational publication governance require actual inputs. |
 | Organization identity | Native token authority and owner isolation exist. Verify explicit sign-in/out, capability denial, session expiry, revocation and offline local independence; prepare actual provider/cache/policy checks. Never add Yap credentials or caller-selected identity. | WAM/Entra, tenant registration, audience and conditional-access policy require Windows and IT. |
 | UI, accessibility and documentation | Preserve the 30-area baseline; apply the same usability/recovery checks to every added feature. Keep one queue, readable product/setup guidance and source-linked decisions. Preserve historical goals/features and third-party attribution. | Physical focus/input/hit testing remains target-platform work. |
-| Release and operations | Audit existing observability, redaction, dependency/provenance, SBOM, packaging, backup/deletion, disaster recovery, deployment and rollback paths. Implement missing software and run disposable rehearsals; perform focused correctness/security review. | Production retention, monitoring/SLO approval, target installer and deployment/drills need accountable environments. |
+| Release and operations | Audit existing observability, redaction, dependency/provenance, SBOM, packaging, backup/deletion, disaster recovery, deployment and rollback paths. Implement missing software and run disposable rehearsals; perform focused correctness/security review. Add a skip-free real PostgreSQL CI gate: current hosted checks exclude database cases, while local regression remains repeatable. | Production retention, monitoring/SLO approval, target installer and deployment/drills need accountable environments. |
 | Repository and storage boundaries | Preserve [ADR 0018](../../adr/0018-three-repo-topology.md) and [ADR 0022](../../adr/0022-google-okf-permission-safe-projections.md). Make deployment/access boundaries work before splitting repositories. Add Redis/object storage/Neo4j only for a measured gap. | Organization access and hosting decisions need their owners; diagrams alone do not justify dependencies. |
 
 ## Software-verified increments
@@ -82,6 +82,7 @@ The linked records retain each increment's acceptance conditions, before/after b
 | Saved connection inspection | 6/6 | Owned persisted references, current-generation endpoint permissions, exact citations and contained native/UI reads; [acceptance/screens/checks](../../evidence/connection-proposal-inspection/2026-10-03/verification.md). Human publication and rebuilding remain open. |
 | Accepted correction export | 6/6 | Displayed saved-revision preconditions, native source/history revalidation, exact UTF-8 new-file publication and shared original/accepted export ownership; [evidence/screens](../../evidence/accepted-correction-export/2026-10-03/verification.md). Older revision selection, timed/speaker export and Windows picker checks remain open. |
 | AAC in M4A/MP4 | 6/6 | Real single-track AAC-LC container timing/content, retained source/durable preparation, bounded refusal/cancellation and responsive Recording/History; [evidence/screens](../../evidence/aac-import/2026-10-03/verification.md). Distribution patent clearance, inference and Windows playback remain open. |
+| Owned connection discard | 6/6 | Explicit confirmation, retained provenance, atomic audit, capacity release and uncertain-delivery recovery; [acceptance/screens/integration](../../evidence/connection-proposal-discard/2026-10-03/verification.md). Human publication/rebuilding remain open. |
 
 ## Connections: remaining publication outcome
 
@@ -164,23 +165,24 @@ the identical tree tested at `7622a5a6`; all six jobs in
 The iteration branch and superseded Dependabot PR #200 are retired; the latter's
 exact tip remains under `archive/dependency-proposal-200-2026-10-03`.
 
-## Current increment: owner-controlled proposal discard
+## Current increment: discover owned pending connections
 
-**Status:** Five software outcomes locally verified; hosted integration is
-pending. Review now confirms discard of owned connection proposals, retains history
-and sources, and handles uncertain delivery with an idempotent retry. Published
-knowledge stays unchanged and no model runs.
+**Status:** Not implemented; 0/6 outcomes verified. Review opens a pasted reference
+or an explicit Curator handoff; it has no owned proposal list yet. Add a readable,
+explicitly loaded list of the owner's pending connections, using the same journal,
+connection authority and permission-checked source reader. Canonical publication
+and rebuilding remain separate open work.
 
-- [x] Authenticate an explicit bounded discard of only the caller's relationship proposal; unknown, foreign and other-type references share an unavailable result. Obsolete owned proposals can be retired without reading hidden source contents.
-- [x] Keep discard idempotent, preserve provenance/sources/graph, release unresolved capacity and atomically commit the tombstone with its content-free success audit; failures cannot report a false success or resurrect a proposal.
-- [x] Bound service admission and SQL work; bind native dispatch/results to the exact current connection/sign-in and main window, with strict typed receipts and no caller-supplied identity.
-- [x] Add accessible explicit confirmation and a durable discarded result in Review proposals, preserving navigation, local controls and narrow layouts.
-- [x] Support retry after uncertain delivery without claiming a cancelled write; retain the retry reference across Curator handoffs during or after the write. Account changes hide old evidence and cannot apply a delayed result to the new account.
-- [ ] Verify real Postgres/API, native and browser journeys, review/push and integrate through all exact-head checks; continue human publication/rebuilding and the full queue.
+- [ ] Return only the authenticated tenant/subject's pending relationship references and creation times. Include no candidate/source content, caller identity selectors or foreign counts. Bound the complete list to 64 and refuse invalid/excess metadata instead of returning partial truth.
+- [ ] Exercise real model-free PostgreSQL reads and content-free auditing within the existing admission, SQL timeouts and response budget. Listing cannot change the journal or published graph.
+- [ ] Add strict main-window/current-lease native list receipts. Validate hashes, UTC timestamps, duplicates and the 64-item limit; add no renderer credentials or native command.
+- [ ] Explicitly load/refresh an accessible owned list. Selecting an item opens existing permission-checked inspection. Empty, failed and offline states retain local controls and pasted-reference recovery.
+- [ ] Remove a row locally only after confirmed discard; retain it after uncertain delivery. Contain identity changes and delayed reads, preserve pending-write/retry ownership, and verify keyboard access and narrow layouts with one native request owner.
+- [ ] Verify real SQL/API/native/browser cases and screens, review/push, then integrate through all exact-head jobs before retiring the branch. Continue publication/rebuilding and the full queue.
 
-
-[Discard evidence and screens](../../evidence/connection-proposal-discard/2026-10-03/verification.md)
-record the real SQL, native and browser checks and target limits.
+[Reviewed interaction references](../../evidence/ui-completion/2026-10-02-design-references.md#saved-proposal-discovery)
+inform dated rows and deliberate selection. Titles and sources are shown only
+through current permission-checked inspection.
 
 ## Execution record
 
@@ -223,5 +225,7 @@ record the real SQL, native and browser checks and target limits.
 | 2026-10-03 | PR review exposed a new Curator handoff cancelling a pending discard and replacing its retry reference. Two browser cases fail on the original head and pass with retained writes and an explicit queued handoff; all 52 related browser journeys, both narrow handoff cases, frontend units/build and documentation contracts pass. | Renew all exact-head checks for the correction before merging PR #202; run 538 qualifies only the earlier head. |
 
 | 2026-10-03 | Final review reproduced a post-receipt handoff replacing an uncertain discard reference. Handoffs now wait until discard retry resolves uncertainty; proposal reads cannot reset it. All 53 related browser journeys, frontend units/build and seven documentation/population contracts pass. | Push the correction and renew all six checks on the final PR #202 head before integration. |
+
+| 2026-10-03 | PR #202 merges after run 541 passes all six jobs: Windows native 1,368 + 27, frontend 395 and all 193 browser workflows, native WDIO, server, identity and service lifecycle. Main has the identical tested tree; the original reviewed head is retained and the branch retired. Discard completes 6/6 software outcomes. | Discover owned pending proposals through the existing journal/native/UI owners, then continue canonical publication/rebuilding and the full queue. Issue #92 still needs actual RDP/session-lock qualification. |
 
 Attribute project work to Grant McNatt. Preserve third-party attribution/provenance; do not add AI branding or coauthor trailers.
