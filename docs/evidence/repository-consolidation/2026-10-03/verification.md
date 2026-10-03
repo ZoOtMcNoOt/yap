@@ -77,9 +77,15 @@ evidence remain reachable. The active project goal and AGENTS.md now require
 committing/pushing each verified iteration, using required checks before merge
 and deleting finished temporary branches.
 
-Development and documentation commits `454b859f` and `3bced5f` are pushed in
-[PR #199](https://github.com/ZoOtMcNoOt/yap/pull/199). The
+Development, documentation and dependency work merged through
+[PR #199](https://github.com/ZoOtMcNoOt/yap/pull/199) as nine commits attributed
+to Grant McNatt. All six jobs in
+[run 532](https://github.com/ZoOtMcNoOt/yap/actions/runs/37118650222) passed on
+`02da8f11d845f598ce4f59270d8a94e076ac9e33`. Rebased `main` commit
+`dbdd8d1752f260ca37623b74f0f87d86241175cc` has the identical tested tree. The
 [dependency refresh](../../dependency-refresh/2026-10-03/verification.md) replaces
 selected stale proposals with verified locked releases; the remaining archived
-proposals are not installed blindly. Integration into `main` is pending final
-local and required hosted checks. The archive does not establish production/model/Windows qualification.
+proposals are not installed blindly. The temporary integration branch was deleted
+with its expected SHA; local and remote inspection confirmed only `main` remained.
+The full project goal stays active. The archive and green CI do not establish
+production/model qualification or physical Windows RDP/session-lock behavior.

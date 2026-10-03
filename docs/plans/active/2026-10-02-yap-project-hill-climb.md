@@ -118,9 +118,9 @@ projection before activation. Inspection or a proposal reference cannot supply
 that approval. Human publication and rebuild recovery remain available software
 work; they are not closed by the model qualification boundary.
 
-## Current increment: readable documentation and main consolidation
+## Completed increment: readable documentation and main consolidation
 
-**Status:** In progress. User authorized a documentation sub-agent, consolidation
+**Status:** Software verified and merged. User authorized a documentation sub-agent, consolidation
 of existing branches/PRs onto `main`, and committing/pushing every verified
 iteration. [Consolidation evidence](../../evidence/repository-consolidation/2026-10-03/verification.md)
 retains the branch snapshot and dispositions. This does not close unresolved
@@ -128,10 +128,35 @@ issues or promote unqualified models/platforms.
 
 - [x] Make the root README, documentation index and server README readable entry points; retain product goals/features, operational requirements and complete historical evidence.
 - [x] Preserve every original branch tip before cleanup; close stale dependency PRs and retire historical branches without losing their commits.
-- [ ] Commit and push the verified development backlog and documentation as reviewable iterations; integrate through required exact-head checks, then remove the temporary integration branch.
+- [x] Commit and push the verified development backlog and documentation as reviewable iterations; integrate through required exact-head checks, then remove the temporary integration branch.
 - [x] Repair the current locked dependency audit's high advisories through supported upstream releases, retaining license/provenance checks and avoiding audit suppression.
 - [x] Inspect the official Tauri/Tao update for issue #92; verify removal of the affected source path in software, keeping actual Windows RDP/session-lock reproduction/recovery as an explicit target check before issue closure.
-- [ ] Renew the relevant native/frontend/browser/build/contracts, review changes and record the actual `main` head and remaining qualification limits.
+- [x] Renew the relevant native/frontend/browser/build/contracts, review changes and record the actual `main` head and remaining qualification limits.
+
+[PR #199](https://github.com/ZoOtMcNoOt/yap/pull/199) merged to
+`dbdd8d1752f260ca37623b74f0f87d86241175cc`, with the identical tree tested at
+`02da8f11`. [Run 532](https://github.com/ZoOtMcNoOt/yap/actions/runs/37118650222)
+passed all six jobs. The completed integration branch was retired; `main` is
+the shared integration branch. Issue #92 and the full project goal remain open.
+
+## Current increment: core server dependency integrity
+
+**Status:** In progress. Auditing the exact Python lock exposed published
+advisories in PyJWT, cryptography and httpx2. Repair the supported core before
+continuing human publication/rebuild recovery. Model runtime overlays have a
+separate dependency boundary and cannot inherit a clean core result.
+
+- [x] Lock compatible published fixes, preserving hashes, strict identity policy and third-party licenses.
+- [x] Add a repeatable core audit covering every locked registry version, including platform markers and optional/development groups; refuse findings, skipped packages and unavailable evidence without ignores.
+- [x] Verify valid identity flows, malformed token rejection, MCP and the full portable server suite without models; record remaining runtime findings separately.
+- [ ] Review, commit/push and integrate through all green exact-head jobs, then retire the temporary branch and continue the software queue.
+
+[Core server evidence](../../evidence/server-dependencies/2026-10-03/verification.md)
+records the four patched versions, complete 40-version audit, 53 identity cases,
+1,640 portable server passes (96 declared exclusions) and 177 governed contracts
+with no skips. Historical model receipts keep their original dependency hashes;
+changed dependencies require renewed qualification. NeMo overlay findings remain
+open and cannot inherit the clean core result.
 
 ## Execution record
 

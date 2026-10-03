@@ -161,6 +161,7 @@ repository root:
 
 ```bash
 source verification/cloud-env.sh
+python verification/audit-server-dependencies.py
 bash verification/test-cloud-server.sh
 ```
 
@@ -169,6 +170,9 @@ without external networking or real model services. The
 [cloud guide](../docs/runbooks/cloud-development.md) explains Docker setup,
 real local Postgres tests and Rust orchestration checks. Run heavyweight suites
 sequentially. [Test documentation](tests/README.md) describes the test layers.
+The core dependency audit uses an isolated pinned tool and refuses advisories or
+unavailable package evidence. Model overlays and container images retain their
+separate [audit scope](../docs/runbooks/dependency-audit-policy.md).
 
 ## Qualify models and deployment
 

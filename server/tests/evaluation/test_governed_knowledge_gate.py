@@ -42,10 +42,43 @@ class GovernedKnowledgeGateContractTests(unittest.TestCase):
             **route.input_sha256,
             **route.dependency_sha256,
         }.items():
+            # Historical model evidence retains its original dependency identity.
+            # Current dependencies must be requalified through the production gate.
+            body = (
+                subprocess.check_output(
+                    ["git", "-C", str(REPOSITORY_ROOT), "show", f"{route.checked_head}:{relative}"]
+                )
+                if relative in route.dependency_sha256
+                else (REPOSITORY_ROOT / relative).read_bytes()
+            )
             self.assertEqual(
-                hashlib.sha256((REPOSITORY_ROOT / relative).read_bytes()).hexdigest(),
+                hashlib.sha256(body).hexdigest(),
                 expected,
             )
+
+    def test_changed_dependencies_cannot_reuse_historical_model_qualification(self) -> None:
+        route = route_evidence.load_agent_route_qualification_reference(REPOSITORY_ROOT)
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            for relative in {**route.input_sha256, **route.dependency_sha256}:
+                path = root / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(
+                    subprocess.check_output(
+                        ["git", "-C", str(REPOSITORY_ROOT), "show", f"{route.checked_head}:{relative}"]
+                    )
+                )
+            def runner(args, **kwargs):
+                return subprocess.CompletedProcess(args, 0, "", "")
+            route_evidence._verify_unchanged_route_inputs(
+                root, checked_head=route.checked_head, reference=route, runner=runner,
+            )
+            lock = root / "server/uv.lock"
+            lock.write_bytes(lock.read_bytes() + b"\n# Dependency lock changed\n")
+            with self.assertRaisesRegex(ValueError, "input changed"):
+                route_evidence._verify_unchanged_route_inputs(
+                    root, checked_head=route.checked_head, reference=route, runner=runner,
+                )
 
     def test_database_result_rejects_a_green_suite_with_skips(self) -> None:
         runtime = _runtime_lock()
