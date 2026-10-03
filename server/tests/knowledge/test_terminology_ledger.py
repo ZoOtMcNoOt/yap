@@ -1,17 +1,20 @@
 from __future__ import annotations
 
+from yap_server.knowledge.terminology_policy import TerminologyPolicy
+
 import os
+from dataclasses import replace
 import unittest
 from uuid import uuid4
 
 import psycopg
 
 from yap_server.agents.transcript_correction_terminology import (
-    PersonalOrganizationTerminologyMemberships,
     PostgresTranscriptCorrectionTerminologyResolver,
 )
 from yap_server.auth.principal import AuthenticatedPrincipal, PrincipalKey
 from yap_server.knowledge.terminology_authorization import (
+    TerminologyAuthorization,
     resolve_terminology_authorization,
 )
 from yap_server.knowledge.terminology_ledger import (
@@ -43,7 +46,7 @@ class TerminologyLedgerTests(unittest.TestCase):
             )
         resolver = PostgresTranscriptCorrectionTerminologyResolver(
             connection_factory=lambda: psycopg.connect(POSTGRES_DSN),
-            memberships=PersonalOrganizationTerminologyMemberships(),
+            policy=TerminologyPolicy(),
         )
 
         alice_terms = resolver.resolve(
@@ -103,18 +106,14 @@ class TerminologyLedgerTests(unittest.TestCase):
         with psycopg.connect(POSTGRES_DSN) as connection:
             install_terminology_schema(connection)
             authorization = _authorization(principal)
-            append_terminology_record(
-                connection, first, authorization=authorization
-            )
+            append_terminology_record(connection, first, authorization=authorization)
             bound = bind_job_terminology_snapshot(
                 connection,
                 job_id=job_id,
                 authorization=authorization,
                 locale="en-US",
             )
-            append_terminology_record(
-                connection, second, authorization=authorization
-            )
+            append_terminology_record(connection, second, authorization=authorization)
             unchanged = read_job_terminology_snapshot(
                 connection, principal=principal, job_id=job_id
             )
@@ -173,7 +172,7 @@ class TerminologyLedgerTests(unittest.TestCase):
             )
             connection.commit()
 
-    def test_actor_cannot_append_another_users_personal_record(self) -> None:
+    def test_actor_cannot_append_records_without_scope_management(self) -> None:
         suffix = uuid4().hex
         tenant_id = f"tenant-{suffix}"
         actor = PrincipalKey(tenant_id, f"alice-{suffix}")
@@ -184,6 +183,44 @@ class TerminologyLedgerTests(unittest.TestCase):
                 append_terminology_record(
                     connection, record, authorization=_authorization(actor)
                 )
+            team = f"team-{suffix}"
+            team_record = replace(record, scope="team", owner_id=team)
+            member = TerminologyAuthorization(actor, (team,), (), False)
+            manager = TerminologyAuthorization(actor, (team,), (team,), False)
+            with self.assertRaisesRegex(PermissionError, "does not own"):
+                append_terminology_record(connection, team_record, authorization=member)
+            append_terminology_record(connection, team_record, authorization=manager)
+            visible = store_current_terminology_snapshot(
+                connection,
+                authorization=member,
+                locale="en-US",
+            )
+            self.assertEqual(
+                tuple(item.canonical_form for item in visible.entries),
+                (record.canonical_form,),
+            )
+            replacement = replace(
+                team_record, version=2, audit_revision="audit-2", deleted=True
+            )
+            with self.assertRaisesRegex(PermissionError, "does not own"):
+                append_terminology_record(connection, replacement, authorization=member)
+            append_terminology_record(connection, replacement, authorization=manager)
+            after = store_current_terminology_snapshot(
+                connection, authorization=member, locale="en-US"
+            )
+            self.assertEqual(after.entries, ())
+            self.assertEqual(
+                tuple(item.canonical_form for item in visible.entries),
+                (record.canonical_form,),
+            )
+            connection.execute(
+                "DELETE FROM yap_terminology_snapshots WHERE tenant_id = %s",
+                (tenant_id,),
+            )
+            connection.execute(
+                "DELETE FROM yap_terminology_records WHERE tenant_id = %s", (tenant_id,)
+            )
+            connection.commit()
 
     def test_record_lineage_cannot_change_owner_or_resume_after_deletion(self) -> None:
         suffix = uuid4().hex
@@ -246,7 +283,9 @@ class TerminologyLedgerTests(unittest.TestCase):
             )
             self.assertEqual(alice_snapshot.subject_id, alice.subject_id)
             self.assertEqual(bob_snapshot.subject_id, bob.subject_id)
-            self.assertNotEqual(alice_snapshot.snapshot_sha256, bob_snapshot.snapshot_sha256)
+            self.assertNotEqual(
+                alice_snapshot.snapshot_sha256, bob_snapshot.snapshot_sha256
+            )
             with self.assertRaisesRegex(LookupError, "no terminology snapshot"):
                 read_job_terminology_snapshot(
                     connection,
@@ -270,6 +309,10 @@ class TerminologyLedgerTests(unittest.TestCase):
 
 class _Memberships:
     def team_ids_for(self, principal: PrincipalKey) -> tuple[str, ...]:
+        del principal
+        return ()
+
+    def managed_team_ids_for(self, principal: PrincipalKey) -> tuple[str, ...]:
         del principal
         return ()
 

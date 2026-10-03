@@ -9,7 +9,7 @@ use super::{
     cleanup_stale_download_temps, hf_resolve_url, models_dir_from,
     operation::DownloadOperation,
     progress::{progress_metrics, BodyProgress},
-    sha256_file, verify_sha256, DownloadProgress,
+    sha256_file, verify_artifact, DownloadProgress,
 };
 use crate::stt::error::SttError;
 
@@ -62,7 +62,7 @@ fn hf_resolve_url_is_pinned_by_revision() {
 }
 
 #[test]
-fn verify_sha256_matches_and_mismatches() {
+fn verify_artifact_checks_digest_and_size() {
     let dir = TestDir::new("yap-sha");
     let file = dir.0.join("model.bin");
     std::fs::write(&file, b"hello").unwrap();
@@ -70,7 +70,18 @@ fn verify_sha256_matches_and_mismatches() {
         sha256_file(&file).unwrap(),
         "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
     );
-    assert_eq!(verify_sha256(&file, "bad"), Err(SttError::ModelCorrupt));
+    assert_eq!(
+        verify_artifact(&file, 5, "bad", || false),
+        Err(SttError::ModelCorrupt)
+    );
+    let expected = "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824";
+    assert_eq!(verify_artifact(&file, 5, expected, || false), Ok(()));
+    for expected_bytes in [4, 6] {
+        assert_eq!(
+            verify_artifact(&file, expected_bytes, expected, || false),
+            Err(SttError::ModelCorrupt)
+        );
+    }
 }
 
 #[test]

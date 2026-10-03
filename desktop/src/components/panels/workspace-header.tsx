@@ -1,4 +1,4 @@
-import { PrivacyStatus } from "@/components/app/privacy-status";
+import { LocalSetupStatus } from "@/components/app/local-setup-status";
 import { ServerRouteStatus } from "@/components/app/server-route-status";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,16 +32,9 @@ export function WorkspaceHeader({
         ) : null}
       </div>
 
-      {/*
-        No settings gear here. The sidebar already carries one, permanently, and
-        two identical gears opening the same surface is the kind of duplication
-        that reads as two different things. `onOpenDetails` stays because
-        ServerRouteStatus uses it for sign-in -- that is a contextual jump to fix
-        a specific blocked state, not a second front door.
-      */}
       <div className="flex min-w-0 flex-wrap items-center gap-2">
         <ServerRouteStatus onSignIn={onOpenDetails} state={serverState} />
-        <PrivacyStatus auth={auth} status={status} />
+        <LocalSetupStatus auth={auth} status={status} />
         {historyCount ? (
           <Badge className="rounded-full px-3 py-1.5 text-sm font-semibold tabular-nums" variant="secondary">
             {historyCount} saved

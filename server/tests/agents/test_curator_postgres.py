@@ -281,7 +281,7 @@ class CuratorPostgresTests(unittest.TestCase):
                    GROUP BY proposer_subject_id ORDER BY proposer_subject_id""",
                 (owner.tenant_id,),
             ).fetchall()
-            with self.assertRaises(PermissionError):
+            with self.assertRaises(LookupError):
                 discard_knowledge_proposal(
                     verification,
                     principal=other_subject.key,

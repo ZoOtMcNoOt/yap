@@ -6,22 +6,27 @@ import { ArrowCounterClockwise } from "@phosphor-icons/react/ArrowCounterClockwi
 import { Sparkle } from "@phosphor-icons/react/Sparkle";
 import { Square } from "@phosphor-icons/react/Square";
 import { X } from "@phosphor-icons/react/X";
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 
-import { type OverlayModel, type OverlaySurface } from "@/components/live/live-overlay-state";
-import { LiveWaveform, useOverlayTimeline } from "@/components/live/live-waveform";
+import {
+  type OverlayModel,
+  type OverlaySurface,
+} from "@/components/live/live-overlay-state";
+import {
+  LiveWaveform,
+  useOverlayTimeline,
+} from "@/components/live/live-waveform";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-// Ported from FreeFlow's RecordingOverlayView and its sibling views
-// (Sources/RecordingOverlay.swift, MIT, revision 7427ca9).
-//
-// Upstream's palette is two colours. Everything structural is white on black at
-// 0.92 opacity; one red carries anything that failed or that stops a recording.
-// There is no accent hue, no tinted surface and no second weight of text. Yap's
-// island had picked up fuchsia and emerald along the way, and that -- more than
-// any single measurement -- is what stopped it reading like the thing it was
-// copied from.
+// Geometry and status presentation derive from FreeFlow's RecordingOverlay.swift
+// (MIT, revision 7427ca9). Yap owns the glass surface and voice accent.
 const upstreamRed = "rgba(255, 59, 48, 0.92)"; // Color.red.opacity(0.92)
 const chromeWhite = "rgba(255, 255, 255, 0.92)"; // .white.opacity(0.92)
 // `.padding(.horizontal, 12)` on the pill's root.
@@ -104,7 +109,10 @@ function OverlayStatusAnnouncement({
   );
 }
 
-export function overlayStatusMessage(model: OverlayModel, surface: OverlaySurface): string {
+export function overlayStatusMessage(
+  model: OverlayModel,
+  surface: OverlaySurface,
+): string {
   if (surface === "success") return "Dictation finished. Transcript inserted.";
   if (model.phase === "feedback") {
     return model.errorMessage
@@ -125,9 +133,16 @@ function CollapsedOverlayView() {
   return (
     <div
       aria-label="Yap dictation island"
-      className={cn("flex h-full w-full items-center justify-center gap-[7px]", pillPaddingClass)}
+      className={cn(
+        "flex h-full w-full items-center justify-center gap-[7px]",
+        pillPaddingClass,
+      )}
     >
-      <Microphone className="size-[13px]" style={{ color: chromeWhite }} weight="fill" />
+      <Microphone
+        className="size-[13px]"
+        style={{ color: chromeWhite }}
+        weight="fill"
+      />
       <PillLabel>Yap</PillLabel>
     </div>
   );
@@ -150,10 +165,19 @@ function ExpandedOverlayView({
           pillPaddingClass,
         )}
       >
-        <Microphone className="size-[13px]" style={{ color: chromeWhite }} weight="fill" />
+        <Microphone
+          className="size-[13px]"
+          style={{ color: chromeWhite }}
+          weight="fill"
+        />
         <PillLabel>Yap</PillLabel>
       </div>
-      <div className={cn("flex min-h-0 flex-1 items-center justify-center gap-2", pillPaddingClass)}>
+      <div
+        className={cn(
+          "flex min-h-0 flex-1 items-center justify-center gap-2",
+          pillPaddingClass,
+        )}
+      >
         <IslandInlineButton label="Start dictating" onClick={onStart}>
           <Microphone className="size-[18px]" weight="bold" />
         </IslandInlineButton>
@@ -180,16 +204,21 @@ function RecordingOverlayView({
   prefersReducedMotion: boolean;
 }) {
   const showsLiveRecordingContent = model.phase === "recording";
-  const showsStopButton = showsLiveRecordingContent && model.recordingTriggerMode === "toggle";
+  const showsStopButton =
+    showsLiveRecordingContent && model.recordingTriggerMode === "toggle";
 
   if (model.phase === "feedback" && model.errorMessage) {
     return <ErrorOverlayView message={model.errorMessage} onRetry={onRetry} />;
   }
-  if (model.phase === "feedback") return <FailureIndicatorView onRetry={onRetry} />;
+  if (model.phase === "feedback")
+    return <FailureIndicatorView onRetry={onRetry} />;
 
   return (
     <div
-      className={cn("relative grid h-full w-full place-items-center", pillPaddingClass)}
+      className={cn(
+        "relative grid h-full w-full place-items-center",
+        pillPaddingClass,
+      )}
       data-testid="live-recording-layout"
     >
       <div className="absolute inset-0 grid place-items-center">
@@ -202,11 +231,18 @@ function RecordingOverlayView({
             showsActivityPulse
           />
         ) : (
-          <ProcessingIndicatorView prefersReducedMotion={prefersReducedMotion} />
+          <ProcessingIndicatorView
+            prefersReducedMotion={prefersReducedMotion}
+          />
         )}
       </div>
 
-      <div className={cn("absolute inset-0 flex items-center justify-end", pillPaddingClass)}>
+      <div
+        className={cn(
+          "absolute inset-0 flex items-center justify-end",
+          pillPaddingClass,
+        )}
+      >
         <div
           className="flex items-center justify-end"
           data-testid="live-toggle-actions"
@@ -256,7 +292,10 @@ function BadgeButton({ children, label, onClick }: ActionButtonProps) {
 
 function PillLabel({ children }: { children: ReactNode }) {
   return (
-    <span className="text-[11px] font-semibold leading-none" style={{ color: chromeWhite }}>
+    <span
+      className="text-[11px] font-semibold leading-none"
+      style={{ color: chromeWhite }}
+    >
       {children}
     </span>
   );
@@ -280,7 +319,11 @@ function IslandInlineButton({ children, label, onClick }: ActionButtonProps) {
 
 // upstream `ProcessingIndicatorView`: the processing waveform for one second,
 // then a spinner, because past a second the bars read as "still listening".
-function ProcessingIndicatorView({ prefersReducedMotion }: { prefersReducedMotion: boolean }) {
+function ProcessingIndicatorView({
+  prefersReducedMotion,
+}: {
+  prefersReducedMotion: boolean;
+}) {
   const [showsSpinner, setShowsSpinner] = useState(false);
 
   useEffect(() => {
@@ -331,11 +374,17 @@ const processingCenterIndex = (processingPillCount - 1) / 2;
 const processingMinHeight = 4;
 const processingMaxHeight = 18;
 
-function ProcessingWaveformView({ prefersReducedMotion }: { prefersReducedMotion: boolean }) {
+function ProcessingWaveformView({
+  prefersReducedMotion,
+}: {
+  prefersReducedMotion: boolean;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useOverlayTimeline(!prefersReducedMotion, (timeSeconds) => {
-    const pills = containerRef.current?.querySelectorAll<HTMLElement>("[data-live-processing-pill]");
+    const pills = containerRef.current?.querySelectorAll<HTMLElement>(
+      "[data-live-processing-pill]",
+    );
     pills?.forEach((pill, index) => {
       const pulse = processingPulse(index, timeSeconds);
       pill.style.height = `${processingHeight(index, pulse)}px`;
@@ -344,16 +393,21 @@ function ProcessingWaveformView({ prefersReducedMotion }: { prefersReducedMotion
   });
 
   return (
-    <div className="flex h-5 items-center justify-center gap-1" ref={containerRef}>
+    <div
+      className="flex h-5 items-center justify-center gap-1"
+      ref={containerRef}
+    >
       {Array.from({ length: processingPillCount }, (_, index) => (
         <span
           className="w-1 rounded-full bg-white"
           data-live-processing-pill
           key={index}
-          style={{
-            height: processingHeight(index, 0),
-            opacity: 0.42,
-          } as CSSProperties}
+          style={
+            {
+              height: processingHeight(index, 0),
+              opacity: 0.42,
+            } as CSSProperties
+          }
         />
       ))}
     </div>
@@ -365,26 +419,38 @@ function processingPulse(index: number, timeSeconds: number) {
   const stagger = 0.11;
   // Swift's `truncatingRemainder` keeps the sign of the dividend; JS `%` does
   // too, so both need the extra wrap before dividing.
-  const phase = ((((timeSeconds - index * stagger) % cycle) + cycle) % cycle) / cycle;
+  const phase =
+    ((((timeSeconds - index * stagger) % cycle) + cycle) % cycle) / cycle;
   const wave = 0.5 + 0.5 * Math.sin(phase * 2 * Math.PI - Math.PI / 2);
   return wave ** 1.9;
 }
 
 function processingHeight(index: number, pulse: number) {
-  const centerDistance = Math.abs(index - processingCenterIndex) / processingCenterIndex;
+  const centerDistance =
+    Math.abs(index - processingCenterIndex) / processingCenterIndex;
   const baseline = 0.18 + (1 - centerDistance) * 0.1;
   const amplitude = Math.min(baseline + pulse * 0.68, 1);
-  return processingMinHeight + (processingMaxHeight - processingMinHeight) * amplitude;
+  return (
+    processingMinHeight +
+    (processingMaxHeight - processingMinHeight) * amplitude
+  );
 }
 
 // upstream `InitializingDotsView`: three 4.5pt dots, one lit at 0.9 and the rest
 // at 0.25, advancing every 0.5s over a 0.4s ease.
-function InitializingDotsView({ prefersReducedMotion }: { prefersReducedMotion: boolean }) {
+function InitializingDotsView({
+  prefersReducedMotion,
+}: {
+  prefersReducedMotion: boolean;
+}) {
   const [activeDot, setActiveDot] = useState(0);
 
   useEffect(() => {
     if (prefersReducedMotion) return;
-    const handle = window.setInterval(() => setActiveDot((dot) => (dot + 1) % 3), 500);
+    const handle = window.setInterval(
+      () => setActiveDot((dot) => (dot + 1) % 3),
+      500,
+    );
     return () => window.clearInterval(handle);
   }, [prefersReducedMotion]);
 
@@ -404,8 +470,17 @@ function InitializingDotsView({ prefersReducedMotion }: { prefersReducedMotion: 
 // Yap-only, in upstream's label-pill idiom.
 function SuccessOverlayView() {
   return (
-    <div className={cn("flex h-full w-full items-center justify-center gap-[7px]", pillPaddingClass)}>
-      <Check className="size-[13px]" style={{ color: chromeWhite }} weight="bold" />
+    <div
+      className={cn(
+        "flex h-full w-full items-center justify-center gap-[7px]",
+        pillPaddingClass,
+      )}
+    >
+      <Check
+        className="size-[13px]"
+        style={{ color: chromeWhite }}
+        weight="bold"
+      />
       <PillLabel>Saved</PillLabel>
     </div>
   );
@@ -416,7 +491,12 @@ function SuccessOverlayView() {
 // the neutral white treatment upstream uses for everything that is not an alarm.
 function FailureIndicatorView({ onRetry }: { onRetry?: () => void }) {
   return (
-    <div className={cn("flex h-full w-full items-center justify-center gap-2", pillPaddingClass)}>
+    <div
+      className={cn(
+        "flex h-full w-full items-center justify-center gap-2",
+        pillPaddingClass,
+      )}
+    >
       <span
         className="grid shrink-0 place-items-center rounded-full"
         style={{ backgroundColor: upstreamRed, height: 20, width: 20 }}
@@ -433,9 +513,20 @@ function FailureIndicatorView({ onRetry }: { onRetry?: () => void }) {
 // upstream `ErrorOverlayView`: 13pt filled exclamation in red, 6pt gap, 12pt
 // medium message clipped to one line with a tail ellipsis. The message is full
 // white rather than 0.92 -- upstream draws it brighter than its own chrome.
-function ErrorOverlayView({ message, onRetry }: { message: string; onRetry?: () => void }) {
+function ErrorOverlayView({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry?: () => void;
+}) {
   return (
-    <div className={cn("flex h-full w-full items-center justify-center gap-1.5", pillPaddingClass)}>
+    <div
+      className={cn(
+        "flex h-full w-full items-center justify-center gap-1.5",
+        pillPaddingClass,
+      )}
+    >
       <WarningCircle
         className="size-[13px] shrink-0"
         style={{ color: upstreamRed }}

@@ -95,9 +95,7 @@ class JobRequestMixin:
             if speaker_result_match is not None and self.command == "GET":
                 self._send_json(
                     HTTPStatus.OK,
-                    jobs.get_speaker_result(
-                        speaker_result_match.group("job_id")
-                    ),
+                    jobs.get_speaker_result(speaker_result_match.group("job_id")),
                 )
                 return
 

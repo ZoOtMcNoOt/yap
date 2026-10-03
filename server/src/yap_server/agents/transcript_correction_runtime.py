@@ -5,6 +5,10 @@ from pathlib import Path
 from typing import Mapping
 
 from yap_server.knowledge.vllm_reasoning_client import BoundedVllmJsonClient
+from yap_server.knowledge.terminology_policy import (
+    TerminologyPolicy,
+    build_terminology_policy,
+)
 from yap_server.pools.agent_vllm_service_profile import (
     AgentVllmServiceProfile,
     load_rapid_agent_vllm_service_profile,
@@ -18,19 +22,14 @@ from .admission_protocol import UnixAgentAdmissionTransport
 from .transcript_correction_model import TranscriptCorrectionModel
 from .transcript_correction_service import TranscriptCorrectionService
 from .transcript_correction_terminology import (
-    PersonalOrganizationTerminologyMemberships,
     PostgresTranscriptCorrectionTerminologyResolver,
 )
 
 
 TRANSCRIPT_CORRECTION_RUNTIME = "YAP_TRANSCRIPT_CORRECTION_RUNTIME"
-TRANSCRIPT_CORRECTION_ADMISSION_SOCKET = (
-    "YAP_TRANSCRIPT_CORRECTION_ADMISSION_SOCKET"
-)
+TRANSCRIPT_CORRECTION_ADMISSION_SOCKET = "YAP_TRANSCRIPT_CORRECTION_ADMISSION_SOCKET"
 TRANSCRIPT_CORRECTION_PROFILE = "YAP_TRANSCRIPT_CORRECTION_PROFILE"
-TRANSCRIPT_CORRECTION_CANDIDATE_LOCK = (
-    "YAP_TRANSCRIPT_CORRECTION_CANDIDATE_LOCK"
-)
+TRANSCRIPT_CORRECTION_CANDIDATE_LOCK = "YAP_TRANSCRIPT_CORRECTION_CANDIDATE_LOCK"
 TRANSCRIPT_CORRECTION_KNOWLEDGE_DSN_FILE = (
     "YAP_TRANSCRIPT_CORRECTION_KNOWLEDGE_DSN_FILE"
 )
@@ -65,6 +64,7 @@ def build_transcript_correction_runtime(
     environ: Mapping[str, str],
     *,
     authenticated_team_mode: bool,
+    terminology_policy: TerminologyPolicy | None = None,
 ) -> TranscriptCorrectionRuntime | None:
     mode = environ.get(TRANSCRIPT_CORRECTION_RUNTIME)
     configured_paths = [name for name in _CONFIGURATION_PATHS if name in environ]
@@ -74,10 +74,15 @@ def build_transcript_correction_runtime(
                 "transcript correction configuration requires an explicit runtime mode"
             )
         return None
-    if not isinstance(mode, str) or mode.strip() != mode or mode not in {
-        _DISABLED,
-        _WARM_QWEN,
-    }:
+    if (
+        not isinstance(mode, str)
+        or mode.strip() != mode
+        or mode
+        not in {
+            _DISABLED,
+            _WARM_QWEN,
+        }
+    ):
         raise ValueError("transcript correction runtime mode is invalid")
     if mode == _DISABLED:
         if configured_paths:
@@ -86,9 +91,7 @@ def build_transcript_correction_runtime(
             )
         return None
     if not authenticated_team_mode:
-        raise ValueError(
-            "transcript correction requires organization authentication"
-        )
+        raise ValueError("transcript correction requires organization authentication")
 
     socket_path = _absolute_path(
         environ,
@@ -120,10 +123,12 @@ def build_transcript_correction_runtime(
         maximum_output_tokens=_MAXIMUM_OUTPUT_TOKENS,
     )
     terminology = PostgresTranscriptCorrectionTerminologyResolver(
-        connection_factory=private_postgres_connection_factory(
-            knowledge_dsn_path
+        connection_factory=private_postgres_connection_factory(knowledge_dsn_path),
+        policy=terminology_policy
+        if terminology_policy is not None
+        else build_terminology_policy(
+            environ, authenticated_team_mode=authenticated_team_mode
         ),
-        memberships=PersonalOrganizationTerminologyMemberships(),
     )
     service = TranscriptCorrectionService(
         admission=admission,

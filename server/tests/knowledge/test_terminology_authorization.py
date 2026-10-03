@@ -9,18 +9,25 @@ from yap_server.knowledge.terminology_authorization import (
 
 
 class _Memberships:
-    def __init__(self, team_ids: tuple[str, ...]) -> None:
+    def __init__(
+        self, team_ids: tuple[str, ...], managed_team_ids: tuple[str, ...] = ()
+    ) -> None:
         self._team_ids = team_ids
+        self._managed_team_ids = managed_team_ids
         self.seen: PrincipalKey | None = None
 
     def team_ids_for(self, principal: PrincipalKey) -> tuple[str, ...]:
         self.seen = principal
         return self._team_ids
 
+    def managed_team_ids_for(self, principal: PrincipalKey) -> tuple[str, ...]:
+        self.seen = principal
+        return self._managed_team_ids
+
 
 class TerminologyAuthorizationTests(unittest.TestCase):
     def test_derives_membership_and_admin_from_trusted_identity_inputs(self) -> None:
-        memberships = _Memberships(("team-b", "team-a"))
+        memberships = _Memberships(("team-b", "team-a"), ("team-b",))
         principal = AuthenticatedPrincipal(
             "tenant-1",
             "person-1",
@@ -37,6 +44,7 @@ class TerminologyAuthorizationTests(unittest.TestCase):
 
         self.assertEqual(memberships.seen, principal.key)
         self.assertEqual(authorization.team_ids, ("team-a", "team-b"))
+        self.assertEqual(authorization.managed_team_ids, ("team-b",))
         self.assertTrue(authorization.may_manage_organization)
 
     def test_untrusted_request_values_are_not_an_authorization_input(self) -> None:
@@ -52,6 +60,7 @@ class TerminologyAuthorizationTests(unittest.TestCase):
             administrator_roles=frozenset({"knowledge.admin"}),
         )
         self.assertEqual(authorization.team_ids, ())
+        self.assertEqual(authorization.managed_team_ids, ())
         self.assertFalse(authorization.may_manage_organization)
 
     def test_rejects_duplicated_resolved_membership(self) -> None:
@@ -67,6 +76,35 @@ class TerminologyAuthorizationTests(unittest.TestCase):
                 memberships=_Memberships(("team-a", "team-a")),
                 administrator_roles=frozenset({"knowledge.admin"}),
             )
+
+    def test_team_membership_does_not_grant_management(self) -> None:
+        principal = AuthenticatedPrincipal(
+            "tenant-1", "person-1", "desktop-client", frozenset({"knowledge.read"})
+        )
+        authorization = resolve_terminology_authorization(
+            principal,
+            memberships=_Memberships(("team-a",)),
+            administrator_roles=frozenset({"knowledge.admin"}),
+        )
+        self.assertEqual(authorization.team_ids, ("team-a",))
+        self.assertEqual(authorization.managed_team_ids, ())
+
+    def test_rejects_management_outside_trusted_visibility_or_duplicate_grants(
+        self,
+    ) -> None:
+        principal = AuthenticatedPrincipal(
+            "tenant-1", "person-1", "desktop-client", frozenset({"knowledge.read"})
+        )
+        for memberships in [
+            _Memberships(("team-a",), ("team-b",)),
+            _Memberships(("team-a",), ("team-a", "team-a")),
+        ]:
+            with self.subTest(memberships=memberships), self.assertRaises(ValueError):
+                resolve_terminology_authorization(
+                    principal,
+                    memberships=memberships,
+                    administrator_roles=frozenset({"knowledge.admin"}),
+                )
 
 
 if __name__ == "__main__":

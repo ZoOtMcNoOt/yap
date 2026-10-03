@@ -56,8 +56,10 @@ export function QueuePanel({
           </CardTitle>
           <CardDescription>
             {queue.length
-              ? "Waiting for the organization server."
-              : "Choose files above to add them to the organization server queue."}
+              ? "Track recordings and review their progress."
+              : languageOptions.length
+                ? "Choose files above to add them to the organization server queue."
+                : "Set up transcription above to start adding recordings."}
           </CardDescription>
         </div>
         <CardAction className="col-span-full col-start-1 row-span-1 row-start-2 w-full justify-self-stretch sm:col-span-1 sm:col-start-2 sm:row-span-2 sm:row-start-1 sm:w-auto sm:justify-self-end">

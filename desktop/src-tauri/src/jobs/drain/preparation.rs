@@ -186,12 +186,14 @@ pub(super) fn prepare_client_preflight_for_resources(
         remote::reset_unattached_spool(job_id, resources.remote_jobs_directory())?;
         let decoded = remote::decode_import_if_compressed(
             &validated.canonical_path,
+            &source,
+            &validated.fingerprint,
             job_id,
             resources.remote_jobs_directory(),
             || cancellation.ensure_active(),
         )?;
         if let Some(decoded) = decoded.as_ref() {
-            source = crate::media_protocol::open_decoded_media_source(&decoded.path)?;
+            source = decoded.open_source()?;
         }
         let prepared = remote::prepare_imported_client_preflight_with_cancellation(
             remote::ImportedClientPreflightPreparation {
@@ -404,6 +406,8 @@ fn prepare_next_queued_job_impl(
         remote::reset_unattached_spool(&job_id, remote_jobs_directory)?;
         let decoded = remote::decode_import_if_compressed(
             &validated.canonical_path,
+            &source,
+            &validated.fingerprint,
             &job_id,
             remote_jobs_directory,
             || {
@@ -415,7 +419,7 @@ fn prepare_next_queued_job_impl(
             },
         )?;
         if let Some(decoded) = decoded.as_ref() {
-            source = crate::media_protocol::open_decoded_media_source(&decoded.path)?;
+            source = decoded.open_source()?;
         }
         let prepared = remote::prepare_imported_pcm_wav_with_cancellation(
             remote::ImportedPcmWavPreparation {

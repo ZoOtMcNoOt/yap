@@ -18,6 +18,8 @@ _HEALTH_VIEW = HealthView(
         analyst_answers=False,
         coordinator_bundles=False,
         auditor_reports=False,
+        knowledge_connections=False,
+        personal_terminology=False,
     ),
 )
 
@@ -34,6 +36,8 @@ def health(
     analyst_answers: bool = False,
     coordinator_bundles: bool = False,
     auditor_reports: bool = False,
+    knowledge_connections: bool = False,
+    personal_terminology: bool = False,
 ) -> dict[str, object]:
     if (
         not batch_jobs
@@ -46,6 +50,8 @@ def health(
         and not analyst_answers
         and not coordinator_bundles
         and not auditor_reports
+        and not knowledge_connections
+        and not personal_terminology
     ):
         return _HEALTH_VIEW.to_wire()
     return HealthView(
@@ -65,5 +71,7 @@ def health(
             analyst_answers=analyst_answers,
             coordinator_bundles=coordinator_bundles,
             auditor_reports=auditor_reports,
+            knowledge_connections=knowledge_connections,
+            personal_terminology=personal_terminology,
         ),
     ).to_wire()

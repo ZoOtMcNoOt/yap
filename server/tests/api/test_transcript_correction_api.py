@@ -85,9 +85,7 @@ class TranscriptCorrectionApiTests(HealthServerTestCase):
     def test_submit_status_and_cancel_are_bounded_authenticated_routes(self) -> None:
         status, _, response = self._request("/v1/health")
         self.assertEqual(status, 200)
-        self.assertTrue(
-            json.loads(response)["capabilities"]["transcriptCorrection"]
-        )
+        self.assertTrue(json.loads(response)["capabilities"]["transcriptCorrection"])
 
         body = json.dumps(_request(), separators=(",", ":")).encode()
         status, headers, response = self._request(
@@ -135,9 +133,7 @@ class TranscriptCorrectionApiTests(HealthServerTestCase):
             message="Transcript correction request is invalid.",
         )
 
-        status, headers, body = self._request(
-            "/v1/transcript-corrections/missing"
-        )
+        status, headers, body = self._request("/v1/transcript-corrections/missing")
         self.assert_error(
             status,
             headers,

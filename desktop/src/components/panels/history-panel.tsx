@@ -14,6 +14,7 @@ import { groupHistoryByDay } from "@/lib/display-format";
 import { historyRenderWindowSize, renderHistoryWindow } from "@/lib/history-render-window";
 
 export function HistoryPanel({
+  catalogState = "ready",
   entries,
   onCopy,
   onDelete,
@@ -24,8 +25,10 @@ export function HistoryPanel({
   onOpenHelp,
   onPreview,
   onRecover,
+  onRetryCatalog,
   onReveal,
   onSelect,
+  onTranscribe,
   selectedOutputPath,
 }: HistoryPanelProps) {
   const [searchOpen, setSearchOpen] = useState(false);
@@ -79,6 +82,14 @@ export function HistoryPanel({
   return (
     <Card className="surface-workspace-inset min-w-0 bg-card py-0">
       <CardContent className="grid gap-4 p-4 sm:p-5">
+        {catalogState === "loading" ? (
+          <p className="text-sm text-muted-foreground" role="status">Loading transcript history…</p>
+        ) : catalogState === "error" ? (
+          <div className="flex flex-wrap items-center gap-3 text-sm" role="alert">
+            <p>Transcript history could not be loaded. Your saved files are unchanged.</p>
+            {onRetryCatalog ? <Button onClick={onRetryCatalog} size="sm" type="button" variant="outline">Retry history</Button> : null}
+          </div>
+        ) : null}
         {entries.length ? (
           <>
             <div className="flex items-center justify-end">
@@ -160,7 +171,7 @@ export function HistoryPanel({
               )}
             </ScrollArea>
           </>
-        ) : (
+        ) : catalogState === "ready" ? (
           <Empty className="min-h-[260px]">
             <EmptyMedia>
               <FileText />
@@ -170,20 +181,19 @@ export function HistoryPanel({
               <EmptyDescription>
                 Finished transcriptions will appear here, grouped by day.
               </EmptyDescription>
-              {onOpenHelp ? (
-                <Button
-                  className="mt-2 h-auto px-0 text-muted-foreground"
-                  onClick={onOpenHelp}
-                  size="sm"
-                  type="button"
-                  variant="link"
-                >
-                  Learn more
-                </Button>
-              ) : null}
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+                {onTranscribe ? (
+                  <Button onClick={onTranscribe} type="button">Transcribe a recording</Button>
+                ) : null}
+                {onOpenHelp ? (
+                  <Button className="h-auto px-0 text-muted-foreground" onClick={onOpenHelp} size="sm" type="button" variant="link">
+                    Learn more
+                  </Button>
+                ) : null}
+              </div>
             </div>
           </Empty>
-        )}
+        ) : null}
       </CardContent>
     </Card>
   );

@@ -241,6 +241,7 @@ def _item() -> KnowledgeToolItem:
         "TAVI publication is atomic.",
         None,
         None,
+        None,
     )
 
 

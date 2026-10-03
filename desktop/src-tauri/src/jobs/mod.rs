@@ -6,6 +6,8 @@ mod model;
 mod remote;
 mod resources;
 mod schema;
+#[cfg(test)]
+mod test_media;
 
 pub use ledger::JobLedger;
 pub(crate) use ledger::{LidPreflightDispatchFailure, LidPreflightDispatchStart};

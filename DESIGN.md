@@ -1,56 +1,56 @@
 ---
 version: alpha
-name: Yap Warm Workbench
-description: A local-first consumer transcription design system for Yap.
+name: Yap Clear Workbench
+description: A private desktop transcription design system for Yap.
 colors:
-  ink: "#201D19"
-  muted-ink: "#756F66"
-  quiet-ink: "#8A8278"
-  canvas: "#F3F0EA"
-  surface: "#FFFEFA"
-  surface-muted: "#F8F6F1"
-  border: "#E6DFD4"
-  border-soft: "#EEE8DE"
-  primary: "#034F46"
-  primary-hover: "#013F38"
-  primary-soft: "#DFF7ED"
-  accent: "#F0D7FF"
+  ink: "#20242C"
+  muted-ink: "#626977"
+  quiet-ink: "#626977"
+  canvas: "#EEF0F4"
+  surface: "#FCFCFE"
+  surface-muted: "#F4F5F8"
+  border: "#DDE1E9"
+  border-soft: "#E8EBF1"
+  primary: "#5143A0"
+  primary-hover: "#443687"
+  primary-soft: "#E9E5F7"
+  accent: "#E9E5F7"
   success: "#034F46"
   warning: "#B45309"
   danger: "#B91C1C"
 typography:
   headline-lg:
-    fontFamily: Inter
+    fontFamily: ui-sans-serif
     fontSize: 36px
     fontWeight: 650
     lineHeight: 1.15
     letterSpacing: 0
   headline-md:
-    fontFamily: Inter
+    fontFamily: ui-sans-serif
     fontSize: 22px
     fontWeight: 600
     lineHeight: 1.2
     letterSpacing: 0
   body-md:
-    fontFamily: Inter
+    fontFamily: ui-sans-serif
     fontSize: 15px
     fontWeight: 400
     lineHeight: 1.55
     letterSpacing: 0
   body-sm:
-    fontFamily: Inter
+    fontFamily: ui-sans-serif
     fontSize: 13px
     fontWeight: 400
     lineHeight: 1.45
     letterSpacing: 0
   label-md:
-    fontFamily: Inter
+    fontFamily: ui-sans-serif
     fontSize: 13px
     fontWeight: 600
     lineHeight: 1.2
     letterSpacing: 0
   caption:
-    fontFamily: Inter
+    fontFamily: ui-sans-serif
     fontSize: 12px
     fontWeight: 500
     lineHeight: 1.35
@@ -58,7 +58,7 @@ typography:
 rounded:
   sm: 8px
   md: 12px
-  lg: 28px
+  lg: 24px
   full: 9999px
 spacing:
   xs: 4px
@@ -101,9 +101,9 @@ components:
 
 ## Overview
 
-Yap is a local-first transcription app for people with recordings, meetings,
-voice memos, interviews, and video files sitting on their machine. It should
-feel like a polished consumer utility: calm, direct, private, warm, and fast to
+Yap is a private desktop transcription app for people with recordings, meetings,
+voice memos, interviews, and, in the planned format expansion, video files sitting on their machine. It should
+feel like a polished consumer utility: calm, direct, private, clear, and fast to
 understand. The product language borrows practical strategies from Wispr Flow
 and Figma-style tools: sparse navigation, a soft canvas, one generous work
 surface, compact status pills, and document-like transcript surfaces.
@@ -113,27 +113,38 @@ the current file and transcript feel more important than the model, auth state,
 or runner details. Technical setup belongs in a details drawer or secondary
 status area unless something needs attention.
 
+Executable color tokens live in [styles.css](desktop/src/styles.css). Reviewed
+[Mobbin screens, flows, and sections](docs/evidence/ui-completion/2026-10-02-design-references.md) inform reading, citations, and Help disclosure.
+
 Use route labels sparingly but confidently. Users should understand whether work
 is private on this device or running on the org-owned server without the app
 sounding like infrastructure tooling.
 
+See the [current screen review and motion evidence](docs/evidence/design-refresh/2026-10-03/review.md)
+for the shared-system refresh and the remaining native/Wispr research boundaries.
+
 ## Colors
 
-The palette is warm and quiet, with enough contrast to keep the app from feeling
-like a generic beige utility.
+The palette uses cool neutral surfaces and purple actions. Mint belongs to voice
+activity; glass belongs to compact floating controls. Reading surfaces stay opaque.
 
-- **Ink (`#201D19`):** Primary text, transcript text, and important labels.
-- **Canvas (`#F3F0EA`):** App background. It should feel soft without turning
+- **Ink (`#20242C`):** Primary text, transcript text, and important labels.
+- **Canvas (`#EEF0F4`):** App background. It should feel soft without turning
   into a decorative landing page.
-- **Surface (`#FFFEFA`):** Primary panels, cards, transcript editor, and sheets.
-- **Primary Green (`#034F46`):** Main action, local/privacy confidence, success.
-- **Accent Lilac (`#F0D7FF`):** Rare highlight for polish or review affordances;
+- **Surface (`#FCFCFE`):** Primary panels, cards, transcript editor, and sheets.
+- **Primary Purple (`#5143A0`):** Main actions, selected tasks, and focus.
+- **Accent Lavender (`#E9E5F7`):** Review affordances and occasional emphasis;
   never compete with the primary action.
 - **Warning and Danger:** Reserved for setup, auth, or failed transcription.
 
+The [original speech-and-wave mark](desktop/public/yap-mark.svg) is the canonical
+logo source. Desktop installer and browser icons are rasterized from it with the
+locked Tauri CLI; see [icon regeneration](desktop/src-tauri/icons/README.md).
+
 ## Typography
 
-Use Inter for the app shell and operational UI. A serif display treatment is
+Use the system sans-serif stack for the app shell and operational UI. Inter is
+used when installed; Yap does not fetch a font at runtime. A serif display treatment is
 allowed only for the large drop hero headline, where it gives the product a
 friendlier editorial moment without spreading into controls or dense surfaces.
 
@@ -147,16 +158,28 @@ friendlier editorial moment without spreading into controls or dense surfaces.
 
 ## Layout
 
-The primary layout is a warm workbench with one obvious action at a time.
+The primary layout is a clear workbench with one obvious action at a time.
 
-- Empty state: a sparse left rail on desktop, a large tactile drop hero, the
-  queue below it, and a compact transcript workspace beside it on wide screens.
+- Home: recent transcripts or a direct recording action. Transcribe owns the
+  drop zone, queue, and adjacent transcript workspace on wide screens.
 - Running state: the active file card should show progress, elapsed time, and a
   clear cancel/remove path.
-- Done state: the transcript preview becomes the hero; export actions sit close
-  to the transcript, not in a distant toolbar.
+- Done state: readable transcript text with nearby copy/open/export/reveal and a
+  direct correction action. Export saves the original as UTF-8 text to an
+  explicit new destination; the action toolbar wraps without horizontal scroll.
+- Correct: distinguish saved accepted revisions from new suggestions. Reopened
+  revisions remain readable, copyable and exportable offline. Saved-correction
+  export sits beside its copy action, wraps on narrow windows and retains focus
+  on cancellation/retry; it stays distinct from original export. Short columns fit
+  their text on narrow windows, while long transcripts retain bounded scrolling.
 - Settings/status: model, auth, runner, output path, and logs live in a secondary
   area. They should not dominate the first screen.
+- Personalization: trusted personal/team/organization scope selection exposes
+  read-only permissions and keeps drafts bound to one native connection and scope.
+  Preferred spellings live in a readable, paged list with
+  contextual edit/delete actions and an inline form. Failed writes retain the
+  draft; conflicts show the latest saved term before an explicit resolution.
+  Delete uses confirmation; closing or switching Settings does not resubmit work.
 
 Use an 8px rhythm. The Tauri window enforces a minimum of 1122×740 (default
 1122×760; see `desktop/src-tauri/tauri.conf.json`). Layout targets that floor.
@@ -174,7 +197,15 @@ cursor.
 - Use one owner for geometry: either React lays out an in-window surface, or
   Rust/Tauri owns the native window frame.
 - Test motion during the transition, not only after it settles.
-- Respect `prefers-reduced-motion`.
+- Respect `prefers-reduced-motion`, including changes while the app is open.
+- Use the shared 120ms response / 200ms settle tokens. Reveal uses a restrained
+  overshoot; interruptible transitions always settle to the latest state.
+- Animate transform and opacity for island reveal and waveform activity. Sidebar
+  resizing happens once, without continuously reflowing the reading surface.
+- Keep the island blur bounded to its small native surface. Increased contrast
+  or reduced transparency uses an opaque surface; no experimental GPU flags.
+- Stop the waveform clock while hidden or reduced motion is selected.
+- Measure target compositor performance separately from browser fixture checks.
 
 Do not resize native windows from multiple layers, animate hit-area width on
 hover, or use decorative motion that changes the user's target.
@@ -243,3 +274,5 @@ details behind disclosure unless an error requires them.
 - Don't use giant hero copy, marketing sections, nested cards, or decorative
   gradient blobs.
 - Don't use more than one primary accent in the same screen state.
+
+Knowledge Connections uses human topic titles, a bounded directed neighborhood and an equivalent keyboard-readable relationship list. Source authority and proof stay visible during exploration; proposals remain separate. Narrow task navigation scrolls horizontally, and Connections removes repeated panel headings. [Current screens and checks](docs/evidence/knowledge-connections/2026-10-03/verification.md).

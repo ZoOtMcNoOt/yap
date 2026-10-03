@@ -601,7 +601,9 @@ class CuratorTests(unittest.TestCase):
         nested["choices"][0]["message"]["tool_calls"][0]["function"]["arguments"] = (
             "[" * 5_000 + "]" * 5_000
         )
-        with self.assertRaisesRegex(ValueError, "not valid JSON"):
+        # Runtimes with a higher recursion limit can decode this as a list;
+        # it must still be rejected as an invalid decision.
+        with self.assertRaises(ValueError):
             parse_curator_decision(nested)
 
     def test_evidence_hash_binds_every_server_owned_identity_and_byte(self) -> None:

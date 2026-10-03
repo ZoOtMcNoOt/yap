@@ -4,8 +4,8 @@ use crate::stt::{
     error::SttError,
     model::{
         cleanup_stale_download_temps, import_verified_file, metadata_is_link_or_reparse,
-        model_directory_state, verify_sha256, DownloadOperation, DownloadRequest,
-        ModelDirectoryState, ModelInstallState,
+        model_directory_state, verify_artifact as verify_pinned_artifact, DownloadOperation,
+        DownloadRequest, ModelDirectoryState, ModelInstallState,
     },
     nemotron::{cleanup_stale_model_snapshots, Artifact},
 };
@@ -174,7 +174,7 @@ fn verify_artifact(path: &Path, artifact: &Artifact) -> Result<(), SttError> {
     {
         return Err(SttError::ModelCorrupt);
     }
-    verify_sha256(path, artifact.sha256)
+    verify_pinned_artifact(path, artifact.bytes, artifact.sha256, || false)
 }
 
 fn expected_bytes(artifacts: &[Artifact]) -> Result<u64, SttError> {

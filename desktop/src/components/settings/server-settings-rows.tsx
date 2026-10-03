@@ -8,6 +8,16 @@ export function ServerSettingsRows({
 }: {
   server: ServerSettingsDraftController;
 }) {
+  if (server.loadState !== "ready") {
+    return server.loadState === "loading" ? (
+      <p className="py-3 text-sm text-muted-foreground" role="status">Loading server settings…</p>
+    ) : (
+      <div className="grid gap-3 py-3" role="alert">
+        <p className="text-sm">{server.error}</p>
+        <Button className="w-fit" onClick={server.retryLoad} type="button" variant="outline">Retry server settings</Button>
+      </div>
+    );
+  }
   return (
     <>
       <SettingsRow

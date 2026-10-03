@@ -101,6 +101,8 @@ class BatchJobApiTests(BatchJobApiTestCase):
                 "analystAnswers": False,
                 "coordinatorBundles": False,
                 "auditorReports": False,
+                "knowledgeConnections": False,
+                "personalTerminology": False,
             },
         )
 

@@ -238,6 +238,7 @@ pub(crate) async fn start_coordinator_bundle(
     objective: String,
     maximum_items: u8,
     expected_generation_sha256: Option<String>,
+    authority_revision: String,
 ) -> Result<CoordinatorBundleJobView, String> {
     crate::authorization::ensure_main(&window)?;
     let request = CoordinatorRequest::new(objective, maximum_items, expected_generation_sha256)
@@ -246,6 +247,7 @@ pub(crate) async fn start_coordinator_bundle(
         "Coordination bundles require a connected organization server with Coordinator enabled."
             .to_string()
     })?;
+    lease.require_authority_revision(&authority_revision)?;
     let submission = owner.reserve_submission()?;
     let view = lease
         .client()

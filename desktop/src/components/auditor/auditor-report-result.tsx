@@ -1,5 +1,7 @@
 import { Warning } from "@phosphor-icons/react/Warning";
 
+import { SourceCitation } from "@/components/knowledge/source-citation";
+
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { AuditorReport } from "@/auditor";
@@ -24,17 +26,11 @@ export function AuditorReportResult({ report }: { report: AuditorReport }) {
                 Reviewed sources
               </h5>
               {finding.citations.map((citation, citationIndex) => (
-                <div
-                  className="grid gap-1 border-l-2 border-primary/40 pl-3"
+                <SourceCitation
+                  citation={citation}
+                  index={citationIndex}
                   key={`${citation.conceptId}:${citation.sourceRevision}:${citation.charStart}:${citation.charEnd}`}
-                >
-                  <p className="break-all text-xs leading-5 text-muted-foreground">
-                    Source {citationIndex + 1} · {citation.conceptId} · characters {citation.charStart}–{citation.charEnd}
-                  </p>
-                  <blockquote className="whitespace-pre-wrap break-words text-sm leading-6">
-                    {citation.text}
-                  </blockquote>
-                </div>
+                />
               ))}
             </div>
           </article>

@@ -15,6 +15,8 @@ class ServerCapabilities:
     analyst_answers: bool
     coordinator_bundles: bool
     auditor_reports: bool
+    knowledge_connections: bool
+    personal_terminology: bool
 
     def to_wire(self) -> dict[str, bool]:
         return {
@@ -29,6 +31,8 @@ class ServerCapabilities:
             "analystAnswers": self.analyst_answers,
             "coordinatorBundles": self.coordinator_bundles,
             "auditorReports": self.auditor_reports,
+            "knowledgeConnections": self.knowledge_connections,
+            "personalTerminology": self.personal_terminology,
         }
 
 

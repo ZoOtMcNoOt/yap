@@ -25,21 +25,24 @@ function qualityLabel(option: FixedBatchLanguageOption) {
   return "Transcription ready";
 }
 
-function preferenceDetail(status: PrimaryLanguageStatus | null) {
-  if (!status) return "Checking the verified language catalog.";
+function preferenceDetail(status: PrimaryLanguageStatus | null, localLanguages: string[]) {
+  if (!status) return "Checking available languages.";
   if (status.preferenceIssue === "incompatibleSchema") {
     return "This setting was written by a newer Yap version and was preserved unchanged.";
   }
   if (status.preferenceIssue === "invalidStoredPreference") {
     return "The saved setting is invalid. Confirm a current language to replace it safely.";
   }
-  if (!status.capabilityCatalog) {
+  if (!status.capabilityCatalog && !localLanguages.length) {
     if (status.lastKnownCapabilities) {
       return "The server is unavailable. Its last verified language catalog is retained for explanation only; reconnect before choosing a language.";
     }
     return "Connect to a ready transcription server to load the current language list.";
   }
   if (status.confirmedLanguageAvailable === false) {
+    if (status.confirmedLanguageBcp47 && localLanguages.includes(status.confirmedLanguageBcp47)) {
+      return "Available for local dictation. Choose a supported recording language in Transcribe for server jobs.";
+    }
     return "The saved language is unavailable on the current server. Choose a supported replacement.";
   }
   if (status.requiresConfirmation && status.suggestedLanguageBcp47) {
@@ -48,26 +51,32 @@ function preferenceDetail(status: PrimaryLanguageStatus | null) {
   if (status.requiresConfirmation) {
     return "Choose and confirm the default for short fixed-language recordings.";
   }
-  return "Used for short fixed-language recordings. Per-recording choices never rewrite it.";
+  return "Used for local dictation and supported fixed-language recordings. Per-recording choices never rewrite it.";
 }
 
 export function PrimaryLanguageSetting({
   error,
+  localLanguages = [],
   onConfirm,
   pending,
   status,
 }: {
   error: string;
+  localLanguages?: string[];
   onConfirm: (languageBcp47: string) => void;
   pending: boolean;
   status: PrimaryLanguageStatus | null;
 }) {
   const labelId = useId();
   const errorId = useId();
-  const options = useMemo(
-    () => fixedBatchLanguageOptions(status?.capabilityCatalog),
-    [status?.capabilityCatalog],
-  );
+  const options = useMemo(() => {
+    const serverOptions = fixedBatchLanguageOptions(status?.capabilityCatalog);
+    return [
+      ...serverOptions.map((option) => ({ ...option, detail: qualityLabel(option) })),
+      ...localLanguages.filter((tag) => !serverOptions.some((option) => option.languageBcp47 === tag))
+        .map((languageBcp47) => ({ languageBcp47, detail: "On-device dictation" })),
+    ];
+  }, [localLanguages, status?.capabilityCatalog]);
   const optionIds = useMemo(
     () => new Set(options.map((option) => option.languageBcp47)),
     [options],
@@ -82,7 +91,7 @@ export function PrimaryLanguageSetting({
   const confirmed = status?.confirmedLanguageBcp47;
   const canConfirm = Boolean(
     selection &&
-    status?.capabilityCatalog &&
+    status &&
     status.preferenceIssue !== "incompatibleSchema" &&
     (status.requiresConfirmation || selection !== confirmed || status.preferenceIssue),
   );
@@ -90,7 +99,7 @@ export function PrimaryLanguageSetting({
 
   return (
     <SettingsRow
-      detail={preferenceDetail(status)}
+      detail={preferenceDetail(status, localLanguages)}
       error={error || undefined}
       errorId={errorId}
       label="Primary language"
@@ -117,7 +126,7 @@ export function PrimaryLanguageSetting({
             <SelectGroup>
               {options.map((option) => (
                 <SelectItem key={option.languageBcp47} value={option.languageBcp47}>
-                  {formatLanguageTag(option.languageBcp47)} · {qualityLabel(option)}
+                  {formatLanguageTag(option.languageBcp47)} · {option.detail}
                 </SelectItem>
               ))}
             </SelectGroup>

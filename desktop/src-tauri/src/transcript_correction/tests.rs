@@ -295,3 +295,74 @@ fn accepted_request_without_local_ownership_is_cancelled_and_observed_terminal()
         .unwrap();
     server.join().unwrap();
 }
+
+#[test]
+fn timed_out_recovery_retains_its_capacity_until_the_filesystem_worker_exits() {
+    let readers = Arc::new(tokio::sync::Semaphore::new(1));
+    let worker_readers = readers.clone();
+    let (release, blocked) = std::sync::mpsc::channel();
+    tauri::async_runtime::block_on(async move {
+        let result = run_recovery_read(
+            PathBuf::from("source"),
+            worker_readers.clone(),
+            Duration::from_millis(20),
+            move |_| {
+                blocked.recv_timeout(Duration::from_secs(2)).unwrap();
+                Err("controlled read finished".into())
+            },
+        )
+        .await;
+        assert!(result.unwrap_err().contains("timed out"));
+        assert_eq!(worker_readers.available_permits(), 0);
+        let result = run_recovery_read(
+            PathBuf::from("other-source"),
+            worker_readers.clone(),
+            Duration::from_secs(1),
+            |_| panic!("a second filesystem worker was admitted"),
+        )
+        .await;
+        assert!(result.unwrap_err().contains("being read"));
+        release.send(()).unwrap();
+        let acquired = tokio::time::timeout(
+            Duration::from_secs(1),
+            worker_readers.clone().acquire_owned(),
+        )
+        .await
+        .unwrap()
+        .unwrap();
+        drop(acquired);
+        let result = run_recovery_read(
+            PathBuf::from("source"),
+            worker_readers,
+            Duration::from_secs(1),
+            |_| Err("a fresh read was admitted".into()),
+        )
+        .await;
+        assert_eq!(result.unwrap_err(), "a fresh read was admitted");
+    });
+}
+
+#[test]
+fn recovery_cannot_admit_a_relative_path_or_an_external_plaintext_file() {
+    assert!(
+        revision::read_accepted_transcript_correction(std::path::Path::new("transcript.txt"))
+            .is_err()
+    );
+    let directory = std::env::temp_dir().join(format!(
+        "yap-unowned-correction-recovery-{}-{}",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    ));
+    std::fs::create_dir(&directory).unwrap();
+    let path = directory.join("transcript.txt");
+    std::fs::write(&path, "An external file is not a committed Yap transcript.").unwrap();
+    assert!(revision::read_accepted_transcript_correction(&path).is_err());
+    assert_eq!(
+        std::fs::read_to_string(path).unwrap(),
+        "An external file is not a committed Yap transcript."
+    );
+    std::fs::remove_dir_all(directory).unwrap();
+}

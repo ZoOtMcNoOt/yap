@@ -23,8 +23,15 @@ pub(super) fn classify_artifacts(root: &Path, artifacts: &[Artifact]) -> Artifac
 }
 
 pub(super) fn classify_artifact(path: &Path, artifact: &Artifact) -> ArtifactInstallState {
-    if !path.exists() {
-        return ArtifactInstallState::Missing;
+    match std::fs::symlink_metadata(path) {
+        Ok(metadata)
+            if metadata.is_file()
+                && !crate::bounded_file::metadata_is_link_or_reparse(&metadata) => {}
+        Ok(_) => return ArtifactInstallState::Corrupted,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            return ArtifactInstallState::Missing
+        }
+        Err(_) => return ArtifactInstallState::Corrupted,
     }
 
     match marker_state(path, artifact) {
@@ -38,8 +45,9 @@ pub(super) fn marker_state(path: &Path, artifact: &Artifact) -> MarkerState {
     let Ok(contents) = crate::bounded_file::read_text(&marker, 256) else {
         return MarkerState::Missing;
     };
-    let Ok(metadata) = std::fs::metadata(path) else {
-        return MarkerState::Missing;
+    let Ok((_artifact, metadata)) = crate::bounded_file::open_regular_file(path, artifact.bytes)
+    else {
+        return MarkerState::Stale;
     };
     let Ok(marker_metadata) = std::fs::metadata(&marker) else {
         return MarkerState::Missing;
@@ -77,15 +85,18 @@ pub(super) fn verify_or_trust(path: &Path, artifact: &Artifact) -> Result<(), St
     if marker_state(path, artifact) == MarkerState::Valid {
         return Ok(());
     }
-    verify_sha_and_mark(path, artifact)
+    verify_sha_and_mark(path, artifact, || false)
 }
 
-pub(super) fn verify_sha_and_mark(path: &Path, artifact: &Artifact) -> Result<(), SttError> {
-    let metadata = std::fs::metadata(path).map_err(|_| SttError::ModelMissing)?;
-    if metadata.len() != artifact.bytes {
-        return Err(SttError::ModelCorrupt);
+pub(super) fn verify_sha_and_mark(
+    path: &Path,
+    artifact: &Artifact,
+    is_cancelled: impl Fn() -> bool,
+) -> Result<(), SttError> {
+    crate::stt::model::verify_artifact(path, artifact.bytes, artifact.sha256, &is_cancelled)?;
+    if is_cancelled() {
+        return Err(SttError::ModelInstallCancelled);
     }
-    crate::stt::model::verify_sha256(path, artifact.sha256)?;
     write_verified_marker(path, artifact)
 }
 
@@ -137,7 +148,7 @@ where
             return Err(SttError::ModelInstallCancelled);
         }
         let path = root.join(artifact.file);
-        verify_sha_and_mark(&path, artifact)?;
+        verify_sha_and_mark(&path, artifact, is_cancelled)?;
         verified_bytes = verified_bytes
             .checked_add(artifact.bytes)
             .ok_or(SttError::ModelCorrupt)?;

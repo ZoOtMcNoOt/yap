@@ -66,9 +66,7 @@ class PostgresCuratorPublisher:
         with self._connection_factory() as connection:
             remaining = deadline - time.monotonic()
             if remaining <= 0:
-                raise KnowledgeToolTimedOut(
-                    "curator publication deadline elapsed"
-                )
+                raise KnowledgeToolTimedOut("curator publication deadline elapsed")
             operation_cancellation = threading.Event()
             if cancellation.is_set():
                 operation_cancellation.set()
@@ -143,7 +141,7 @@ class PostgresCuratorPublisher:
                 purpose="knowledge.read",
                 agent_id="curator",
                 agent_capabilities=frozenset({"knowledge.propose"}),
-                proposal_type="summary",
+                proposal_type=request.proposal_type,
                 proposed_content=request.reviewed_content,
                 source_citations=request.source_citations,
                 expected_generation_sha256=request.expected_generation_sha256,

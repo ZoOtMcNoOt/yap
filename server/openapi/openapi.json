@@ -30,6 +30,10 @@
     {
       "name": "live",
       "description": "Authenticated private WebSocket transport interface; live ASR inference remains unavailable."
+    },
+    {
+      "name": "terminology",
+      "description": "Model-independent personal vocabulary owned by the authenticated organization identity."
     }
   ],
   "security": [
@@ -961,7 +965,6 @@
         }
       }
     },
-
     "/v1/auditor-reports": {
       "post": {
         "tags": [
@@ -2191,6 +2194,609 @@
             "$ref": "#/components/responses/AuthenticationUnavailableResponse"
           }
         }
+      }
+    },
+    "/v1/terminology": {
+      "get": {
+        "tags": [
+          "terminology"
+        ],
+        "operationId": "listTerminology",
+        "summary": "List authorized terms for an explicit locale",
+        "description": "Authenticated identity and operator-owned policy determine ownership, team visibility and management. Requests select only an authorized scope; they never supply tenant, subject, role or management grants. Versioned writes preserve history and existing job snapshots.",
+        "x-yap-runtime-status": "Implemented when explicit authenticated terminology Postgres configuration verifies",
+        "responses": {
+          "200": {
+            "description": "Terminology operation succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TerminologyPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          }
+        },
+        "parameters": [
+          {
+            "name": "locale",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:und|[a-z]{2,3}(?:-[A-Z][a-z]{3})?(?:-[A-Z]{2}|-[0-9]{3})?)$"
+            }
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+            }
+          },
+          {
+            "name": "scopeId",
+            "in": "query",
+            "required": true,
+            "description": "Select one scope returned by authenticated discovery. The server derives its owner and management authority.",
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:personal|organization|team:[A-Za-z0-9][A-Za-z0-9._:-]{0,127})$",
+              "minLength": 1,
+              "maxLength": 133
+            }
+          }
+        ],
+        "x-yap-runtime-owner": "Authenticated scoped terminology ledger"
+      },
+      "post": {
+        "tags": [
+          "terminology"
+        ],
+        "operationId": "createTerminology",
+        "summary": "Create or replay an owner-bound term",
+        "description": "Authenticated identity and operator-owned policy determine ownership, team visibility and management. Requests select only an authorized scope; they never supply tenant, subject, role or management grants. Versioned writes preserve history and existing job snapshots.",
+        "x-yap-runtime-status": "Implemented when explicit authenticated terminology Postgres configuration verifies",
+        "responses": {
+          "201": {
+            "description": "Terminology operation succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TerminologyRecord"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TerminologyCreate"
+              }
+            }
+          }
+        },
+        "x-yap-runtime-owner": "Authenticated scoped terminology ledger",
+        "parameters": [
+          {
+            "name": "scopeId",
+            "in": "query",
+            "required": true,
+            "description": "Select one scope returned by authenticated discovery. The server derives its owner and management authority.",
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:personal|organization|team:[A-Za-z0-9][A-Za-z0-9._:-]{0,127})$",
+              "minLength": 1,
+              "maxLength": 133
+            }
+          }
+        ]
+      }
+    },
+    "/v1/terminology/{recordId}": {
+      "parameters": [
+        {
+          "name": "recordId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "terminology"
+        ],
+        "operationId": "readTerminology",
+        "summary": "Read a current term",
+        "description": "Authenticated identity and operator-owned policy determine ownership, team visibility and management. Requests select only an authorized scope; they never supply tenant, subject, role or management grants. Versioned writes preserve history and existing job snapshots.",
+        "x-yap-runtime-status": "Implemented when explicit authenticated terminology Postgres configuration verifies",
+        "responses": {
+          "200": {
+            "description": "Terminology operation succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TerminologyRecord"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          }
+        },
+        "x-yap-runtime-owner": "Authenticated scoped terminology ledger",
+        "parameters": [
+          {
+            "name": "scopeId",
+            "in": "query",
+            "required": true,
+            "description": "Select one scope returned by authenticated discovery. The server derives its owner and management authority.",
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:personal|organization|team:[A-Za-z0-9][A-Za-z0-9._:-]{0,127})$",
+              "minLength": 1,
+              "maxLength": 133
+            }
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "terminology"
+        ],
+        "operationId": "editTerminology",
+        "summary": "Append a term version with optimistic concurrency",
+        "description": "Authenticated identity and operator-owned policy determine ownership, team visibility and management. Requests select only an authorized scope; they never supply tenant, subject, role or management grants. Versioned writes preserve history and existing job snapshots.",
+        "x-yap-runtime-status": "Implemented when explicit authenticated terminology Postgres configuration verifies",
+        "responses": {
+          "200": {
+            "description": "Terminology operation succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TerminologyRecord"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TerminologyEdit"
+              }
+            }
+          }
+        },
+        "x-yap-runtime-owner": "Authenticated scoped terminology ledger",
+        "parameters": [
+          {
+            "name": "scopeId",
+            "in": "query",
+            "required": true,
+            "description": "Select one scope returned by authenticated discovery. The server derives its owner and management authority.",
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:personal|organization|team:[A-Za-z0-9][A-Za-z0-9._:-]{0,127})$",
+              "minLength": 1,
+              "maxLength": 133
+            }
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "terminology"
+        ],
+        "operationId": "deleteTerminology",
+        "summary": "Append a term tombstone with optimistic concurrency",
+        "description": "Authenticated identity and operator-owned policy determine ownership, team visibility and management. Requests select only an authorized scope; they never supply tenant, subject, role or management grants. Versioned writes preserve history and existing job snapshots.",
+        "x-yap-runtime-status": "Implemented when explicit authenticated terminology Postgres configuration verifies",
+        "responses": {
+          "200": {
+            "description": "Terminology operation succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TerminologyDeleted"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TerminologyDelete"
+              }
+            }
+          }
+        },
+        "x-yap-runtime-owner": "Authenticated scoped terminology ledger",
+        "parameters": [
+          {
+            "name": "scopeId",
+            "in": "query",
+            "required": true,
+            "description": "Select one scope returned by authenticated discovery. The server derives its owner and management authority.",
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:personal|organization|team:[A-Za-z0-9][A-Za-z0-9._:-]{0,127})$",
+              "minLength": 1,
+              "maxLength": 133
+            }
+          }
+        ]
+      }
+    },
+    "/v1/terminology/scopes": {
+      "get": {
+        "tags": [
+          "terminology"
+        ],
+        "operationId": "discoverTerminologyScopes",
+        "summary": "Discover authorized terminology scopes and viewing or management permissions",
+        "description": "Authenticated identity and operator-owned policy determine ownership, team visibility and management. Requests select only an authorized scope; they never supply tenant, subject, role or management grants. Versioned writes preserve history and existing job snapshots.",
+        "x-yap-runtime-status": "Implemented when explicit authenticated terminology Postgres configuration verifies",
+        "responses": {
+          "200": {
+            "description": "Terminology operation succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TerminologyScopes"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          }
+        },
+        "parameters": [],
+        "x-yap-runtime-owner": "Authenticated scoped terminology ledger"
+      }
+    },
+    "/v1/knowledge/concepts": {
+      "get": {
+        "tags": [
+          "knowledge"
+        ],
+        "operationId": "browseKnowledgeTopics",
+        "summary": "Browse reviewed topics",
+        "description": "Trusted organization identity selects the permission-filtered active knowledge generation. No model is invoked. Search is literal and bounded; connections contain incoming and outgoing canonical relationships with authority and source proof. Agent proposals are excluded. Responses are limited to 65536 bytes. Unknown and unavailable topics share a 404. Refresh topics on generation conflict.",
+        "x-yap-runtime-status": "Implemented when explicit authenticated knowledge connections Postgres configuration verifies",
+        "responses": {
+          "200": {
+            "description": "Permission-filtered reviewed knowledge.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeConceptPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          }
+        },
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 128
+            }
+          }
+        ],
+        "x-yap-runtime-owner": "Authenticated permission-safe knowledge connections"
+      }
+    },
+    "/v1/knowledge/connections": {
+      "get": {
+        "tags": [
+          "knowledge"
+        ],
+        "operationId": "readKnowledgeConnections",
+        "summary": "Read one topic\u2019s reviewed connections",
+        "description": "Trusted organization identity selects the permission-filtered active knowledge generation. No model is invoked. Search is literal and bounded; connections contain incoming and outgoing canonical relationships with authority and source proof. Agent proposals are excluded. Responses are limited to 65536 bytes. Unknown and unavailable topics share a 404. Refresh topics on generation conflict.",
+        "x-yap-runtime-status": "Implemented when explicit authenticated knowledge connections Postgres configuration verifies",
+        "responses": {
+          "200": {
+            "description": "Permission-filtered reviewed knowledge.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeConnections"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          }
+        },
+        "parameters": [
+          {
+            "name": "conceptId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512
+            }
+          },
+          {
+            "name": "generationSha256",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        ],
+        "x-yap-runtime-owner": "Authenticated permission-safe knowledge connections"
+      }
+    },
+    "/v1/knowledge/connection-proposal": {
+      "get": {
+        "tags": [
+          "knowledge"
+        ],
+        "operationId": "inspectKnowledgeConnectionProposal",
+        "summary": "Inspect an owned persisted connection proposal",
+        "description": "Read one current proposed Curator connection belonging to the authenticated principal. Reauthorize both exact source citations and validate journal identity; unknown, hidden, discarded, wrong-type and foreign-owner references share 404. Changed knowledge returns 409. No model, canonical approval or generation activation occurs. Response is limited to 65536 bytes.",
+        "x-yap-runtime-status": "Implemented when explicit authenticated knowledge connections Postgres configuration verifies",
+        "responses": {
+          "200": {
+            "description": "Permission-filtered reviewed knowledge.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeConnectionProposal"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          }
+        },
+        "parameters": [
+          {
+            "name": "proposalId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          }
+        ],
+        "x-yap-runtime-owner": "Authenticated permission-safe knowledge connections"
       }
     }
   },
@@ -3561,6 +4167,9 @@
           },
           {
             "$ref": "#/components/schemas/CuratorReviewedStudentAnswerRequest"
+          },
+          {
+            "$ref": "#/components/schemas/CuratorReviewedConnectionRequest"
           }
         ]
       },
@@ -6282,7 +6891,9 @@
           "curatorProposals",
           "analystAnswers",
           "coordinatorBundles",
-          "auditorReports"
+          "auditorReports",
+          "personalTerminology",
+          "knowledgeConnections"
         ],
         "properties": {
           "batchJobs": {
@@ -6328,6 +6939,13 @@
           "auditorReports": {
             "type": "boolean",
             "description": "True only when authenticated noncanonical review-required Auditor reports are configured."
+          },
+          "personalTerminology": {
+            "type": "boolean"
+          },
+          "knowledgeConnections": {
+            "type": "boolean",
+            "description": "True when authenticated model-free reviewed knowledge connections are explicitly configured."
           }
         }
       },
@@ -7111,6 +7729,708 @@
             }
           }
         ]
+      },
+      "TerminologyCreate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "mutationId",
+          "locale",
+          "canonicalForm",
+          "variants",
+          "sensitivity"
+        ],
+        "properties": {
+          "mutationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "locale": {
+            "type": "string",
+            "pattern": "^(?:und|[a-z]{2,3}(?:-[A-Z][a-z]{3})?(?:-[A-Z]{2}|-[0-9]{3})?)$"
+          },
+          "canonicalForm": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512,
+            "pattern": "^[^\\s\\x00\\r\\n](?:[^\\x00\\r\\n]*[^\\s\\x00\\r\\n])?$"
+          },
+          "variants": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 64,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512,
+              "pattern": "^[^\\s\\x00\\r\\n](?:[^\\x00\\r\\n]*[^\\s\\x00\\r\\n])?$"
+            }
+          },
+          "sensitivity": {
+            "type": "string",
+            "enum": [
+              "public",
+              "internal",
+              "confidential",
+              "restricted"
+            ]
+          }
+        }
+      },
+      "TerminologyEdit": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "expectedVersion",
+          "canonicalForm",
+          "variants",
+          "sensitivity"
+        ],
+        "properties": {
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9223372036854775806
+          },
+          "canonicalForm": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512,
+            "pattern": "^[^\\s\\x00\\r\\n](?:[^\\x00\\r\\n]*[^\\s\\x00\\r\\n])?$"
+          },
+          "variants": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 64,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512,
+              "pattern": "^[^\\s\\x00\\r\\n](?:[^\\x00\\r\\n]*[^\\s\\x00\\r\\n])?$"
+            }
+          },
+          "sensitivity": {
+            "type": "string",
+            "enum": [
+              "public",
+              "internal",
+              "confidential",
+              "restricted"
+            ]
+          }
+        }
+      },
+      "TerminologyDelete": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "expectedVersion"
+        ],
+        "properties": {
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9223372036854775806
+          }
+        }
+      },
+      "TerminologyRecord": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "scopeId",
+          "recordId",
+          "locale",
+          "canonicalForm",
+          "variants",
+          "sensitivity",
+          "version",
+          "changedAt"
+        ],
+        "properties": {
+          "recordId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+          },
+          "locale": {
+            "type": "string",
+            "pattern": "^(?:und|[a-z]{2,3}(?:-[A-Z][a-z]{3})?(?:-[A-Z]{2}|-[0-9]{3})?)$"
+          },
+          "canonicalForm": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512,
+            "pattern": "^[^\\s\\x00\\r\\n](?:[^\\x00\\r\\n]*[^\\s\\x00\\r\\n])?$"
+          },
+          "variants": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 64,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512,
+              "pattern": "^[^\\s\\x00\\r\\n](?:[^\\x00\\r\\n]*[^\\s\\x00\\r\\n])?$"
+            }
+          },
+          "sensitivity": {
+            "type": "string",
+            "enum": [
+              "public",
+              "internal",
+              "confidential",
+              "restricted"
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "changedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "scopeId": {
+            "type": "string",
+            "pattern": "^(?:personal|organization|team:[A-Za-z0-9][A-Za-z0-9._:-]{0,127})$",
+            "minLength": 1,
+            "maxLength": 133
+          }
+        }
+      },
+      "TerminologyPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "scopeId",
+          "records",
+          "nextCursor"
+        ],
+        "properties": {
+          "records": {
+            "type": "array",
+            "maxItems": 10,
+            "items": {
+              "$ref": "#/components/schemas/TerminologyRecord"
+            }
+          },
+          "nextCursor": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "scopeId": {
+            "type": "string",
+            "pattern": "^(?:personal|organization|team:[A-Za-z0-9][A-Za-z0-9._:-]{0,127})$",
+            "minLength": 1,
+            "maxLength": 133
+          }
+        }
+      },
+      "TerminologyDeleted": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "scopeId",
+          "recordId",
+          "version",
+          "deleted"
+        ],
+        "properties": {
+          "recordId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 2
+          },
+          "deleted": {
+            "const": true
+          },
+          "scopeId": {
+            "type": "string",
+            "pattern": "^(?:personal|organization|team:[A-Za-z0-9][A-Za-z0-9._:-]{0,127})$",
+            "minLength": 1,
+            "maxLength": 133
+          }
+        }
+      },
+      "TerminologyScope": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "scopeId",
+          "kind",
+          "label",
+          "canManage"
+        ],
+        "properties": {
+          "scopeId": {
+            "type": "string",
+            "pattern": "^(?:personal|organization|team:[A-Za-z0-9][A-Za-z0-9._:-]{0,127})$",
+            "minLength": 1,
+            "maxLength": 133
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "personal",
+              "team",
+              "organization"
+            ]
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "canManage": {
+            "type": "boolean"
+          }
+        }
+      },
+      "TerminologyScopes": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "scopes"
+        ],
+        "properties": {
+          "scopes": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 34,
+            "items": {
+              "$ref": "#/components/schemas/TerminologyScope"
+            }
+          }
+        }
+      },
+      "KnowledgeConnectionNode": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "conceptId",
+          "type",
+          "title",
+          "sourcePath",
+          "sourceRevision",
+          "contentSha256"
+        ],
+        "properties": {
+          "conceptId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "type": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "sourcePath": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "sourceRevision": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "contentSha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        }
+      },
+      "KnowledgeConnectionCitation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sourcePath",
+          "sourceRevision",
+          "contentSha256",
+          "charStart",
+          "charEnd"
+        ],
+        "properties": {
+          "sourcePath": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "sourceRevision": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "contentSha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "charStart": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 999999
+          },
+          "charEnd": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 1000000
+          }
+        }
+      },
+      "KnowledgeConnectionRelationship": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "relationshipId",
+          "sourceConceptId",
+          "targetConceptId",
+          "type",
+          "authority",
+          "citation"
+        ],
+        "properties": {
+          "relationshipId": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "sourceConceptId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "targetConceptId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "type": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "authority": {
+            "type": "string",
+            "enum": [
+              "asserted",
+              "human_confirmed",
+              "derived"
+            ]
+          },
+          "citation": {
+            "$ref": "#/components/schemas/KnowledgeConnectionCitation"
+          }
+        }
+      },
+      "KnowledgeConceptPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "generationSha256",
+          "permissionHash",
+          "authorizationHash",
+          "hasMore",
+          "nodes"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "generationSha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "permissionHash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "authorizationHash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "hasMore": {
+            "type": "boolean"
+          },
+          "nodes": {
+            "type": "array",
+            "maxItems": 12,
+            "items": {
+              "$ref": "#/components/schemas/KnowledgeConnectionNode"
+            }
+          }
+        }
+      },
+      "KnowledgeConnections": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "generationSha256",
+          "permissionHash",
+          "authorizationHash",
+          "hasMore",
+          "conceptId",
+          "nodes",
+          "relationships"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "generationSha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "permissionHash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "authorizationHash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "hasMore": {
+            "type": "boolean"
+          },
+          "conceptId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "nodes": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 17,
+            "items": {
+              "$ref": "#/components/schemas/KnowledgeConnectionNode"
+            }
+          },
+          "relationships": {
+            "type": "array",
+            "maxItems": 16,
+            "items": {
+              "$ref": "#/components/schemas/KnowledgeConnectionRelationship"
+            }
+          }
+        }
+      },
+      "CuratorReviewedConnectionRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "submissionId",
+          "trigger",
+          "expectedGenerationSha256",
+          "reviewedContent",
+          "sourceCitations"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "submissionId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+          },
+          "trigger": {
+            "type": "string",
+            "const": "reviewed-connection"
+          },
+          "expectedGenerationSha256": {
+            "$ref": "#/components/schemas/Sha256"
+          },
+          "reviewedContent": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "description": "Strict JSON ConnectionCandidate: schema_version 1, distinct source_concept_id/target_concept_id, relationship_type and rationale. No authority or canonical claims. Both input and canonical escaped content are bounded."
+          },
+          "sourceCitations": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "uniqueItems": true,
+            "items": {
+              "$ref": "#/components/schemas/CuratorProposalCitation"
+            }
+          }
+        }
+      },
+      "KnowledgeConnectionProposal": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "generationSha256",
+          "permissionHash",
+          "authorizationHash",
+          "proposalId",
+          "status",
+          "candidate",
+          "sources"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "generationSha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "permissionHash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "authorizationHash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "proposalId": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "status": {
+            "type": "string",
+            "const": "proposed"
+          },
+          "candidate": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "schemaVersion",
+              "sourceConceptId",
+              "targetConceptId",
+              "relationshipType",
+              "rationale"
+            ],
+            "properties": {
+              "schemaVersion": {
+                "type": "integer",
+                "const": 1
+              },
+              "sourceConceptId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 512
+              },
+              "targetConceptId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 512
+              },
+              "relationshipType": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128,
+                "pattern": "^[!-~]+$"
+              },
+              "rationale": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000
+              }
+            }
+          },
+          "sources": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "node",
+                "citation",
+                "text"
+              ],
+              "properties": {
+                "node": {
+                  "$ref": "#/components/schemas/KnowledgeConnectionNode"
+                },
+                "citation": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "conceptId",
+                    "sourceRevision",
+                    "contentSha256",
+                    "charStart",
+                    "charEnd"
+                  ],
+                  "properties": {
+                    "conceptId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 512
+                    },
+                    "sourceRevision": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 512
+                    },
+                    "contentSha256": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{64}$"
+                    },
+                    "charStart": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 1000000
+                    },
+                    "charEnd": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 1000000
+                    }
+                  }
+                },
+                "text": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1024
+                }
+              }
+            }
+          }
+        }
       }
     }
   }

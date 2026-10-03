@@ -5,6 +5,7 @@ import { X as XIcon } from "@phosphor-icons/react/X";
 import { Dialog as DialogPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
+import { useModalFocusReturn } from "@/components/ui/use-modal-focus-return"
 import { Button } from "@/components/ui/button"
 
 function Dialog({
@@ -39,10 +40,13 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
+  onOpenAutoFocus,
+  onCloseAutoFocus,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
 }) {
+  const focusReturn = useModalFocusReturn({ onOpenAutoFocus, onCloseAutoFocus });
   return (
     <DialogPortal data-slot="dialog-portal">
       <DialogOverlay />
@@ -53,6 +57,7 @@ function DialogContent({
           className
         )}
         {...props}
+        {...focusReturn}
       >
         {children}
         {showCloseButton && (

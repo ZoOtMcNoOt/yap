@@ -1,0 +1,18 @@
+{
+  "environment": "Linux headless Chromium, 4 vCPU; settled recording island, synthetic audio level",
+  "sampleMilliseconds": 3000,
+  "barStyleMutations": 594,
+  "barStyleProperties": [
+    "height",
+    "transform"
+  ],
+  "longTasksMilliseconds": [],
+  "delta": {
+    "LayoutCount": 0,
+    "RecalcStyleCount": 66,
+    "LayoutDuration": 0,
+    "ScriptDuration": 0.020448,
+    "TaskDuration": 0.089614
+  },
+  "qualification": "Browser diagnostic only; not Windows compositor, GPU, battery, or frame-rate qualification."
+}

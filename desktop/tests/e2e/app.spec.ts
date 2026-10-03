@@ -10,7 +10,7 @@ test("main app renders the home surface", async ({ page }) => {
 });
 
 
-test("browser preview keeps its startup status and auth labels", async ({ page }) => {
+test("browser preview keeps its startup status and local setup labels", async ({ page }) => {
   await page.goto("/");
 
   await expect(page.getByText("Preview", { exact: true })).toBeVisible();
@@ -50,53 +50,36 @@ test("Settings and Help remain one mutually exclusive modal surface", async ({ p
   await expect(page.getByRole("dialog")).toHaveCount(1);
 });
 
-// The first version of the welcome card had a button that opened Settings and
-// a gate that never cleared without a server. This drives the whole flow the
-// way a person does: pick, confirm, card yields — and asserts both that the
-// LOCAL confirmation path was taken (catalogRevision null: there is no server
-// catalog to name) and that Settings never opened.
-test("first run takes over the window, proves a dictation, and never opens Settings", async ({ page }) => {
+test("first run saves a language and shows readiness without claiming verified dictation", async ({ page }) => {
   await installQueuedServerBridge(page, "not_set", { primaryLanguageUnconfirmed: true });
   await page.goto("/");
 
   const takeover = page.getByTestId("first-run-welcome");
   await expect(takeover).toBeVisible();
-  // The OS-locale suggestion arrives preselected from the local catalog.
   await expect(page.getByTestId("first-run-language")).toContainText("English");
-
-  await takeover.getByRole("button", { name: "Confirm", exact: true }).click();
-
-  // Phase two: the practice field is the mic proof — dictation types into the
-  // focused field, so text arriving in the box IS the successful dictation.
-  const practice = page.getByTestId("first-run-practice");
-  await expect(practice).toBeVisible();
-  await practice.fill("Yap is running entirely on this computer.");
-
-  // Phase three celebrates with the privacy line and shoves toward real apps.
-  await expect(page.getByText("Nothing left this computer.")).toBeVisible();
-  await takeover.getByRole("button", { name: "Start using Yap", exact: true }).click();
+  await takeover.getByRole("button", { name: "Confirm language", exact: true }).click();
+  await expect(takeover.getByRole("heading", { name: "Choose how to transcribe" })).toBeFocused();
+  await expect(takeover).toContainText("Transcription engine ready");
+  await expect(takeover).toContainText("Set your microphone and shortcut in Settings, then try your first dictation.");
+  await expect(page.getByTestId("first-run-practice")).toHaveCount(0);
+  await expect(page.getByText("Nothing left this computer.")).toHaveCount(0);
+  await takeover.getByRole("button", { name: "Explore Yap", exact: true }).click();
   await expect(takeover).toHaveCount(0);
   await expect(page.getByText("Welcome back")).toBeVisible();
 
-  const confirmations = await languageCalls(page);
-  expect(confirmations).toHaveLength(1);
-  expect(confirmations[0]).toMatchObject({
+  expect(await languageCalls(page)).toEqual([{
     args: { catalogRevision: null, languageBcp47: "en-US" },
     command: "confirm_primary_language",
-  });
-
+  }]);
   await expect(page.getByRole("dialog", { name: "Settings" })).toHaveCount(0);
-  // The bridge answers the hidden-history reconciliation, so the startup
-  // cleanup warning must never haunt the surface again.
-  await expect(page.getByText("Hidden transcript cleanup could not be completed."))
-    .toHaveCount(0);
+  await expect(page.getByText("Hidden transcript cleanup could not be completed.")).toHaveCount(0);
 });
 
 test("Transcribe and Help describe the organization server queue", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Transcribe", exact: true }).click();
 
-  await expect(page.getByText("Add recordings to your organization's transcription queue."))
+  await expect(page.getByText("Add recordings to your organization's transcription queue.", { exact: true }))
     .toBeVisible();
   // The browser preview cannot complete a first run, so the takeover stays
   // out of it and the ordinary import hero shows directly.
@@ -104,7 +87,7 @@ test("Transcribe and Help describe the organization server queue", async ({ page
   await expect(page.getByText("Drop recordings here")).toBeVisible();
   await expect(page.getByText("Private on this device", { exact: true })).toHaveCount(0);
   await expect(page.getByText("Drop files to run", { exact: true })).toHaveCount(0);
-  await expect(page.getByText("Choose files above to add them to the organization server queue.", { exact: true }))
+  await expect(page.getByText("Set up transcription above to start adding recordings.", { exact: true }))
     .toBeVisible();
 
   await page.locator('[data-sidebar="menu-button"]').filter({ hasText: /^Help$/ }).click();

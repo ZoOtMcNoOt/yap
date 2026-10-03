@@ -512,7 +512,7 @@ finally {{
                 nonlocal target_connections
                 with target_connections_lock:
                     target_connections += 1
-                    if target_connections >= 33:
+                    if target_connections >= 32:
                         target_capacity_reached.set()
                 while payload := self.request.recv(4096):
                     self.request.sendall(payload)
@@ -561,27 +561,31 @@ finally {{
                     if process.poll() is not None:
                         stderr = process.stderr.read() if process.stderr else ""
                         self.fail(f"Loopback proxy exited early: {stderr}")
+                    client = None
                     try:
-                        with socket.create_connection(
-                            ("127.0.0.1", proxy_port),
-                            timeout=0.2,
-                        ) as client:
-                            client.sendall(b"bounded-loopback")
-                            client.shutdown(socket.SHUT_WR)
-                            self.assertEqual(client.recv(4096), b"bounded-loopback")
+                        client = socket.create_connection(
+                            ("127.0.0.1", proxy_port), timeout=0.2,
+                        )
+                        client.sendall(b"bounded-loopback")
+                        self.assertEqual(client.recv(4096), b"bounded-loopback")
                         break
                     except OSError:
+                        if client is not None:
+                            client.close()
                         if time.monotonic() >= deadline:
                             self.fail("Loopback proxy did not become ready.")
                         time.sleep(0.05)
-                pinned_clients = [
-                    socket.create_connection(
-                        ("127.0.0.1", proxy_port),
-                        timeout=1,
-                    )
-                    for _ in range(32)
-                ]
+                # Keep the verified readiness connection as one of the 32
+                # slots. Closing it before filling the pool races its teardown.
+                pinned_clients = [client]
                 try:
+                    for _ in range(31):
+                        pinned = socket.create_connection(
+                            ("127.0.0.1", proxy_port), timeout=1,
+                        )
+                        pinned_clients.append(pinned)
+                        pinned.sendall(b"x")
+                        self.assertEqual(pinned.recv(1), b"x")
                     self.assertTrue(target_capacity_reached.wait(timeout=3))
                     with socket.create_connection(
                         ("127.0.0.1", proxy_port),

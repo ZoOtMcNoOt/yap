@@ -258,6 +258,10 @@ class AgentModelAcceptanceTests(unittest.TestCase):
             _fixtures(fixtures)
         proposal_case["expectedArguments"]["source_citations"] = source_citations
         proposal_case["expectedArguments"]["proposal_type"] = "relationship"
+        with self.assertRaisesRegex(ValueError, "expected arguments"):
+            _fixtures(fixtures)
+        proposal_case["expectedArguments"]["proposal_type"] = "summary"
+        proposal_case["expectedArguments"]["proposed_content"] = "Changed source summary."
         with self.assertRaisesRegex(ValueError, "cited proposal"):
             _fixtures(fixtures)
 

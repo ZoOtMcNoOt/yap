@@ -1,17 +1,17 @@
 import { Repeat } from "@phosphor-icons/react/Repeat";
 import { ShieldWarning } from "@phosphor-icons/react/ShieldWarning";
-import { XCircle } from "@phosphor-icons/react/XCircle";
 
 import { AuditorReportResult } from "@/components/auditor/auditor-report-result";
 import { useAuditorReport } from "@/components/auditor/use-auditor-report";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { RequestCancelButton } from "@/components/ui/request-cancel-button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 
-export function AuditorReportComposer({ available }: { available: boolean }) {
-  const auditor = useAuditorReport({ available });
+export function AuditorReportComposer({ available, authorityRevision }: { available: boolean; authorityRevision: string }) {
+  const auditor = useAuditorReport({ available, authorityRevision });
   return (
     <Card className="border-primary/25 bg-[var(--surface-transcript)] py-0 shadow-none">
       <CardHeader className="p-4 pb-2">
@@ -48,9 +48,7 @@ export function AuditorReportComposer({ available }: { available: boolean }) {
           </p>
           <div className="flex flex-wrap gap-2">
             {auditor.active ? (
-              <Button onClick={() => void auditor.cancel()} type="button" variant="secondary">
-                <XCircle data-icon="inline-start" /> Cancel
-              </Button>
+              <RequestCancelButton onCancel={auditor.cancel} requestId={auditor.view?.requestId} />
             ) : (
               <Button disabled={!auditor.canRun} type="submit">Review knowledge</Button>
             )}

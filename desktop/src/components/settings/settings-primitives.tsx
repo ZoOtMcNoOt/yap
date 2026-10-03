@@ -7,16 +7,16 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 
-// Progressive disclosure for a settings section: the rows a new user needs
-// stay in view, everything expert-only collapses behind one Advanced toggle.
-// defaultOpen exists so a lifecycle that needs attention (broken model,
-// pending install) is never hidden behind a closed disclosure.
-export function AdvancedSettings({
+// Keep the main settings visible and group optional details by task.
+// A lifecycle that needs attention can open its disclosure by default.
+export function SettingsDisclosure({
   children,
   defaultOpen = false,
+  label = "Advanced",
 }: {
   children: ReactNode;
   defaultOpen?: boolean;
+  label?: string;
 }) {
   return (
     <Collapsible defaultOpen={defaultOpen}>
@@ -25,7 +25,7 @@ export function AdvancedSettings({
         type="button"
       >
         <CaretDown className="size-4 transition-transform group-data-[state=open]:rotate-180" />
-        Advanced
+        {label}
       </CollapsibleTrigger>
       <CollapsibleContent className="pt-2">{children}</CollapsibleContent>
     </Collapsible>

@@ -1,5 +1,4 @@
-import gsap from "gsap";
-import { useEffect, useRef, type ElementType } from "react";
+import { type ElementType } from "react";
 import { UserCircle as CircleUserRound } from "@phosphor-icons/react/UserCircle";
 import { SquaresFour as Grid2X2 } from "@phosphor-icons/react/SquaresFour";
 import { Question as HelpCircle } from "@phosphor-icons/react/Question";
@@ -44,56 +43,17 @@ export function AppSidebar({
   onAction: (action: RailAction) => void;
 }) {
   const { state } = useSidebar();
-  const brandIconRef = useRef<HTMLDivElement>(null);
-  const wordmarkRef = useRef<HTMLSpanElement>(null);
-
-  useEffect(() => {
-    const icon = brandIconRef.current;
-    const wordmark = wordmarkRef.current;
-
-    if (!icon || !wordmark) return;
-
-    const collapsed = state === "collapsed";
-    gsap.killTweensOf(icon);
-    gsap.killTweensOf(wordmark);
-
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      gsap.set(icon, {
-        scale: collapsed ? 0.96 : 1,
-      });
-      gsap.set(wordmark, {
-        autoAlpha: collapsed ? 0 : 1,
-        x: collapsed ? -6 : 0,
-      });
-      return;
-    }
-
-    gsap.to(icon, {
-      duration: 0.14,
-      ease: "power2.out",
-      overwrite: "auto",
-      scale: collapsed ? 0.96 : 1,
-    });
-    gsap.to(wordmark, {
-      autoAlpha: collapsed ? 0 : 1,
-      duration: 0.12,
-      ease: "power2.out",
-      overwrite: "auto",
-      x: collapsed ? -6 : 0,
-    });
-
-    return () => {
-      gsap.killTweensOf(icon);
-      gsap.killTweensOf(wordmark);
-    };
-  }, [state]);
 
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="gap-0 px-3 pb-0 pt-4">
         <div className="flex flex-col">
           <div className="flex h-7 items-center gap-2 px-1 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
-            <SidebarTrigger aria-label="Toggle sidebar" className="bg-secondary" size="icon-xs" />
+            <SidebarTrigger
+              aria-label="Toggle sidebar"
+              className="bg-secondary"
+              size="icon-xs"
+            />
             <Button
               aria-label="Account"
               className="text-muted-foreground group-data-[collapsible=icon]:hidden"
@@ -107,12 +67,16 @@ export function AppSidebar({
           </div>
 
           <div className="flex h-[3.75rem] items-center gap-2 overflow-hidden px-1">
-            <div ref={brandIconRef} className="size-6 shrink-0 will-change-transform">
-              <AppIcon className="size-6 rounded-md" />
+            <div className="size-7 shrink-0">
+              <AppIcon className="size-7" />
             </div>
             <span
-              ref={wordmarkRef}
-              className="min-w-0 truncate text-xl font-semibold tracking-tight will-change-[opacity,transform]"
+              className="brand-wordmark min-w-0 truncate text-xl font-semibold tracking-tight"
+              style={{
+                opacity: state === "collapsed" ? 0 : 1,
+                transform:
+                  state === "collapsed" ? "translateX(-6px)" : "translateX(0)",
+              }}
             >
               Yap
             </span>

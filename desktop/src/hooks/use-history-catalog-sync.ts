@@ -1,6 +1,6 @@
 import { isTauri } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -106,6 +106,11 @@ export function useHistoryCatalogSync({
   captureNativeHistoryReconciliation,
   onSaved,
 }: HistoryCatalogSyncPorts) {
+  const [catalogState, setCatalogState] = useState<"loading" | "ready" | "error">(
+    () => isTauri() ? "loading" : "ready",
+  );
+  const retryRef = useRef<() => void>(() => undefined);
+  const retryCatalog = useCallback(() => retryRef.current(), []);
   const portsRef = useRef({
     captureNativeHistoryReconciliation,
     onSaved,
@@ -132,6 +137,7 @@ export function useHistoryCatalogSync({
       ),
       ({ apply, catalog, entries }) => {
         if (!active) return;
+        setCatalogState("ready");
         const maintenanceWarning = acceptMaintenanceWarnings(
           catalog.maintenanceWarnings,
           shownMaintenanceWarnings,
@@ -168,7 +174,10 @@ export function useHistoryCatalogSync({
     );
 
     const reportRefreshFailure = () => {
-      if (active) toast.error(historySyncWarning);
+      if (active) {
+        setCatalogState("error");
+        toast.error(historySyncWarning);
+      }
     };
     const requestRefresh = () => {
       if (!startupReady) return;
@@ -197,12 +206,18 @@ export function useHistoryCatalogSync({
         toast.warning(historySubscriptionWarning);
       }
       startupReady = true;
+      retryRef.current = () => {
+        setCatalogState("loading");
+        requestRefresh();
+      };
       await coordinator.refresh();
     })().catch(reportRefreshFailure);
 
     return () => {
       active = false;
+      retryRef.current = () => undefined;
       disposeSubscriptions?.();
     };
   }, []);
+  return { catalogState, retryCatalog };
 }

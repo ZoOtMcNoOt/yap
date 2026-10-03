@@ -342,6 +342,8 @@ class ContractTests(unittest.TestCase):
             analyst_answers=False,
             coordinator_bundles=False,
             auditor_reports=False,
+            knowledge_connections=False,
+            personal_terminology=False,
         )
         view = HealthView(
             service="yap-server",
@@ -365,6 +367,8 @@ class ContractTests(unittest.TestCase):
                 "analystAnswers": False,
                 "coordinatorBundles": False,
                 "auditorReports": False,
+                "knowledgeConnections": False,
+                "personalTerminology": False,
             },
         )
         self.assertEqual(

@@ -57,7 +57,10 @@ fn owned_job_spool_entry(name: &str, job_id: &str) -> bool {
 fn owned_decoded_import(name: &str, job_id: &str) -> bool {
     name.strip_prefix(&format!(".{job_id}-decoded-"))
         .and_then(|suffix| suffix.strip_suffix(".wav"))
-        .is_some_and(|pid| !pid.is_empty() && pid.bytes().all(|byte| byte.is_ascii_digit()))
+        .is_some_and(|suffix| {
+            decimal_pair(suffix)
+                || (!suffix.is_empty() && suffix.bytes().all(|byte| byte.is_ascii_digit()))
+        })
 }
 
 fn remove_owned_decoded_import(source: &Path) -> Result<(), String> {

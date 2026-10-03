@@ -166,7 +166,7 @@ impl RemoteJobDrain {
             .record_remote_error(
                 job_id,
                 "PREPROCESSING_FAILED",
-                "The selected recording could not be prepared for private-server transcription.",
+                "The recording could not be prepared. Check the file, then select it again.",
                 None,
                 updated_at_ms,
             )

@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useConnectionAuthority } from "@/hooks/use-connection-authority";
+
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   cancelCoordinatorBundle,
@@ -55,10 +57,11 @@ function validObjective(value: string) {
     && [...objective].some((character) => /[\p{L}\p{N}]/u.test(character));
 }
 
-export function useCoordinatorBundle({ available }: { available: boolean }) {
+export function useCoordinatorBundle({ available, authorityRevision }: { available: boolean; authorityRevision: string }) {
   const [objective, setObjective] = useState("");
   const [view, setView] = useState<CoordinatorBundleJobView>();
   const [starting, setStarting] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState("");
   const activeRequestRef = useRef<string | undefined>(undefined);
   const epochRef = useRef(0);
@@ -66,28 +69,31 @@ export function useCoordinatorBundle({ available }: { available: boolean }) {
   const cancelPendingRef = useRef(false);
   const lastSubmittedObjectiveRef = useRef("");
 
-  const abandonActiveRequest = useCallback((showError: boolean) => {
+  const abandonActiveRequest = useCallback(() => {
     const requestId = activeRequestRef.current;
     activeRequestRef.current = undefined;
-    if (!requestId) return;
-    void cancelCoordinatorBundle(requestId).catch((cause) => {
-      if (showError) setError(cause instanceof Error ? cause.message : String(cause));
-    });
+    if (!requestId || cancelPendingRef.current) return;
+    void cancelCoordinatorBundle(requestId).catch(() => undefined);
   }, []);
 
   useEffect(() => () => {
     epochRef.current += 1;
-    abandonActiveRequest(false);
+    abandonActiveRequest();
   }, [abandonActiveRequest]);
 
-  useEffect(() => {
-    if (available) return;
+  const invalidate = useCallback((changed: boolean) => {
     epochRef.current += 1;
-    abandonActiveRequest(false);
+    abandonActiveRequest();
+    if (changed) {
+      setObjective("");
+      lastSubmittedObjectiveRef.current = "";
+    }
     setView(undefined);
-    setStarting(false);
     setError("");
-  }, [abandonActiveRequest, available]);
+  }, [abandonActiveRequest]);
+  const ownsDraft = useConnectionAuthority(available, authorityRevision, invalidate);
+  const current = available && ownsDraft;
+  const currentView = current ? view : undefined;
 
   const pollUntilTerminal = useCallback(async (requestId: string, epoch: number) => {
     while (activeRequestRef.current === requestId) {
@@ -117,8 +123,9 @@ export function useCoordinatorBundle({ available }: { available: boolean }) {
   const submit = useCallback(async (requestedObjective: string) => {
     const normalized = requestedObjective.trim();
     if (
-      !available
+      !current
       || !validObjective(normalized)
+      || cancelPendingRef.current
       || startPendingRef.current
       || activeRequestRef.current
     ) return;
@@ -129,7 +136,7 @@ export function useCoordinatorBundle({ available }: { available: boolean }) {
     setError("");
     lastSubmittedObjectiveRef.current = normalized;
     try {
-      const next = await startCoordinatorBundle(normalized, maximumItems, null);
+      const next = await startCoordinatorBundle(normalized, maximumItems, null, authorityRevision);
       if (epochRef.current !== epoch) {
         if (coordinatorBundleIsActive(next.status)) {
           void cancelCoordinatorBundle(next.requestId).catch(() => undefined);
@@ -149,9 +156,9 @@ export function useCoordinatorBundle({ available }: { available: boolean }) {
       }
     } finally {
       startPendingRef.current = false;
-      if (epochRef.current === epoch) setStarting(false);
+      setStarting(false);
     }
-  }, [available, pollUntilTerminal]);
+  }, [authorityRevision, current, pollUntilTerminal]);
 
   const run = useCallback(() => submit(objective), [objective, submit]);
   const retry = useCallback(
@@ -164,6 +171,7 @@ export function useCoordinatorBundle({ available }: { available: boolean }) {
     if (!requestId || cancelPendingRef.current) return;
     const epoch = epochRef.current;
     cancelPendingRef.current = true;
+    setCancelling(true);
     try {
       const next = await cancelCoordinatorBundle(requestId);
       if (epochRef.current !== epoch) return;
@@ -175,26 +183,26 @@ export function useCoordinatorBundle({ available }: { available: boolean }) {
       }
     } finally {
       cancelPendingRef.current = false;
+      setCancelling(false);
     }
   }, []);
 
-  const active = starting || (view ? coordinatorBundleIsActive(view.status) : false);
-  const statusLine = useMemo(
-    () => coordinatorStatusLine({ available, starting, view }),
-    [available, starting, view],
-  );
+  const active = starting || cancelling || (currentView ? coordinatorBundleIsActive(currentView.status) : false);
+  const statusLine = cancelling
+    ? "Waiting for cancellation acknowledgement…"
+    : coordinatorStatusLine({ available, starting, view: currentView });
 
   return {
     active,
-    bundle: view?.status === "complete" ? view.proposalBundle ?? undefined : undefined,
-    canRun: available && validObjective(objective) && !active,
+    bundle: currentView?.status === "complete" ? currentView.proposalBundle ?? undefined : undefined,
+    canRun: current && validObjective(objective) && !active,
     cancel,
-    error,
-    objective,
+    error: current ? error : "",
+    objective: ownsDraft ? objective : "",
     retry,
     run,
     setObjective,
     statusLine,
-    view,
+    view: currentView,
   };
 }

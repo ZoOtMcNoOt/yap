@@ -440,7 +440,7 @@ describe("Yap desktop shell", () => {
         archivistIngestions: false,
         analystAnswers: false,
         coordinatorBundles: false,
-        auditorReports: false,
+        auditorReports: false, knowledgeConnections: false, personalTerminology: false,
         curatorProposals: false,
         studentQuestions: false,
         batchJobs: false,

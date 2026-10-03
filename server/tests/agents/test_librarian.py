@@ -195,7 +195,9 @@ class _DeadlineAuditor(_Auditor):
 
 
 class LibrarianContractTests(unittest.TestCase):
-    def test_request_wire_is_exact_and_server_authority_is_not_caller_owned(self) -> None:
+    def test_request_wire_is_exact_and_server_authority_is_not_caller_owned(
+        self,
+    ) -> None:
         value = {
             "schemaVersion": 1,
             "searchText": "crash safe transcript",
@@ -290,6 +292,7 @@ class LibrarianContractTests(unittest.TestCase):
                     text=_item().text,
                     relationship_type=None,
                     target_concept_id=None,
+                    relationship_authority=None,
                 ),
             ),
             output_budget_exhausted=False,
@@ -349,7 +352,9 @@ class LibrarianServiceTests(unittest.TestCase):
         self.assertEqual(auditor.records[0]["outcome"], "succeeded")
         self.assertEqual(auditor.records[0]["result_count"], 1)
 
-    def test_no_match_is_indistinguishable_and_never_returns_evidence_bytes(self) -> None:
+    def test_no_match_is_indistinguishable_and_never_returns_evidence_bytes(
+        self,
+    ) -> None:
         auditor = _Auditor()
         empty = _evidence(items=())
         view = self._service(reader=_Reader(empty), auditor=auditor).query(
@@ -404,9 +409,7 @@ class LibrarianServiceTests(unittest.TestCase):
         self.assertFalse(worker.is_alive())
         self.assertEqual(results[0].status, "cancelled")
         self.assertEqual(reader.calls, [])
-        self.assertEqual(
-            admission.calls[-2:], ["cancel", "acknowledge-cancellation"]
-        )
+        self.assertEqual(admission.calls[-2:], ["cancel", "acknowledge-cancellation"])
 
     def test_active_database_cancellation_is_contained_before_return(self) -> None:
         admission = _Admission()
@@ -457,9 +460,7 @@ class LibrarianServiceTests(unittest.TestCase):
                 self.assertIsNone(view.evidence)
                 self.assertNotIn("private", repr(view.to_wire()))
 
-        with self.assertRaisesRegex(
-            LibrarianContainmentError, "evidence conversion"
-        ):
+        with self.assertRaisesRegex(LibrarianContainmentError, "evidence conversion"):
             self._service(reader=_Reader(error=ValueError("corrupt row"))).query(
                 _request(),
                 principal=_principal(),

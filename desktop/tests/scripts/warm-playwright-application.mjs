@@ -19,7 +19,7 @@ export default async function warmPlaywrightApplicationBeforeTests(config) {
     throw new Error("Playwright application warmup requires a project baseURL.");
   }
 
-  const browser = await chromium.launch();
+  const browser = await chromium.launch(config.projects[0]?.use?.launchOptions);
   try {
     const page = await browser.newPage();
     await warmPlaywrightApplication(page, baseURL);

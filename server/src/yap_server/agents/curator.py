@@ -21,6 +21,9 @@ from yap_server.knowledge.knowledge_tool_contract import (
     KnowledgeToolCancelled,
     KnowledgeToolTimedOut,
     ProposalCitation,
+    ProposalType,
+    MAX_CONNECTION_PROPOSAL_CHARACTERS,
+    canonical_connection_proposal,
     validate_bounded_text,
 )
 from yap_server.knowledge.postgres_knowledge_retrieval import (
@@ -48,7 +51,7 @@ _MAXIMUM_STUDENT_CITATION_CHARACTERS = 8_192
 _MAXIMUM_EVIDENCE_CHARACTERS = 8_192
 _MAXIMUM_CONCEPT_ITEMS = 100
 _MAXIMUM_CONCEPT_CHARACTERS = 1_000_000
-_TRIGGERS = {"explicit-proposal", "reviewed-student-answer"}
+_TRIGGERS = {"explicit-proposal", "reviewed-student-answer", "reviewed-connection"}
 
 
 @dataclass(frozen=True, slots=True)
@@ -163,19 +166,22 @@ class CuratorRequest:
         _bounded_content(
             self.reviewed_content,
             field="curator reviewed content",
-            maximum=_MAXIMUM_REVIEWED_CONTENT_CHARACTERS,
+            maximum=(
+                MAX_CONNECTION_PROPOSAL_CHARACTERS
+                if self.trigger == "reviewed-connection"
+                else _MAXIMUM_REVIEWED_CONTENT_CHARACTERS
+            ),
         )
         if (
             not isinstance(self.source_citations, tuple)
             or not 1 <= len(self.source_citations) <= _MAXIMUM_SOURCE_CITATIONS
             or any(
-                not isinstance(item, ProposalCitation)
-                for item in self.source_citations
+                not isinstance(item, ProposalCitation) for item in self.source_citations
             )
         ):
             raise ValueError("curator source citations are invalid")
         if (
-            self.trigger == "explicit-proposal"
+            self.trigger != "reviewed-student-answer"
             and self.student_question is not None
         ) or (
             self.trigger == "reviewed-student-answer"
@@ -185,8 +191,7 @@ class CuratorRequest:
                     CuratorReviewedStudentQuestion,
                 )
                 or len(self.source_citations) != 1
-                or self.source_citations[0]
-                != self.student_question.source_citation
+                or self.source_citations[0] != self.student_question.source_citation
             )
         ):
             raise ValueError("curator trigger authority is invalid")
@@ -199,8 +204,7 @@ class CuratorRequest:
             raise ValueError("curator source citations are invalid") from error
         if (
             citations != self.source_citations
-            or len({_citation_identity(item) for item in citations})
-            != len(citations)
+            or len({_citation_identity(item) for item in citations}) != len(citations)
             or any(
                 item.char_end - item.char_start
                 > (
@@ -215,6 +219,17 @@ class CuratorRequest:
             or _has_overlapping_citations(citations)
         ):
             raise ValueError("curator source citations are invalid")
+
+        if self.trigger == "reviewed-connection":
+            content, citations = canonical_connection_proposal(
+                self.reviewed_content, citations, self.expected_generation_sha256
+            )
+            object.__setattr__(self, "reviewed_content", content)
+            object.__setattr__(self, "source_citations", citations)
+
+    @property
+    def proposal_type(self) -> ProposalType:
+        return "relationship" if self.trigger == "reviewed-connection" else "summary"
 
     @classmethod
     def from_wire(cls, value: object) -> CuratorRequest:
@@ -492,8 +507,7 @@ def validate_curator_evidence(
         not isinstance(evidence, CuratorEvidence)
         or evidence.generation_sha256 != request.expected_generation_sha256
         or evidence.evidence_sha256 != curator_evidence_sha256(evidence)
-        or tuple(item.citation for item in evidence.items)
-        != request.source_citations
+        or tuple(item.citation for item in evidence.items) != request.source_citations
     ):
         raise ValueError("curator evidence differs from the request")
     if request.student_question is not None:

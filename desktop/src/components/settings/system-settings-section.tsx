@@ -1,6 +1,6 @@
 import { useId } from "react";
 
-import { AdvancedSettings, SettingsGroup, SettingsRow } from "@/components/settings/settings-primitives";
+import { SettingsDisclosure, SettingsGroup, SettingsRow } from "@/components/settings/settings-primitives";
 import { ServerSettingsRows } from "@/components/settings/server-settings-rows";
 import type { FallbackLifecycleActionId, FallbackLifecycleProjection } from "@/components/settings/settings-lifecycle";
 import type { ServerSettingsDraftController } from "@/components/settings/use-server-settings-draft";
@@ -134,8 +134,10 @@ export function SystemSettingsSection({
           ))}
         </div>
       </SettingsRow>
-      <AdvancedSettings defaultOpen={advancedNeedsAttention}>
+      <SettingsDisclosure label="Organization server">
         <ServerSettingsRows server={server} />
+      </SettingsDisclosure>
+      <SettingsDisclosure defaultOpen={advancedNeedsAttention}>
         <SettingsRow
           detail={
             liveActive
@@ -278,7 +280,7 @@ export function SystemSettingsSection({
             )}
           </div>
         </SettingsRow>
-      </AdvancedSettings>
+      </SettingsDisclosure>
     </SettingsGroup>
   );
 }

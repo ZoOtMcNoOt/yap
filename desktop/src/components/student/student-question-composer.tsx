@@ -1,24 +1,32 @@
 import { Repeat } from "@phosphor-icons/react/Repeat";
-import { XCircle } from "@phosphor-icons/react/XCircle";
 
 import { CuratorProposalComposer } from "@/components/curator/curator-proposal-composer";
 import { StudentQuestionResult } from "@/components/student/student-question-result";
 import { useStudentQuestion } from "@/components/student/use-student-question";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { RequestCancelButton } from "@/components/ui/request-cancel-button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import type { LibrarianEvidenceItem } from "@/librarian";
 
 export function StudentQuestionComposer({
   available,
+  authorityRevision,
   curatorAvailable,
   generationSha256,
   item,
   onClose,
 }: {
   available: boolean;
+  authorityRevision: string;
   curatorAvailable: boolean;
   generationSha256: string;
   item: LibrarianEvidenceItem;
@@ -33,17 +41,21 @@ export function StudentQuestionComposer({
   return (
     <Card className="border-primary/25 bg-[var(--surface-transcript)] py-0 shadow-none">
       <CardHeader className="p-4 pb-2">
-        <CardTitle className="text-base">Create a source-cited learning prompt</CardTitle>
+        <CardTitle className="text-base">
+          Create a source-cited learning prompt
+        </CardTitle>
         <CardDescription className="break-all leading-5">
-          Student will use only the current reviewed meeting source: {item.conceptId}
+          Student will use only the current reviewed meeting source:{" "}
+          {item.conceptId}
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-3 p-4 pt-2">
         {!available ? (
           <Alert>
             <AlertDescription>
-              Learning prompts need your connected organization server with Student enabled.
-              Knowledge search and local controls remain available.
+              Learning prompts need your connected organization server with
+              Student enabled. Knowledge search and local controls remain
+              available.
             </AlertDescription>
           </Alert>
         ) : null}
@@ -55,7 +67,10 @@ export function StudentQuestionComposer({
             void student.run();
           }}
         >
-          <label className="text-sm font-medium" htmlFor="student-learning-topic">
+          <label
+            className="text-sm font-medium"
+            htmlFor="student-learning-topic"
+          >
             What should the prompt help you remember?
           </label>
           <Input
@@ -68,21 +83,26 @@ export function StudentQuestionComposer({
             value={student.topic}
           />
           <p className="text-xs leading-5 text-muted-foreground">
-            Student returns one question with exact support from this source. Do not include a question mark.
+            Student returns one question with exact support from this source. Do
+            not include a question mark.
           </p>
           <div className="flex flex-wrap gap-2">
             {student.active ? (
-              <Button onClick={() => void student.cancel()} type="button" variant="secondary">
-                <XCircle data-icon="inline-start" />
-                Cancel
-              </Button>
+              <RequestCancelButton
+                onCancel={student.cancel}
+                requestId={student.view?.requestId}
+              />
             ) : (
               <Button disabled={!student.canRun} type="submit">
                 Create prompt
               </Button>
             )}
             {!student.active && student.view ? (
-              <Button onClick={() => void student.retry()} type="button" variant="secondary">
+              <Button
+                onClick={() => void student.retry()}
+                type="button"
+                variant="secondary"
+              >
                 <Repeat data-icon="inline-start" />
                 Retry
               </Button>
@@ -93,14 +113,19 @@ export function StudentQuestionComposer({
           </div>
         </form>
 
-        <div aria-live="polite" className="flex items-center gap-2 text-sm leading-6 text-muted-foreground">
+        <div
+          aria-live="polite"
+          className="flex items-center gap-2 text-sm leading-6 text-muted-foreground"
+        >
           {student.active ? <Spinner aria-hidden="true" /> : null}
           <p>{student.statusLine}</p>
         </div>
 
         {student.error ? (
           <Alert variant="destructive">
-            <AlertDescription>{student.error} Knowledge search and local controls are unchanged.</AlertDescription>
+            <AlertDescription>
+              {student.error} Knowledge search and local controls are unchanged.
+            </AlertDescription>
           </Alert>
         ) : null}
 
@@ -110,6 +135,7 @@ export function StudentQuestionComposer({
             {student.view.questions[0] ? (
               <CuratorProposalComposer
                 available={curatorAvailable}
+                authorityRevision={authorityRevision}
                 generationSha256={student.view.generationSha256}
                 question={student.view.questions[0]}
               />

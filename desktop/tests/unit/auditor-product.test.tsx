@@ -55,7 +55,7 @@ describe("Auditor product contract", () => {
 
   it("routes audit focus through the native owner without renderer credentials", async () => {
     const requestId = completeView.requestId;
-    await startAuditorReport("Helios release limit", 3, null);
+    await startAuditorReport("Helios release limit", 3, null, "1");
     await auditorReportStatus(requestId);
     await cancelAuditorReport(requestId);
 
@@ -64,6 +64,7 @@ describe("Auditor product contract", () => {
         focus: "Helios release limit",
         maximumFindings: 3,
         expectedGenerationSha256: null,
+        authorityRevision: "1",
       }],
       ["auditor_report_status", { requestId }],
       ["cancel_auditor_report", { requestId }],

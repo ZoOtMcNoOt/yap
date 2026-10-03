@@ -30,7 +30,7 @@
       "files": [
         {
           "path": "desktop/src-tauri/src/audio/preprocess.rs",
-          "sha256": "a818fff040dd2631eac29230867f5bab3ca458179cfd50fd1b0d4af3e22b313a",
+          "sha256": "c4840de3751cfd798cb75ac25bb4b42d14e020cc36b0d8615c680ea3e99ecaae",
           "derivedFrom": "Sources/LiveAudioLevelNormalizer.swift"
         },
         {
@@ -45,17 +45,17 @@
         },
         {
           "path": "desktop/src/components/live/live-overlay-views.tsx",
-          "sha256": "cedd5f4994537fca650951654ef20452d967be4fd1cf8f8953d900b196538dc8",
+          "sha256": "b7d97e769355472d2c6d6cbcbd6c7316f69489addb61f80d3b439f3bd40e7d55",
           "derivedFrom": "Sources/RecordingOverlay.swift"
         },
         {
           "path": "desktop/src/components/live/live-overlay.tsx",
-          "sha256": "bb17ca56489eca9456661182acb43aa9f09255aa621f0f891cd9d92fab4398ab",
+          "sha256": "6c02c1ab19dd8226f81d634b79b0918eff1b5c7901444084ae2b960aef17d839",
           "derivedFrom": "Sources/RecordingOverlay.swift"
         },
         {
           "path": "desktop/src/components/live/live-waveform.tsx",
-          "sha256": "8d657227c1b4326260b7090e3527805f2180793edefd4cf58b6722ebd858a8d1",
+          "sha256": "156647690fbeafb3ee14d69ff93a46e1b051e5d947824a2538f5a67cb531c130",
           "derivedFrom": "Sources/RecordingOverlay.swift"
         },
         {

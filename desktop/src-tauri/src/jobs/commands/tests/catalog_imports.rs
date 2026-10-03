@@ -631,7 +631,7 @@ fn create_imports_rejects_media_outside_the_admitted_container_set() {
     // MP3 is admitted now and decoded during preparation, so the rejection case
     // has to be a container this build cannot decode at all. A malformed file
     // with an admitted extension is refused later, by the decoder.
-    let source = dir.join("meeting.m4a");
+    let source = dir.join("meeting.webm");
     fs::write(&source, b"not admitted before remote preparation").unwrap();
     let jobs = RecordingJobs::from_ledger(JobLedger::open_in_memory().unwrap(), &dir);
     let media = MediaOwner::new();
@@ -641,9 +641,100 @@ fn create_imports_rejects_media_outside_the_admitted_container_set() {
         .unwrap_err();
 
     assert_eq!(error.code, "REMOTE_MEDIA_UNSUPPORTED");
-    assert!(error.message.contains("WAV and MP3"));
+    assert!(error
+        .message
+        .contains("WAV, MP3, FLAC, Ogg Vorbis and AAC-LC in M4A/MP4"));
     assert!(jobs.snapshot(&media, 1_001).unwrap().is_empty());
 
     drop(media);
     fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
+fn flac_import_retains_native_selection_and_catalog_authority() {
+    let dir = temp_dir("create-flac-import");
+    let source = dir.join("meeting.FLAC");
+    let fixture = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/fixtures/tone-44k-stereo.flac");
+    let original = fs::read(fixture).unwrap();
+    fs::write(&source, &original).unwrap();
+    let jobs = RecordingJobs::from_ledger(JobLedger::open_in_memory().unwrap(), &dir);
+    let media = MediaOwner::new();
+    let created = jobs
+        .create_imports(&media, vec![source.clone()], 1_000)
+        .unwrap();
+    assert_eq!(created.len(), 1);
+    assert_eq!(created[0].status, RecordingJobStatus::Preflighting);
+    assert_eq!(
+        created[0].source_path.as_deref(),
+        source.canonicalize().unwrap().to_str()
+    );
+    assert!(created[0].playback_path.is_some());
+    let record = jobs.ledger().get_job(&created[0].id).unwrap().unwrap();
+    assert!(record.asr_catalog_binding.is_some());
+    assert!(jobs.selection_registry_path.is_file());
+    assert_eq!(jobs.snapshot(&media, 1_001).unwrap()[0].id, created[0].id);
+    assert_eq!(fs::read(&source).unwrap(), original);
+    drop(media);
+    drop(jobs);
+    fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
+fn ogg_vorbis_import_retains_native_selection_and_catalog_authority() {
+    let dir = temp_dir("create-ogg-import");
+    let source = dir.join("meeting.OGG");
+    let fixture =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/tone-44k-stereo.ogg");
+    let original = fs::read(fixture).unwrap();
+    fs::write(&source, &original).unwrap();
+    let jobs = RecordingJobs::from_ledger(JobLedger::open_in_memory().unwrap(), &dir);
+    let media = MediaOwner::new();
+    let created = jobs
+        .create_imports(&media, vec![source.clone()], 1_000)
+        .unwrap();
+    assert_eq!(created.len(), 1);
+    assert_eq!(created[0].status, RecordingJobStatus::Preflighting);
+    assert_eq!(
+        created[0].source_path.as_deref(),
+        source.canonicalize().unwrap().to_str()
+    );
+    assert!(created[0].playback_path.is_some());
+    let record = jobs.ledger().get_job(&created[0].id).unwrap().unwrap();
+    assert!(record.asr_catalog_binding.is_some());
+    assert!(jobs.selection_registry_path.is_file());
+    assert_eq!(jobs.snapshot(&media, 1_001).unwrap()[0].id, created[0].id);
+    assert_eq!(fs::read(&source).unwrap(), original);
+    drop(media);
+    drop(jobs);
+    fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
+fn aac_imports_retain_selection_catalog_and_original_files() {
+    for (extension, fixture_name) in [("M4A", "tone-44k-stereo.m4a"), ("MP4", "tone-video.mp4")] {
+        let dir = temp_dir(&format!("create-aac-{extension}"));
+        let source = dir.join(format!("meeting.{extension}"));
+        let fixture = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/fixtures")
+            .join(fixture_name);
+        let original = fs::read(fixture).unwrap();
+        fs::write(&source, &original).unwrap();
+        let jobs = RecordingJobs::from_ledger(JobLedger::open_in_memory().unwrap(), &dir);
+        let media = MediaOwner::new();
+        let created = jobs
+            .create_imports(&media, vec![source.clone()], 1_000)
+            .unwrap();
+        assert_eq!(created.len(), 1);
+        assert_eq!(created[0].status, RecordingJobStatus::Preflighting);
+        let record = jobs.ledger().get_job(&created[0].id).unwrap().unwrap();
+        assert!(record.asr_catalog_binding.is_some());
+        assert!(jobs.selection_registry_path.is_file());
+        assert!(created[0].playback_path.is_some());
+        assert_eq!(jobs.snapshot(&media, 1_001).unwrap()[0].id, created[0].id);
+        assert_eq!(fs::read(&source).unwrap(), original);
+        drop(media);
+        drop(jobs);
+        fs::remove_dir_all(dir).unwrap();
+    }
 }

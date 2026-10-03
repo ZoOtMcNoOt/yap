@@ -612,7 +612,8 @@ class NemotronNemoServiceTests(unittest.TestCase):
                 timeout_seconds=2,
             )
             try:
-                for _index in range(20):
+                request_count = _MAX_HTTP_REQUEST_WORKERS * 3
+                for _index in range(request_count):
                     self.assertEqual(
                         client.transcribe(
                             request,
@@ -621,7 +622,13 @@ class NemotronNemoServiceTests(unittest.TestCase):
                         ),
                         {"schemaVersion": 1, "jobId": "job-1"},
                     )
-                self.assertEqual(len(engine.request_thread_ids), 1)
+                self.assertEqual(len(engine.requests), request_count)
+                # A response can reach the client before its worker finishes
+                # socket cleanup. Reuse is bounded by the pool, not one thread.
+                self.assertGreaterEqual(len(engine.request_thread_ids), 1)
+                self.assertLessEqual(
+                    len(engine.request_thread_ids), _MAX_HTTP_REQUEST_WORKERS
+                )
                 self.assertTrue(
                     all(
                         name.startswith("yap-nemotron-http-request")
@@ -689,9 +696,7 @@ class NemotronNemoServiceTests(unittest.TestCase):
             timeout_seconds=2,
         )
 
-        self.assertFalse(
-            client.wait_until_dispatched("missing", timeout_seconds=0.02)
-        )
+        self.assertFalse(client.wait_until_dispatched("missing", timeout_seconds=0.02))
 
     def test_cancel_before_connection_creation_does_not_dispatch(self) -> None:
         lock = _native_lock()
@@ -867,7 +872,9 @@ class NemotronNemoServiceTests(unittest.TestCase):
                     outcomes[job_id] = error
 
             job_ids = tuple(f"capacity-{index}" for index in range(8))
-            threads = [threading.Thread(target=run, args=(job_id,)) for job_id in job_ids]
+            threads = [
+                threading.Thread(target=run, args=(job_id,)) for job_id in job_ids
+            ]
             try:
                 for thread in threads:
                     thread.start()

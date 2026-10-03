@@ -1,9 +1,7 @@
 import { isTauri } from "@tauri-apps/api/core";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import {
-  serverConnectionLabel,
-} from "@/lib/setup-model";
+import { serverConnectionLabel } from "@/lib/setup-model";
 import {
   listenServerConnection,
   refreshServerConnection,
@@ -12,6 +10,7 @@ import {
 } from "@/server";
 
 const initialServerSnapshot: ServerConnectionSnapshot = {
+  authorityRevision: "0",
   state: "not_set",
   checkedAtMs: null,
   retryAtMs: null,
@@ -25,6 +24,8 @@ const initialServerSnapshot: ServerConnectionSnapshot = {
     analystAnswers: false,
     coordinatorBundles: false,
     auditorReports: false,
+    knowledgeConnections: false,
+    personalTerminology: false,
     archivistIngestions: false,
     studentQuestions: false,
     curatorProposals: false,
@@ -33,9 +34,8 @@ const initialServerSnapshot: ServerConnectionSnapshot = {
 };
 
 export function useServerConnection() {
-  const [serverSnapshot, setServerSnapshot] = useState<ServerConnectionSnapshot>(
-    initialServerSnapshot,
-  );
+  const [serverSnapshot, setServerSnapshot] =
+    useState<ServerConnectionSnapshot>(initialServerSnapshot);
   const eventVersionRef = useRef(0);
   const serverState = serverSnapshot.state;
   const serverLabel = serverConnectionLabel(serverState);
@@ -49,34 +49,36 @@ export function useServerConnection() {
     void listenServerConnection((snapshot) => {
       eventVersionRef.current += 1;
       if (!cancelled) setServerSnapshot(snapshot);
-    }).then(async (stop) => {
-      if (cancelled) {
-        stop();
-        return;
-      }
+    })
+      .then(async (stop) => {
+        if (cancelled) {
+          stop();
+          return;
+        }
 
-      unlisten = stop;
-      const versionBeforeLoad = eventVersionRef.current;
-      try {
-        const snapshot = await serverConnectionStatus();
-        if (!cancelled && eventVersionRef.current === versionBeforeLoad) {
-          setServerSnapshot(snapshot);
+        unlisten = stop;
+        const versionBeforeLoad = eventVersionRef.current;
+        try {
+          const snapshot = await serverConnectionStatus();
+          if (!cancelled && eventVersionRef.current === versionBeforeLoad) {
+            setServerSnapshot(snapshot);
+          }
+        } catch {
+          // The settings refresh surface reports command errors; keep the last event truth here.
         }
-      } catch {
-        // The settings refresh surface reports command errors; keep the last event truth here.
-      }
-    }).catch(async () => {
-      if (cancelled) return;
-      const versionBeforeLoad = eventVersionRef.current;
-      try {
-        const snapshot = await serverConnectionStatus();
-        if (!cancelled && eventVersionRef.current === versionBeforeLoad) {
-          setServerSnapshot(snapshot);
+      })
+      .catch(async () => {
+        if (cancelled) return;
+        const versionBeforeLoad = eventVersionRef.current;
+        try {
+          const snapshot = await serverConnectionStatus();
+          if (!cancelled && eventVersionRef.current === versionBeforeLoad) {
+            setServerSnapshot(snapshot);
+          }
+        } catch {
+          // The settings refresh surface reports command errors.
         }
-      } catch {
-        // The settings refresh surface reports command errors.
-      }
-    });
+      });
 
     return () => {
       cancelled = true;
@@ -87,7 +89,8 @@ export function useServerConnection() {
   const refreshServerState = useCallback(async () => {
     const versionBeforeRefresh = eventVersionRef.current;
     const snapshot = await refreshServerConnection();
-    if (eventVersionRef.current === versionBeforeRefresh) setServerSnapshot(snapshot);
+    if (eventVersionRef.current === versionBeforeRefresh)
+      setServerSnapshot(snapshot);
     return snapshot;
   }, []);
 

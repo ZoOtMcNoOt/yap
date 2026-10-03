@@ -7,6 +7,7 @@ type PreviewTextLoader = (entry: TranscriptHistoryEntry) => Promise<string>;
 export function useTranscriptPreview(loadPreviewText: PreviewTextLoader) {
   const [previewEntry, setPreviewEntry] = useState<TranscriptHistoryEntry>();
   const [previewText, setPreviewText] = useState<string | undefined>();
+  const [previewError, setPreviewError] = useState("");
   const previewRequest = useRef(0);
 
   const previewHistoryEntry = useCallback(async (entry: TranscriptHistoryEntry) => {
@@ -14,13 +15,14 @@ export function useTranscriptPreview(loadPreviewText: PreviewTextLoader) {
     previewRequest.current = request;
     setPreviewEntry(entry);
     setPreviewText(undefined);
+    setPreviewError("");
 
     try {
       const text = await loadPreviewText(entry);
       if (previewRequest.current === request) setPreviewText(text);
     } catch {
       if (previewRequest.current === request) {
-        setPreviewText("Preview unavailable. Open the transcript file from the actions menu.");
+        setPreviewError("This preview could not be read. Retry or open the saved file.");
       }
     }
   }, [loadPreviewText]);
@@ -29,11 +31,13 @@ export function useTranscriptPreview(loadPreviewText: PreviewTextLoader) {
     previewRequest.current += 1;
     setPreviewEntry(undefined);
     setPreviewText(undefined);
+    setPreviewError("");
   }, []);
 
   return {
     closeTranscriptPreview,
     previewEntry,
+    previewError,
     previewHistoryEntry,
     previewText,
   };

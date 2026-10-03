@@ -125,6 +125,14 @@ long-term frame; accepted future work is sequenced by the
 [roadmap](../roadmap/ROADMAP.md) and ADRs, not promoted into current-state
 claims before it executes.
 
+Saved connection inspection reuses the same authenticated knowledge-read service
+and proposal journal. It verifies current generation, owner, typed candidate,
+proposal/citation/policy identity and both endpoint permissions before returning
+exact excerpts. The native reader shares connection leases, strict decoding,
+cancellation and read admission. Review proposals opens a reference or explicit
+Curator handoff without model dispatch or canonical mutation. See the
+[contract](../specs/knowledge-connections.md#saved-connection-inspection).
+
 ## System context
 
 ```mermaid
@@ -163,6 +171,21 @@ feature hooks and views; it does not own native job, recording, connector,
 path, or result transitions. Feature hooks hold navigation, selected-item,
 preview, draft, and loading state. Native snapshots/events are re-read after
 missed or stale events instead of being promoted into a second durable owner.
+
+Knowledge request views use the required native connection revision to separate
+draft ownership from result availability. A different account/server clears
+private state; same-owner offline drafting remains possible. The four native
+submission commands and every Connections read check that revision against their
+captured lease before dispatch, while the existing authenticated transport and
+commit guards remain authoritative. See the [ownership evidence](../evidence/connection-owned-knowledge/2026-10-03-verification.md).
+
+Curator connection submission derives two exact excerpts from a completed native
+Librarian query, with both current leases and the shared revision required.
+The renderer supplies only source indexes and bounded intent. The existing
+Curator owner/hook reviews and persists a noncanonical typed relationship;
+source/account changes contain late jobs and remove old results. Student
+answer submissions also require that revision. Human canonical publication and
+rebuilding remain open; see the [connection proposal record](../evidence/curator-connections/2026-10-03/verification.md).
 
 The live surface is one renderer hosted in the native `live-overlay` window.
 View variants, waveform, reduced-motion behavior, and presentation timing live
@@ -457,6 +480,20 @@ full-matrix children.
 The server's dynamic health response advertises batch/status only when the
 Phase 5 runtime actually initializes. Live streaming remains false and
 `/v1/live` remains unimplemented.
+
+## Imported AAC container timing
+
+The existing admitted-source and private decoded-file owners now normalize a
+single mono/stereo AAC-LC track from complete M4A/MP4 containers. Symphonia
+0.6.1 owns demuxing/decoding. A bounded native timing reader applies the selected
+track's single unit-rate edit, because the library does not apply MP4 edit lists.
+It reads the same admitted handle before demuxing, validates declared packet and
+presentation frames, and retains the final sample across movie-clock rounding.
+No edit means no invented priming trim. Video is ignored; multiple audio tracks,
+fragments, unsupported codecs and complex edits are refused. Source hashes,
+canonical manifests, cancellation and cleanup retain their existing owners.
+[AAC evidence](../evidence/aac-import/2026-10-03/verification.md) records limits;
+model/Windows qualification and distribution patent clearance remain open.
 
 ## Merged Phase 6 implementation
 
@@ -1327,7 +1364,7 @@ are checkpoint repairs, not production serving or a new model claim.
 | Server identity repository | The provider-neutral repository owns principal, access-revocation, purpose-control, and redacted audit records. The SQLite adapter persists focused development/restart evidence; production topology, encryption, backup/deletion, retention/export, and administrative access remain external approvals. |
 | Knowledge generation ledger | Postgres owns staged and active immutable knowledge generations, permission and relationship projections, terminology snapshots, reviewed capture bindings, proposals, and redacted audit identities. A cache is not a permission authority. Phase 10 owns production backup, retention, encryption, monitoring, and operational topology. |
 | Boot-scoped provider lifecycle snapshot | One Rust supervisor atomically publishes bounded state/counters for its one launcher under the systemd-created private runtime directory. It is an operational projection, not durable application truth, provider quality evidence, or a capacity metric. |
-| Accepted transcript-correction revision | The native Scribe revision owner publishes a hash-chained user-accepted derivative beside the trusted live source or inside its owned remote spool. Raw transcript remains authoritative; the renderer is read-only. |
+| Accepted transcript-correction revision | The native Scribe revision owner publishes a hash-chained user-accepted derivative beside the trusted live source or inside its owned remote spool. A bounded main-window local reader derives the revision location from that source, validates its complete chain/current source proof and recovers the latest accepted text without bearer credentials or models. Explicit UTF-8 export validates displayed revision/hash preconditions and rereads native history before the existing atomic new-file writer; both original and accepted export share one worker permit. Raw transcript remains authoritative; reading/export preserve all files. |
 | Deletion intent/quarantine | Destructive work revalidates identity and resumes without following replacement paths. |
 
 ## Trust boundaries and limits

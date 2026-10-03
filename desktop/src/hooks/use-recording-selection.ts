@@ -29,12 +29,15 @@ function withHistoryPlaybackAdmission(
 export function useRecordingSelection({
   history,
   queue,
+  reviewAvailable,
 }: {
   history: TranscriptHistoryEntry[];
   queue: RecordingJobView[];
+  reviewAvailable: boolean;
 }) {
   const [selectedId, setSelectedId] = useState<string>();
   const [selectedHistoryOutput, setSelectedHistoryOutput] = useState<string>();
+  const [historyReviewOpen, setHistoryReviewOpen] = useState(false);
   const [reviewMorphOrigin, setReviewMorphOrigin] = useState<ReviewMorphOrigin>();
 
   const historyJob = useCallback(
@@ -48,7 +51,7 @@ export function useRecordingSelection({
   const { historyPlaybackAdmissions } = useRegisteredPlayback(
     queue,
     history,
-    selectedHistoryEntry,
+    historyReviewOpen && reviewAvailable ? selectedHistoryEntry : undefined,
   );
   const selectedHistoryItem = useMemo(
     () => withHistoryPlaybackAdmission(
@@ -88,20 +91,25 @@ export function useRecordingSelection({
   useEffect(() => {
     if (selectedHistoryOutput && !history.some((entry) => entry.outputPath === selectedHistoryOutput)) {
       setSelectedHistoryOutput(undefined);
+      setHistoryReviewOpen(false);
     }
   }, [history, selectedHistoryOutput]);
 
   const closeHistoryReview = useCallback(() => {
-    setSelectedHistoryOutput(undefined);
+    setHistoryReviewOpen(false);
     setReviewMorphOrigin(undefined);
   }, []);
 
   const clearHistorySelectionIf = useCallback((outputPath: string) => {
-    if (selectedHistoryOutput === outputPath) setSelectedHistoryOutput(undefined);
+    if (selectedHistoryOutput === outputPath) {
+      setSelectedHistoryOutput(undefined);
+      setHistoryReviewOpen(false);
+    }
   }, [selectedHistoryOutput]);
 
   const selectQueueItem = useCallback((id: string) => {
     setSelectedHistoryOutput(undefined);
+    setHistoryReviewOpen(false);
     setSelectedId(id);
   }, []);
 
@@ -112,6 +120,7 @@ export function useRecordingSelection({
   const selectHistoryEntry = useCallback((entry: TranscriptHistoryEntry, origin?: DOMRect) => {
     setSelectedId(undefined);
     setSelectedHistoryOutput(entry.outputPath);
+    setHistoryReviewOpen(true);
     setReviewMorphOrigin(
       origin
         ? {
@@ -129,6 +138,7 @@ export function useRecordingSelection({
     closeHistoryReview,
     displayedHistoryEntry,
     historyJob,
+    historyReviewOpen,
     reviewMorphOrigin,
     selectHistoryEntry,
     selectQueueItem,

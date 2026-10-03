@@ -85,7 +85,7 @@ impl RecordingJobs {
         }) {
             return Err(command_error(
                 "REMOTE_MEDIA_UNSUPPORTED",
-                "Private-server transcription currently accepts WAV and MP3 recordings.",
+                "Private-server transcription currently accepts WAV, MP3, FLAC, Ogg Vorbis and AAC-LC in M4A/MP4 recordings.",
             ));
         }
         let sources = paths

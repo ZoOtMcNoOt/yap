@@ -1,417 +1,61 @@
-# Yap Roadmap
+# Yap roadmap
 
-The roadmap is ordered. Each phase uses a separate branch and focused reviewed
-PR. Repository state, executable tests, and observed runtime behavior are the
-completion authority.
+**Owner:** Grant McNatt. **Updated:** 2026-10-02.
 
-The [Voice OS architecture](../VOICE-OS-ARCHITECTURE.md) is the long-term
-full-system frame. This roadmap is the ordered delivery authority when that
-frame contains alternate or historical sequencing.
+## Project-wide goal
 
-## Delivered MVP foundation
+Complete Yap across this entire feature inventory through verified end-to-end increments. The [project hill-climbing goal](../plans/active/2026-10-02-yap-project-hill-climb.md) is the single execution queue and defines progress, completion and the next increment; [current status](../CURRENT-STATUS.md) records verification. Continue every available software task while separately preparing real model, Windows and enterprise qualification. The [30-area UI acceptance record](../evidence/ui-completion/2026-10-02-acceptance.md) is a completed supported-flow milestone, not a project completion score.
 
-| Phase | Delivered boundary |
-| --- | --- |
-| 0 | Architecture reset around thin desktop, private server, explicit local fallback, and queued/offline truth. |
-| 1 | Desktop capture, durability, tray/island, playback/history, and imported-job foundations. |
-| 2 | Explicit local Nemotron fallback model lifecycle and live transcription. |
-| 3 | Server contracts, capability health, connector state/retry, durable desktop job ledger, canonical app-data/stock NSIS closure. |
-| 4 | Bounded private router/pool and isolated Cohere GPU reference worker on the pinned Python 3.12/NVIDIA stack. |
-| 5 | Real durable imported-recording batch-ASR slice through the desktop/server contract with verified native result publication. |
-| Checkpoint A | Phase 1–5 correctness, ownership, decomposition, provenance, documentation, and resource-bound review; merged after the one-time local/native/server/GB10 matrix and exact-head hosted closure. |
-| 6 | Durable preprocessing, language-aware local routing evidence, guarded batch preflight, provider-specific ASR serving candidates, and bounded timing evidence; merged after the one-time 30-child matrix and exact-head hosted closure. |
+## Product direction and feature inventory
 
-Evidence and limits are summarized in [current status](../CURRENT-STATUS.md).
+The product loop remains **recordings → durable queue → trusted transcript → review/copy/export → optional governed knowledge**. Explicit local dictation remains useful offline. The supported hardware-free journeys are verified; preserve the intended features below as qualification and later development continue. “Implemented” describes a baseline, not completed UX or production qualification.
 
-## Delivered Phase 6 boundary
-
-Phase 6 turns the merged fixed-language canonical-WAV vertical slice into a
-durable preprocessing and language-aware pipeline without pulling later
-identity, diarization, knowledge, or enterprise boundaries forward:
-
-- versioned provider/language/timing capabilities;
-- one Rust-owned primary language plus a visible catalog-derived per-job
-  recording-language selector that never invents an unpromoted alternate;
-- deterministic normalization and advisory VAD that never deletes source audio;
-- durable retryable preprocessing stages on the existing job authority;
-- one bounded resident local acoustic-LID component, automatic offline language
-  switching, and within-utterance source-time language spans under the existing
-  Rust live-runtime owner;
-- one verify-only AmberNet 1.12.0 INT8 QDQ artifact in an isolated CPU runtime,
-  with five strict start-to-tail regions and explicit user confirmation for long
-  fixed-language recordings;
-- pinned reference Cohere/Nemotron routes plus explicit server Nemotron auto
-  mode at finalized utterance boundaries, with correctness and bounded-resource
-  evidence rather than a production pool claim;
-- a digest-pinned Cohere vLLM 26.06 serving candidate behind the same worker
-  contract, with measured GB10 lifecycle, latency, throughput, memory,
-  cancellation, teardown, and concurrent-load safety evidence; representative
-  output quality, rollback, and provider promotion remain separate later
-  evidence rather than exact-output assumptions;
-- a separate Nemotron NeMo server-streaming candidate with its own correctness,
-  streaming, lifecycle, concurrency, and resource gate; and
-- fail-closed word timing, initially behind an English Cohere evidence gate.
-
-The canonical decisions are
-[ADR 0024](../adr/0024-global-language-routing.md),
-[ADR 0025](../adr/0025-provider-specific-asr-serving.md), and
-[ADR 0026](../adr/0026-ambernet-batch-language-preflight.md). The implementation
-and one-time gate contract are in the completed
-[audio preprocessing and language routing plan](../plans/completed/2026-07-16-audio-preprocessing-and-language-routing.md).
-The living
-[decision and evidence queue](../plans/active/2026-07-17-voiceos-decision-evidence-queue.md)
-preserves discussed decisions, open questions, detailed Phase 6 sub-tasks, and
-later-phase owners without authorizing phase mixing.
-Automatic cross-provider switching, named speaker identity, and enterprise
-infrastructure are not Phase 6 claims. Within-utterance language spans are a
-Phase 6 target and remain an explicit default-off Preview because the frozen
-natural-switch quality target failed. Exact executable candidate
-`a92f338546a2f8bbaded96b04f8987f0ac475c88` passed the frozen 30-child
-local/native/server/private-runtime matrix after bounded three-agent
-remediation re-review, including the target-client, 18-child resident-provider,
-and connected interruption/recovery/History channels with exact teardown.
-Exact runtime images were prepared before admission from digest-pinned bases
-and pinned dependencies and emitted private receipts after a second clean-head
-check. The admitted gate verified each frozen receipt hash, then required the
-already-prepared ARM64 image ID, checked-head revision, base digest, and runtime
-identity to match it. The receipt-bound ID was launched and recorded; the gate
-could not build, pull, reconnect, or substitute an image. Hosted CI, CodeQL,
-and stock-NSIS passed at first attempt on docs-only review head
-`cee13f819a85417ea43a3c63e263be85f0570838`; a private closure receipt was
-independently validated outside Git. Final reviewed head
-`50f0f9e5e3cf288f41efa3745514dd08c9ee1929` passed the required exact-head
-hosted policy and final adversarial read-back, and
-[PR #67](https://github.com/mcnatg1/yap/pull/67) merged as
-`87c8654250cba8b9eafa5007bf719c52e4749cdf`.
-Authenticated owner derivation remains Phase 7. Phase 9 now has executable
-vLLM Qwen/Gemma agent workload routes under ADR 0029. Persistent supervision of vLLM and NeMo
-services, production multi-worker/mixed-load capacity promotion, production
-observability, and external deployment remain Phase 10.
-
-## Delivered post-Phase-6 checkpoint
-
-The separate
-[codebase ownership and maintainability review](../plans/completed/2026-07-18-codebase-ownership-and-maintainability-review.md)
-reviewed the complete Phase 1–6 executable system before Phase 7 started. It used
-exactly three completed antagonistic reviews, then applied the same ownership,
-comprehensibility, decomposition, maintainability, resource, provenance, and
-documentation standard as post-Phase-5 Checkpoint A. It added no Phase 7 product
-functionality. Historical candidate
-`66267af0abf38af0a6b8d3d2fac76543673c0331` and consumed hosted head
-`08ab49ba8d727cb8331a40f28c7c4c70d75d4035` retain their recorded evidence
-but are not merge authority. After the Cargo-output and same-process Windows
-atomic replacement repairs, fresh exact executable candidate
-`9dfa8a68b02cdf854d14fb046e51a166cd3da353` passed its single admitted
-31-child checkpoint matrix and independent receipt validation with exact
-teardown. Its private receipt SHA-256 is
-`6b02bd04cb3ce3c25925c2b2be8cc2f3c20f79478513fe41519f666a498114e7`.
-First-attempt hosted CI run `30206923702`, CodeQL run `30206922629`, and
-stock-NSIS run `30206941391` passed on documentation-only reviewed head
-`0bd11ae8dea34cd22029c6c09a9fd62a5951a363`. [PR
-#68](https://github.com/mcnatg1/yap/pull/68) merged as
-`15f9c8ac00211b9d2f28845d419258ae2c8de8e4`.
-
-Phase 7 followed the same cadence: the phase merged, then its separate
-post-phase adversarial/refactor checkpoint and concrete follow-ups closed.
-Phase 8 Preview then merged through PR #142. Historical meeting-transcription
-maintainability candidate `fb0985e7...` passed before documentation successor
-`e22368fc...` exposed high-severity `GHSA-mwp4-54f8-5fhr`. Patched candidate
-`393710999...` passed its exact-image lifecycle, single complete matrix,
-independent receipt validation, and required CI and CodeQL jobs. PR #143 merged
-the reviewed closure as `8fb511ad2fd7217a87e95ddba31d74dfa474fac2`.
-
-## Last completed phase: meeting evidence (Phase 8)
-
-The
-[joint speaker-attributed meeting transcription plan](../plans/completed/2026-07-22-joint-speaker-attributed-meeting-transcription.md)
-implemented the explicit meeting-only Tiron Preview and merged through
-[PR #142](https://github.com/mcnatg1/yap/pull/142) as `4201c5e7`. The route
-publishes source-bound transcript and anonymous-speaker revisions through the
-existing owner-scoped result authority and projects them into native History.
-It is not the default route and is not production-promoted. PR #144 merged the
-replacement exact source-time epoch route and integrated request-scoped speaker
-reconciliation as `b5b52bfd297edf1e95d93e120a8e59c206f7ab77`. Exact
-qualification candidate `3ddb930268b544d2cae80d4389f12ef315b35ded`
-then recorded `unadvertised-baseline` because the required independent private
-holdout was unconfigured. No runtime/image gate was admissible, neither catalog
-changed, and no second server meeting pipeline is planned. PR #150 passed all
-hosted checks at exact head `2ab33ae6bd27b2002a539a6cb89dd55eb16eac6b`
-and merged the closure as `599a0d0b`. Phase 8 is closed. Phase 9 passed its
-complete gate and merged through hosted-green PR #152 as `ae81ff06`.
-
-## Merged checkpoint: governed-knowledge ownership and maintainability
-
-Merged Phase 9 contains the pinned Google OKF compiler, immutable
-model-independent terminology snapshots, atomic Postgres/pgvector generations,
-permission-filtered cited retrieval, governed proposals/RAG/MCP, and explicit
-no-fallback workload routing. Exact private GB10 head
-`36350d449735a4daea6546e16759f28f6f15631a` qualified the locked Qwen rapid and
-Gemma complex routes on the checked vLLM evaluation runtime. That is
-route-specific evaluation evidence, not production service promotion.
-
-Exact candidate `a4f34678ea9980379b18266d40d3347b818ac57e` passed the canonical
-Python/Ruff/Postgres/pgvector/restart/private-route matrix with outcome
-`governed-knowledge-gate-passed` and public-safe evidence SHA-256
-`4013903410e22206c5b46f4dfcbf1878badc3dc9bbdfddb0ddad2ba0e2ff3260`.
-Exact hosted-green head `fa26caaf7e3ea4e20f27b390355dff80bee2464f`
-merged through PR #152 as `ae81ff067c73a64528eecc14403765562726f2fe`.
-The completed [post-Phase-9 checkpoint](../plans/completed/2026-08-10-governed-knowledge-ownership-and-maintainability-review.md)
-reviewed executable ownership and maintainability before Phase 10. Reviewed
-executable head `a76ed9b095ebb797064a12e9ebd90d2dd9d87bef` resolves the
-accepted findings, freezes two evaluation-only final structural-decoding
-attempts without retrying or replaying tools, binds one synthetic cited proposal
-to a complete product-valid JSON call, assigns Qwen to pinned vLLM 26.07 plus
-XGrammar 0.2.1 while Gemma remains on exact upstream vLLM 26.06, and separates
-common and proposal rapid-route qualification bounds without changing either
-route's maximum. Exact `96897d2f...` is terminal rejected evidence with
-public-safe SHA-256
-`929dd2a329387e0647db49699b0653862668f8f6b4588a4bf3ee9818ba656b75`.
-Fresh exact-head qualification at `a76ed9b0...` returned
-`required-workload-routes-qualified` with public-safe evidence SHA-256
-`4662a2784510e63da98dcd301ea05ef107196ce46b49d68ad812abdc042d00f0`;
-both locked routes were eligible and passed their semantic and route-specific
-evidence contracts with exact teardown and zero owned runtime residue. The
-schema-3 public lock committed at `2cf1e92c...` has raw-file SHA-256
-`b8d05f9645f37c36e0be5b480cf95c5e29b31945b4e56f879c95eeb72979a1b9`
-and passed hash-bound semantic admission. Exact aggregate head `22c3f369...`
-then returned `governed-knowledge-gate-passed` with public-safe evidence SHA-256
-`8c2bfdef6b596094fe113a12b1bbfccec94ddeb3944e1b3313f41b61d5df12b0`,
-152 portable tests, Ruff, 17 zero-skip database tests, real restart/recovery,
-and exact teardown with zero residue. Final hosted head `84c22ec9...` passed
-all required CI and CodeQL lanes and merged through PR #153 as
-`ca151b1b...`. The
-split workload bounds are not production SLO/capacity or generic TPS evidence. Postgres
-remains the only current knowledge projection; Redis, object storage, and
-Neo4j require a measured need and a later authorized gate. Persistent
-supervision, simultaneous model residency, sustained mixed-user capacity/SLOs,
-external serving, observability, enterprise networking, and deployment remain
-Phase 10 or IT handoffs.
-
-## Active Phase 10 delivery: supervised services and complete agent workflows
-
-The active [Phase 10 plan](../plans/active/2026-08-11-phase-10-supervised-provider-services.md)
-starts with one hardware-independent lifecycle owner rather than a model or TPS
-claim. Merged Slice 10.1 places one Rust supervisor inside a
-systemd-owned cgroup, supervises exactly one existing foreground launcher,
-requires numeric-loopback health plus exact served-model identity, bounds child
-restart and stop/reap, and publishes only private typed state counters. The
-launcher keeps container/proxy/image/teardown authority; Rust never calls
-Docker and never substitutes another route.
-
-Exact hosted-green head `1a487db840578d8e415fd2e5a51b1909af4b7041`
-passed the dedicated Linux lifecycle lane and every required repository check;
-PR #155 merged it as `e2d82b89532addb26fda73f652ae4f68b2127ef7`.
-Merged Slice 10.2 binds the qualified Qwen rapid and Gemma complex profiles to
-separate instances. Exact lifecycle head
-`4b103c1b...` passed both sequential route lifecycles with public-safe evidence
-SHA-256 `9b6a34f6...`; exact qualification head `4d623212...` returned
-`required-workload-routes-qualified` with evidence SHA-256 `4a856f3e...`; and
-public-lock successor `0471b158...` returned
-`governed-knowledge-gate-passed` with evidence SHA-256 `008d748b...`. The
-aggregate ran 157 portable tests across 26 modules, Ruff, 17 zero-skip Postgres
-tests across four modules, real restart/retrieval/stale/successor proof,
-unchanged desktop scope, and exact teardown. Hosted-green head `6d1400cc...`
-merged through PR #157 as `cac8989b...`.
-
-Exact protected head `7bd93dc6...` implements the bounded-admission
-substrate: all eight role bindings, conservative per-route capacity, bounded
-global/per-owner queues, owner round robin, weighted work classes, idle-only
-exclusion, queue-inclusive deadlines, provider-generation disruption, and
-token-bound completion/cancellation over an owner-private Unix socket. It keeps
-already-started exact services warm; requests do not launch or swap models. The
-broker is not enabled and does not automatically restart after losing its
-in-memory lease state. Replacement private qualification admitted both routes
-with public-safe evidence SHA-256 `a75500c3...`; public-lock/aggregate head
-`135cc2ba...` passed the 169-test portable matrix, Ruff, the 17-test Postgres
-matrix, real restart/retrieval/stale/successor proof, unchanged desktop scope,
-and exact teardown with public-safe evidence SHA-256 `350c13a5...`. Hosted-green
-head `cf1e69a4...` passed all 12 required checks and PR #158 merged it as
-`84d95842...`.
-
-The merged Scribe workflow is the first native/server workflow integration.
-It replaces the renderer/Ollama prototype with finalized source-hashed segment
-input, an authenticated asynchronous server route, structured source-bound
-edits, immutable terminology, semantic-preservation validation, explicit cancel,
-visible raw/corrected diff, and a separately accepted native revision. Raw ASR
-remains authoritative and all local controls survive remote failure. Exact
-source-lock head `e5858424...` passed the 24-case bilingual/eight-owner private
-qualification gate with public-safe semantic evidence SHA-256 `5e187ed4...`,
-correction benefit, exact raw fallback, one stable warm rapid generation, and
-zero residue. Hosted-green head `bc9a88bc...` passed all 12 checks and PR #164
-merged it as `ec3af506...`. Hosted-green head `e1899db7...` passed all 12 checks
-and PR #165 merged the no-LLM Archivist core as `2a7ec819...`. Student's
-topic-copy prompt repair is complete-portable-test green on the unchanged full
-Qwen rapid profile at 1,241 tests (1,207 passed and 34 declared skips). Exact
-head `428d6e48...` then returned `student-learning-questions-qualified` with
-public-safe evidence SHA-256 `f597cca7...`; exact `0970d74c...` remains terminal
-`deterministic-no-student`. Hosted-green head `b03c6e79...` passed all 12 checks
-and PR #166 merged the internal Student core as `2254605e...`; product exposure
-was still open at that merge. Exact route head `dab19fe...` returned
-`required-workload-routes-qualified` with public-safe evidence SHA-256
-`96228914...`. Exact workflow head `7cd24deb...` requalified Scribe and Student
-and qualified the nonmutating Curator core with public-safe evidence
-SHA-256 `b60df1e2...`; exact aggregate/public-lock head `7f896b34...` passed with
-public-safe evidence SHA-256 `fd197b98...`. Hosted-green head `593e627b...`
-passed all 12 checks, and PR #168 merged the slice as `284ab96b...`. Student
-product exposure later merged through PR #178 and Curator product exposure
-through PR #179. Exact `56b7f5d0...` privately qualified
-Librarian; hosted head `7505247e...` merged it through PR #169 as `d7a7e003...`.
-Exact executable `0665c486...` then privately qualified Analyst's grounded
-cited-answer internal core; lock-only `8fee7a5c...` publishes the matching
-batch-invariant route lock. Hosted head `da1127f8...` passed all 12 checks and
-PR #170 merged Analyst as `52c45d22...`. Exact `fed729b3...` then privately
-qualified Coordinator's selection-only source-cited proposal-bundle internal
-core. Hosted head `53ee0152...` passed all 12 checks, and PR #171 merged
-Coordinator as `67d836da...`. Exact `08b06f6d...` then privately qualified
-Auditor's idle-only source-cited review-findings internal core. Hosted head
-`937a4129...` passed all 12 checks, and PR #172 merged Auditor as
-`1b255e9a...`, completing the eight bounded internal role cores. Exact
-`e2ba1864...` privately qualified the first Librarian HTTP/native/Knowledge
-product vertical's authenticated server boundary; hosted head `67a79ce2...`
-passed all 12 checks and PR #174 merged it as `98af78c9...`. Archivist, Student,
-Curator, Analyst, Coordinator, and Auditor were still internal-only at that
-merge. Exact `a2e9b551...` privately qualified the Archivist
-authenticated staging candidate with public-safe evidence SHA-256 `9ec9e373...`:
-10/10 exact server-side terminals, 9 staged, 1 cancelled, 0 active generations,
-and exact teardown. Hosted head `69215c43...` passed all 12 required checks,
-and PR #177 merged the vertical as `e397af8b...`. Exact `778a7545...` privately
-qualified Student with 11/11 exact server-side
-terminals, authenticated question endpoints, native-owned transport/validation,
-and a source-bound renderer action. Hosted head `53ce570b...` passed all 12
-checks and PR #178 merged it as `6546970b...`. Exact `6aa33e4d...` privately
-qualified the Curator product server boundary with 10/10 exact terminals and
-public-safe evidence SHA-256 `328f6640...`; hosted head `b983adb7...` passed all
-12 checks and PR #179 merged it as `70303872...`. Exact `78b2c638...`
-privately qualified Analyst's authenticated product server boundary with 10/10
-exact terminals, 4 exact cited answers, 5 unavailable results, 1 cancelled
-request, two PostgreSQL restart/read-backs, complex-c8/ninth-owner-queued
-containment, and public-safe evidence SHA-256 `f26adfc0...`. Hosted head
-`4c8db7c2...` passed all 12 checks and PR #180 merged it as `c95fcf1a...`.
-Exact `05400fb3...` privately qualified Coordinator's authenticated product
-server/database/broker boundary with 10/10 exact terminals, 5 exact bundles,
-two PostgreSQL restart/read-backs, c8/ninth-owner-queued containment, and public-
-safe evidence SHA-256 `394112ad...`; hosted head `6890a9f5...` passed all 12
-checks and PR #181 merged it as `3fd5eaed...`. Exact `87924d5f...` privately
-qualified Auditor's authenticated product server/database/broker boundary with
-10/10 exact terminals, 4 exact reports, two PostgreSQL restart/read-backs,
-c8/ninth-owner-queued containment, and public-safe evidence SHA-256
-`b5a31c21...`. Hosted head `6bb72953...` passed all six CI jobs reported for PR
-#183, which rebase-merged the tree-identical successor with main tip
-`13d9e3ef...`. Proven selected-route
-limits of four rapid/eight complex are not simultaneous-model,
-sustained-capacity, or production-SLO evidence. One Spark cannot retain both
-unchanged full profiles simultaneously, so warm two-route promotion requires a
-second owned GPU node/private routing rather than throttling or model swapping.
-Sustained mixed-owner route-specific capacity and p95/p99 evidence,
-observability, rollback, external serving, and IT-owned deployment remain later
-gates or handoffs. If one node cannot satisfy simultaneous evidence, the routes
-use separate owned nodes rather than model fallback or per-request swapping. No
-generic TPS or production promotion follows from the sequential lifecycle gate.
-
-Analyst's, Coordinator's, and Auditor's separate three-wave exact synchronized repeats
-prove repeatability only inside one unchanged warm provider process; they do
-not prove cross-start/global determinism. Coordinator additionally proves one
-lease per invocation, current Curator lineage, server-owned bundle content and
-citations, exact audit/restart read-back, and teardown—not autonomous action or
-product readiness. Auditor additionally proves idle-only blocking/resumption,
-one lease per invocation, server-owned finding/citation derivation, exact
-audit/restart read-back, and teardown—not scheduled autonomy or product
-readiness. The current public server read-back is 1,603 tests: 1,556 passed and
-47 declared skips. The governed fixed membership is 173 tests: 169 passed and
-four declared skips.
-
-## Prior merged phase: tenant-scoped identity and access (Phase 7)
-
-The
-[tenant-scoped identity and job authorization plan](../plans/completed/2026-07-25-tenant-scoped-identity-and-job-authorization.md)
-implemented the Phase 7 boundary and merged as `66d314d7`. It keeps local/offline dictation independent,
-derives server principals from validated Yap API tokens, enforces owner-scoped
-job and LID operations, adds revocation/purpose-control/audit primitives, and
-uses a synthetic signed two-principal gate where IT-owned Entra registration is
-not yet available. Purpose-authorized speaker reconciliation and naming remain
-unpromoted later work; Postgres/pgvector knowledge permission compilation
-remains Phase 9.
-
-Merged Phase 7 has executable evidence for a provider-neutral OIDC verifier
-with Entra policy, fail-closed authentication, tenant-scoped resource
-ownership, and authenticated bounded private WebSocket admission. Role-gated
-purpose grants and purpose checks are implemented and unit-tested but no route
-or operator entry point calls them, so they do not enforce anything yet. The native lower
-WebSocket handshake is qualified against the separate internal live port. The
-desktop exposes only a narrow in-process token-provider seam; no production
-adapter is selected or approved. The desktop can offer only the verified fixed
-numeric-loopback HTTP health origin; there is no managed LAN/enterprise or
-live-endpoint discovery, live ASR, external same-origin WSS/TLS, or HTTP/3 edge.
-
-Phase 7 is complete at the repository level. Exact application/runtime
-candidate `dc635916...` passed its private 25-cell matrix and independent receipt
-validation. PR #69 merged as `66d314d7`, although its final hosted head did not
-have an all-green rollup and is not relabeled here. The separate adversarial
-checkpoint closed at `ef6d977`, with concrete follow-ups at `1a6f06e` and
-`589197e`. Real enterprise Entra policy conformance and an approved production
-native provider remain IT-authorized follow-ups rather than Phase 8 work.
-
-## Accepted later phases
-
-| Phase | Boundary | Exit direction |
+| Feature or goal | Current disposition and next work | Source |
 | --- | --- | --- |
-| 7 | Identity and access | Provider-neutral OIDC validation with Entra policy, a native token-provider seam whose production adapter requires separate approval, replacement of the fixed development owner with tenant-scoped `(tid, oid)` ownership, purpose grants and authorization/revocation/audit records that are implemented but reachable only from tests, and authenticated bounded private live admission without a live ASR or external edge claim. |
-| 8 | Meeting evidence | Local anonymous speaker evidence plus the pinned Tiron historical whole-meeting reproduction, one integrated source-time epoch route with bounded request-scoped speaker reconciliation for larger speaking rosters, timestamped result revisions, a frozen messy-meeting gate separating attendee/session/window pressure, and later purpose-authorized naming. A failed Tiron gate leaves the sole server meeting route unpromoted. |
-| 9 | Knowledge and agents | Pinned Google OKF profile, deterministic compiler, permission-safe relational/vector retrieval, governed agents/RAG/MCP, and vLLM-backed compatible reasoning/tool-output models. |
-| 10 | Enterprise and release | The active [supervised-provider plan](../plans/active/2026-08-11-phase-10-supervised-provider-services.md) starts with one hardware-independent Rust-owned provider lifecycle under a systemd cgroup, then layers qualified agent service profiles, authenticated integration, mixed-owner capacity/SLO evidence, observability, IT-managed hosting/access/network integration, secure-edge evaluation, publication governance, audit/deploy evidence, and eventual repo split. |
+| Setup, Home, Transcribe, Correct, Knowledge, Settings, Help | Supported UI milestone and the [shared design refresh](../evidence/design-refresh/2026-10-03/review.md) are software verified within their recorded scopes. The [Connections reader and typed candidate boundary](../evidence/knowledge-connections/2026-10-03/verification.md) and [connection-owned views](../evidence/connection-owned-knowledge/2026-10-03-verification.md) pass stored-source/interface checks. The [Curator connection review journey](../evidence/curator-connections/2026-10-03/verification.md) verifies typed proposals with two owned excerpts and recovery; [saved connection inspection](../evidence/connection-proposal-inspection/2026-10-03/verification.md) reopens persisted evidence without a model. Human publication and rebuild recovery remain open. Preserve coherent navigation, readiness, all recovery states, keyboard access, readable transcripts and reduced motion as features expand. | [Product](../../PRODUCT.md), [Design](../../DESIGN.md); prior D-17/D-18, OQ-22 |
+| Imported recordings and preprocessing | WAV/MP3/FLAC/Ogg Vorbis intake and deterministic normalization exist; guidance, language choice, queue/progress, cancellation/retry and restored result reading are exercised in UI fixtures. Native tests cover durability; inference and target playback still require qualification. Audit executable decoding before changing support claims. | [Native decoder](../../desktop/src-tauri/src/jobs/remote/decode.rs), [preprocessing spec](../specs/local-audio-preprocessing-stack.md); D-10, OQ-14/OQ-27 |
+| More audio/video formats | FLAC and Ogg Vorbis are implemented through native intake; [FLAC evidence](../evidence/flac-import/2026-10-02-verification.md) and [Ogg evidence](../evidence/ogg-import/2026-10-02-verification.md) record checks and qualification limits. Single-track AAC-LC M4A/MP4 is now software verified through existing preparation owners; [AAC evidence](../evidence/aac-import/2026-10-03/verification.md) records timing, codec and release limits. WebM and broader Ogg codecs remain planned; each needs a decoder/license decision, bounded admission, source identity, recovery, and end-to-end checks before advertisement. | [Product](../../PRODUCT.md), [native dependencies](../../desktop/src-tauri/Cargo.toml) |
+| History, copy, reveal, and dedicated export | Native UTF-8 original-transcript export is implemented, with explicit destination selection, source revalidation and atomic creation that preserves existing files. Native IO and browser recovery checks are recorded in [export evidence](../evidence/transcript-export/2026-10-02-verification.md). [Accepted-correction export](../evidence/accepted-correction-export/2026-10-03/verification.md) adds explicit offline UTF-8 export of the displayed saved revision, with source/history revalidation. Actual Windows picker qualification, older revision selection and timed/speaker export contracts remain open. | [Product](../../PRODUCT.md), [current architecture](../architecture/CURRENT-ARCHITECTURE.md) |
+| Local dictation, microphone, hotkeys, and tray island | Baseline native ownership exists. Finish setup/status/recovery and UI fixtures now; physical capture, cross-app delivery, hit testing, and installer lifecycle require Windows qualification. No always-listening or silent route changes. | [Live UX](../specs/live-dictation-client-ux.md), [ADR 0013](../adr/0013-global-hotkey-injection.md); D-17, OQ-19/OQ-22 |
+| Fixed language, suggestions, and automatic switching | Confirmed primary/per-job locales and catalog-derived choices exist. Finish accurate availability and review now. Local switching and meeting routes remain explicit Preview where unpromoted; broader locales require evidence. | [ADR 0024](../adr/0024-global-language-routing.md), [ADR 0026](../adr/0026-ambernet-batch-language-preflight.md); D-06–D-09, OQ-01/OQ-05/OQ-11–OQ-13 |
+| Model installation, replacement, and rollback | Explicit verified install/import, atomic activation, and model-independent jobs/results remain requirements. Exercise corruption/interruption/unavailability now; format changes, distribution rights, performance, and route promotion need their own evidence. | [Download UX](../specs/model-download-ux.md), [ADR 0019](../adr/0019-local-streaming-model-selection.md); D-01/D-15, OQ-03/OQ-16/OQ-17/OQ-24 |
+| Terminology and personalization | Personal and explicitly configured team/organization CRUD connect the canonical ledger, frozen snapshots, native connection/scope authority and Settings → Personalization. [Shared management verifies nine software outcomes](../evidence/shared-terminology/2026-10-03-verification.md). Automatic directory integration, broader administration and ASR/normalizer/OKF projections remain in scope; actual Windows/enterprise/provider effectiveness is unqualified. | [ADR 0028](../adr/0028-model-independent-terminology-authority.md); D-11, OQ-04/OQ-15/OQ-25 |
+| Source-bound correction — Scribe | Implemented and exercised with fixtures: source selection, proposed edits, cancellation, explicit acceptance, separate revision, and raw transcript access on failure. [Accepted-revision recovery](../evidence/accepted-correction-recovery/2026-10-03/verification.md) adds native persisted-chain reopening and source-bound offline reading/copying. Accepted UTF-8 export now uses the dedicated source-bound contract above; older-revision selection and explicit damaged-history repair remain open. Real correction-model qualification remains required. | [ADR 0031](../adr/0031-eight-agent-voice-os-roster.md); OQ-25/OQ-26 |
+| Governed knowledge and all eight roles | Supported UI journeys are exercised with native-boundary fixtures: Scribe corrects; Archivist stages; Student asks learning questions; Curator proposes; Librarian retrieves cited excerpts; Analyst answers with citations; Coordinator bundles proposals; Auditor produces review findings. Staging/proposals/reports do not silently activate knowledge or execute actions. | [ADR 0031](../adr/0031-eight-agent-voice-os-roster.md), [knowledge compiler](../adr/0017-knowledge-base-compiler.md), [OKF/MCP](../adr/0022-google-okf-permission-safe-projections.md) |
+| Meeting transcripts and speaker identity | Anonymous evidence and source-time Tiron Preview exist. Keep speaker/timing/revision review usable. Purpose-authorized naming, deliberate enrollment/profile lifecycle, and larger-roster/overlap quality remain intended later work; no inferred identity from contact names. | [ADR 0020](../adr/0020-meeting-capture-diarization-authority.md), [ADR 0027](../adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md); D-23, OQ-19/OQ-20 |
+| Organization identity and permission isolation | Native token seam and token-derived owner isolation exist. Finish capability/sign-in/access-denied UI without disabling local controls. Production provider/cache and enterprise policy conformance require IT inputs; purpose grants must not be advertised as enforced where no executable caller exists. | [ADR 0016](../adr/0016-auth-identity-bridge.md), [current architecture](../architecture/CURRENT-ARCHITECTURE.md); D-21/D-22 |
+| Persistent services, routing, and fair capacity | Rust supervision, bounded admission, and route bindings exist. Preserve health/backpressure/cancel/restart ownership and software tests; remaining ASR integration needs an explicit slice. Simultaneous full-profile residency, sustained mixed-owner capacity, tail latency, and SLOs require representative nodes. | [ADR 0030](../adr/0030-rust-supervised-provider-service-lifecycle.md), [prior service plan](../plans/archived/2026-08-11-phase-10-supervised-provider-services.md); D-02–D-05, OQ-07/OQ-08/OQ-21 |
+| External live transport and secure edge | Authenticated private live admission is a baseline, not end-to-end server live ASR. Live inference, same-origin WSS/TLS, and external serving remain planned integration. HTTP/3 remains conditional on parity, measured benefit, resource budgets, and security/IT review. | [ADR 0021](../adr/0021-http3-secure-edge-transport.md), [prior roadmap](../archive/implementation-evidence/roadmap-2026-08-14.md#enterprise-handoffs); D-21 |
+| Release and operations | Preserve observability, dependency/provenance review, focused correctness/security review, publication governance, SBOM, backup/deletion, disaster recovery, deployment/rollback, and packaging. Implement software and document rehearsals now; scans/production drills and approvals have their explicit environments. | [Prior service plan](../plans/archived/2026-08-11-phase-10-supervised-provider-services.md#objective), [prior decision queue](../plans/archived/2026-07-17-voiceos-decision-evidence-queue.md#later-phase-queue); D-18–D-22 |
+| Repository split and additional storage/projections | Repository split remains intended after deployable boundaries/access are real. Redis, object storage, or Neo4j require a measured gap; do not add them merely to match a diagram. | [ADR 0018](../adr/0018-three-repo-topology.md), [ADR 0022](../adr/0022-google-okf-permission-safe-projections.md) |
 
-Accepted ADRs remain requirements even when no premature implementation exists.
-Do not treat an unchecked historical plan box as current backlog.
+Product now reflects the native WAV/MP3/FLAC/Ogg Vorbis intake boundary. The broader audio/video format goal remains intact; a decoder's four-hour safety ceiling does not establish a qualified maximum recording duration.
 
-The merged Phase 8 Preview follows
-[ADR 0027](../adr/0027-tiron-joint-speaker-attributed-meeting-transcription.md)
-and the completed
-[joint speaker-attributed meeting transcription plan](../plans/completed/2026-07-22-joint-speaker-attributed-meeting-transcription.md).
-Selecting and explicitly enabling the Preview baseline does not place it in the
-committed default catalog or production-promote it. The completed qualification
-record preserves the explicit `unadvertised-baseline` outcome.
-The separate
-[meeting-transcription ownership and maintainability review](../plans/completed/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md)
-qualified patched candidate `393710999...`; PR #143 merged the reviewed closure
-as `8fb511ad2fd7217a87e95ddba31d74dfa474fac2`. PR #144 merged the sole
-source-time route, and the completed production-qualification record closes the
-Phase 8 evidence decision without promotion.
+## Carried-forward decisions and qualification
 
-## Enterprise handoffs
+The [prior register](../plans/archived/2026-07-17-voiceos-decision-evidence-queue.md#open-decision-register) preserves all OQ-01–OQ-27 and their original evidence requirements. The grouped dispositions below carry every question forward without repeating historical execution receipts. D-01–D-23 remain accepted directions or explicitly gated candidates at their linked ADRs; D-12–D-16 govern evaluation/provider promotion, not new advertised capabilities.
 
-The following are controlled by IT, security, networking, or enterprise
-platform owners and cannot be invented by a developer branch:
+| Prior questions | Disposition and observable closure |
+| --- | --- |
+| OQ-01, OQ-05, OQ-12, OQ-13 | Keep primary plus explicit alternates and abstention/Unknown behavior. Promote switching/search breadth only after representative switch/false-switch/confusion tests pass; retain failed natural-switch evidence and redistribution limits. |
+| OQ-02, OQ-07, OQ-08 | Keep current explicit ASR/reasoning routes. Provider replacement or production promotion requires exact model/runtime/locale/task evidence, timing, isolation, teardown, and rollback. Qualified evaluation routes do not imply a production service. |
+| OQ-03, OQ-17 | Preserve checked formats and the Q4 floor; choose a new format only with exact-model quality/resource evidence. Fleet capacity remains separate. |
+| OQ-04, OQ-15 | Personal and explicitly configured shared management are software verified through scoped CRUD, native/UI authority and frozen snapshots. Broader projections, directory integration and provider effectiveness still require their own contracts and evidence. |
+| OQ-06, OQ-11 | Preserve immutable finalized text and source-time evidence. Close remaining holdback/reconciliation questions with duplicate/drop/reset/race/conflict/retry tests and representative switching evidence where required. |
+| OQ-09, OQ-20 | Advertise only the longest passing end-to-end case. Four hours remains a candidate ceiling; qualify chunk ordering, memory, cancellation/restart, alignment, and publication before raising it. |
+| OQ-10 | Classify native warnings on their actual target. Existing Linux dependency warnings and Windows qualification remain explicit; change pins only for reproducible impact. |
+| OQ-14 | Keep client capture/normalization/advisory evidence and server official inference ownership. Any redundant work needs measured value and explicit conflict/retry tests. |
+| OQ-16, OQ-24 | Prove compatible replacement, verified explicit install/import, interruption, atomic activation, rollback, disk/path safety, and last-known-good preservation; distribution authority cannot be inferred. |
+| OQ-18 | Promotion needs licensed, source-locked, independent holdouts with training-exposure classification. Comparator/synthetic evidence does not satisfy that requirement. |
+| OQ-19 | Preserve source/channel/gap identities for virtual/system audio. Qualify the supported OS capture path and codec/jitter/drop/privacy behavior on Windows. |
+| OQ-21 | Software verifies bounded fair admission and overload/cancellation isolation. Sustained mixed-owner live/batch capacity and latency/memory ceilings require actual services and hardware. |
+| OQ-22 | Fix inaccessible focus, duplicate state, invisible hit regions, and stalls in this milestone. Verify browser behavior now; physical hit testing/input latency remains target-platform work. |
+| OQ-23 | Keep idle work bounded and local LID lifecycle under the native owner. Battery, thermal, and sustained CPU/memory/ASR interference need representative physical clients. |
+| OQ-25, OQ-26 | Keep raw ASR and separate accepted revisions. Deterministic critical-token/number/unit/negation and correction-authority tests run now; representative model benefit needs inference evidence. |
+| OQ-27 | Exercise offline/missing/corrupt models, queued server jobs, retry, and no-data-loss recovery in this milestone. Never substitute an official-looking result or silently change routes. |
 
-- internal DNS and certificate issuance/trust;
-- synchronized server time and approved host identity;
-- enterprise firewall source ranges and policy;
-- ZPA application segment, policy, App Connector placement, and redundancy;
-- production identity registration, token audience, conditional-access and
-  revocation behavior;
-- production hosting/service-manager approval, backup/deletion SLA, enterprise
-  monitoring integration, SLO approval, and capacity authorization (Yap still
-  owns the service implementation, bounded local capacity evidence, and
-  observability instrumentation); and
-- enterprise deployment, publication, and audit approval.
+## Hardware and enterprise handoff
 
-Until those handoffs exist, the Phase 5 SSH-forward profile remains a narrow
-development boundary, not production security.
+Real-model quality/performance, speaker/locale promotion, Windows capture/injection/WAM/installer behavior, and sustained simultaneous service capacity need their target environments. DNS/certificates, synchronized server identity/time, firewall/ZPA, identity registration/audience/conditional access, production hosting, backup/deletion policy, monitoring/SLO approval, and enterprise publication/deployment remain accountable IT handoffs. Yap owns the software and prepared tests; fixtures do not invent those approvals.
 
-## Phase working rules
-
-1. Do not restart or duplicate merged work.
-2. Keep phases independently reviewable and mergeable.
-3. Use focused verification during development; run the complete applicable
-   phase matrix once when the exact head is ready.
-4. Resolve correctness/security findings before merge.
-5. Preserve upstream provenance and verify licenses before reuse.
-6. Update completion scores/status only after executable evidence exists.
-7. Keep private scan material and sensitive runtime evidence out of Git, PRs,
-   hosted logs, and public docs.
-8. After Phase 6 and each later phase, run the accepted separate adversarial/
-   refactor checkpoint before beginning the next phase; never mix next-phase
-   behavior into a checkpoint branch.
-9. Name runtime modules, types, functions, tests, configuration, containers,
-   and versioned contracts for the behavior they own. A phase number belongs
-   only in an actual roadmap, phase gate, phase evidence artifact, or frozen
-   backward-compatibility token; it is not a substitute for a domain name.
+The [Voice OS architecture](../VOICE-OS-ARCHITECTURE.md), accepted [ADRs](../adr/README.md), and current contracts retain the long-term direction. The [prior roadmap](../archive/implementation-evidence/roadmap-2026-08-14.md) and [decision queue](../plans/archived/2026-07-17-voiceos-decision-evidence-queue.md) retain detailed history. Nothing is retired merely by archiving its plan; any requirement retirement needs an explicit reason and source reference.

@@ -1,0 +1,50 @@
+import { expect, test } from "@playwright/test";
+import { installQueuedServerBridge } from "./app-server-bridge";
+
+test("correction and missing recording languages offer direct recovery actions", async ({ page }) => {
+  await installQueuedServerBridge(page, "not_set", { primaryLanguageUnconfirmed: true, localModelStatus: "missing" });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Skip for now" }).click();
+  await page.getByRole("button", { name: "Correct", exact: true }).click();
+  await page.getByRole("button", { name: "Choose a transcript", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Transcribe a recording", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Transcribe a recording", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Choose files", exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "Set up transcription", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "Settings", exact: true })).toBeVisible();
+});
+
+test("Knowledge task tabs retain drafts and support keyboard navigation when services are unavailable", async ({ page }) => {
+  await page.setViewportSize({ width: 1122, height: 740 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installQueuedServerBridge(page, "not_set");
+  await page.goto("/");
+  await page.getByRole("button", { name: "Knowledge", exact: true }).click();
+  const search = page.getByRole("tab", { name: "Search sources", exact: true });
+  await expect(search).toHaveAttribute("aria-selected", "true");
+  await page.getByRole("textbox", { name: "What reviewed information are you looking for?" }).fill("reviewed launch");
+  await page.getByRole("tab", { name: "Ask a question", exact: true }).click();
+  await page.getByRole("textbox", { name: "What do you want to know?" }).fill("Why was the launch approved?");
+  await expect(page.getByRole("textbox", { name: "What reviewed information are you looking for?" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Ask Analyst", exact: true })).toBeDisabled();
+  await page.getByRole("tab", { name: "Ask a question", exact: true }).focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(page.getByRole("tab", { name: "Review proposals", exact: true })).toBeFocused();
+  await page.keyboard.press("ArrowRight");
+  await expect(page.getByRole("tab", { name: "Review conflicts", exact: true })).toBeFocused();
+  await page.getByRole("tab", { name: "Review proposals", exact: true }).click();
+  await page.getByRole("textbox", { name: "What should the reviewed proposals help coordinate?" }).fill("Review the launch plan");
+  await page.getByRole("tab", { name: "Review conflicts", exact: true }).click();
+  await page.getByRole("textbox", { name: "What should Auditor review?" }).fill("Find launch conflicts");
+  await page.getByRole("tab", { name: "Review proposals", exact: true }).click();
+  await expect(page.getByRole("textbox", { name: "What should the reviewed proposals help coordinate?" })).toHaveValue("Review the launch plan");
+  await page.getByRole("tab", { name: "Review conflicts", exact: true }).click();
+  await expect(page.getByRole("textbox", { name: "What should Auditor review?" })).toHaveValue("Find launch conflicts");
+  await page.getByRole("tab", { name: "Ask a question", exact: true }).click();
+  await expect(page.getByRole("textbox", { name: "What do you want to know?" })).toHaveValue("Why was the launch approved?");
+  await search.click();
+  await expect(page.getByRole("textbox", { name: "What reviewed information are you looking for?" })).toHaveValue("reviewed launch");
+  await expect(page.getByRole("button", { name: "Search knowledge", exact: true })).toBeDisabled();
+  await page.getByRole("button", { name: "Check server settings", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "Settings", exact: true })).toBeVisible();
+});

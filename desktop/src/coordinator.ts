@@ -43,11 +43,13 @@ export function startCoordinatorBundle(
   objective: string,
   maximumItems: number,
   expectedGenerationSha256: string | null,
+  authorityRevision: string,
 ) {
   return invoke<CoordinatorBundleJobView>("start_coordinator_bundle", {
     objective,
     maximumItems,
     expectedGenerationSha256,
+    authorityRevision,
   });
 }
 

@@ -10,7 +10,7 @@ use std::{
 use crate::server_connector::{
     curator::{
         CuratorApiClient, CuratorProposalJobView, CuratorProposalStatus, CuratorRequest,
-        CuratorReviewedStudentQuestion,
+        CuratorReviewedStudentQuestion, CuratorSourceCitation,
     },
     CuratorConnectionLease, ServerConnector,
 };
@@ -235,6 +235,7 @@ pub(crate) async fn start_curator_proposal(
     expected_generation_sha256: String,
     reviewed_content: String,
     student_question: CuratorReviewedStudentQuestion,
+    authority_revision: String,
 ) -> Result<CuratorProposalJobView, String> {
     crate::authorization::ensure_main(&window)?;
     let request = CuratorRequest::reviewed_student_answer(
@@ -248,6 +249,61 @@ pub(crate) async fn start_curator_proposal(
         "Knowledge proposals require a connected organization server with Curator enabled."
             .to_string()
     })?;
+    lease.require_authority_revision(&authority_revision)?;
+    submit_owned_proposal(&connector, &owner, request, lease).await
+}
+
+#[tauri::command]
+// Tauri injects four authority owners alongside the independently bound inputs.
+#[allow(clippy::too_many_arguments)]
+pub(crate) async fn start_connection_proposal(
+    window: tauri::WebviewWindow,
+    connector: tauri::State<'_, ServerConnector>,
+    owner: tauri::State<'_, CuratorProposalOwner>,
+    librarian_owner: tauri::State<'_, crate::librarian_query::LibrarianQueryOwner>,
+    query_request_id: String,
+    source_index: usize,
+    target_index: usize,
+    relationship_type: String,
+    rationale: String,
+    authority_revision: String,
+) -> Result<CuratorProposalJobView, String> {
+    crate::authorization::ensure_main(&window)?;
+    let sources =
+        librarian_owner.connection_sources(&query_request_id, source_index, target_index)?;
+    sources
+        .lease
+        .require_authority_revision(&authority_revision)?;
+    connector.with_current_librarian_lease(&sources.lease, || ())?;
+    let lease = connector.curator_connection_lease()?.ok_or_else(|| {
+        "Connection review requires a connected organization server with Curator enabled."
+            .to_string()
+    })?;
+    lease.require_authority_revision(&authority_revision)?;
+    let citations = sources.items.map(|item| CuratorSourceCitation {
+        concept_id: item.concept_id,
+        source_revision: item.source_revision,
+        content_sha256: item.content_sha256,
+        char_start: item.char_start,
+        char_end: item.char_end,
+    });
+    let request = CuratorRequest::reviewed_connection(
+        next_submission_id(),
+        sources.generation_sha256,
+        citations,
+        relationship_type,
+        rationale,
+    )
+    .map_err(|error| error.to_string())?;
+    submit_owned_proposal(&connector, &owner, request, lease).await
+}
+
+async fn submit_owned_proposal(
+    connector: &ServerConnector,
+    owner: &CuratorProposalOwner,
+    request: CuratorRequest,
+    lease: CuratorConnectionLease,
+) -> Result<CuratorProposalJobView, String> {
     let submission = owner.reserve_submission()?;
     let view = lease
         .client()

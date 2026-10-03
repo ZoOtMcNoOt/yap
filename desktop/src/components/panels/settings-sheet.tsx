@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 
 import { AboutSettingsSection } from "@/components/settings/about-settings-section";
 import { GeneralSettingsSection } from "@/components/settings/general-settings-section";
+import { PersonalizationSettingsSection } from "@/components/settings/personalization-settings-section";
+import { useTerminology } from "@/hooks/use-terminology";
+import type { ServerConnectionSnapshot } from "@/server";
 import {
   SettingsNavigation,
   settingsSectionTitle,
@@ -50,6 +53,7 @@ export type SettingsSheetProps = {
   liveSettingsError: string;
   liveView: LiveSessionView;
   localComputeTargets: LocalComputeTargetView[];
+  localDictationLanguages: string[];
   primaryLanguageError: string;
   primaryLanguagePending: boolean;
   primaryLanguageStatus: PrimaryLanguageStatus | null;
@@ -69,12 +73,12 @@ export type SettingsSheetProps = {
   onSetLiveOverlayEnabled: (enabled: boolean) => void;
   onSetLivePasteHotkey: () => void;
   onSetLocalComputeTarget: (targetId: string) => void;
-  onSkipSetup: () => void;
   onStartLive: () => void;
   onStopLive: () => void;
   onVerifyFallback: () => void;
   open: boolean;
   serverLabel: string;
+  serverSnapshot: ServerConnectionSnapshot;
   status: string;
   sileroVad: SileroVadControl;
 };
@@ -91,6 +95,7 @@ export function SettingsSheet({
   liveSettingsError,
   liveView,
   localComputeTargets,
+  localDictationLanguages,
   primaryLanguageError,
   primaryLanguagePending,
   primaryLanguageStatus,
@@ -110,12 +115,12 @@ export function SettingsSheet({
   onSetLiveOverlayEnabled,
   onSetLivePasteHotkey,
   onSetLocalComputeTarget,
-  onSkipSetup,
   onStartLive,
   onStopLive,
   onVerifyFallback,
   open,
   serverLabel,
+  serverSnapshot,
   status,
   sileroVad,
 }: SettingsSheetProps) {
@@ -126,6 +131,7 @@ export function SettingsSheet({
   );
   const [confirmRemoveOpen, setConfirmRemoveOpen] = useState(false);
   const server = useServerSettingsDraft(open);
+  const terminology = useTerminology(open && section === "personalization", serverSnapshot, primaryLanguageStatus?.confirmedLanguageBcp47 ?? "en-US");
   const liveActive = liveSettingsLocked(liveView.status);
   const liveOverlayAction = projectLiveOverlayAction(liveView.status, liveBusy);
   const fallbackLifecycle = projectFallbackLifecycle(fallbackModel, {
@@ -212,6 +218,7 @@ export function SettingsSheet({
                     onSetLivePasteHotkey={onSetLivePasteHotkey}
                     onStartLive={onStartLive}
                     onStopLive={onStopLive}
+                    localDictationLanguages={localDictationLanguages}
                     primaryLanguageError={primaryLanguageError}
                     primaryLanguagePending={primaryLanguagePending}
                     primaryLanguageStatus={primaryLanguageStatus}
@@ -233,13 +240,12 @@ export function SettingsSheet({
                   />
                 ) : null}
 
+                {section === "personalization" ? <PersonalizationSettingsSection control={terminology} snapshot={serverSnapshot} languages={localDictationLanguages} onOpenSystem={() => setSection("system")} /> : null}
+
                 {section === "about" ? (
                   <AboutSettingsSection
                     auth={auth}
-                    canSkipSetup={Boolean(fallbackStatus && fallbackStatus !== "ready")}
-                    onSkipSetup={onSkipSetup}
                     serverLabel={serverLabel}
-                    skipSetupDisabled={busy || fallbackActionPending}
                     status={status}
                   />
                 ) : null}

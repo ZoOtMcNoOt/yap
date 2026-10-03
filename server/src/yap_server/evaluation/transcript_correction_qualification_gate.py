@@ -350,6 +350,7 @@ def _initialize_terminology(
                 authorization=TerminologyAuthorization(
                     principal=principal,
                     team_ids=(),
+                    managed_team_ids=(),
                     may_manage_organization=False,
                 ),
             )

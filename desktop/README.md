@@ -1,16 +1,15 @@
 # Yap Desktop
 
-Tauri desktop app for the local Nemotron INT8 fallback. Yap targets installed desktop
-windows, not phone/mobile layouts. See `..\README.md` for the repo map.
+Tauri/React desktop client for explicit local dictation, organization-server recording queues, transcript review/correction, and reviewed knowledge. Models are required for inference; frontend and native-boundary fixtures run without them.
 
-`desktop/src-tauri/src/audio/` owns the source-aware capture foundation: callback-safe framing and loss accounting, deterministic preprocessing, explicit timelines/gaps, independently bounded sink fan-out, crash-safe recording/recovery, and evidence/result contracts. Local Nemotron decoding remains under `live/` and `stt/`; server ASR, diarization inference, and other model-heavy processing remain deferred.
+Use Node 24 and pinned pnpm 11.7.0. The [cloud runbook](../docs/runbooks/cloud-development.md) installs Rust and native build dependencies. [Current status](../docs/CURRENT-STATUS.md) distinguishes portable checks from Windows/model qualification.
 
 Repo-owned Windows automation and installer validation require PowerShell Core 7.4 or newer (`pwsh.exe`). The scripts fail fast under legacy Windows PowerShell or an older Core runtime.
 
 ```powershell
-cd C:\dev\cohere-transcribe-local\desktop
+cd C:\dev\yap\desktop
 node -v  # should be v24.x
-pnpm install
+pnpm install --frozen-lockfile
 pnpm test
 pnpm build
 pnpm test:e2e

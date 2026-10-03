@@ -1,9 +1,7 @@
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 
-import type {
-  ServerConnectionState,
-} from "@/lib/setup-model";
+import type { ServerConnectionState } from "@/lib/setup-model";
 
 export const SERVER_SETTINGS_SCHEMA_VERSION = 2 as const;
 
@@ -34,6 +32,8 @@ export type ServerCapabilities = {
   analystAnswers: boolean;
   coordinatorBundles: boolean;
   auditorReports: boolean;
+  knowledgeConnections: boolean;
+  personalTerminology: boolean;
   archivistIngestions: boolean;
   studentQuestions: boolean;
   curatorProposals: boolean;
@@ -75,6 +75,7 @@ export type AsrCapabilityCatalog = {
 };
 
 export type ServerConnectionSnapshot = {
+  authorityRevision: string;
   state: ServerConnectionState;
   checkedAtMs: number | null;
   retryAtMs: number | null;
@@ -86,11 +87,17 @@ export type ServerConnectionSnapshot = {
 export function serverCanRouteImportedRecording(
   snapshot: ServerConnectionSnapshot | null | undefined,
 ) {
-  return snapshot?.state === "ready" && snapshot.capabilities?.batchJobs === true;
+  return (
+    snapshot?.state === "ready" && snapshot.capabilities?.batchJobs === true
+  );
 }
 
-export function serverCanRouteLive(snapshot: ServerConnectionSnapshot | null | undefined) {
-  return snapshot?.state === "ready" && snapshot.capabilities?.liveStreaming === true;
+export function serverCanRouteLive(
+  snapshot: ServerConnectionSnapshot | null | undefined,
+) {
+  return (
+    snapshot?.state === "ready" && snapshot.capabilities?.liveStreaming === true
+  );
 }
 
 export function catalogSupportsMode(
@@ -98,9 +105,15 @@ export function catalogSupportsMode(
   languageBcp47: string,
   mode: AsrExecutionMode,
 ) {
-  return catalog?.providers.some((provider) =>
-    provider.capabilities.some((capability) =>
-      capability.languageBcp47 === languageBcp47 && capability.mode === mode)) ?? false;
+  return (
+    catalog?.providers.some((provider) =>
+      provider.capabilities.some(
+        (capability) =>
+          capability.languageBcp47 === languageBcp47 &&
+          capability.mode === mode,
+      ),
+    ) ?? false
+  );
 }
 
 export function serverConnectionStatus(): Promise<ServerConnectionSnapshot> {
@@ -119,7 +132,9 @@ export async function listenServerConnection(
   onUpdate: (snapshot: ServerConnectionSnapshot) => void,
 ): Promise<UnlistenFn> {
   if (!isTauri()) return () => undefined;
-  return listen<ServerConnectionSnapshot>("server-connection", (event) => onUpdate(event.payload));
+  return listen<ServerConnectionSnapshot>("server-connection", (event) =>
+    onUpdate(event.payload),
+  );
 }
 
 export type LocalServerOffer = {
@@ -135,7 +150,9 @@ export function serverSettings(): Promise<ServerSettings> {
   return invoke<ServerSettings>("server_settings");
 }
 
-export function saveServerSettings(settings: ServerSettings): Promise<ServerSettings> {
+export function saveServerSettings(
+  settings: ServerSettings,
+): Promise<ServerSettings> {
   return invoke<ServerSettings>("set_server_settings", { settings });
 }
 

@@ -1,17 +1,17 @@
 import { Repeat } from "@phosphor-icons/react/Repeat";
 import { Sparkle } from "@phosphor-icons/react/Sparkle";
-import { XCircle } from "@phosphor-icons/react/XCircle";
 
 import { CoordinatorBundleResult } from "@/components/coordinator/coordinator-bundle-result";
 import { useCoordinatorBundle } from "@/components/coordinator/use-coordinator-bundle";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { RequestCancelButton } from "@/components/ui/request-cancel-button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 
-export function CoordinatorBundleComposer({ available }: { available: boolean }) {
-  const coordinator = useCoordinatorBundle({ available });
+export function CoordinatorBundleComposer({ available, authorityRevision }: { available: boolean; authorityRevision: string }) {
+  const coordinator = useCoordinatorBundle({ available, authorityRevision });
 
   return (
     <Card className="border-primary/25 bg-[var(--surface-transcript)] py-0 shadow-none">
@@ -63,10 +63,7 @@ export function CoordinatorBundleComposer({ available }: { available: boolean })
           </p>
           <div className="flex flex-wrap gap-2">
             {coordinator.active ? (
-              <Button onClick={() => void coordinator.cancel()} type="button" variant="secondary">
-                <XCircle data-icon="inline-start" />
-                Cancel
-              </Button>
+              <RequestCancelButton onCancel={coordinator.cancel} requestId={coordinator.view?.requestId} />
             ) : (
               <Button disabled={!coordinator.canRun} type="submit">
                 Build proposal bundle

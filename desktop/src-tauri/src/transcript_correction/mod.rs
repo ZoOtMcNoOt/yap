@@ -1,7 +1,7 @@
 use std::{
     collections::HashMap,
     path::PathBuf,
-    sync::{Arc, Mutex},
+    sync::{Arc, LazyLock, Mutex},
     time::{Duration, Instant},
 };
 
@@ -21,13 +21,17 @@ mod tests;
 pub(crate) use revision::live_transcript_correction_artifacts_for_deletion;
 #[cfg(test)]
 pub(crate) use revision::publish_transcript_correction_revision_for_test;
-pub(crate) use revision::PublishedTranscriptCorrection;
+pub(crate) use revision::read_accepted_transcript_correction as recover_accepted_transcript_correction;
+pub(crate) use revision::{PublishedTranscriptCorrection, RecoveredTranscriptCorrection};
 pub(crate) use source::{
     read_trusted_transcript_correction_source, TranscriptCorrectionSourceKind,
     TrustedTranscriptCorrectionSource,
 };
 
 const MAXIMUM_OWNED_REQUESTS: usize = 64;
+static RECOVERY_READ: LazyLock<Arc<tokio::sync::Semaphore>> =
+    LazyLock::new(|| Arc::new(tokio::sync::Semaphore::new(1)));
+
 const SOURCE_READ_TIMEOUT: Duration = Duration::from_secs(8);
 const UNOWNED_REQUEST_CONTAINMENT_TIMEOUT: Duration = Duration::from_secs(5);
 const UNOWNED_REQUEST_POLL_INTERVAL: Duration = Duration::from_millis(25);
@@ -293,6 +297,41 @@ fn valid_status_transition(
 impl Default for TranscriptCorrectionOwner {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[tauri::command]
+pub(crate) async fn read_accepted_transcript_correction(
+    window: tauri::WebviewWindow,
+    output_path: String,
+) -> Result<RecoveredTranscriptCorrection, String> {
+    crate::authorization::ensure_main(&window)?;
+    run_recovery_read(
+        PathBuf::from(output_path),
+        RECOVERY_READ.clone(),
+        SOURCE_READ_TIMEOUT,
+        |path| revision::read_accepted_transcript_correction(&path),
+    )
+    .await
+}
+
+async fn run_recovery_read(
+    path: PathBuf,
+    readers: Arc<tokio::sync::Semaphore>,
+    deadline: Duration,
+    read: impl FnOnce(PathBuf) -> Result<RecoveredTranscriptCorrection, String> + Send + 'static,
+) -> Result<RecoveredTranscriptCorrection, String> {
+    let permit = readers
+        .try_acquire_owned()
+        .map_err(|_| "Saved correction history is being read. Try again shortly.".to_string())?;
+    let task = tauri::async_runtime::spawn_blocking(move || {
+        let _permit = permit;
+        read(path)
+    });
+    match tokio::time::timeout(deadline, task).await {
+        Ok(Ok(result)) => result,
+        Ok(Err(_)) => Err("The saved correction history worker failed.".into()),
+        Err(_) => Err("Reading saved correction history timed out. Try again shortly.".into()),
     }
 }
 

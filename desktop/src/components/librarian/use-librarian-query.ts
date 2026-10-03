@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useConnectionAuthority } from "@/hooks/use-connection-authority";
+
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   cancelLibrarianQuery,
@@ -53,10 +55,11 @@ function validSearchText(value: string) {
   return text.length > 0 && [...text].length <= 1_024 && [...text].some((character) => /[\p{L}\p{N}]/u.test(character));
 }
 
-export function useLibrarianQuery({ available }: { available: boolean }) {
+export function useLibrarianQuery({ available, authorityRevision }: { available: boolean; authorityRevision: string }) {
   const [searchText, setSearchText] = useState("");
   const [view, setView] = useState<LibrarianQueryJobView>();
   const [starting, setStarting] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState("");
   const activeRequestRef = useRef<string | undefined>(undefined);
   const epochRef = useRef(0);
@@ -64,28 +67,31 @@ export function useLibrarianQuery({ available }: { available: boolean }) {
   const cancelPendingRef = useRef(false);
   const lastSubmittedTextRef = useRef("");
 
-  const abandonActiveRequest = useCallback((showError: boolean) => {
+  const abandonActiveRequest = useCallback(() => {
     const requestId = activeRequestRef.current;
     activeRequestRef.current = undefined;
-    if (!requestId) return;
-    void cancelLibrarianQuery(requestId).catch((cause) => {
-      if (showError) setError(cause instanceof Error ? cause.message : String(cause));
-    });
+    if (!requestId || cancelPendingRef.current) return;
+    void cancelLibrarianQuery(requestId).catch(() => undefined);
   }, []);
 
   useEffect(() => () => {
     epochRef.current += 1;
-    abandonActiveRequest(false);
+    abandonActiveRequest();
   }, [abandonActiveRequest]);
 
-  useEffect(() => {
-    if (available) return;
+  const invalidate = useCallback((changed: boolean) => {
     epochRef.current += 1;
-    abandonActiveRequest(false);
+    abandonActiveRequest();
+    if (changed) {
+      setSearchText("");
+      lastSubmittedTextRef.current = "";
+    }
     setView(undefined);
-    setStarting(false);
     setError("");
-  }, [abandonActiveRequest, available]);
+  }, [abandonActiveRequest]);
+  const ownsDraft = useConnectionAuthority(available, authorityRevision, invalidate);
+  const current = available && ownsDraft;
+  const currentView = current ? view : undefined;
 
   const pollUntilTerminal = useCallback(async (requestId: string, epoch: number) => {
     while (activeRequestRef.current === requestId) {
@@ -115,8 +121,9 @@ export function useLibrarianQuery({ available }: { available: boolean }) {
   const submit = useCallback(async (requestedText: string) => {
     const normalized = requestedText.trim();
     if (
-      !available
+      !current
       || !validSearchText(normalized)
+      || cancelPendingRef.current
       || startPendingRef.current
       || activeRequestRef.current
     ) return;
@@ -127,7 +134,7 @@ export function useLibrarianQuery({ available }: { available: boolean }) {
     setError("");
     lastSubmittedTextRef.current = normalized;
     try {
-      const next = await startLibrarianQuery(normalized, maximumResults, null);
+      const next = await startLibrarianQuery(normalized, maximumResults, null, authorityRevision);
       if (epochRef.current !== epoch) {
         if (librarianQueryIsActive(next.status)) {
           void cancelLibrarianQuery(next.requestId).catch(() => undefined);
@@ -145,9 +152,9 @@ export function useLibrarianQuery({ available }: { available: boolean }) {
       }
     } finally {
       startPendingRef.current = false;
-      if (epochRef.current === epoch) setStarting(false);
+      setStarting(false);
     }
-  }, [available, pollUntilTerminal]);
+  }, [authorityRevision, current, pollUntilTerminal]);
 
   const run = useCallback(() => submit(searchText), [searchText, submit]);
   const retry = useCallback(
@@ -160,6 +167,7 @@ export function useLibrarianQuery({ available }: { available: boolean }) {
     if (!requestId || cancelPendingRef.current) return;
     const epoch = epochRef.current;
     cancelPendingRef.current = true;
+    setCancelling(true);
     try {
       const next = await cancelLibrarianQuery(requestId);
       if (epochRef.current !== epoch) return;
@@ -171,26 +179,26 @@ export function useLibrarianQuery({ available }: { available: boolean }) {
       }
     } finally {
       cancelPendingRef.current = false;
+      setCancelling(false);
     }
   }, []);
 
-  const active = starting || (view ? librarianQueryIsActive(view.status) : false);
-  const statusLine = useMemo(
-    () => librarianStatusLine({ available, starting, view }),
-    [available, starting, view],
-  );
+  const active = starting || cancelling || (currentView ? librarianQueryIsActive(currentView.status) : false);
+  const statusLine = cancelling
+    ? "Waiting for cancellation acknowledgement…"
+    : librarianStatusLine({ available, starting, view: currentView });
 
   return {
     active,
-    canRun: available && validSearchText(searchText) && !active,
+    canRun: current && validSearchText(searchText) && !active,
     cancel,
-    error,
-    evidence: view?.status === "complete" ? view.evidencePack ?? undefined : undefined,
+    error: current ? error : "",
+    evidence: currentView?.status === "complete" ? currentView.evidencePack ?? undefined : undefined,
     retry,
     run,
-    searchText,
+    searchText: ownsDraft ? searchText : "",
     setSearchText,
     statusLine,
-    view,
+    view: currentView,
   };
 }

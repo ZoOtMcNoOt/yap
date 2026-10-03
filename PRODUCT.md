@@ -1,9 +1,5 @@
 # Product
 
-## Register
-
-product
-
 ## Users
 
 Privacy-conscious people who need accurate text from audio or video files — journalists transcribing interviews, researchers working through field recordings, podcasters, students, and anyone who batch-processes media without sending it to a third-party cloud.
@@ -12,75 +8,42 @@ They usually arrive with files already on disk (MP3, M4A, WAV, MP4, and similar 
 
 ## Product Purpose
 
-Yap is a desktop transcription app (Tauri + React in `desktop/`). The current desktop implementation records and transcribes explicit live sessions locally with Nemotron 3.5 ASR Streaming 0.6B INT8 through in-process `sherpa-onnx`. The merged Phase 5 path also transcribes already-canonical mono PCM16/16 kHz WAV imports through the durable private-server contract and publishes only natively verified results. Disconnected imports remain queued or blocked instead of receiving official-looking fallback output. General audio/video decoding and conversion remain the target product experience but are not advertised as current executable support.
+Yap is a desktop transcription app (Tauri + React in `desktop/`). The current desktop implementation records and transcribes explicit live sessions locally with Nemotron 3.5 ASR Streaming 0.6B INT8 through in-process `sherpa-onnx`. The imported-recording path accepts canonical mono PCM16/16 kHz WAV and decodes MP3, FLAC, Ogg Vorbis and AAC-LC in M4A/MP4 into that canonical format before using the durable private-server contract. It publishes only natively verified results. Disconnected imports remain queued or blocked instead of receiving official-looking fallback output. Additional audio/video formats remain the target product experience; current decoding support is WAV, MP3, FLAC, Ogg Vorbis and M4A/MP4 with one mono/stereo AAC-LC track. Ogg requires a single, non-chained Vorbis track with a complete ending. M4A/MP4 requires a complete nonfragmented container with supported presentation timing; video is ignored. Opus, other MP4 codecs and complex edits remain unsupported. AAC distribution patent clearance remains a separate release decision.
 
-The target product loop is files in, accurate transcripts out, with minimal friction between drop → durable queue → private server transcript → copy/export. The connected path currently accepts already-canonical mono PCM16/16 kHz WAV files; general audio/video decoding and conversion remain open. The supported offline loop is explicit live capture → local transcript → history/playback/copy or reveal. The interface should make the current file and its transcript the center of attention; model names, auth paths, and runner details stay in secondary status unless something needs attention.
+The target product loop is files in, accurate transcripts out, with minimal friction between drop → durable queue → private server transcript → copy/export. The connected path currently accepts canonical mono PCM16/16 kHz WAV, MP3, FLAC, Ogg Vorbis and supported M4A/MP4 files; additional audio/video formats remain open. The supported offline loop is explicit live capture → local transcript → history/playback/copy or reveal. The interface should make the current file and its transcript the center of attention; model names, auth paths, and runner details stay in secondary status unless something needs attention.
 
-Merged production navigation:
+Supported navigation:
 
 - **Home** — hub with recent transcripts and a quick path back into work
 - **Transcribe** — the workbench: drop zone, queue, progress, and live transcript preview
 - **Correct** — manual source-bound transcript correction with original/corrected review and explicit revision publication
+- **Knowledge** — cited search/answers and human review of proposals/conflicts
+- **Settings and Help** — setup, recovery, and concise guidance
 
-Transcript history currently lives on Home; there is no separate Transcripts navigation item or dedicated export command yet. Correct uses the merged authenticated Scribe route on a connected organization server. It preserves raw ASR, shows the original and proposed correction together, and publishes only an explicitly accepted separate revision. Remote failure leaves the raw transcript unchanged.
+Transcript history lives on Home. Review offers copy, open, reveal and **Export text** for the original UTF-8 transcript. Export creates a new file outside Yap data and preserves existing files. Timed/speaker exports remain planned.
 
-The merged product includes a dedicated **Knowledge** workspace backed by
-authenticated Librarian HTTP endpoints and native Tauri commands. It exposes
-only bounded permission-safe excerpts with source citations, one active query,
-cancel/retry controls, and an explicit unavailable state. The bearer and server
-exchange remain native-owned; remote failure does not disable local controls.
-Exact executable `e2ba1864...` privately qualified its authenticated HTTP server
-boundary; hosted head `67a79ce2...` passed all 12 checks, and PR #174 merged the
-vertical as `98af78c9...`. The private gate did not include a native/renderer
-round trip or live enterprise identity-provider exchange.
+Correct requests source-bound suggestions through Scribe on the connected organization server. **Save revision** accepts edits as a separate revision and preserves raw ASR. Reopening restores the latest accepted revision for offline reading, copying and **Export saved correction**. Export checks the displayed revision and revalidates source/history after destination selection. Unsaved suggestions remain separate; damaged or source-conflicting history reports an error without replacing files.
 
-The merged Archivist product vertical adds one explicit **Stage for
-knowledge** action to a completed server-batch transcript. React sends only the
-local recording identity to native Rust; native code resolves and verifies the
-durable server job/result, owns the bearer exchange, and reconciles cancellation
-through an exact terminal request/source identity before releasing its lease.
-It then calls authenticated Archivist HTTP endpoints. The server re-derives the
-reviewed capture, stages a deterministic non-embedding generation, and never
-activates knowledge. Exact executable `a2e9b551...` privately qualified the
-authenticated server/database/broker boundary with 10/10 terminals and exact
-teardown. Hosted head `69215c43...` passed all 12 required checks, and PR #177
-merged the vertical as `e397af8b...`. The private gate did not execute a native-
-to-renderer round trip or live enterprise identity provider.
+Knowledge provides five task tabs: Search sources, Ask a question, Connections, Review proposals, and Review conflicts. Connections explores permission-filtered, source-cited relationships; proposed connections require two exact source excerpts and remain separate from canonical knowledge. Review proposals reopens a saved connection by reference, with its direction, rationale and exact cited sources; opening it does not publish knowledge. Tasks retain drafts and pending work across tabs; citations show exact excerpts and source revision/range details. The supported roles are:
 
-The internal Student, Curator, Analyst, Coordinator, and Auditor cores are
-merged. Exact executable `778a7545...` privately qualified Student's
-authenticated product boundary; hosted head `53ce570b...` passed all 12 checks,
-and PR #178 merged the HTTP/native/renderer vertical as `6546970b...`. Its
-private gate covers the authenticated server boundary, not a live native/
-renderer round trip or enterprise identity exchange. Exact executable
-`6aa33e4d...` privately qualified Curator's explicit
-reviewed-proposal HTTP jobs, native-owned bearer and lifecycle handling, and
-source-bound review action after a completed Student question. Its 10/10 exact
-server terminals returned public-safe evidence SHA-256 `328f6640...`. Hosted
-head `b983adb7...` passed all 12 checks, and PR #179 merged that product vertical
-as `70303872...`; its private gate did not execute a native/renderer round trip
-or live enterprise identity exchange. Exact `78b2c638...` privately
-qualifies Analyst's authenticated cited-answer server boundary: 10/10 exact
-product terminals, 4 exact server-derived cited answers, strict owner isolation,
-two PostgreSQL restart/read-backs, fail-closed cancellation, and exact teardown.
-Hosted head `4c8db7c2...` passed all 12 required checks, and PR #180 merged the
-native/renderer Analyst successor as `c95fcf1a...`; its private gate did not
-claim a client round trip or live enterprise identity exchange. Exact
-`05400fb3...` privately qualified Coordinator's authenticated proposal-
-bundle server boundary: 10/10 exact product terminals, 5 exact server-derived
-noncanonical review-required bundles, strict owner isolation, two PostgreSQL
-restart/read-backs, fail-closed cancellation, and exact teardown. Hosted head
-`6890a9f5...` passed all 12 required checks, and PR #181 merged the native/
-renderer vertical as `3fd5eaed...`. Exact `87924d5f...` privately qualified
-Auditor's authenticated report server boundary: 10/10 exact product
-terminals, 4 exact server-derived noncanonical review-required reports, strict
-owner isolation, two PostgreSQL restart/read-backs, fail-closed cancellation,
-and exact teardown. Hosted head `6bb72953...` passed all six hosted CI jobs
-reported for PR #183, which rebase-merged the tree-identical native/renderer
-successor with main tip `13d9e3ef...`. Auditor does not schedule reviews or
-mutate source or knowledge state.
+| Role | User-facing outcome |
+| --- | --- |
+| Scribe | Proposed corrections; explicitly accepted separate revision. |
+| Archivist | Stage a completed server transcript for knowledge review. |
+| Librarian | Retrieve permission-safe excerpts with citations. |
+| Analyst | Answer using current cited evidence. |
+| Student | Ask a learning question about an exact cited excerpt. |
+| Curator | Create a source-bound proposal with a copyable review reference. |
+| Coordinator | Assemble a noncanonical proposal bundle for human review. |
+| Auditor | Report source-cited findings without changing knowledge or scheduling actions. |
 
-This is not live-only dictation or a Wispr Flow clone. Batch recordings remain the target core loop once the trusted server route exists; live capture is the implemented compact, explicit companion path.
+Credentials, source admission, authorization, transport, and durable jobs remain native/server-owned. Staging, proposals, bundles, and reports do not activate knowledge. Failed remote work leaves local reading and setup available; background completion offers an explicit review action instead of changing workspaces.
+
+Settings separates local dictation from the optional organization connection and sign-in. Help explains language choice, routing, storage, corrections, and human review. Setup can be skipped and retried before models or services are available.
+
+Settings → Personalization manages personal and explicitly configured team/organization preferred spellings, variants, language and sensitivity through the authenticated server ledger. Scope discovery provides trusted labels and separate viewing/editing permissions; team membership and organization administrator roles remain operator-owned. Creation retries preserve identity; edit conflicts require comparing the latest version; deletion preserves history and existing snapshots. Offline failures retain drafts, while sign-out clears private loaded data. Native connection revisions prevent old drafts from being submitted under another server/account. Terminology management works without correction models; saving terms does not enable correction or promise provider-specific ASR effectiveness. Automatic directory synchronization, broader administration/projections and provider effectiveness remain in the [project queue](docs/plans/active/2026-10-02-yap-project-hill-climb.md).
+
+Qualification history is preserved in the [product snapshot](docs/archive/implementation-evidence/product-2026-08-14.md) and [evidence index](docs/evidence/README.md). Those receipts establish their recorded server boundaries; they do not establish a current native/renderer round trip, live enterprise identity exchange, or renewed model qualification. The [roadmap](docs/roadmap/ROADMAP.md) retains intended formats, export, personalization, speaker identity, and the full Voice OS direction.
 
 ## Brand Personality
 
@@ -108,8 +71,8 @@ Emotional goal: users trust the visible route — local fallback on this device,
 ## Design Principles
 
 1. **Drop audio, get text.** Every screen should reinforce the core loop; secondary capabilities (correction, knowledge staging, history, setup) support it, they don't compete with it.
-2. **The transcript is the reward.** When transcription completes, the text surface becomes the hero; copy and reveal actions stay adjacent to the content, with dedicated export remaining a target capability.
-3. **Trusted route, stated simply.** Say "Private on this device" for local fallback and "Org server" for team/server work — not implementation details — unless an error requires technical context.
+2. **The transcript is the reward.** When transcription completes, the text surface becomes the hero; copy, export and reveal actions stay adjacent to the content.
+3. **Trusted route, stated simply.** Distinguish local dictation readiness from server availability. Imported recordings retain their organization-server route during outages; no status label may imply an automatic local switch.
 4. **One primary action per state.** Empty → drop; queued → wait for the trusted route; running → progress + cancel; done → read, copy, or reveal. Avoid competing primary buttons.
 5. **Technical setup is secondary.** Model, auth, runner, and output path belong in details/status areas until something needs attention.
 

@@ -29,6 +29,27 @@ Current architecture-review evidence:
 - [Reviewed file inventory](executable-ownership-review/FILE-INVENTORY.md)
 - [Checked-head verification](executable-ownership-review/VERIFICATION.md)
 
+Current product-completion evidence:
+
+- [Original transcript export](transcript-export/2026-10-02-verification.md)
+- [Personal terminology](personal-terminology/2026-10-02-verification.md)
+- [Shared terminology](shared-terminology/2026-10-03-verification.md)
+- [Imported audio integrity](imported-audio-integrity/2026-10-02-verification.md)
+- [FLAC import](flac-import/2026-10-02-verification.md)
+- [Ogg Vorbis import](ogg-import/2026-10-02-verification.md)
+- [AAC in M4A/MP4: native timing and recording flows](aac-import/2026-10-03/verification.md)
+- [Model lifecycle source verification](model-lifecycle/2026-10-02-verification.md)
+- [UI acceptance and qualification handoff](ui-completion/2026-10-02-acceptance.md)
+- [Shared design refresh, screen review and motion](design-refresh/2026-10-03/review.md)
+- [Knowledge connections: storage, contract and screens](knowledge-connections/2026-10-03/verification.md)
+- [Connection-owned Knowledge views](connection-owned-knowledge/2026-10-03-verification.md)
+- [Curator connection proposals and review screens](curator-connections/2026-10-03/verification.md)
+- [Accepted correction reopening and offline recovery](accepted-correction-recovery/2026-10-03/verification.md)
+- [Accepted correction UTF-8 export](accepted-correction-export/2026-10-03/verification.md)
+- [Saved connection source inspection](connection-proposal-inspection/2026-10-03/verification.md)
+- [Repository consolidation and preserved branch history](repository-consolidation/2026-10-03/verification.md)
+- [Mobbin design references](ui-completion/2026-10-02-design-references.md)
+
 Do not commit private scans, scan identifiers, sensitive audio/transcripts, raw
 host snapshots, credentials, or enterprise configuration. Public evidence may
 record hashes, versions, counts, redacted outcomes, and explicit limitations.

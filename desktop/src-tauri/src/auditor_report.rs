@@ -226,6 +226,7 @@ pub(crate) async fn start_auditor_report(
     focus: String,
     maximum_findings: u8,
     expected_generation_sha256: Option<String>,
+    authority_revision: String,
 ) -> Result<AuditorReportJobView, String> {
     crate::authorization::ensure_main(&window)?;
     let request = AuditorRequest::new(focus, maximum_findings, expected_generation_sha256)
@@ -233,6 +234,7 @@ pub(crate) async fn start_auditor_report(
     let lease = connector.auditor_connection_lease()?.ok_or_else(|| {
         "Audit reports require a connected organization server with Auditor enabled.".to_string()
     })?;
+    lease.require_authority_revision(&authority_revision)?;
     let submission = owner.reserve_submission()?;
     let view = lease
         .client()

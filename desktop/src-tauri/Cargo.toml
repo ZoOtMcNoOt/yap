@@ -35,15 +35,14 @@ sha2 = "0.11"
 tokio = { version = "1", features = ["io-util", "macros", "process", "sync", "time"] }
 tauri-plugin-global-shortcut = "2"
 cpal = "0.16"
-# mp3 only for now; m4a needs a separate AAC patent decision.
-symphonia = { version = "0.5", default-features = false, features = ["mp3"] }
+# MPL-2.0 decoder sources/notices are inventoried. AAC distribution patent
+# clearance remains a separate release decision; local development verifies IO.
+symphonia = { version = "=0.6.1", default-features = false, features = ["mp3", "flac", "ogg", "vorbis", "aac", "isomp4"] }
 # Canonical WAV writing. Zero transitive dependencies.
 hound = "3.5"
 sherpa-onnx = "1.13.4"
 ort = { version = "=2.0.0-rc.12", default-features = false, features = ["std", "api-24", "alternative-backend"] }
 realfft = "=3.5.0"
-windows = { version = "0.61.3", features = ["Win32_Foundation", "Win32_Graphics_Gdi", "Win32_Security_Authorization", "Win32_Storage_FileSystem", "Win32_System_DataExchange", "Win32_System_IO", "Win32_System_Memory", "Win32_System_ProcessStatus", "Win32_System_Threading", "Win32_UI_Input_KeyboardAndMouse", "Win32_UI_WindowsAndMessaging", "Foundation", "Security_Authentication_Web_Core", "Security_Credentials", "Win32_System_WinRT", "Win32_System_Com"] }
-windows-future = "0.2"
 tauri-plugin-wdio = { version = "1", optional = true }
 tauri-plugin-wdio-webdriver = { version = "1", optional = true }
 time = { version = "0.3.53", default-features = false, features = ["formatting", "parsing"] }
@@ -54,3 +53,7 @@ zeroize = "1.9.0"
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.61.3", features = ["Win32_Foundation", "Win32_Graphics_Gdi", "Win32_Security_Authorization", "Win32_Storage_FileSystem", "Win32_System_DataExchange", "Win32_System_IO", "Win32_System_Memory", "Win32_System_ProcessStatus", "Win32_System_Threading", "Win32_UI_Input_KeyboardAndMouse", "Win32_UI_WindowsAndMessaging", "Foundation", "Security_Authentication_Web_Core", "Security_Credentials", "Win32_System_WinRT", "Win32_System_Com"] }
+windows-future = "0.2"

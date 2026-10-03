@@ -53,8 +53,9 @@ class LidRuntimeTests(unittest.TestCase):
             storage.mkdir()
             model.mkdir()
             work_root = storage / "lid-preflight"
+            work_root.mkdir(mode=0o700)
             recovery = work_root / "lid-recovery-request"
-            recovery.mkdir(parents=True)
+            recovery.mkdir(mode=0o700)
             (recovery / ".yap-container-id").write_text(
                 "e" * 64,
                 encoding="utf-8",

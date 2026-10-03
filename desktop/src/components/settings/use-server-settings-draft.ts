@@ -19,6 +19,8 @@ export type ServerSettingsDraftController = {
   error: string;
   identity: ServerIdentityStatus;
   notice: string;
+  loadState: "loading" | "ready" | "error";
+  retryLoad: () => void;
   pending: boolean;
   save: () => Promise<ServerSettings | null>;
   setApiScope: (scope: string) => void;
@@ -55,11 +57,14 @@ export function useServerSettingsDraft(open: boolean): ServerSettingsDraftContro
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [loadState, setLoadState] = useState<"loading" | "ready" | "error">("loading");
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
   useEffect(() => {
     if (!open) return;
     let active = true;
     setPending(true);
+    setLoadState("loading");
     setError("");
     setNotice("");
     void Promise.all([serverSettings(), serverIdentityStatus()])
@@ -71,9 +76,13 @@ export function useServerSettingsDraft(open: boolean): ServerSettingsDraftContro
         setClientId(settings.authentication?.clientId ?? "");
         setApiScope(settings.authentication?.apiScope ?? "");
         setIdentity(identityStatus);
+        setLoadState("ready");
       })
       .catch((loadError: unknown) => {
-        if (active) setError(terseSettingsError(loadError, "Could not load server settings."));
+        if (active) {
+          setLoadState("error");
+          setError(terseSettingsError(loadError, "Could not load server settings."));
+        }
       })
       .finally(() => {
         if (active) setPending(false);
@@ -81,7 +90,7 @@ export function useServerSettingsDraft(open: boolean): ServerSettingsDraftContro
     return () => {
       active = false;
     };
-  }, [open]);
+  }, [open, loadAttempt]);
 
   async function save() {
     setPending(true);
@@ -180,6 +189,8 @@ export function useServerSettingsDraft(open: boolean): ServerSettingsDraftContro
     error,
     identity,
     notice,
+    loadState,
+    retryLoad: () => setLoadAttempt((attempt) => attempt + 1),
     pending,
     save,
     setApiScope,

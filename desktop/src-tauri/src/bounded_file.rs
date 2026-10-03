@@ -13,18 +13,24 @@ pub(crate) fn read_bytes(path: &Path, maximum_bytes: usize) -> io::Result<Vec<u8
     read_bytes_after_admission(path, maximum_bytes, || {})
 }
 
+/// Opens a bounded regular file without following a final link. Streaming
+/// owners retain this handle rather than inspecting a pathname and reopening
+/// a potentially different source. The returned metadata belongs to the handle.
+pub(crate) fn open_regular_file(path: &Path, maximum_bytes: u64) -> io::Result<(File, Metadata)> {
+    let file = open_no_follow(path)?;
+    let metadata = file.metadata()?;
+    validate_metadata(&metadata, maximum_bytes)?;
+    Ok((file, metadata))
+}
+
 fn read_bytes_after_admission(
     path: &Path,
     maximum_bytes: usize,
     after_admission: impl FnOnce(),
 ) -> io::Result<Vec<u8>> {
-    let mut file = open_no_follow(path)?;
-    let opened_metadata = file.metadata()?;
-    validate_metadata(&opened_metadata, maximum_bytes)?;
+    let (mut file, opened_metadata) = open_regular_file(path, maximum_bytes as u64)?;
     after_admission();
-    let admitted_path = open_no_follow(path)?;
-    let path_metadata = admitted_path.metadata()?;
-    validate_metadata(&path_metadata, maximum_bytes)?;
+    let (admitted_path, path_metadata) = open_regular_file(path, maximum_bytes as u64)?;
     if opened_metadata.len() != path_metadata.len() || !same_file_identity(&file, &admitted_path)? {
         return Err(invalid_data("opened file differs from its admitted path"));
     }
@@ -55,10 +61,10 @@ pub(crate) fn read_to_end(reader: &mut impl Read, maximum_bytes: usize) -> io::R
     Ok(bytes)
 }
 
-fn validate_metadata(metadata: &Metadata, maximum_bytes: usize) -> io::Result<()> {
+fn validate_metadata(metadata: &Metadata, maximum_bytes: u64) -> io::Result<()> {
     if !metadata.is_file()
         || metadata_is_link_or_reparse(metadata)
-        || metadata.len() > maximum_bytes as u64
+        || metadata.len() > maximum_bytes
     {
         return Err(invalid_data("path is not a bounded regular file"));
     }
@@ -88,7 +94,9 @@ fn open_no_follow(path: &Path) -> io::Result<File> {
 
     OpenOptions::new()
         .read(true)
-        .custom_flags(libc::O_NOFOLLOW)
+        // A path substituted with a FIFO must reach the type check without
+        // waiting for a writer. O_NONBLOCK does not change regular-file reads.
+        .custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK)
         .open(path)
 }
 
@@ -115,7 +123,7 @@ pub(crate) fn metadata_is_link_or_reparse(metadata: &Metadata) -> bool {
 }
 
 #[cfg(unix)]
-fn same_file_identity(left: &File, right: &File) -> io::Result<bool> {
+pub(crate) fn same_file_identity(left: &File, right: &File) -> io::Result<bool> {
     use std::os::unix::fs::MetadataExt;
 
     let left = left.metadata()?;
@@ -124,7 +132,7 @@ fn same_file_identity(left: &File, right: &File) -> io::Result<bool> {
 }
 
 #[cfg(windows)]
-fn same_file_identity(left: &File, right: &File) -> io::Result<bool> {
+pub(crate) fn same_file_identity(left: &File, right: &File) -> io::Result<bool> {
     Ok(windows_file_identity(left)? == windows_file_identity(right)?)
 }
 
@@ -146,7 +154,7 @@ fn windows_file_identity(file: &File) -> io::Result<(u32, u64)> {
 }
 
 #[cfg(not(any(unix, windows)))]
-fn same_file_identity(_left: &File, _right: &File) -> io::Result<bool> {
+pub(crate) fn same_file_identity(_left: &File, _right: &File) -> io::Result<bool> {
     Ok(false)
 }
 
@@ -154,9 +162,84 @@ fn same_file_identity(_left: &File, _right: &File) -> io::Result<bool> {
 mod tests {
     use std::sync::atomic::{AtomicU64, Ordering};
 
-    use super::{read_bytes_after_admission, read_text, read_to_end};
+    use super::{open_regular_file, read_bytes_after_admission, read_text, read_to_end};
 
     static NEXT_TEMP: AtomicU64 = AtomicU64::new(0);
+
+    fn scratch(label: &str) -> std::path::PathBuf {
+        let id = NEXT_TEMP.fetch_add(1, Ordering::Relaxed);
+        let dir =
+            std::env::temp_dir().join(format!("yap-bounded-{label}-{}-{id}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    #[test]
+    fn streaming_open_checks_the_handle_type_and_size_before_reading() {
+        let dir = scratch("stream");
+        let path = dir.join("source");
+        std::fs::write(&path, b"bounded").unwrap();
+        let (mut file, metadata) = open_regular_file(&path, 7).unwrap();
+        assert_eq!(metadata.len(), 7);
+        assert_eq!(read_to_end(&mut file, 7).unwrap(), b"bounded");
+        drop(file);
+        assert_eq!(
+            open_regular_file(&path, 6).unwrap_err().kind(),
+            std::io::ErrorKind::InvalidData
+        );
+        assert!(open_regular_file(&dir, 1024).is_err());
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn streaming_open_refuses_a_link_to_an_otherwise_valid_file() {
+        let dir = scratch("link");
+        let source = dir.join("source");
+        let link = dir.join("link");
+        std::fs::write(&source, b"approved").unwrap();
+        std::os::unix::fs::symlink(&source, &link).unwrap();
+        assert!(open_regular_file(&link, 8).is_err());
+        assert_eq!(std::fs::read(&source).unwrap(), b"approved");
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn streaming_open_refuses_a_fifo_without_waiting_for_a_writer() {
+        use std::os::unix::ffi::OsStrExt;
+        use std::os::unix::fs::OpenOptionsExt;
+        let dir = scratch("fifo");
+        let fifo = dir.join("source");
+        let name = std::ffi::CString::new(fifo.as_os_str().as_bytes()).unwrap();
+        assert_eq!(unsafe { libc::mkfifo(name.as_ptr(), 0o600) }, 0);
+        let source = fifo.clone();
+        let (send, receive) = std::sync::mpsc::channel();
+        let reader = std::thread::spawn(move || {
+            send.send(open_regular_file(&source, 1024)).unwrap();
+        });
+        let result = receive.recv_timeout(std::time::Duration::from_secs(1));
+        // Release a regressed blocking reader before failing, so CI can
+        // report the error instead of hanging indefinitely.
+        let writer = result.is_err().then(|| {
+            std::fs::OpenOptions::new()
+                .read(true)
+                .write(true)
+                .custom_flags(libc::O_NONBLOCK)
+                .open(&fifo)
+                .unwrap()
+        });
+        reader.join().unwrap();
+        drop(writer);
+        std::fs::remove_dir_all(dir).unwrap();
+        assert_eq!(
+            result
+                .expect("FIFO admission must not wait for a writer")
+                .unwrap_err()
+                .kind(),
+            std::io::ErrorKind::InvalidData
+        );
+    }
 
     #[test]
     fn stream_reader_rejects_content_past_the_limit() {

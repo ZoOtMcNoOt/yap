@@ -226,6 +226,7 @@ pub(crate) async fn start_analyst_answer(
     question: String,
     maximum_results: u8,
     expected_generation_sha256: Option<String>,
+    authority_revision: String,
 ) -> Result<AnalystAnswerJobView, String> {
     crate::authorization::ensure_main(&window)?;
     let request = AnalystRequest::new(question, maximum_results, expected_generation_sha256)
@@ -233,6 +234,7 @@ pub(crate) async fn start_analyst_answer(
     let lease = connector.analyst_connection_lease()?.ok_or_else(|| {
         "Cited answers require a connected organization server with Analyst enabled.".to_string()
     })?;
+    lease.require_authority_revision(&authority_revision)?;
     let submission = owner.reserve_submission()?;
     let view = lease
         .client()

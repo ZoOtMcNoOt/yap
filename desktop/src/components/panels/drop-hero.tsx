@@ -25,6 +25,7 @@ export function DropHero({
   onDragOver,
   onDrop,
   onOpenHelp,
+  onOpenSettings,
   onLanguageChange,
   onPickFiles,
   languageOptions,
@@ -35,6 +36,7 @@ export function DropHero({
   onDragOver: (event: DragEvent<HTMLElement>) => void;
   onDrop: (event: DragEvent<HTMLElement>) => void;
   onOpenHelp?: () => void;
+  onOpenSettings?: () => void;
   onLanguageChange: (optionId: string) => void;
   onPickFiles: () => void;
   languageOptions: RecordingImportLanguageOption[];
@@ -61,10 +63,10 @@ export function DropHero({
         <div className="max-w-md">
           <h2 className="text-lg font-semibold tracking-tight">Drop recordings here</h2>
           <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
-            Choose a fixed language or verified automatic detection, then add files to your organization's transcription server queue. Dropped files use your primary language. {acceptedFormats}.
+            Supported files: {acceptedFormats}. Dropped files use your primary language.
           </p>
         </div>
-        <div className="flex w-full max-w-md flex-wrap items-center justify-center gap-2">
+        {languageOptions.length ? <div className="flex w-full max-w-md flex-wrap items-center justify-center gap-2">
           <Select
             disabled={!languageOptions.length}
             onValueChange={onLanguageChange}
@@ -85,12 +87,20 @@ export function DropHero({
               </SelectGroup>
             </SelectContent>
           </Select>
-        </div>
+        </div> : null}
+        {!languageOptions.length ? (
+          <div className="max-w-md text-sm leading-6 text-muted-foreground" role="status">
+            <p>Connect to your organization server in Settings → System to load recording languages. Existing queued recordings are kept.</p>
+            {onOpenSettings ? <Button className="mt-2" onClick={onOpenSettings} type="button">Set up transcription</Button> : null}
+          </div>
+        ) : !languageReady ? (
+          <p className="text-sm text-muted-foreground">Choose a recording language to add files.</p>
+        ) : null}
         <div className="flex flex-wrap items-center justify-center gap-3">
-          <Button disabled={!languageReady} onClick={onPickFiles} type="button">
+          {languageOptions.length ? <Button disabled={!languageReady} onClick={onPickFiles} type="button">
             <UploadCloud data-icon="inline-start" />
             Choose files
-          </Button>
+          </Button> : null}
           <Badge className="border-primary/20 bg-[var(--primary-soft)] text-primary hover:bg-[var(--primary-soft)]" variant="outline">
             <UploadCloud data-icon="inline-start" />
             Organization server queue

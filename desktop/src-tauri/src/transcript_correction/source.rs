@@ -31,16 +31,21 @@ pub(crate) fn read_trusted_transcript_correction_source(
 
 fn read_live_source(requested: &Path) -> Result<TrustedTranscriptCorrectionSource, String> {
     let recordings = crate::live::recordings::recordings_dir();
+    read_live_source_from_dir(requested, &recordings)
+}
+
+pub(super) fn read_live_source_from_dir(
+    requested: &Path,
+    recordings: &Path,
+) -> Result<TrustedTranscriptCorrectionSource, String> {
     let output_path = crate::live::recordings::canonical_committed_live_path_from_dir(
-        requested,
-        &recordings,
-        true,
+        requested, recordings, true,
     )
     .map_err(|_| "Only committed Yap transcripts can be corrected.".to_string())?;
     let source =
         crate::live::recordings::read_committed_live_transcript_correction_source_from_dir(
             &output_path,
-            &recordings,
+            recordings,
         )?;
     if source.segments.is_empty() {
         return Err(
