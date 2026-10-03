@@ -127,6 +127,35 @@ The unchanged server,
 real Postgres and orchestrator checks retain their dated receipts; model quality,
 Windows RDP, enterprise integration and distribution clearance remain separate.
 
+## Windows file ownership renewal
+
+[Hosted run 529](https://github.com/ZoOtMcNoOt/yap/actions/runs/37116069254)
+at `ac6bb417` passed strict Windows Clippy, 392 frontend units, 184 browser
+workflows, all 71 hosted release contracts, and the native WDIO application build.
+Server, mock identity and orchestrator jobs passed. Native tests and one WDIO
+assertion failed; this run does not qualify integration.
+
+Native model installation exposed a real sharing violation: the no-follow
+verifier reopened staging while its writer was still open. Both download and
+offline import now verify the retained read/write staging handle after sync,
+seeking its clone to the start and preserving exact size/hash/cancellation checks.
+Admitted external artifacts keep their stricter sharing and no-follow boundary.
+The staging handle closes before same-directory atomic publication.
+
+The other native failures were test ownership assumptions. Export receipts use
+canonical paths, including Windows long-path/short-name resolution. Decoded
+plaintext disappears after every cloned DELETE_ON_CLOSE handle closes. Mid-decode
+cancellation tests now observe file length on the retained handle, because Windows
+directory-entry lengths may remain stale while writing; the 128 KiB cancellation
+bound, original bytes and owned-file cleanup remain asserted. The native Knowledge
+smoke assertion follows the refreshed offline copy and still checks disabled
+search, accessible labeling and available local navigation.
+
+The follow-up renews all 1,363 Linux native unit tests (11 declared ignores),
+Clippy, formatting and eight documentation/license/provenance checks. Exact-head
+Windows native tests and WDIO must pass before merge. No RDP/session-lock or model
+quality result is inferred from these checks.
+
 [Audit policy](../../../runbooks/dependency-audit-policy.md) records the remaining
 findings and removal conditions. The [single goal](../../../plans/active/2026-10-02-yap-project-hill-climb.md)
 remains active after this increment.

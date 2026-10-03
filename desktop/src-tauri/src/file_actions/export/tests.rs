@@ -87,7 +87,11 @@ fn export_preserves_utf8_bytes_and_the_committed_original() {
     assert_eq!(
         fixture.export(&target).unwrap(),
         TranscriptExport::Saved {
-            path: target.to_string_lossy().into_owned(),
+            path: target
+                .canonicalize()
+                .unwrap()
+                .to_string_lossy()
+                .into_owned(),
         }
     );
     assert_eq!(std::fs::read(target).unwrap(), original);

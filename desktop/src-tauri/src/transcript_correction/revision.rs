@@ -781,7 +781,7 @@ mod tests {
         assert_eq!(
             receipt,
             AcceptedCorrectionExport::Saved {
-                path: target.display().to_string(),
+                path: target.canonicalize().unwrap().display().to_string(),
                 revision: 2,
                 corrected_sha256: last.corrected_sha256.clone()
             }

@@ -39,6 +39,11 @@ Installed and exercised: Node 24.19, pnpm 11.7.0, Python 3.12.14 with locked uv 
 | Shipped dependency inventory/license checks | 3 passed |
 
 The dependency refresh renews native/frontend/browser/application checks; saved connection inspection retains the latest server and real-database/service receipts.
+Hosted Windows run 529 additionally passed 392 frontend units, 184 browser
+workflows, 71 release contracts and strict desktop Clippy. Its native file-ownership
+and stale-copy smoke failures are addressed in the
+[dependency evidence](evidence/dependency-refresh/2026-10-03/verification.md#windows-file-ownership-renewal);
+new exact-head native checks remain required before merging PR #199.
 Nine new inspection database/HTTP
 cases join the prior 51 new-feature database exclusions, all verified against
 real local Postgres. The isolated suite retains 36 preexisting skips. The

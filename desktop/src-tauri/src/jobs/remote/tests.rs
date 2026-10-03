@@ -1110,6 +1110,8 @@ fn verify_decoded_source_manifest(fixture_name: &str) {
         decoded.evidence.source_codec
     );
     let temporary = decoded.path.clone();
+    // DELETE_ON_CLOSE reclaims the Windows object after its last cloned handle.
+    drop(source);
     drop(decoded);
     assert!(!temporary.exists(), "decoded plaintext is reclaimed");
     fs::remove_dir_all(&root).ok();

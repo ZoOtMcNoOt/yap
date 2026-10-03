@@ -318,9 +318,9 @@ describe("Yap desktop shell", () => {
       "Audit reports need your connected organization server with Auditor enabled.",
     );
     expect(bodyText).toContain(
-      "Knowledge search needs your connected organization server with Librarian enabled.",
+      "Connect to your organization server with Librarian enabled.",
     );
-    expect(bodyText).toContain("Local recording, playback, transcripts, export, and deletion remain available.");
+    expect(bodyText).toContain("Local recording, playback, and saved transcripts remain available.");
     expect(await $("button=Transcribe").isDisplayed()).toBe(true);
   });
 
