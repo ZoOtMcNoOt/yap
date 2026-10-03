@@ -183,6 +183,11 @@ projection, publication and rebuilding remain separate open outcomes.
 - [x] Verify actual native transport/file invariants and browser recovery with deterministic evidence, using existing dependencies and retained source provenance. Document how the package enters human Git review and its limits; it does not mutate the canonical graph.
 - [ ] Review/push and integrate through every exact-head job, retain the reviewed head and retire the branch. Continue actual canonical publication/rebuilding and the full software queue.
 
+GitHub rejected the implementation push; its connector reports disconnected.
+Restore access before hosted checks/merging. Local development remains available;
+`9cb8d310` retains the verified implementation and the evidence records the full
+221-pass Linux browser regression (one declared Windows-only skip).
+
 ## Execution record
 
 The [dated execution history](../../archive/implementation-evidence/2026-10-02-project-hill-climb-history.md) retains every iteration, evidence link and next action recorded at the time. Those next actions are historical; the current increment above determines what to do now. Append new iteration receipts there and keep this queue current.

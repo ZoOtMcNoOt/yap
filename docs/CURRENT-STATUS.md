@@ -75,7 +75,8 @@ The [execution queue](plans/active/2026-10-02-yap-project-hill-climb.md#current-
 now targets **exporting a source-bound connection review package**. Inspection and
 discard are verified; the implemented export carries the exact proposal and citations
 into human Git review. [Five local software outcomes pass](evidence/connection-review-export/2026-10-03/verification.md);
-reviewed exact-head integration remains pending.
+the complete Linux browser suite passes with 221 cases and one declared Windows-only skip.
+GitHub authentication is disconnected, so pushing and reviewed exact-head integration remain pending.
 Canonical publication and generation rebuilding remain separate open outcomes.
 
 The [complete PostgreSQL gate](evidence/governed-postgres-ci/2026-10-03/verification.md)
