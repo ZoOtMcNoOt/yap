@@ -80,13 +80,19 @@ class GovernedKnowledgeGateContractTests(unittest.TestCase):
                     root, checked_head=route.checked_head, reference=route, runner=runner,
                 )
 
-    def test_database_result_rejects_a_green_suite_with_skips(self) -> None:
+    def test_database_result_requires_complete_current_suite_without_skips(self) -> None:
         runtime = _runtime_lock()
         result = _database_result()
-        result["skipped"] = 1
-
-        with self.assertRaisesRegex(ValueError, "did not pass"):
-            gate._validate_database_test_result(result, runtime)
+        gate._validate_database_test_result(result, runtime)
+        for field, value in (
+            ("skipped", 1),
+            ("testsRun", 19),
+            ("testsRun", gate._EXPECTED_DATABASE_TEST_COUNT - 1),
+            ("modules", ["tests.knowledge.test_postgres_generation_ledger"]),
+        ):
+            with self.subTest(field=field, value=value):
+                with self.assertRaisesRegex(ValueError, "did not pass"):
+                    gate._validate_database_test_result({**result, field: value}, runtime)
 
     def test_portable_result_freezes_phase_scoped_modules_without_skips(self) -> None:
         suite = unittest.defaultTestLoader.loadTestsFromNames(
@@ -133,10 +139,18 @@ class GovernedKnowledgeGateContractTests(unittest.TestCase):
                 / "verification/run-governed-knowledge-postgres-suite.py"
             )
         )
+        self.assertEqual(postgres_suite["_MODULES"], gate._EXPECTED_DATABASE_MODULES)
+        self.assertEqual(
+            postgres_suite["_EXPECTED_TEST_COUNT"], gate._EXPECTED_DATABASE_TEST_COUNT
+        )
         server_root = REPOSITORY_ROOT / "server"
         previous_cwd = Path.cwd()
         try:
             os.chdir(server_root)
+            self.assertEqual(
+                postgres_suite["_load_required_suite"]().countTestCases(),
+                gate._EXPECTED_DATABASE_TEST_COUNT,
+            )
             with patch.object(sys, "path", ["sentinel"]):
                 postgres_suite["_configure_server_test_imports"]()
                 self.assertEqual(sys.path[0], str(server_root))

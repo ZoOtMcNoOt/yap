@@ -34,12 +34,32 @@ Runner = Callable[..., subprocess.CompletedProcess[str]]
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _LOCAL_OFFLINE_DESKTOP_BASE_HEAD = "2254605ed19a592d2db1747d576762ccf11a5cc0"
 _EXPECTED_DATABASE_MODULES = (
+    "tests.knowledge.test_agent_relationship_authority",
+    "tests.knowledge.test_connection_proposal_discard",
+    "tests.knowledge.test_connection_proposal_inspection",
+    "tests.knowledge.test_pending_connection_proposals",
+    "tests.knowledge.test_postgres_connection_proposals",
     "tests.knowledge.test_postgres_generation_ledger",
+    "tests.knowledge.test_postgres_knowledge_connections",
     "tests.knowledge.test_postgres_permission_safe_retrieval",
     "tests.knowledge.test_reviewed_meeting_postgres_route",
     "tests.knowledge.test_terminology_ledger",
+    "tests.knowledge.test_terminology_service",
+    "tests.agents.test_analyst_postgres",
+    "tests.agents.test_archivist_postgres",
+    "tests.agents.test_auditor_postgres",
+    "tests.agents.test_coordinator_postgres",
+    "tests.agents.test_curator_connections_postgres",
+    "tests.agents.test_curator_postgres",
+    "tests.agents.test_librarian_postgres",
+    "tests.agents.test_student_postgres",
+    "tests.api.test_connection_proposal_inspection_api",
+    "tests.api.test_curator_connections_api",
+    "tests.api.test_knowledge_connections_api",
+    "tests.api.test_terminology_api",
 )
-_EXPECTED_DATABASE_TEST_COUNT = 19
+_EXPECTED_DATABASE_TEST_COUNT = 117
+
 _EXPECTED_PORTABLE_PACKAGES = frozenset(
     {"numpy", "psycopg", "psycopg-binary", "rapidfuzz", "regex"}
 )

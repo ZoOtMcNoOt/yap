@@ -15,6 +15,14 @@ The Linux hosted job runs this gate against its own disposable database. The lau
 | Self-contained fixtures | Unchanged main reproduces the Auditor fixture's one-source/two-source expectation mismatch. The corrected synthetic query reads both authorized statements. A fresh database also exposes a missing reviewed-capture schema in shared Curator cleanup; the fixture now installs every schema it uses. | No production authorization or model behavior changes. |
 | Required hosted closure | Existing Linux lifecycle/identity job adds an unconditional PostgreSQL step and installs locked evaluation/test dependencies. A release contract refuses a missing, conditional or continue-on-error gate. All 72 local release contracts run: 67 pass, five Windows-only skips. Ruff passes. | All exact-head checks must pass before merge. |
 
+## Review and hosted rehearsal
+
+[Run 546](https://github.com/ZoOtMcNoOt/yap/actions/runs/37136218110) executes all **117 PostgreSQL cases without skips** on initial head `b6307e90ea9012089d732037fd5ecf32a4a9cdd5`, with successful teardown. This qualifies that rehearsal; final exact-head integration is still pending.
+
+Review reproduced the aggregate qualification validator rejecting the new receipt because it retained a duplicated 19-case contract. The runner now imports the existing aggregate gate's complete membership/count constants, matching the portable runner's pattern. Contract checks reject skips, old/incomplete counts and missing modules; the actual complete receipt passes with matching development runtime identity. Historical model artifacts and the separate ARM64 production database lock remain unchanged.
+
+The portable server job also exposed an existing OIDC clock-boundary fixture race: a two-second verification delay makes its future tokens fall inside the allowed skew. The test now fixes both validation clocks, uses numeric timestamps and checks accepted/rejected expiry, not-before and issued-at boundaries. Authentication policy is unchanged. All 23 focused aggregate/authentication cases and the renewed disposable 117-case gate pass. The isolated portable server executes all 1,754 cases: 1,640 pass with 114 declared platform/fixture/database exclusions. Final exact-head hosted integration remains pending.
+
 ## Runtime provenance
 
 - Image: `pgvector/pgvector@sha256:ac08538c6f8b9904c33c8224c5e5706dbe760aca29db1d096972b4052c22a75d`.
