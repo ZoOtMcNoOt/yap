@@ -68,13 +68,17 @@ Earlier dependency/consolidation results remain in the [desktop evidence](eviden
 
 ## Current increment
 
-The [execution queue](plans/active/2026-10-02-yap-project-hill-climb.md#current-increment-complete-the-postgresql-ci-gate)
-now targets a **complete, skip-free PostgreSQL CI gate**. Hosted portable checks
-exclude real database cases. The new required gate runs all 23 knowledge/agent/API
-modules: **117 cases pass without skips** against a fresh owned PostgreSQL 17.11/
-pgvector 0.8.7 runtime. Four of five software outcomes are verified locally;
-[hosted integration is pending](evidence/governed-postgres-ci/2026-10-03/verification.md).
-It preserves production authority and qualification limits.
+The [execution queue](plans/active/2026-10-02-yap-project-hill-climb.md#current-increment-export-a-connection-review-package)
+now targets **exporting a source-bound connection review package**. Inspection and
+discard are verified; this next step carries the exact proposal and citations into
+human Git review. Its six acceptance outcomes are defined; implementation is pending.
+Canonical publication and generation rebuilding remain separate open outcomes.
+
+The [complete PostgreSQL gate](evidence/governed-postgres-ci/2026-10-03/verification.md)
+is merged and **5/5 software verified**. [PR #204](https://github.com/ZoOtMcNoOt/yap/pull/204)
+and [run 547](https://github.com/ZoOtMcNoOt/yap/actions/runs/37137161514) pass all six jobs,
+including every one of the 117 real database cases without skips. Main has the
+identical tested tree, the reviewed head is retained and its branch retired.
 
 Owned connection discovery is merged and **6/6 software verified**. [PR #203](https://github.com/ZoOtMcNoOt/yap/pull/203)
 and [run 544](https://github.com/ZoOtMcNoOt/yap/actions/runs/37133293613) pass all six jobs:
