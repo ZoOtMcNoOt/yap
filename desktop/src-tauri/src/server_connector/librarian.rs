@@ -217,6 +217,29 @@ impl LibrarianQueryJobView {
     }
 
     #[cfg(test)]
+    pub(crate) fn complete_for_test(items: Vec<LibrarianEvidenceItem>) -> Self {
+        let mut evidence = LibrarianEvidencePack {
+            operation: "search".into(),
+            generation_sha256: "a".repeat(64),
+            permission_hash: "b".repeat(64),
+            authorization_hash: "c".repeat(64),
+            evidence_sha256: String::new(),
+            items,
+            output_budget_exhausted: false,
+        };
+        evidence.evidence_sha256 = evidence_sha256(&evidence).unwrap();
+        let view = Self {
+            schema_version: 1,
+            request_id: format!("librarian-query-{}", "1".repeat(32)),
+            status: LibrarianQueryStatus::Complete,
+            evidence_pack: Some(evidence),
+            reason: None,
+        };
+        assert!(view.is_valid());
+        view
+    }
+
+    #[cfg(test)]
     pub(crate) fn for_test(
         request_id: String,
         status: LibrarianQueryStatus,

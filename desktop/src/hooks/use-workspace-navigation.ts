@@ -25,14 +25,13 @@ export type WorkspaceNavigationIntent =
   | { type: "openWorkspace"; action: RailAction }
   | { type: "showDetails" };
 
-export type WorkspaceNavigationEffect = "openCorrection" | "refreshDetails";
+export type WorkspaceNavigationEffect = "refreshDetails";
 
 export function workspaceNavigationEffectForIntent(
   intent: WorkspaceNavigationIntent,
 ): WorkspaceNavigationEffect | undefined {
   if (intent.type === "showDetails") return undefined;
   if (intent.action === "details") return "refreshDetails";
-  if (intent.action === "correct") return "openCorrection";
   return undefined;
 }
 
@@ -86,25 +85,20 @@ export function workspaceNavigationStateForAction(
 
 export function useWorkspaceNavigation({
   onOpenDetails,
-  onOpenCorrection,
 }: {
   onOpenDetails: () => void;
-  onOpenCorrection: () => void;
 }) {
   const [navigation, setNavigation] = useState(initialWorkspaceNavigationState);
   const onOpenDetailsRef = useRef(onOpenDetails);
-  const onOpenCorrectionRef = useRef(onOpenCorrection);
 
   useEffect(() => {
     onOpenDetailsRef.current = onOpenDetails;
-    onOpenCorrectionRef.current = onOpenCorrection;
-  }, [onOpenCorrection, onOpenDetails]);
+  }, [onOpenDetails]);
 
   const openWorkspace = useCallback((action: RailAction) => {
     setNavigation((state) => workspaceNavigationStateForAction(state, { type: "openWorkspace", action }));
     const effect = workspaceNavigationEffectForIntent({ type: "openWorkspace", action });
     if (effect === "refreshDetails") onOpenDetailsRef.current();
-    if (effect === "openCorrection") onOpenCorrectionRef.current();
   }, []);
 
   const showDetails = useCallback(() => {

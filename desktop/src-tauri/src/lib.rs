@@ -15,6 +15,7 @@ mod exclusive_file_lease;
 mod file_actions;
 mod install_identity;
 pub mod jobs;
+mod knowledge_connections;
 pub mod language;
 pub mod language_preferences;
 mod librarian_query;
@@ -29,6 +30,7 @@ mod runtime_policy;
 pub mod server_connector;
 pub mod stt;
 mod student_question;
+mod terminology;
 mod transcript_correction;
 mod tray;
 

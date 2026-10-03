@@ -26,6 +26,7 @@ from .knowledge_tool_contract import (
     MAX_PROPOSAL_CHARACTERS,
     MAX_PROPOSAL_CITATIONS,
     ProposalCitation,
+    canonical_connection_proposal,
     validate_bounded_text,
 )
 
@@ -268,6 +269,10 @@ def store_knowledge_proposal_in_transaction(
     if connection.info.transaction_status == TransactionStatus.IDLE:
         raise RuntimeError("knowledge proposal requires an owned transaction")
     _proposal_input(agent_id, proposal_type, proposed_content, source_citations)
+    if proposal_type == "relationship":
+        proposed_content, source_citations = canonical_connection_proposal(
+            proposed_content, source_citations, expected_generation_sha256
+        )
     authorized = _authorize_knowledge_query(
         connection,
         principal=principal,
@@ -429,6 +434,132 @@ def store_knowledge_proposal_in_transaction(
         authorized.authorization_hash,
         "proposed",
     )
+
+
+def read_connection_proposal_in_transaction(
+    connection: Connection[object],
+    *,
+    principal: PrincipalKey,
+    proposal_id: str,
+    purpose: str,
+    agent_capabilities: frozenset[str],
+) -> dict[str, object] | None:
+    """Inspect one owned candidate without granting review/publication authority."""
+    authorized = _authorize_knowledge_query(
+        connection,
+        principal=principal,
+        purpose=purpose,
+        agent_capabilities=agent_capabilities,
+        required_capability="knowledge.relationship.traverse",
+    )
+    connection.execute(
+        "SELECT pg_advisory_xact_lock_shared(hashtextextended(%s, 1))",
+        (
+            json.dumps(
+                [principal.tenant_id, principal.subject_id], separators=(",", ":")
+            ),
+        ),
+    )
+    row = connection.execute(
+        """SELECT generation_sha256, proposed_content, source_citations,
+                  inherited_policy, inherited_permission_sha256
+           FROM yap_knowledge_proposals
+           WHERE tenant_id = %s AND proposal_id = %s
+             AND proposer_subject_id = %s AND proposer_agent_id = 'curator'
+             AND proposal_type = 'relationship' AND status = 'proposed'""",
+        (principal.tenant_id, proposal_id, principal.subject_id),
+    ).fetchone()
+    if row is None:
+        return None
+    if row[0] != authorized.generation_sha256:
+        from .knowledge_tool_contract import KnowledgeGenerationStale
+
+        raise KnowledgeGenerationStale("connection proposal generation is stale")
+    citations = _stored_proposal_citations(row[2])
+    content, citations = canonical_connection_proposal(
+        str(row[1]), citations, str(row[0])
+    )
+    if content != row[1]:
+        raise ValueError("stored connection candidate is not canonical")
+    canonical = {
+        "tenantId": principal.tenant_id,
+        "generationSha256": authorized.generation_sha256,
+        "proposerSubjectId": principal.subject_id,
+        "proposerAgentId": "curator",
+        "proposalType": "relationship",
+        "proposedContent": content,
+        "sourceCitations": [item.model_dump(mode="json") for item in citations],
+        "inheritedPermissionSha256": row[4],
+    }
+    if _sha256(canonical) != proposal_id or _sha256(row[3]) != row[4]:
+        raise ValueError("stored connection proposal identity differs")
+    if not {item.concept_id for item in citations} <= authorized.visible_concept_ids:
+        return None
+    rows = connection.execute(
+        """SELECT c.concept_id, c.frontmatter->>'type', c.frontmatter->>'title',
+                  c.source_path, b.source_revision, c.content_sha256, c.body, p.policy
+           FROM yap_knowledge_concepts c
+           JOIN yap_knowledge_builds b
+             ON b.tenant_id = c.tenant_id AND b.generation_sha256 = c.generation_sha256
+           JOIN yap_knowledge_permissions p
+             ON p.tenant_id = c.tenant_id AND p.generation_sha256 = c.generation_sha256
+            AND p.path_prefix = c.permission_path_prefix
+           WHERE c.tenant_id = %s AND c.generation_sha256 = %s
+             AND c.concept_id = ANY(%s)""",
+        (
+            principal.tenant_id,
+            authorized.generation_sha256,
+            [item.concept_id for item in citations],
+        ),
+    ).fetchall()
+    by_concept = {str(item[0]): item for item in rows}
+    policies = []
+    sources = []
+    for citation in citations:
+        source = by_concept.get(citation.concept_id)
+        if source is None:
+            return None
+        body = str(source[6])
+        if (
+            citation.source_revision != source[4]
+            or citation.content_sha256 != source[5]
+            or not 0 <= citation.char_start < citation.char_end <= len(body)
+            or citation.char_end - citation.char_start > 1_024
+        ):
+            raise ValueError("connection proposal evidence differs")
+        policies.append(dict(source[7]))
+        sources.append(
+            {
+                "node": {
+                    "conceptId": citation.concept_id,
+                    "type": source[1],
+                    "title": source[2],
+                    "sourcePath": source[3],
+                    "sourceRevision": source[4],
+                    "contentSha256": source[5],
+                },
+                "citation": {
+                    "conceptId": citation.concept_id,
+                    "sourceRevision": citation.source_revision,
+                    "contentSha256": citation.content_sha256,
+                    "charStart": citation.char_start,
+                    "charEnd": citation.char_end,
+                },
+                "text": body[citation.char_start : citation.char_end],
+            }
+        )
+    if _strictest_policy(tuple(policies)) != row[3]:
+        raise ValueError("connection proposal inherited permissions changed")
+    return {
+        "schemaVersion": 1,
+        "proposalId": proposal_id,
+        "status": "proposed",
+        "generationSha256": authorized.generation_sha256,
+        "permissionHash": authorized.permission_hash,
+        "authorizationHash": authorized.authorization_hash,
+        "candidate": json.loads(content),
+        "sources": sources,
+    }
 
 
 def discard_knowledge_proposal(

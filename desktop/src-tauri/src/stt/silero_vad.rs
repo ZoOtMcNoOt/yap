@@ -8,7 +8,7 @@ use crate::stt::{
     error::SttError,
     model::{
         cleanup_stale_download_temps, download_verified_file, import_verified_file,
-        metadata_is_link_or_reparse, model_directory_state, verify_sha256, DownloadOperation,
+        metadata_is_link_or_reparse, model_directory_state, verify_artifact, DownloadOperation,
         DownloadProgress, DownloadRequest, ModelDirectoryState,
     },
     nemotron::{cleanup_stale_model_snapshots, Artifact},
@@ -143,7 +143,7 @@ pub(crate) fn resolve_model_at(path: &Path) -> Result<PathBuf, SttError> {
     {
         return Err(SttError::ModelCorrupt);
     }
-    verify_sha256(path, ARTIFACT_SHA256)?;
+    verify_artifact(path, ARTIFACT_BYTES, ARTIFACT_SHA256, || false)?;
     Ok(path.to_path_buf())
 }
 
@@ -163,7 +163,7 @@ fn status_at(path: &Path) -> SileroVadView {
                 if metadata.is_file()
                     && !metadata_is_link_or_reparse(&metadata)
                     && metadata.len() == ARTIFACT_BYTES
-                    && verify_sha256(path, ARTIFACT_SHA256).is_ok() =>
+                    && verify_artifact(path, ARTIFACT_BYTES, ARTIFACT_SHA256, || false).is_ok() =>
             {
                 (SileroVadStatus::Ready, Some(metadata.len()))
             }

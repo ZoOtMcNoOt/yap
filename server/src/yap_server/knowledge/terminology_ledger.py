@@ -77,7 +77,7 @@ def append_terminology_record(
     if not _actor_owns(
         record,
         actor=actor,
-        actor_team_ids=authorization.team_ids,
+        managed_team_ids=authorization.managed_team_ids,
         may_manage_organization=authorization.may_manage_organization,
     ):
         raise PermissionError("terminology actor does not own the requested scope")
@@ -206,6 +206,70 @@ def read_job_terminology_snapshot(
     return restore_terminology_snapshot(row[0])
 
 
+def read_scoped_terminology_record(
+    connection: Connection[object],
+    *,
+    principal: PrincipalKey,
+    scope: str,
+    owner_id: str,
+    record_id: str,
+    first_version: bool = False,
+) -> TerminologyRecord | None:
+    row = connection.execute(
+        """SELECT record_id, tenant_id, scope, owner_id, locale,
+                  canonical_form, variants, sensitivity, version, deleted,
+                  audit_revision, changed_at
+           FROM yap_terminology_records
+           WHERE tenant_id = %s AND owner_id = %s AND scope = %s
+             AND record_id = %s AND (NOT %s OR version = 1)
+           ORDER BY version DESC LIMIT 1""",
+        (principal.tenant_id, owner_id, scope, record_id, first_version),
+    ).fetchone()
+    return _record_from_row(row) if row is not None else None
+
+
+def read_scoped_terminology_page(
+    connection: Connection[object],
+    *,
+    principal: PrincipalKey,
+    scope: str,
+    owner_id: str,
+    locale: str,
+    after: str,
+) -> tuple[TerminologyRecord, ...]:
+    rows = connection.execute(
+        """SELECT * FROM (
+               SELECT DISTINCT ON (record_id)
+                      record_id, tenant_id, scope, owner_id, locale,
+                      canonical_form, variants, sensitivity, version, deleted,
+                      audit_revision, changed_at
+               FROM yap_terminology_records
+               WHERE tenant_id = %s AND owner_id = %s AND scope = %s
+                 AND locale IN (%s, 'und') AND record_id > %s
+               ORDER BY record_id, version DESC
+           ) current_records WHERE NOT deleted ORDER BY record_id LIMIT 11""",
+        (principal.tenant_id, owner_id, scope, locale, after),
+    ).fetchall()
+    return tuple(_record_from_row(row) for row in rows)
+
+
+def _record_from_row(row) -> TerminologyRecord:
+    return TerminologyRecord(
+        record_id=row[0],
+        tenant_id=row[1],
+        scope=row[2],
+        owner_id=row[3],
+        locale=row[4],
+        canonical_form=row[5],
+        variants=tuple(row[6]),
+        sensitivity=row[7],
+        version=row[8],
+        deleted=row[9],
+        audit_revision=row[10],
+        changed_at=row[11].isoformat().replace("+00:00", "Z"),
+    )
+
+
 def _read_tenant_records(
     connection: Connection[object], tenant_id: str
 ) -> tuple[TerminologyRecord, ...]:
@@ -217,23 +281,7 @@ def _read_tenant_records(
            ORDER BY record_id, version""",
         (tenant_id,),
     ).fetchall()
-    return tuple(
-        TerminologyRecord(
-            record_id=row[0],
-            tenant_id=row[1],
-            scope=row[2],
-            owner_id=row[3],
-            locale=row[4],
-            canonical_form=row[5],
-            variants=tuple(row[6]),
-            sensitivity=row[7],
-            version=row[8],
-            deleted=row[9],
-            audit_revision=row[10],
-            changed_at=row[11].isoformat().replace("+00:00", "Z"),
-        )
-        for row in rows
-    )
+    return tuple(_record_from_row(row) for row in rows)
 
 
 def _freeze_current_snapshot(
@@ -305,13 +353,13 @@ def _actor_owns(
     record: TerminologyRecord,
     *,
     actor: PrincipalKey,
-    actor_team_ids: tuple[str, ...],
+    managed_team_ids: tuple[str, ...],
     may_manage_organization: bool,
 ) -> bool:
     if record.scope == "personal":
         return record.owner_id == actor.subject_id
     if record.scope == "team":
-        return record.owner_id in actor_team_ids
+        return record.owner_id in managed_team_ids
     return may_manage_organization and record.owner_id == actor.tenant_id
 
 
@@ -320,5 +368,7 @@ __all__ = [
     "bind_job_terminology_snapshot",
     "install_terminology_schema",
     "read_job_terminology_snapshot",
+    "read_scoped_terminology_record",
+    "read_scoped_terminology_page",
     "store_current_terminology_snapshot",
 ]

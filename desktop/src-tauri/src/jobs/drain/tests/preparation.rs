@@ -1,6 +1,83 @@
 use super::*;
 
 #[test]
+fn damaged_import_fails_its_exact_job_before_attaching_a_server_manifest() {
+    let root = temp_dir("damaged-import");
+    let owned_live = root.join("live-recordings");
+    let remote_jobs = root.join("remote-jobs");
+    let registry = root.join("recording-native-selection-registry.json");
+    fs::create_dir_all(&owned_live).unwrap();
+    let source = root.join("damaged.mp3");
+    let original = crate::jobs::test_media::write_damaged_mp3_fixture(&source);
+    let resources = Arc::new(RecordingJobResources::from_storage(
+        JobLedger::open_in_memory().unwrap(),
+        owned_live.clone(),
+        remote_jobs.clone(),
+        registry.clone(),
+    ));
+    let validated =
+        crate::recording_access::validate_recording_job_source_at(&source, &owned_live).unwrap();
+    crate::recording_access::register_native_selected_recording_job_source_at(
+        &validated,
+        &registry,
+        &owned_live,
+    )
+    .unwrap();
+    let mut job = queued_job("job-damaged-import", source.clone());
+    job.status = RecordingJobStatus::Preprocessing;
+    resources.ledger().insert_job(&job).unwrap();
+    let neighbor = queued_job("job-neighbor-import", root.join("neighbor.wav"));
+    resources.ledger().insert_job(&neighbor).unwrap();
+    let owner = OwnerNamespace::local("i-damaged-import").unwrap();
+    let error = super::super::preparation::prepare_job_for_resources(
+        &resources,
+        &owner,
+        &job.job_id,
+        1_720_000_000_200,
+        UNIX_EPOCH + Duration::from_secs(1_720_000_000),
+    )
+    .unwrap_err();
+    assert_eq!(error.job_id(), Some(job.job_id.as_str()));
+    assert!(!error.is_cancelled());
+    assert!(error.to_string().contains("damaged packet"));
+    assert!(resources
+        .ledger()
+        .get_prepared_remote_job(&job.job_id)
+        .unwrap()
+        .is_none());
+    assert!(resources
+        .ledger()
+        .get_client_preflight_artifact(&job.job_id)
+        .unwrap()
+        .is_none());
+    assert_eq!(fs::read(&source).unwrap(), original);
+    assert_eq!(fs::read_dir(&remote_jobs).unwrap().count(), 0);
+    let drain = RemoteJobDrain::from_resources_for_test(Arc::clone(&resources), owner);
+    drain
+        .fail_preprocessing_job(&job.job_id, 1_720_000_000_300)
+        .unwrap();
+    let failed = resources.ledger().get_job(&job.job_id).unwrap().unwrap();
+    assert_eq!(failed.status, RecordingJobStatus::Failed);
+    assert_eq!(failed.error_code.as_deref(), Some("PREPROCESSING_FAILED"));
+    assert_eq!(
+        failed.error_message.as_deref(),
+        Some("The recording could not be prepared. Check the file, then select it again.")
+    );
+    assert_eq!(
+        resources
+            .ledger()
+            .get_job(&neighbor.job_id)
+            .unwrap()
+            .unwrap()
+            .status,
+        RecordingJobStatus::QueuedServer
+    );
+    drop(drain);
+    drop(resources);
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
 fn background_preprocessing_requires_durable_native_selection_authority() {
     let root = temp_dir("preprocessing-selection-authority");
     let owned_live = root.join("live-recordings");

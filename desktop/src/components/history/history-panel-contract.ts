@@ -13,8 +13,11 @@ export type HistoryEntryActions = {
 
 export type HistoryPanelProps = HistoryEntryActions & {
   entries: TranscriptHistoryEntry[];
+  catalogState?: "loading" | "ready" | "error";
+  onRetryCatalog?: () => void;
   onLoadPreviewText?: (entry: TranscriptHistoryEntry) => Promise<string>;
   onOpenHelp?: () => void;
+  onTranscribe?: () => void;
   onSelect: (entry: TranscriptHistoryEntry, origin?: DOMRect) => void;
   selectedOutputPath?: string;
 };

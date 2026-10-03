@@ -9,7 +9,6 @@ import { useLocalComputeTargets } from "@/hooks/use-local-compute-targets";
 import { usePrimaryLanguage } from "@/hooks/use-primary-language";
 import { useServerConnection } from "@/hooks/use-server-connection";
 import { useSileroVadControl } from "@/hooks/use-silero-vad-control";
-import { shouldRequestPrimaryLanguageSetup } from "@/language-preference";
 import {
   isFallbackModelBusy,
   type FallbackModelView,
@@ -40,22 +39,16 @@ type SetupStatus = {
   engineStatus: string;
 };
 
-const setupSkipKey = "yap-local-fallback-setup-skipped";
-
 export function useSettingsControl({
   onStatusChange,
 }: {
   onStatusChange: (status: string) => void;
 }) {
   const [auth, setAuth] = useState("Checking");
-  const [, setEngineReady] = useState(false);
   const [fallbackEnabled, setFallbackEnabled] = useState(true);
   const [fallbackModel, setFallbackModel] = useState<FallbackModelView | null>(null);
   const [modelInstalled, setModelInstalled] = useState(false);
   const [fallbackCommandPending, setFallbackCommandPending] = useState(false);
-  const [setupPromptRequest, setSetupPromptRequest] = useState(false);
-  const setupPromptedRef = useRef(false);
-  const languagePromptedRef = useRef(false);
   const fallbackEnabledRef = useRef(fallbackEnabled);
   const modelInstalledRef = useRef(modelInstalled);
   const callbacksRef = useRef({ onStatusChange });
@@ -97,24 +90,19 @@ export function useSettingsControl({
     overrides: FallbackModelStateOverrides = {},
   ) => {
     const projection = projectFallbackModelState({
-      alreadyPrompted: setupPromptedRef.current,
       currentFallbackEnabled: fallbackEnabledRef.current,
       currentModelInstalled: modelInstalledRef.current,
       overrides,
-      skipped: localStorage.getItem(setupSkipKey) === "true",
       view,
     });
 
     fallbackEnabledRef.current = projection.fallbackEnabled;
     modelInstalledRef.current = projection.modelInstalled;
-    setupPromptedRef.current = projection.setupPrompted;
     setFallbackModel(view);
     callbacksRef.current.onStatusChange(projection.status);
     setAuth(projection.auth);
-    setEngineReady(projection.engineReady);
     setFallbackEnabled(projection.fallbackEnabled);
     setModelInstalled(projection.modelInstalled);
-    if (projection.requestSetupPrompt) setSetupPromptRequest(true);
   }, []);
 
   const applySetupStatus = useCallback((setup: SetupStatus) => {
@@ -122,7 +110,6 @@ export function useSettingsControl({
     modelInstalledRef.current = setup.modelInstalled;
     callbacksRef.current.onStatusChange(setup.engineReady ? setup.engineStatus : "Setup");
     setAuth(setup.engineReady ? "Ready" : "Setup");
-    setEngineReady(setup.engineReady);
     setFallbackEnabled(setup.fallbackEnabled);
     setModelInstalled(setup.modelInstalled);
   }, []);
@@ -134,6 +121,8 @@ export function useSettingsControl({
     // state and must never prevent the on-device engine, model, language, or
     // microphone setup from loading.
     void refreshPortsRef.current.refreshServerState().catch(() => null);
+    void refreshPortsRef.current.loadPrimaryLanguage().catch(() => null);
+    void refreshPortsRef.current.loadLiveLanguageRouting().catch(() => null);
     try {
       const [setup, view] = await Promise.all([
         invoke<SetupStatus>("setup_status"),
@@ -146,19 +135,10 @@ export function useSettingsControl({
         fallbackEnabled: setup.fallbackEnabled,
         modelInstalled: setup.modelInstalled,
       });
-      const [, , languageStatus] = await Promise.all([
+      await Promise.all([
         refreshPortsRef.current.refreshLiveState(),
         refreshPortsRef.current.loadComputeTargets(),
-        refreshPortsRef.current.loadPrimaryLanguage().catch(() => null),
-        refreshPortsRef.current.loadLiveLanguageRouting().catch(() => null),
       ]);
-      if (
-        !languagePromptedRef.current &&
-        shouldRequestPrimaryLanguageSetup(languageStatus)
-      ) {
-        languagePromptedRef.current = true;
-        setSetupPromptRequest(true);
-      }
     } catch (error) {
       callbacksRef.current.onStatusChange("Setup check failed");
       setAuth(String(error));
@@ -213,7 +193,6 @@ export function useSettingsControl({
     callbacksRef.current.onStatusChange("Installing local fallback");
     try {
       const view = await installFallbackModel({ force: options.force });
-      localStorage.removeItem(setupSkipKey);
       applyFallbackModelView(view, { fallbackEnabled: true });
       if (view.status === "ready") {
         toast.success(options.force ? "Local fallback reinstalled" : "Local fallback installed");
@@ -233,7 +212,6 @@ export function useSettingsControl({
 
     setFallbackCommandPending(true);
     try {
-      localStorage.setItem(setupSkipKey, "true");
       const view = await removeFallbackModel();
       applyFallbackModelView(view, {
         engineReady: false,
@@ -255,7 +233,6 @@ export function useSettingsControl({
     setFallbackCommandPending(true);
     try {
       const view = await setFallbackModelEnabled(enabled);
-      if (!enabled) localStorage.setItem(setupSkipKey, "true");
       applyFallbackModelView(view, {
         engineReady: enabled && view.status === "ready",
         fallbackEnabled: enabled,
@@ -317,18 +294,14 @@ export function useSettingsControl({
   const confirmPrimaryLanguageSetting = useCallback(async (languageBcp47: string) => {
     try {
       await primaryLanguage.confirm(languageBcp47);
-      await liveLanguageRouting.load();
-      toast.success("Primary language saved");
-    } catch (error) {
-      toast.error(`Language update failed: ${String(error)}`);
-      await primaryLanguage.load().catch(() => null);
-      await liveLanguageRouting.load().catch(() => null);
+    } catch {
+      // Keep the failed choice and error visible so setup can be retried.
+      return false;
     }
-  }, [liveLanguageRouting.load, primaryLanguage.confirm, primaryLanguage.load]);
-
-  const skipSetup = useCallback(() => {
-    localStorage.setItem(setupSkipKey, "true");
-  }, []);
+    void liveLanguageRouting.load().catch(() => null);
+    toast.success("Primary language saved");
+    return true;
+  }, [liveLanguageRouting.load, primaryLanguage.confirm]);
 
   return {
     auth,
@@ -371,6 +344,7 @@ export function useSettingsControl({
     language: {
       confirm: confirmPrimaryLanguageSetting,
       error: primaryLanguage.error,
+      localLanguages: primaryLanguage.localLanguages,
       pending: primaryLanguage.pending,
       status: primaryLanguage.status,
     },
@@ -380,8 +354,6 @@ export function useSettingsControl({
     serverLabel,
     serverSnapshot,
     serverState,
-    setupPromptRequest,
-    skipSetup,
     vad,
   };
 }

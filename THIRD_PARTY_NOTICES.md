@@ -24,6 +24,27 @@ This dependency inventory is separate from direct source-adaptation provenance
 in `THIRD_PARTY_PROVENANCE.json`. Package-manager metadata does not authorize
 copying source into Yap, and a new license term fails closed pending review.
 
+## Symphonia media decoders
+
+Native media decoding uses unmodified Symphonia 0.6.1: `symphonia`,
+`symphonia-bundle-flac`, `symphonia-bundle-mp3`, `symphonia-codec-vorbis`,
+`symphonia-common`, `symphonia-core`, `symphonia-codec-aac`,
+`symphonia-format-isomp4`, `symphonia-format-ogg` and
+`symphonia-metadata`. Copyright (c) 2019-2026 The Project Symphonia Developers;
+Mozilla Public License 2.0. The shipped notice bundle includes each crate's
+standalone license. Original source archives are available from
+`https://crates.io/api/v1/crates/<crate-name>/0.6.1/download`.
+
+- Source: https://github.com/pdeljanov/Symphonia/tree/ee35874b571a35a9a6e15d3bc9a3aaf8f11fbeee
+- License: https://github.com/pdeljanov/Symphonia/blob/ee35874b571a35a9a6e15d3bc9a3aaf8f11fbeee/LICENSE
+
+The LICENSE SHA-256 is
+`c76f740d1521b9bed9ca7a04ad526c310493c62621b1341d623b431736533b30`.
+Earlier verification records retain the then-used 0.5.5 provenance. AAC codec
+source licensing and exact notices are recorded here; the separate distribution
+patent decision remains open before release. Development checks do not establish
+patent clearance.
+
 ## Silero VAD v4 model
 
 Yap can explicitly download or import a hash-pinned k2-fsa ONNX export of

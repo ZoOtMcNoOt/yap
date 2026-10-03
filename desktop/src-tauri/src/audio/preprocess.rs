@@ -230,12 +230,25 @@ impl LinearResampler {
             Some(lowpass) => self.buffered.extend_from_slice(&lowpass.filter(input)),
             None => self.buffered.extend_from_slice(input),
         }
+        self.drain_output(false)
+    }
+
+    /// Ends a stream by holding its last frame through the final interpolation
+    /// interval. This emits no extra source frame and preserves source duration.
+    pub fn finish(&mut self) -> Vec<f32> {
+        let output = self.drain_output(true);
+        self.buffered.clear();
+        self.cursor = 0.0;
+        output
+    }
+
+    fn drain_output(&mut self, end_of_stream: bool) -> Vec<f32> {
         let step = self.source_rate as f64 / self.target_rate as f64;
         let mut output = Vec::new();
         while self.cursor < self.buffered.len() as f64 {
             let base = self.cursor.floor() as usize;
             let frac = (self.cursor - base as f64) as f32;
-            if frac != 0.0 && base + 1 >= self.buffered.len() {
+            if !end_of_stream && frac != 0.0 && base + 1 >= self.buffered.len() {
                 break;
             }
             let a = self.buffered[base];

@@ -94,12 +94,13 @@ remain later gates.
 
 ## Phase 5 Loopback Batch Baseline
 
-- Native Rust admits only an already-canonical mono PCM16/16 kHz RIFF/WAVE,
-  extracts it into an immutable PCM spool under exact container/physical-size
-  bounds, persists chunk identity and lifecycle state in SQLite, and drains
-  only after the configured connector origin is explicitly approved and
-  advertises batch capability. General media decoding, resampling, and channel
-  conversion are not implemented in this slice.
+- Native Rust admits canonical mono PCM16/16 kHz RIFF/WAVE or normalizes
+  MP3/FLAC/Ogg Vorbis into that format through the bounded native decoder. It extracts
+  immutable PCM under exact container/physical-size bounds, persists chunk
+  identity and lifecycle state in SQLite, and drains only after the configured
+  connector origin is explicitly approved and advertises batch capability.
+  Additional media formats remain open; the existing safety ceiling does not
+  establish a qualified maximum recording duration.
 - Create idempotency is the SHA-256 of the exact canonical request. Receipt
   identity, status-before-commit replay, a detached cancellation outbox, bounded
   typed retry, and verified immutable result publication make reconnect and

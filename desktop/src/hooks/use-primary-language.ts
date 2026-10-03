@@ -3,12 +3,15 @@ import { useCallback, useRef, useState } from "react";
 
 import {
   confirmPrimaryLanguage,
+  fixedBatchLanguageOptions,
+  localDictationLanguages,
   primaryLanguageStatus,
   type PrimaryLanguageStatus,
 } from "@/language-preference";
 
 export function usePrimaryLanguage() {
   const [status, setStatus] = useState<PrimaryLanguageStatus | null>(null);
+  const [localLanguages, setLocalLanguages] = useState<string[]>([]);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const requestGeneration = useRef(0);
@@ -19,8 +22,14 @@ export function usePrimaryLanguage() {
     setPending(true);
     setError("");
     try {
-      const next = await primaryLanguageStatus();
-      if (requestGeneration.current === generation) setStatus(next);
+      const [next, languages] = await Promise.all([
+        primaryLanguageStatus(),
+        localDictationLanguages().catch(() => []),
+      ]);
+      if (requestGeneration.current === generation) {
+        setStatus(next ?? null);
+        setLocalLanguages(Array.isArray(languages) ? languages : []);
+      }
       return next;
     } catch (reason) {
       if (requestGeneration.current === generation) setError(String(reason));
@@ -31,11 +40,14 @@ export function usePrimaryLanguage() {
   }, []);
 
   const confirm = useCallback(async (languageBcp47: string) => {
-    // With a server catalog present its revision is named and matched; without
-    // one, the command confirms against the local dictation catalog. Both are
-    // real confirmations — the second is what makes a serverless first run
-    // possible at all.
-    const catalogRevision = status?.capabilityCatalog?.catalogRevision ?? null;
+    // A server-supported choice names its current catalog. A local-only
+    // choice is validated against the native dictation catalog; it does not
+    // grant a batch route or rewrite per-recording choices.
+    const serverSupportsLanguage = fixedBatchLanguageOptions(status?.capabilityCatalog)
+      .some((option) => option.languageBcp47 === languageBcp47);
+    const catalogRevision = serverSupportsLanguage
+      ? status?.capabilityCatalog?.catalogRevision ?? null
+      : null;
     if (!isTauri()) {
       throw new Error("Language confirmation requires the desktop app.");
     }
@@ -54,5 +66,5 @@ export function usePrimaryLanguage() {
     }
   }, [status?.capabilityCatalog?.catalogRevision]);
 
-  return { confirm, error, load, pending, status };
+  return { confirm, error, load, localLanguages, pending, status };
 }

@@ -12,6 +12,7 @@ from .knowledge_tool_contract import (
     MAX_TRAVERSAL_DEPTH,
     validate_bounded_text,
     validate_integer,
+    validate_expected_generation,
 )
 from .postgres_permission_view import _authorize_knowledge_query
 
@@ -40,6 +41,205 @@ class PostgresRelationshipTraversal:
     permission_hash: str
     authorization_hash: str
     relationships: tuple[KnowledgeRelationshipResult, ...]
+
+
+MAX_CONNECTION_RELATIONSHIPS = 16
+
+
+@dataclass(frozen=True, slots=True)
+class KnowledgeConnectionNode:
+    concept_id: str
+    type: str
+    title: str
+    source_path: str
+    source_revision: str
+    content_sha256: str
+
+
+@dataclass(frozen=True, slots=True)
+class PostgresKnowledgeNeighborhood:
+    generation_sha256: str
+    permission_hash: str
+    authorization_hash: str
+    nodes: tuple[KnowledgeConnectionNode, ...]
+    relationships: tuple[KnowledgeRelationshipResult, ...]
+    has_more: bool
+
+
+@dataclass(frozen=True, slots=True)
+class PostgresKnowledgeConceptPage:
+    generation_sha256: str
+    permission_hash: str
+    authorization_hash: str
+    nodes: tuple[KnowledgeConnectionNode, ...]
+    has_more: bool
+
+
+def browse_postgres_knowledge_concepts(
+    connection: Connection[object],
+    *,
+    principal: PrincipalKey,
+    purpose: str,
+    agent_capabilities: frozenset[str],
+    search_text: str = "",
+    maximum_results: int = 12,
+) -> PostgresKnowledgeConceptPage:
+    if (
+        not isinstance(search_text, str)
+        or len(search_text) > 128
+        or search_text.strip() != search_text
+    ):
+        raise ValueError("knowledge topic search is invalid")
+    validate_integer(
+        maximum_results, minimum=1, maximum=12, field="knowledge topic limit"
+    )
+    escaped = search_text.replace("!", "!!").replace("%", "!%").replace("_", "!_")
+    with connection.transaction():
+        query = _authorize_knowledge_query(
+            connection,
+            principal=principal,
+            purpose=purpose,
+            agent_capabilities=agent_capabilities,
+            required_capability="knowledge.tree",
+        )
+        rows = connection.execute(
+            """SELECT c.concept_id, c.frontmatter->>'type', c.frontmatter->>'title',
+                      c.source_path, b.source_revision, c.content_sha256
+               FROM yap_knowledge_concepts c
+               JOIN yap_knowledge_builds b
+                 ON b.tenant_id = c.tenant_id AND b.generation_sha256 = c.generation_sha256
+               WHERE c.tenant_id = %s AND c.generation_sha256 = %s
+                 AND c.concept_id = ANY(%s)
+                 AND c.frontmatter->>'title' ILIKE %s ESCAPE '!'
+               ORDER BY c.concept_id LIMIT %s""",
+            (
+                query.tenant_id,
+                query.generation_sha256,
+                list(query.visible_concept_ids),
+                f"%{escaped}%",
+                maximum_results + 1,
+            ),
+        ).fetchall()
+        return PostgresKnowledgeConceptPage(
+            query.generation_sha256,
+            query.permission_hash,
+            query.authorization_hash,
+            tuple(KnowledgeConnectionNode(*row) for row in rows[:maximum_results]),
+            len(rows) > maximum_results,
+        )
+
+
+def read_postgres_knowledge_neighborhood(
+    connection: Connection[object],
+    *,
+    principal: PrincipalKey,
+    purpose: str,
+    agent_capabilities: frozenset[str],
+    concept_id: str,
+    maximum_results: int = MAX_CONNECTION_RELATIONSHIPS,
+    expected_generation_sha256: str | None = None,
+) -> PostgresKnowledgeNeighborhood:
+    """Read a bounded incoming/outgoing neighborhood from one authorized build."""
+
+    validate_bounded_text(
+        concept_id,
+        field="knowledge connection concept",
+        maximum=MAX_CONCEPT_ID_CHARACTERS,
+    )
+    validate_integer(
+        maximum_results,
+        minimum=1,
+        maximum=MAX_CONNECTION_RELATIONSHIPS,
+        field="knowledge connection limit",
+    )
+    validate_expected_generation(expected_generation_sha256)
+    with connection.transaction():
+        query = _authorize_knowledge_query(
+            connection,
+            principal=principal,
+            purpose=purpose,
+            agent_capabilities=agent_capabilities,
+            required_capability="knowledge.relationship.traverse",
+            expected_generation_sha256=expected_generation_sha256,
+        )
+        if concept_id not in query.visible_concept_ids:
+            return PostgresKnowledgeNeighborhood(
+                query.generation_sha256,
+                query.permission_hash,
+                query.authorization_hash,
+                (),
+                (),
+                False,
+            )
+        visible = list(query.visible_concept_ids)
+        rows = connection.execute(
+            """SELECT r.relationship_id, r.source_concept_id, r.target_concept_id,
+                      r.relationship_type, r.authority, 1, c.source_path,
+                      b.source_revision, c.content_sha256,
+                      r.source_char_start, r.source_char_end
+               FROM yap_knowledge_relationships r
+               JOIN yap_knowledge_concepts c
+                 ON c.tenant_id = r.tenant_id
+                AND c.generation_sha256 = r.generation_sha256
+                AND c.concept_id = r.source_concept_id
+               JOIN yap_knowledge_builds b
+                 ON b.tenant_id = r.tenant_id
+                AND b.generation_sha256 = r.generation_sha256
+               WHERE r.tenant_id = %s AND r.generation_sha256 = %s
+                 AND (r.source_concept_id = %s OR r.target_concept_id = %s)
+                 AND r.canonical
+                 AND r.source_concept_id = ANY(%s)
+                 AND r.target_concept_id = ANY(%s)
+               ORDER BY r.relationship_id
+               LIMIT %s""",
+            (
+                query.tenant_id,
+                query.generation_sha256,
+                concept_id,
+                concept_id,
+                visible,
+                visible,
+                maximum_results + 1,
+            ),
+        ).fetchall()
+        relationships = tuple(
+            KnowledgeRelationshipResult(
+                *row,
+                generation_sha256=query.generation_sha256,
+                permission_hash=query.permission_hash,
+                authorization_hash=query.authorization_hash,
+            )
+            for row in rows[:maximum_results]
+        )
+        selected = sorted(
+            {concept_id}
+            | {
+                endpoint
+                for edge in relationships
+                for endpoint in (edge.source_concept_id, edge.target_concept_id)
+            }
+        )
+        nodes = connection.execute(
+            """SELECT c.concept_id, c.frontmatter->>'type', c.frontmatter->>'title',
+                      c.source_path, b.source_revision, c.content_sha256
+               FROM yap_knowledge_concepts c
+               JOIN yap_knowledge_builds b
+                 ON b.tenant_id = c.tenant_id
+                AND b.generation_sha256 = c.generation_sha256
+               WHERE c.tenant_id = %s AND c.generation_sha256 = %s
+                 AND c.concept_id = ANY(%s)
+               ORDER BY c.concept_id
+               LIMIT %s""",
+            (query.tenant_id, query.generation_sha256, selected, maximum_results + 1),
+        ).fetchall()
+        return PostgresKnowledgeNeighborhood(
+            query.generation_sha256,
+            query.permission_hash,
+            query.authorization_hash,
+            tuple(KnowledgeConnectionNode(*row) for row in nodes),
+            relationships,
+            len(rows) > maximum_results,
+        )
 
 
 def traverse_postgres_knowledge_relationships(
@@ -181,7 +381,13 @@ def _traverse_postgres_knowledge_relationships(
 
 
 __all__ = [
+    "KnowledgeConnectionNode",
     "KnowledgeRelationshipResult",
+    "MAX_CONNECTION_RELATIONSHIPS",
+    "PostgresKnowledgeNeighborhood",
+    "PostgresKnowledgeConceptPage",
     "PostgresRelationshipTraversal",
+    "read_postgres_knowledge_neighborhood",
+    "browse_postgres_knowledge_concepts",
     "traverse_postgres_knowledge_relationships",
 ]

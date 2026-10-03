@@ -43,11 +43,13 @@ export function startAuditorReport(
   focus: string,
   maximumFindings: number,
   expectedGenerationSha256: string | null,
+  authorityRevision: string,
 ) {
   return invoke<AuditorReportJobView>("start_auditor_report", {
     focus,
     maximumFindings,
     expectedGenerationSha256,
+    authorityRevision,
   });
 }
 

@@ -79,6 +79,7 @@ describe("client workflow projections", () => {
   it("fails closed when projecting server capabilities", () => {
     const readyWithoutCapabilities = {
       state: "ready" as const,
+      authorityRevision: "1",
       checkedAtMs: 10,
       retryAtMs: null,
       apiVersion: "1",
@@ -90,7 +91,7 @@ describe("client workflow projections", () => {
         librarianQueries: false,
         analystAnswers: false,
         coordinatorBundles: false,
-        auditorReports: false,
+        auditorReports: false, knowledgeConnections: false, personalTerminology: false,
         archivistIngestions: false,
         studentQuestions: false,
         curatorProposals: false,

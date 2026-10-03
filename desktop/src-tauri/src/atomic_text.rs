@@ -18,12 +18,24 @@ pub(crate) fn write(path: &Path, text: &str) -> std::io::Result<()> {
         Err(error) => return Err(error),
     }
 
+    publish(path, text, atomic_file::replace_same_directory)
+}
+
+pub(crate) fn write_new(path: &Path, text: &str) -> std::io::Result<()> {
+    publish(path, text, atomic_file::rename_same_directory_no_replace)
+}
+
+fn publish(
+    path: &Path,
+    text: &str,
+    commit: fn(&Path, &Path) -> std::io::Result<()>,
+) -> std::io::Result<()> {
     let (temp, mut file) = reserve_sibling_temp_file(path)?;
     let result = (|| {
         file.write_all(text.as_bytes())?;
         file.sync_all()?;
         drop(file);
-        atomic_file::replace_same_directory(&temp, path)?;
+        commit(&temp, path)?;
         atomic_file::sync_parent_directory(path)
     })();
     if result.is_err() {
@@ -48,11 +60,14 @@ fn reserve_sibling_temp_file(path: &Path) -> std::io::Result<(PathBuf, std::fs::
     let pid = std::process::id();
     for attempt in 0..32 {
         let temp = path.with_file_name(format!("{file_name}.{pid}.{nonce}.{attempt}.part"));
-        match std::fs::OpenOptions::new()
-            .write(true)
-            .create_new(true)
-            .open(&temp)
+        let mut options = std::fs::OpenOptions::new();
+        options.write(true).create_new(true);
+        #[cfg(unix)]
         {
+            use std::os::unix::fs::OpenOptionsExt;
+            options.mode(0o600);
+        }
+        match options.open(&temp) {
             Ok(file) => return Ok((temp, file)),
             Err(error) if error.kind() == ErrorKind::AlreadyExists => {}
             Err(error) => return Err(error),

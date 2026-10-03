@@ -164,6 +164,7 @@ class GovernedKnowledgeTools:
                     text=None,
                     relationship_type=item.relationship_type,
                     target_concept_id=item.target_concept_id,
+                    relationship_authority=item.authority,
                 )
                 for item in traversal.relationships
             )
@@ -191,6 +192,7 @@ class GovernedKnowledgeTools:
                 text=item.title,
                 relationship_type=None,
                 target_concept_id=None,
+                relationship_authority=None,
             )
             for item in tree.concepts[: profile.maximum_results]
         )
@@ -223,6 +225,7 @@ def _bounded_search_items(
                 text=text,
                 relationship_type=None,
                 target_concept_id=None,
+                relationship_authority=None,
             )
         )
     return _bounded_items(tuple(items), maximum_characters)
@@ -243,6 +246,7 @@ def _bounded_items(
                 item.text or "",
                 item.relationship_type or "",
                 item.target_concept_id or "",
+                item.relationship_authority or "",
             )
         )
         if used + size > maximum_characters:

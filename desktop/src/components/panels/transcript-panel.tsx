@@ -1,4 +1,5 @@
 import { Copy } from "@phosphor-icons/react/Copy";
+import { DownloadSimple } from "@phosphor-icons/react/DownloadSimple";
 import { FileText } from "@phosphor-icons/react/FileText";
 import { Books } from "@phosphor-icons/react/Books";
 import { Question as HelpCircle } from "@phosphor-icons/react/Question";
@@ -6,7 +7,7 @@ import { ArrowCounterClockwise as RotateCcw } from "@phosphor-icons/react/ArrowC
 import { useEffect, useState, type ReactNode } from "react";
 
 import { RecordingPlayer } from "@/components/playback/recording-player";
-import { recordingActivityLabel } from "@/components/playback/recording-status";
+import { recordingActivityDescription, recordingActivityLabel } from "@/components/playback/recording-status";
 import { TranscriptResultSummaryLine } from "@/components/transcript-result-summary";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -42,21 +43,29 @@ import { cn } from "@/lib/utils";
 export function TranscriptPanel({
   className,
   elapsedSeconds,
+  exportBusy,
+  exportError,
   item,
   knowledgeStaging,
   languageLabelReview,
   onCopy,
+  onCorrect,
+  onExport,
   onOpen,
   onOpenHelp,
   onRetry,
+  onReloadText,
   onReveal,
   running,
   speakerTranscript,
   text,
+  textError,
   variant = "panel",
 }: {
   className?: string;
   elapsedSeconds: number;
+  exportBusy?: boolean;
+  exportError?: string;
   item?: RecordingJobView;
   knowledgeStaging?: {
     active: boolean;
@@ -68,13 +77,17 @@ export function TranscriptPanel({
   };
   languageLabelReview?: ReactNode;
   onCopy: (item: RecordingJobView) => void;
+  onCorrect?: () => void;
+  onExport?: (item: RecordingJobView) => void;
   onOpen: (path: string) => void;
   onOpenHelp?: () => void;
   onRetry: (id: string) => void;
+  onReloadText?: (path: string) => void;
   onReveal: (path: string) => void;
   running: boolean;
   speakerTranscript?: SpeakerTranscriptDetailState;
   text?: string;
+  textError?: string;
   variant?: "panel" | "modal";
 }) {
   const output = item?.outputPath;
@@ -161,10 +174,11 @@ export function TranscriptPanel({
           ) : null}
         </div>
         {output ? (
-          <CardAction className="col-span-full col-start-1 row-span-1 row-start-2 w-full justify-self-stretch sm:col-span-1 sm:col-start-2 sm:row-span-2 sm:row-start-1 sm:w-auto sm:justify-self-end">
-            <ButtonGroup
+          <CardAction className="col-span-full col-start-1 row-span-1 row-start-2 w-full justify-self-stretch">
+            <div
               aria-label="Transcript actions"
-              className="w-full sm:w-auto [&>[data-slot=button]]:flex-1 sm:[&>[data-slot=button]]:flex-none"
+              className="flex flex-wrap gap-2"
+              role="group"
             >
               <Button
                 aria-label={`${hasSeparateSpeakerTranscript ? "Copy plain-text transcript" : "Copy transcript"} for ${item.name}`}
@@ -185,6 +199,26 @@ export function TranscriptPanel({
                 <FileText data-icon="inline-start" />
                 {hasSeparateSpeakerTranscript ? "Open text" : "Open"}
               </Button>
+              {isDone && onExport ? (
+                <Button
+                  aria-label={`Export original transcript for ${item.name}`}
+                  aria-disabled={exportBusy || undefined}
+                  className="aria-disabled:pointer-events-none aria-disabled:opacity-50"
+                  onClick={() => { if (!exportBusy) onExport(item); }}
+                  size="sm"
+                  title="Save the original transcript as UTF-8 text. Choose a new filename; existing files are preserved."
+                  type="button"
+                  variant="secondary"
+                >
+                  <DownloadSimple data-icon="inline-start" />
+                  {exportBusy ? "Exporting…" : "Export text"}
+                </Button>
+              ) : null}
+              {isDone && onCorrect ? (
+                <Button onClick={onCorrect} size="sm" type="button" variant="secondary">
+                  Review corrections
+                </Button>
+              ) : null}
               {knowledgeStaging ? (
                 <Button
                   aria-label={`Stage ${item.name} for knowledge review`}
@@ -203,10 +237,15 @@ export function TranscriptPanel({
                       : "Stage for knowledge"}
                 </Button>
               ) : null}
-            </ButtonGroup>
+            </div>
           </CardAction>
         ) : null}
       </CardHeader>
+      {exportError ? (
+        <p className="border-b px-5 py-3 text-sm text-destructive" role="alert">
+          {exportError}
+        </p>
+      ) : null}
       <CardContent className="flex min-h-0 flex-1 flex-col p-0">
         {item ? (
           <RecordingPlayer item={item} onOpen={onOpen} onReveal={onReveal} variant={variant} />
@@ -226,7 +265,20 @@ export function TranscriptPanel({
                 <AlertDescription>{speakerTranscript.message}</AlertDescription>
               </Alert>
             ) : null}
-            {isDone ? (
+            {isDone && textError ? (
+              <div className="grid gap-4">
+                <Alert variant="destructive">
+                  <HelpCircle />
+                  <AlertDescription>{textError}</AlertDescription>
+                </Alert>
+                {item?.outputPath && onReloadText ? (
+                  <Button className="w-fit" onClick={() => onReloadText(item.outputPath!)} type="button" variant="outline">
+                    <RotateCcw data-icon="inline-start" />
+                    Retry reading transcript
+                  </Button>
+                ) : null}
+              </div>
+            ) : isDone ? (
               transcriptText.state === "ready" ? (
                 speakerTranscript?.status === "loading" ? (
                   <div className="flex flex-col gap-3" data-testid="speaker-transcript-loading">
@@ -283,7 +335,7 @@ export function TranscriptPanel({
                   </div>
                 ) : (
                   <pre
-                    className="whitespace-pre-wrap break-words text-[15px] leading-7 text-foreground"
+                    className="whitespace-pre-wrap break-words font-sans text-[15px] leading-7 text-foreground"
                     data-testid={speakerProjection?.mode === "plain" ? "single-speaker-transcript" : undefined}
                   >
                     {transcriptText.text}
@@ -319,7 +371,7 @@ export function TranscriptPanel({
                         Transcribing · <span className="tabular-nums">{formatElapsed(elapsedSeconds)}</span>
                       </>
                     ) : (
-                      "Transcribing"
+                      item ? recordingActivityLabel(item.status) : "Transcribing"
                     )
                   ) : running ? (
                     "Transcribing"
@@ -328,7 +380,7 @@ export function TranscriptPanel({
                   )}
                 </Badge>
                 <p className="text-[15px] leading-7 text-muted-foreground">
-                  {item.route === "serverBatch"
+                  {isRunning ? recordingActivityDescription(item.status) : item.route === "serverBatch"
                     ? queuedServerMessage
                     : "The finished transcript will appear here as soon as the local run completes."}
                 </p>

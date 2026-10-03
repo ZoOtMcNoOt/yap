@@ -15,3 +15,11 @@
 - Treat IT-controlled identity, networking, certificates, policy, and deployment as explicit handoffs.
 - Executable behavior is truth; ADRs describe intent. Keep changes phase-scoped, use functional names, and merge only a reviewed green exact head.
 - Verify licenses and preserve provenance when reusing external code.
+
+## Current development priority
+
+- Use `docs/plans/active/2026-10-02-yap-project-hill-climb.md` as the single execution queue. Continue across the entire approved roadmap in verified end-to-end increments. Completing a milestone or encountering a hardware blocker does not complete the project goal; select the next available software task.
+- Use pnpm 11.7.0 and the locked dependencies. The cloud setup and verification commands are in `docs/runbooks/cloud-development.md`.
+- Real-model and enterprise qualification gate production promotion; they do not block UI, documentation, refactoring, or hardware-free tests. Report simulated, Linux-native, Windows-native, and inference results accurately.
+- Attribute project work to Grant McNatt. Do not add AI coauthor trailers or generated-by branding; preserve third-party attribution and provenance.
+- Commit and push each verified development iteration to GitHub. Keep `main` as the shared integration branch; merge through required checks, then remove completed temporary branches. Preserve unique historical work before retiring branches.

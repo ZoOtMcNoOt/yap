@@ -8,8 +8,8 @@ use yap_desktop_lib::runtime::state::ServerConnectorState;
 use yap_desktop_lib::server_connector::config::{ServerSettings, CURRENT_SCHEMA_VERSION};
 use yap_desktop_lib::server_connector::{ServerConnectionSnapshot, ServerConnectorBoundary};
 
-const HEALTHY_BODY: &str = r#"{"service":"yap-server","status":"ok","apiVersion":"1","auth":"not_configured","capabilities":{"batchJobs":true,"liveStreaming":true,"jobStatus":true,"transcriptCorrection":true,"librarianQueries":true,"archivistIngestions":true,"studentQuestions":true,"curatorProposals":true,"analystAnswers":true,"coordinatorBundles":true,"auditorReports":true}}"#;
-const AUTH_REQUIRED_BODY: &str = r#"{"service":"yap-server","status":"ok","apiVersion":"1","auth":"required","capabilities":{"batchJobs":false,"liveStreaming":false,"jobStatus":false,"transcriptCorrection":false,"librarianQueries":false,"archivistIngestions":false,"studentQuestions":false,"curatorProposals":false,"analystAnswers":false,"coordinatorBundles":false,"auditorReports":false}}"#;
+const HEALTHY_BODY: &str = r#"{"service":"yap-server","status":"ok","apiVersion":"1","auth":"not_configured","capabilities":{"batchJobs":true,"liveStreaming":true,"jobStatus":true,"transcriptCorrection":true,"librarianQueries":true,"archivistIngestions":true,"studentQuestions":true,"curatorProposals":true,"analystAnswers":true,"coordinatorBundles":true,"auditorReports":true,"knowledgeConnections":false,"personalTerminology":true}}"#;
+const AUTH_REQUIRED_BODY: &str = r#"{"service":"yap-server","status":"ok","apiVersion":"1","auth":"required","capabilities":{"batchJobs":false,"liveStreaming":false,"jobStatus":false,"transcriptCorrection":false,"librarianQueries":false,"archivistIngestions":false,"studentQuestions":false,"curatorProposals":false,"analystAnswers":false,"coordinatorBundles":false,"auditorReports":false,"knowledgeConnections":false,"personalTerminology":false}}"#;
 
 #[test]
 fn healthy_health_contract_projects_ready_capabilities() {
@@ -24,6 +24,7 @@ fn healthy_health_contract_projects_ready_capabilities() {
     assert!(snapshot.capabilities.batch_jobs);
     assert!(snapshot.capabilities.live_streaming);
     assert!(snapshot.capabilities.job_status);
+    assert!(snapshot.capabilities.personal_terminology);
     server.join();
 }
 

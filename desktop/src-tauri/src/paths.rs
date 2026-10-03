@@ -143,6 +143,7 @@ mod tests {
             ),
             known_folder.join(PRODUCTION_IDENTIFIER),
         );
+        #[cfg(windows)]
         assert_eq!(
             app_data_dir_from(|key| (key == "APPDATA").then(|| appdata.display().to_string())),
             appdata.join(PRODUCTION_IDENTIFIER),
@@ -165,10 +166,7 @@ mod tests {
     #[test]
     fn app_data_dir_keeps_production_data_namespace() {
         let local = std::env::temp_dir().join("yap-local-data");
-        let dir = app_data_dir_from(|key| match key {
-            "APPDATA" => Some(local.display().to_string()),
-            _ => None,
-        });
+        let dir = app_data_dir_from_root(|_| None, Some(local.clone()));
 
         assert_eq!(dir, local.join("com.mcnatg1.yap"));
     }

@@ -4,7 +4,7 @@ import { useId } from "react";
 import { ShortcutRecorder } from "@/components/settings/shortcut-recorder";
 import { PrimaryLanguageSetting } from "@/components/settings/primary-language-setting";
 import { AutomaticLanguageRoutingSetting } from "@/components/settings/automatic-language-routing-setting";
-import { AdvancedSettings, SettingsGroup, SettingsRow } from "@/components/settings/settings-primitives";
+import { SettingsDisclosure, SettingsGroup, SettingsRow } from "@/components/settings/settings-primitives";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -49,6 +49,7 @@ export function GeneralSettingsSection({
   onSetLivePasteHotkey,
   onStartLive,
   onStopLive,
+  localDictationLanguages,
   primaryLanguageError,
   primaryLanguagePending,
   primaryLanguageStatus,
@@ -71,6 +72,7 @@ export function GeneralSettingsSection({
   onSetLivePasteHotkey: () => void;
   onStartLive: () => void;
   onStopLive: () => void;
+  localDictationLanguages: string[];
   primaryLanguageError: string;
   primaryLanguagePending: boolean;
   primaryLanguageStatus: PrimaryLanguageStatus | null;
@@ -82,6 +84,7 @@ export function GeneralSettingsSection({
     <SettingsGroup>
       <PrimaryLanguageSetting
         error={primaryLanguageError}
+        localLanguages={localDictationLanguages}
         onConfirm={onConfirmPrimaryLanguage}
         pending={primaryLanguagePending}
         status={primaryLanguageStatus}
@@ -112,6 +115,7 @@ export function GeneralSettingsSection({
         label="Microphone"
         value={liveView.inputDeviceLabel || "System default"}
       >
+        <Label className="sr-only" id={micLabelId}>Microphone</Label>
         <Select
           disabled={liveBusy || liveActive}
           onValueChange={(value) => onSetInputDevice(value === "default" ? undefined : value)}
@@ -180,7 +184,7 @@ export function GeneralSettingsSection({
           </Button>
         </div>
       </SettingsRow>
-      <AdvancedSettings>
+      <SettingsDisclosure>
         <AutomaticLanguageRoutingSetting
           control={liveLanguageRouting}
           liveActive={liveActive}
@@ -201,7 +205,7 @@ export function GeneralSettingsSection({
           label="Overlay controls shortcut"
           value={liveView.overlayFocusHotkey || "Unavailable"}
         />
-      </AdvancedSettings>
+      </SettingsDisclosure>
     </SettingsGroup>
   );
 }

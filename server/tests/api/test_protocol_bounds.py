@@ -13,11 +13,7 @@ class ProtocolBoundsTests(HealthServerTestCase):
         host, port = self.server.server_address[:2]
         stalled = socket.create_connection((host, port), timeout=2)
         stalled.settimeout(5)
-        stalled.sendall(
-            b"GET /v1/health HTTP/1.1\r\n"
-            b"Host: 127.0.0.1\r\n"
-            b"X-Stall: "
-        )
+        stalled.sendall(b"GET /v1/health HTTP/1.1\r\nHost: 127.0.0.1\r\nX-Stall: ")
         try:
             status, _, _ = self._request("/v1/health", timeout=5)
             stalled_response = bytearray()
@@ -155,8 +151,7 @@ class ProtocolBoundsTests(HealthServerTestCase):
         cases = (
             (b"BROKEN\r\n\r\n", 400, "HTTP_ERROR"),
             (
-                b"GET /v1/health HTTP/1.1 EXTRA\r\n"
-                b"Host: 127.0.0.1\r\n\r\n",
+                b"GET /v1/health HTTP/1.1 EXTRA\r\nHost: 127.0.0.1\r\n\r\n",
                 400,
                 "HTTP_ERROR",
             ),

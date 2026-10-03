@@ -1,17 +1,17 @@
 import { Repeat } from "@phosphor-icons/react/Repeat";
 import { Sparkle } from "@phosphor-icons/react/Sparkle";
-import { XCircle } from "@phosphor-icons/react/XCircle";
 
 import { AnalystAnswerResult } from "@/components/analyst/analyst-answer-result";
 import { useAnalystAnswer } from "@/components/analyst/use-analyst-answer";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { RequestCancelButton } from "@/components/ui/request-cancel-button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 
-export function AnalystAnswerComposer({ available }: { available: boolean }) {
-  const analyst = useAnalystAnswer({ available });
+export function AnalystAnswerComposer({ available, authorityRevision }: { available: boolean; authorityRevision: string }) {
+  const analyst = useAnalystAnswer({ available, authorityRevision });
 
   return (
     <Card className="border-primary/25 bg-[var(--surface-transcript)] py-0 shadow-none">
@@ -61,10 +61,7 @@ export function AnalystAnswerComposer({ available }: { available: boolean }) {
           </p>
           <div className="flex flex-wrap gap-2">
             {analyst.active ? (
-              <Button onClick={() => void analyst.cancel()} type="button" variant="secondary">
-                <XCircle data-icon="inline-start" />
-                Cancel
-              </Button>
+              <RequestCancelButton onCancel={analyst.cancel} requestId={analyst.view?.requestId} />
             ) : (
               <Button disabled={!analyst.canRun} type="submit">
                 Ask Analyst

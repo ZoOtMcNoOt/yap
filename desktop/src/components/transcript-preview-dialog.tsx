@@ -21,6 +21,8 @@ export function TranscriptPreviewDialog({
   onOpen,
   onOpenChange,
   onReveal,
+  onRetry,
+  error,
   text,
 }: {
   entry?: TranscriptHistoryEntry;
@@ -28,6 +30,8 @@ export function TranscriptPreviewDialog({
   onOpen: (entry: TranscriptHistoryEntry) => void;
   onOpenChange: (open: boolean) => void;
   onReveal: (entry: TranscriptHistoryEntry) => void;
+  onRetry?: (entry: TranscriptHistoryEntry) => void;
+  error?: string;
   text?: string;
 }) {
   const transcriptText = projectTranscriptText(text);
@@ -40,9 +44,12 @@ export function TranscriptPreviewDialog({
           <DialogDescription className="truncate">{entry?.outputPath ?? "Local transcript"}</DialogDescription>
         </DialogHeader>
         <ScrollArea className="max-h-[58vh] rounded-md border bg-muted">
-          <pre className="whitespace-pre-wrap break-words p-4 text-sm leading-6">
-            {transcriptText.text}
-          </pre>
+          {error ? (
+            <div className="grid gap-3 p-4" role="alert">
+              <p className="text-sm">{error}</p>
+              {entry && onRetry ? <Button className="w-fit" onClick={() => onRetry(entry)} type="button" variant="outline">Retry preview</Button> : null}
+            </div>
+          ) : <pre aria-live="polite" className="whitespace-pre-wrap break-words p-4 font-sans text-[15px] leading-7">{transcriptText.text}</pre>}
         </ScrollArea>
         {entry ? (
           <DialogFooter>

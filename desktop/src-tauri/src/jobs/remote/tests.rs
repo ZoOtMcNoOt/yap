@@ -672,7 +672,23 @@ fn cleanup_removes_only_exact_owned_job_staging_shapes_after_a_crash() {
         fs::write(directory.join("private.pcm"), b"private bytes").unwrap();
     }
 
+    let abandoned_decode = spool.join(".job-stale-decoded-4242-7.wav");
+    let legacy_decode = spool.join(".job-stale-decoded-4242.wav");
+    let unrelated_decode = spool.join(".job-stale-decoded-not-owned.wav");
+    let neighboring_decode = spool.join(".job-neighbor-decoded-4242-7.wav");
+    for file in [
+        &abandoned_decode,
+        &legacy_decode,
+        &unrelated_decode,
+        &neighboring_decode,
+    ] {
+        fs::write(file, b"retained plaintext").unwrap();
+    }
     reset_unattached_spool("job-stale", &spool).unwrap();
+    assert!(!abandoned_decode.exists());
+    assert!(!legacy_decode.exists());
+    assert_eq!(fs::read(unrelated_decode).unwrap(), b"retained plaintext");
+    assert_eq!(fs::read(neighboring_decode).unwrap(), b"retained plaintext");
 
     assert!(!abandoned_prepare.exists());
     assert!(!abandoned_quarantine.exists());
@@ -1001,8 +1017,22 @@ fn write_pcm_wav_with_empty_chunks(path: &std::path::Path, pcm: &[u8], chunk_cou
 /// reads must say the source was decoded rather than received canonical.
 #[test]
 fn a_compressed_import_reaches_the_manifest_as_a_decoded_source() {
+    verify_decoded_source_manifest("tone-44k-stereo.mp3");
+}
+
+#[test]
+fn flac_reaches_the_canonical_manifest_with_source_evidence() {
+    verify_decoded_source_manifest("tone-44k-stereo.flac");
+}
+
+#[test]
+fn declared_mp3_reaches_the_manifest_on_its_source_content_timeline() {
+    verify_decoded_source_manifest("tone-44k-gapless.mp3");
+}
+
+fn verify_decoded_source_manifest(fixture_name: &str) {
     let root = std::env::temp_dir().join(format!(
-        "yap-decoded-preparation-{}-{:?}",
+        "yap-decoded-preparation-{fixture_name}-{}-{:?}",
         std::process::id(),
         std::thread::current().id()
     ));
@@ -1010,14 +1040,23 @@ fn a_compressed_import_reaches_the_manifest_as_a_decoded_source() {
     let fixture = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("tests")
         .join("fixtures")
-        .join("tone-44k-stereo.mp3");
+        .join(fixture_name);
     let spool_root = root.join("spool");
     fs::create_dir_all(&spool_root).unwrap();
 
-    let decoded =
-        super::decode_import_if_compressed(&fixture, "job-decoded-import", &spool_root, || Ok(()))
-            .expect("decode must succeed")
-            .expect("an mp3 must be decoded");
+    let fingerprint = crate::media_protocol::inspect_media_source(&fixture).unwrap();
+    let admitted =
+        crate::media_protocol::open_unchanged_media_source(&fixture, &fingerprint).unwrap();
+    let decoded = super::decode_import_if_compressed(
+        &fixture,
+        &admitted,
+        &fingerprint,
+        "job-decoded-import",
+        &spool_root,
+        || Ok(()),
+    )
+    .expect("decode must succeed")
+    .expect("a supported compressed import must be decoded");
     assert_eq!(decoded.evidence.source_sample_rate_hz, 44_100);
     assert_eq!(decoded.evidence.source_channels, 2);
 
@@ -1026,11 +1065,11 @@ fn a_compressed_import_reaches_the_manifest_as_a_decoded_source() {
     let mut vad = FixedIntervalVad {
         accepted_pcm_bytes: 0,
     };
-    let mut source = File::open(&decoded.path).unwrap();
+    let mut source = decoded.open_source().unwrap();
     let prepared = prepare_imported_pcm_wav_with_advisory_vad_for_test(
         ImportedPcmWavPreparation {
             job_id: "job-decoded-import",
-            display_name: "tone-44k-stereo.mp3",
+            display_name: fixture_name,
             source: &mut source,
             spool_root: &spool_root,
             owner_namespace: &owner,
@@ -1056,9 +1095,34 @@ fn a_compressed_import_reaches_the_manifest_as_a_decoded_source() {
     assert_eq!(normalization["decodedFrom"]["sampleRateHz"], 44_100);
     assert_eq!(normalization["decodedFrom"]["channels"], 2);
     assert!(normalization["decodedFrom"]["frameCount"].as_u64().unwrap() > 0);
+    if fixture_name == "tone-44k-gapless.mp3"
+        || fixture_name.ends_with(".ogg")
+        || fixture_name.ends_with(".m4a")
+        || fixture_name.ends_with(".mp4")
+    {
+        assert_eq!(normalization["decodedFrom"]["frameCount"], 44_100);
+    }
     assert_eq!(normalization["sourceTimePreserved"], true);
     assert_eq!(manifest["schemaVersion"], 2);
 
+    assert_eq!(
+        normalization["decodedFrom"]["codec"],
+        decoded.evidence.source_codec
+    );
+    let temporary = decoded.path.clone();
     drop(decoded);
+    assert!(!temporary.exists(), "decoded plaintext is reclaimed");
     fs::remove_dir_all(&root).ok();
+}
+
+#[test]
+fn ogg_vorbis_reaches_the_canonical_manifest_with_declared_source_evidence() {
+    verify_decoded_source_manifest("tone-44k-stereo.ogg");
+}
+
+#[test]
+fn aac_m4a_and_mp4_reach_durable_canonical_preparation() {
+    for name in ["tone-44k-stereo.m4a", "tone-video.mp4"] {
+        verify_decoded_source_manifest(name);
+    }
 }

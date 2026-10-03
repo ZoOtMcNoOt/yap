@@ -3,6 +3,7 @@ import { X as XIcon } from "@phosphor-icons/react/X";
 import { Dialog as SheetPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
+import { useModalFocusReturn } from "@/components/ui/use-modal-focus-return"
 
 function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
   return <SheetPrimitive.Root data-slot="sheet" {...props} />
@@ -41,11 +42,14 @@ function SheetContent({
   children,
   side = "right",
   showCloseButton = true,
+  onOpenAutoFocus,
+  onCloseAutoFocus,
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Content> & {
   side?: "top" | "right" | "bottom" | "left"
   showCloseButton?: boolean
 }) {
+  const focusReturn = useModalFocusReturn({ onOpenAutoFocus, onCloseAutoFocus });
   return (
     <SheetPortal>
       <SheetOverlay />
@@ -64,6 +68,7 @@ function SheetContent({
           className
         )}
         {...props}
+        {...focusReturn}
       >
         {children}
         {showCloseButton && (

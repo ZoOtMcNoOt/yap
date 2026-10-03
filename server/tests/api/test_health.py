@@ -24,6 +24,8 @@ class HealthTests(unittest.TestCase):
                     "analystAnswers": False,
                     "coordinatorBundles": False,
                     "auditorReports": False,
+                    "knowledgeConnections": False,
+                    "personalTerminology": False,
                 },
             },
         )
@@ -48,6 +50,8 @@ class HealthTests(unittest.TestCase):
                     "analystAnswers": False,
                     "coordinatorBundles": False,
                     "auditorReports": False,
+                    "knowledgeConnections": False,
+                    "personalTerminology": False,
                 },
             },
         )

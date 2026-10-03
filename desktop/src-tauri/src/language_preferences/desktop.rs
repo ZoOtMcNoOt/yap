@@ -86,12 +86,10 @@ pub(crate) async fn confirm_primary_language(
     crate::authorization::ensure_main(&window)?;
     let _live_mutation = live_runtime.begin_primary_language_mutation()?;
 
-    // No catalog revision means no server catalog exists to confirm against —
-    // a first run before any server. Local dictation carries its own locale
-    // list, enforced again at live start, so confirming against it promises
-    // nothing the runtime will not honor. The server-catalog path below stays
-    // exactly as strict as it was: a caller who has a catalog must name its
-    // revision and match it.
+    // No catalog revision selects the local dictation catalog, enforced again
+    // at live start. This confirms a preference without granting a server
+    // recording route. The server-catalog path separately requires a current
+    // revision and an exact supported locale.
     let Some(catalog_revision) = catalog_revision else {
         {
             let _mutation = persistence::lock_mutation().map_err(preference_error_message)?;

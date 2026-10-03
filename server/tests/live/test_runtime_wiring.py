@@ -288,6 +288,7 @@ class LiveRuntimeWiringTests(unittest.TestCase):
         serve.assert_called_once_with(
             settings,
             request_authenticator=admitted_authenticator,
+            terminology_service=None,
             job_service=None,
             lid_preflight_service=None,
             asr_capabilities=None,
@@ -458,6 +459,7 @@ class LiveRuntimeWiringTests(unittest.TestCase):
         serve.assert_called_once_with(
             settings,
             request_authenticator=authorization_runtime.authenticator,
+            terminology_service=None,
             job_service=jobs,
             lid_preflight_service=batch_runtime.lid_preflight_service,
             asr_capabilities=batch_runtime.asr_capabilities,

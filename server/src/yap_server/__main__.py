@@ -25,6 +25,9 @@ from yap_server.agents.auditor_product_runtime import (
     AuditorProductRuntime,
     build_auditor_product_runtime,
 )
+from yap_server.knowledge.knowledge_connections_service import (
+    build_knowledge_connections_service,
+)
 from yap_server.agents.librarian_runtime import (
     LibrarianRuntime,
     build_librarian_runtime,
@@ -38,6 +41,10 @@ from yap_server.agents.transcript_correction_runtime import (
     build_transcript_correction_runtime,
 )
 from yap_server.api.app import serve
+from yap_server.knowledge.terminology_policy import build_terminology_policy
+from yap_server.knowledge.terminology_runtime import (
+    build_terminology_service,
+)
 from yap_server.auth import (
     RequestAuthorizationRuntime,
     build_request_authenticator,
@@ -264,9 +271,22 @@ def main() -> None:
             token_authenticator,
         )
         request_authenticator = authorization_runtime.authenticator
+        terminology_policy = build_terminology_policy(
+            os.environ, authenticated_team_mode=settings.authentication.required
+        )
+        knowledge_connections_service = build_knowledge_connections_service(
+            os.environ,
+            authenticated_team_mode=settings.authentication.required,
+        )
+        terminology_service = build_terminology_service(
+            os.environ,
+            authenticated_team_mode=settings.authentication.required,
+            policy=terminology_policy,
+        )
         transcript_correction_runtime = build_transcript_correction_runtime(
             os.environ,
             authenticated_team_mode=settings.authentication.required,
+            terminology_policy=terminology_policy,
         )
         librarian_runtime = build_librarian_runtime(
             os.environ,
@@ -358,6 +378,8 @@ def main() -> None:
         serve(
             settings,
             request_authenticator=request_authenticator,
+            knowledge_connections_service=knowledge_connections_service,
+            terminology_service=terminology_service,
             job_service=runtime.service if runtime is not None else None,
             lid_preflight_service=(
                 runtime.lid_preflight_service if runtime is not None else None

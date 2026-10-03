@@ -78,6 +78,9 @@ fn migration_lock_links_are_rejected_without_following_them() {
 
     let error = migrate_legacy_entries(&legacy, &canonical).unwrap_err();
 
+    #[cfg(unix)]
+    assert_eq!(error.raw_os_error(), Some(libc::ELOOP));
+    #[cfg(not(unix))]
     assert_eq!(error.kind(), io::ErrorKind::InvalidData);
     assert_eq!(fs::read(outside).unwrap(), b"outside");
     assert!(!canonical.join("jobs.sqlite3").exists());

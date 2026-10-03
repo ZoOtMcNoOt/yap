@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from contextlib import nullcontext
+from dataclasses import replace
 import threading
 import unittest
 
@@ -16,6 +17,8 @@ from yap_server.knowledge.knowledge_proposals import KnowledgeProposal
 from yap_server.knowledge.knowledge_tool_contract import (
     KnowledgeToolCancellationFailed,
     KnowledgeToolCancelled,
+    KnowledgeToolCitation,
+    KnowledgeToolItem,
     KnowledgeToolResponse,
     SearchKnowledgeRequest,
     governed_agent_tool_definitions,
@@ -63,6 +66,56 @@ class _RecordingProposals:
 
 
 class GovernedKnowledgeMcpTests(unittest.TestCase):
+    def test_mcp_relationship_response_preserves_authority_and_source_proof(
+        self,
+    ) -> None:
+        anyio.run(self._exercise_relationship_authority)
+
+    async def _exercise_relationship_authority(self) -> None:
+        edge = KnowledgeToolItem(
+            citation=KnowledgeToolCitation(
+                "projects/yap", "reviewed-1", "f" * 64, None, None
+            ),
+            text=None,
+            relationship_type="supports",
+            target_concept_id="decisions/interface",
+            relationship_authority="human_confirmed",
+        )
+
+        class RelationshipTools(_RecordingTools):
+            def execute(self, *args: object, **kwargs: object) -> KnowledgeToolResponse:
+                return replace(
+                    super().execute(*args, **kwargs),
+                    operation="traverse",
+                    items=(edge,),
+                )
+
+        tools = RelationshipTools()
+        principal = PrincipalKey("tenant-1", "person-1")
+        server = create_governed_knowledge_mcp_server(
+            tools=tools,  # type: ignore[arg-type]
+            proposals=_RecordingProposals(),  # type: ignore[arg-type]
+            connection_factory=lambda: nullcontext(object()),  # type: ignore[arg-type]
+            principal=principal,
+            agent_id="curator",
+        )
+        async with Client(server, raise_exceptions=True) as client:
+            result = await client.call_tool(
+                "traverse_knowledge",
+                {
+                    "purpose": "knowledge.read",
+                    "start_concept_id": "projects/yap",
+                    "maximum_depth": 1,
+                },
+            )
+        self.assertFalse(result.is_error, result.content)
+        projected = result.structured_content["items"][0]
+        self.assertEqual(projected["relationship_authority"], "human_confirmed")
+        self.assertEqual(projected["target_concept_id"], "decisions/interface")
+        self.assertEqual(projected["citation"]["source_revision"], "reviewed-1")
+        self.assertEqual(projected["citation"]["content_sha256"], "f" * 64)
+        self.assertEqual(tools.calls[0][1:3], (principal, "curator"))
+
     def test_mcp_schema_uses_the_frozen_product_tool_bounds(self) -> None:
         anyio.run(self._exercise_schema_bounds)
 
@@ -79,10 +132,15 @@ class GovernedKnowledgeMcpTests(unittest.TestCase):
             for item in governed_agent_tool_definitions()
         }
         async with Client(server, raise_exceptions=True) as client:
-            listed = {item.name: item.input_schema for item in (await client.list_tools()).tools}
+            listed = {
+                item.name: item.input_schema
+                for item in (await client.list_tools()).tools
+            }
 
         for name in expected:
-            self.assertEqual(set(listed[name]["properties"]), set(expected[name]["properties"]))
+            self.assertEqual(
+                set(listed[name]["properties"]), set(expected[name]["properties"])
+            )
         self.assertEqual(
             listed["search_knowledge"]["properties"]["search_text"]["maxLength"],
             expected["search_knowledge"]["properties"]["search_text"]["maxLength"],
@@ -97,11 +155,11 @@ class GovernedKnowledgeMcpTests(unittest.TestCase):
         )
         self.assertEqual(
             listed["propose_knowledge"]["properties"]["proposed_content"]["maxLength"],
-            expected["propose_knowledge"]["properties"]["proposed_content"]["maxLength"],
+            expected["propose_knowledge"]["properties"]["proposed_content"][
+                "maxLength"
+            ],
         )
-        listed_citation = listed["propose_knowledge"]["$defs"][
-            "ProposalCitation"
-        ]
+        listed_citation = listed["propose_knowledge"]["$defs"]["ProposalCitation"]
         expected_citation = expected["propose_knowledge"]["properties"][
             "source_citations"
         ]["items"]
@@ -223,7 +281,9 @@ class GovernedKnowledgeMcpTests(unittest.TestCase):
         self.assertFalse(proposal_result.is_error, proposal_result.content)
         self.assertEqual(proposal_result.structured_content["status"], "proposed")
         self.assertEqual(len(tools.calls), 1)
-        used_connection, used_principal, used_agent, request, cancellation = tools.calls[0]
+        used_connection, used_principal, used_agent, request, cancellation = (
+            tools.calls[0]
+        )
         self.assertIs(used_connection, connection)
         self.assertEqual(used_principal, principal)
         self.assertEqual(used_agent, "meeting-agent")

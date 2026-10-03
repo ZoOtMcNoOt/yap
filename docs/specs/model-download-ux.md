@@ -13,7 +13,8 @@ Yap should make local model ownership obvious:
 - Installers carry no model weights; setup and settings own explicit, verified acquisition into application data.
 - Setup and settings expose explicit install, cancel, verify, remove, disable, and open-folder actions.
 - The UI uses short labels; docs and tooltips carry detail.
-- Corrupt or partial installs fail closed.
+- Corrupt or partial installs fail closed. A cache marker cannot make a linked/nonregular fallback artifact ready. Installed and staged verification share an approved-size/hash-bounded regular-file reader; fallback verification observes cancellation between buffers before renewing markers.
+- Explicit auxiliary-model imports copy from a bounded, no-follow regular file handle and verify approved bytes before atomic replacement. Pathname substitution cannot redirect the copy; cancellation preserves installed artifacts and cleans staging. See [native source verification](../evidence/model-lifecycle/2026-10-02-verification.md).
 - Removing the model disables local fallback until the user reinstalls it.
 
 ## Meetily Reference

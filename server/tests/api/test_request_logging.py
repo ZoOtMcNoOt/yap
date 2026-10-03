@@ -38,6 +38,8 @@ class RequestLoggingTests(HealthServerTestCase):
                 "analystAnswers": False,
                 "coordinatorBundles": False,
                 "auditorReports": False,
+                "knowledgeConnections": False,
+                "personalTerminology": False,
             },
         }
         self.assertEqual(status, 200)

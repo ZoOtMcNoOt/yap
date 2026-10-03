@@ -12,11 +12,11 @@ function state(overrides: Partial<WorkspaceNavigationState> = {}): WorkspaceNavi
 }
 
 describe("workspace navigation", () => {
-  it("selects callbacks only for rail-driven details and correction", () => {
+  it("refreshes setup only for rail-driven details", () => {
     expect(workspaceNavigationEffectForIntent({ type: "openWorkspace", action: "details" }))
       .toBe("refreshDetails");
     expect(workspaceNavigationEffectForIntent({ type: "openWorkspace", action: "correct" }))
-      .toBe("openCorrection");
+      .toBeUndefined();
     expect(workspaceNavigationEffectForIntent({ type: "openWorkspace", action: "home" }))
       .toBeUndefined();
     expect(workspaceNavigationEffectForIntent({ type: "openWorkspace", action: "knowledge" }))

@@ -53,6 +53,7 @@ export default function App() {
     loadTranscriptPreviewText,
     loadTranscriptText,
     transcriptText,
+    transcriptTextErrors,
   } = useTranscriptText();
   const {
     addRecordings: pickImportedRecordings,
@@ -64,6 +65,11 @@ export default function App() {
   } = useRecordingJobs(clearTranscriptText);
   const {
     copyTranscript,
+    exportTranscript,
+    exportBusy,
+    exportFailure,
+    exportAcceptedCorrection,
+    acceptedExportFailure,
     openAppPath,
     revealPath,
   } = useTranscriptFileActions(loadTranscriptText);
@@ -75,10 +81,24 @@ export default function App() {
     rememberHiddenHistoryEntry,
   } = useTranscriptHistory();
   const {
+    activeRail,
+    detailsOpen,
+    helpOpen,
+    onDetailsOpenChange,
+    onHelpOpenChange,
+    openWorkspace,
+    railCollapsed,
+    setRailCollapsed,
+    workspaceView,
+  } = useWorkspaceNavigation({
+    onOpenDetails: () => void settingsRefreshRef.current(),
+  });
+  const {
     clearHistorySelectionIf,
     closeHistoryReview,
     displayedHistoryEntry,
     historyJob,
+    historyReviewOpen,
     reviewMorphOrigin,
     selectHistoryEntry,
     selectQueueItem,
@@ -87,41 +107,31 @@ export default function App() {
     selectedHistoryOutput,
     selectedId,
     selectedItem,
-  } = useRecordingSelection({ history, queue });
+  } = useRecordingSelection({
+    history, queue, reviewAvailable: workspaceView === "home" && !detailsOpen && !helpOpen,
+  });
   const speakerTranscript = useHistorySpeakerTranscript(displayedHistoryEntry);
   const archivistEligible = selectedItem?.route === "serverBatch"
     && isRecordingFinished(selectedItem.status);
-  const {
-    activeRail,
-    closeDetails,
-    detailsOpen,
-    helpOpen,
-    onDetailsOpenChange,
-    onHelpOpenChange,
-    openWorkspace,
-    railCollapsed,
-    setRailCollapsed,
-    showDetails,
-    workspaceView,
-  } = useWorkspaceNavigation({
-    onOpenDetails: () => void settingsRefreshRef.current(),
-    onOpenCorrection: () => {
-      setStatus(isRecordingFinished(selectedItem?.status) ? "Transcript ready" : "Select a finished transcript first");
-    },
-  });
   const recordingDrop = useRecordingDrop();
   const onNativeTranscriptSaved = useCallback((entry: TranscriptHistoryEntry) => {
-    selectHistoryEntry(entry);
-    openWorkspace("home");
-    setStatus("Ready");
-    void loadTranscriptText(entry.outputPath).catch(() => undefined);
-    if (entry.warning) {
-      toast.warning(entry.warning);
-    } else {
-      toast.success(entry.origin === "remote" ? "Server transcript saved" : "Live transcript saved");
-    }
+    toast[entry.warning ? "warning" : "success"](
+      entry.warning ?? (entry.origin === "remote" ? "Server transcript saved" : "Live transcript saved"),
+      {
+        duration: 10000,
+        description: entry.name,
+        action: {
+          label: "Review transcript",
+          onClick: () => {
+            selectHistoryEntry(entry);
+            openWorkspace("home");
+            void loadTranscriptText(entry.outputPath).catch(() => undefined);
+          },
+        },
+      },
+    );
   }, [loadTranscriptText, openWorkspace, selectHistoryEntry]);
-  useHistoryCatalogSync({
+  const { catalogState, retryCatalog } = useHistoryCatalogSync({
     captureNativeHistoryReconciliation,
     onSaved: onNativeTranscriptSaved,
   });
@@ -199,14 +209,11 @@ export default function App() {
   const showKnowledge = workspaceView === "knowledge";
 
   useEffect(() => {
-    if (settings.setupPromptRequest) showDetails();
-  }, [settings.setupPromptRequest, showDetails]);
-
-  useEffect(() => {
-    if (selectedItem?.outputPath && !Object.prototype.hasOwnProperty.call(transcriptText, selectedItem.outputPath)) {
+    if (selectedItem?.outputPath && !transcriptTextErrors[selectedItem.outputPath]
+      && !Object.prototype.hasOwnProperty.call(transcriptText, selectedItem.outputPath)) {
       void loadTranscriptText(selectedItem.outputPath).catch(() => toast.error("Preview unavailable"));
     }
-  }, [loadTranscriptText, selectedItem?.outputPath, transcriptText]);
+  }, [loadTranscriptText, selectedItem?.outputPath, transcriptText, transcriptTextErrors]);
 
   function goToTranscribe() {
     openWorkspace("transcribe");
@@ -234,6 +241,7 @@ export default function App() {
   const {
     closeTranscriptPreview,
     previewEntry,
+    previewError,
     previewHistoryEntry,
     previewText,
   } = useTranscriptPreview(loadHistoryPreviewText);
@@ -260,6 +268,7 @@ export default function App() {
 
       {showHistory ? (
         <HistoryPanel
+          catalogState={catalogState}
           entries={history}
           onCopy={(entry) => void copyTranscript(historyJob(entry))}
           onDelete={(entry) => void historyActions.deleteHistoryEntry(entry)}
@@ -271,23 +280,31 @@ export default function App() {
           onPreview={(entry) => void previewHistoryEntry(entry)}
           onReveal={(entry) => void revealPath(entry.outputPath)}
           onRecover={(entry) => void historyActions.recoverHistoryEntry(entry)}
+          onRetryCatalog={retryCatalog}
           onSelect={openHistoryEntry}
+          onTranscribe={goToTranscribe}
           selectedOutputPath={selectedHistoryOutput}
         />
       ) : null}
 
       {showCorrection ? (
         <TranscriptCorrectionPanel
+          exportBusy={exportBusy}
+          exportFailure={acceptedExportFailure}
+          onExportAccepted={exportAcceptedCorrection}
           available={settings.serverSnapshot.state === "ready"
             && settings.serverSnapshot.capabilities.transcriptCorrection}
           item={selectedItem}
           onOpenHelp={() => openWorkspace("help")}
+          onOpenHistory={() => openWorkspace("home")}
+          onOpenSettings={() => openWorkspace("details")}
           originalText={selectedItem?.outputPath ? transcriptText[selectedItem.outputPath] : undefined}
         />
       ) : null}
 
       {showKnowledge ? (
         <LibrarianPanel
+          serverSnapshot={settings.serverSnapshot}
           auditorAvailable={settings.serverSnapshot.state === "ready"
             && settings.serverSnapshot.capabilities.auditorReports}
           analystAvailable={settings.serverSnapshot.state === "ready"
@@ -298,6 +315,7 @@ export default function App() {
             && settings.serverSnapshot.capabilities.coordinatorBundles}
           curatorAvailable={settings.serverSnapshot.state === "ready"
             && settings.serverSnapshot.capabilities.curatorProposals}
+          onOpenSettings={() => openWorkspace("details")}
           studentAvailable={settings.serverSnapshot.state === "ready"
             && settings.serverSnapshot.capabilities.studentQuestions}
         />
@@ -307,6 +325,9 @@ export default function App() {
   const workspaceTranscriptPane = showTranscript ? (
     <div className="h-full min-w-0">
       <TranscriptPanel
+        exportBusy={exportBusy}
+        exportError={exportFailure?.path === selectedItem?.outputPath ? exportFailure?.message : undefined}
+        onExport={exportTranscript}
         elapsedSeconds={0}
         item={selectedItem}
         knowledgeStaging={archivistEligible
@@ -323,10 +344,12 @@ export default function App() {
         onOpen={(path) => void openAppPath(path)}
         onOpenHelp={() => openWorkspace("help")}
         onRetry={(id) => reportRecordingAction(() => retryItem(id), "Could not retry recording")}
+        onReloadText={(path) => void loadTranscriptText(path).catch(() => toast.error("Transcript unavailable"))}
         onReveal={(path) => void revealPath(path)}
         running={false}
         speakerTranscript={speakerTranscript}
         text={selectedItem?.outputPath ? transcriptText[selectedItem.outputPath] : undefined}
+        textError={selectedItem?.outputPath ? transcriptTextErrors[selectedItem.outputPath] : undefined}
       />
     </div>
   ) : null;
@@ -374,6 +397,7 @@ export default function App() {
           onLanguageChange={setRecordingLanguageOptionId}
           onOpenHelp={() => openWorkspace("help")}
           onPickFiles={() => void pickFiles()}
+          onOpenSettings={() => openWorkspace("details")}
           selectedLanguageOptionId={recordingLanguageOptionId}
         />
       ) : null}
@@ -398,20 +422,24 @@ export default function App() {
         </div>
       </SidebarInset>
       <AppOverlays
-        closeDetails={closeDetails}
         closeHistoryReview={closeHistoryReview}
         closeTranscriptPreview={closeTranscriptPreview}
         copyTranscript={copyTranscript}
+        exportTranscript={exportTranscript}
+        exportBusy={exportBusy}
+        exportFailure={exportFailure}
         detailsOpen={detailsOpen}
         helpOpen={helpOpen}
         historyJob={historyJob}
-        historyReviewOpen={workspaceView === "home" && Boolean(selectedHistoryItem)}
+        historyReviewOpen={workspaceView === "home" && historyReviewOpen && Boolean(selectedHistoryItem) && !detailsOpen && !helpOpen}
         languageOptions={languageOptions}
         onDetailsOpenChange={onDetailsOpenChange}
         onHelpOpenChange={onHelpOpenChange}
         openAppPath={openAppPath}
         openWorkspace={openWorkspace}
         previewEntry={previewEntry}
+        previewError={previewError}
+        previewHistoryEntry={previewHistoryEntry}
         previewText={previewText}
         revealPath={revealPath}
         reviewMorphOrigin={reviewMorphOrigin}
@@ -421,10 +449,16 @@ export default function App() {
         settings={settings}
         status={status}
         transcriptText={transcriptText}
+        transcriptTextErrors={transcriptTextErrors}
+        reloadTranscriptText={(path) => void loadTranscriptText(path).catch(() => toast.error("Transcript unavailable"))}
       />
       <FirstRunTakeover
-        hotkey={settings.live.view.hotkey || "Ctrl+Shift+Space"}
-        languageOptions={importLanguageOptions}
+        language={settings.language}
+        fallbackModel={settings.fallback.model}
+        onOpenSettings={() => openWorkspace("details")}
+        onOpenTranscribe={() => openWorkspace("transcribe")}
+        onRetry={() => void settings.refresh()}
+        serverSnapshot={settings.serverSnapshot}
       />
     </SidebarProvider>
   );

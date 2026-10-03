@@ -5,7 +5,7 @@ import { FileText } from "@phosphor-icons/react/FileText";
 import { FolderOpen } from "@phosphor-icons/react/FolderOpen";
 import { DotsThree as MoreHorizontal } from "@phosphor-icons/react/DotsThree";
 import { Trash as Trash2 } from "@phosphor-icons/react/Trash";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import type { HistoryEntryActions } from "@/components/history/history-panel-contract";
 import {
@@ -44,6 +44,8 @@ export function HistoryActionMenu({
   entry: TranscriptHistoryEntry;
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuTrigger = useRef<HTMLButtonElement>(null);
   const canDelete = canDeleteTranscriptHistoryEntry(entry);
   const recoverable = isRecoverableTranscriptHistoryEntry(entry);
   const canMutateRecoverable = recoverableLiveSessionActionIdentity(entry) !== undefined;
@@ -51,10 +53,11 @@ export function HistoryActionMenu({
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu onOpenChange={setMenuOpen} open={menuOpen}>
         <DropdownMenuTrigger asChild>
           <Button
             aria-label={`Actions for ${entry.name}`}
+            ref={menuTrigger}
             onClick={(event) => event.stopPropagation()}
             size="icon-xs"
             type="button"
@@ -63,7 +66,9 @@ export function HistoryActionMenu({
             <MoreHorizontal />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" onClick={(event) => event.stopPropagation()}>
+        <DropdownMenuContent align="end" onClick={(event) => event.stopPropagation()} onCloseAutoFocus={(event) => {
+          if (confirmDelete) event.preventDefault();
+        }}>
           <DropdownMenuLabel>{recoverable ? "Partial" : "Transcript"}</DropdownMenuLabel>
           {recoverable ? (
             <DropdownMenuGroup>
@@ -79,7 +84,11 @@ export function HistoryActionMenu({
               </DropdownMenuItem>
               {canMutateRecoverable ? (
                 <DropdownMenuItem
-                  onSelect={() => actions.onDeleteRecoverable(entry)}
+                  onSelect={(event) => {
+                    event.preventDefault();
+                    setMenuOpen(false);
+                    setConfirmDelete(true);
+                  }}
                   variant="destructive"
                 >
                   <Trash2 />
@@ -123,6 +132,7 @@ export function HistoryActionMenu({
             <DropdownMenuItem
               onSelect={(event) => {
                 event.preventDefault();
+                setMenuOpen(false);
                 setConfirmDelete(true);
               }}
               variant="destructive"
@@ -135,19 +145,23 @@ export function HistoryActionMenu({
       </DropdownMenu>
 
       <AlertDialog onOpenChange={setConfirmDelete} open={confirmDelete}>
-        <AlertDialogContent onClick={(event) => event.stopPropagation()}>
+        <AlertDialogContent onClick={(event) => event.stopPropagation()} onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          menuTrigger.current?.focus();
+        }}>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete from device?</AlertDialogTitle>
             <AlertDialogDescription>
-              This deletes the saved transcript. If the recording was captured by Yap, that audio file
-              is deleted too.
+              {recoverable
+                ? "This deletes the partial recording from this device. It cannot be recovered afterward."
+                : "This deletes the saved transcript. If the recording was captured by Yap, that audio file is deleted too."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20"
-              onClick={() => actions.onDelete(entry)}
+              onClick={() => recoverable ? actions.onDeleteRecoverable(entry) : actions.onDelete(entry)}
             >
               Delete
             </AlertDialogAction>

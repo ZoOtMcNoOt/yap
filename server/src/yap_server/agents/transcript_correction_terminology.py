@@ -2,11 +2,8 @@ from __future__ import annotations
 
 import psycopg
 
-from yap_server.auth import AuthenticatedPrincipal, PrincipalKey
-from yap_server.knowledge.terminology_authorization import (
-    TerminologyMembershipResolver,
-    resolve_terminology_authorization,
-)
+from yap_server.auth import AuthenticatedPrincipal
+from yap_server.knowledge.terminology_policy import TerminologyPolicy
 from yap_server.knowledge.terminology_ledger import (
     store_current_terminology_snapshot,
 )
@@ -21,18 +18,6 @@ from .transcript_correction import TranscriptCorrectionTerminology
 from .transcript_correction_service import TranscriptCorrectionTerminologyUnavailable
 
 
-_TERMINOLOGY_ADMINISTRATOR_ROLES = frozenset({"knowledge.terminology.admin"})
-
-
-class PersonalOrganizationTerminologyMemberships:
-    """Use only personal and organization terms until trusted teams are supplied."""
-
-    def team_ids_for(self, principal: PrincipalKey) -> tuple[str, ...]:
-        if not isinstance(principal, PrincipalKey):
-            raise TypeError("terminology principal type is invalid")
-        return ()
-
-
 class PostgresTranscriptCorrectionTerminologyResolver:
     """Freeze one canonical terminology snapshot before broker admission."""
 
@@ -40,14 +25,14 @@ class PostgresTranscriptCorrectionTerminologyResolver:
         self,
         *,
         connection_factory: PrivatePostgresConnectionFactory,
-        memberships: TerminologyMembershipResolver,
+        policy: TerminologyPolicy,
     ) -> None:
         if not callable(connection_factory):
             raise TypeError("terminology connection factory is invalid")
-        if not hasattr(memberships, "team_ids_for"):
-            raise TypeError("terminology membership resolver is invalid")
+        if not isinstance(policy, TerminologyPolicy):
+            raise TypeError("terminology policy is invalid")
         self._connection_factory = connection_factory
-        self._memberships = memberships
+        self._policy = policy
 
     def resolve(
         self,
@@ -56,11 +41,7 @@ class PostgresTranscriptCorrectionTerminologyResolver:
         locale: str,
     ) -> TranscriptCorrectionTerminology:
         try:
-            authorization = resolve_terminology_authorization(
-                principal,
-                memberships=self._memberships,
-                administrator_roles=_TERMINOLOGY_ADMINISTRATOR_ROLES,
-            )
+            authorization = self._policy.authorization(principal)
             with self._connection_factory() as connection:
                 snapshot = store_current_terminology_snapshot(
                     connection,
@@ -80,6 +61,5 @@ class PostgresTranscriptCorrectionTerminologyResolver:
 
 
 __all__ = [
-    "PersonalOrganizationTerminologyMemberships",
     "PostgresTranscriptCorrectionTerminologyResolver",
 ]

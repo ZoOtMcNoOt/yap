@@ -40,7 +40,7 @@ use native_import_dispatcher::{
 const PENDING_JOB_LIFETIME_MS: u64 = 7 * 24 * 60 * 60 * 1_000;
 const MAX_RECORDING_JOBS: usize = 200;
 // Canonical WAV plus the compressed containers this build can decode into it.
-const REMOTE_IMPORT_AUDIO_EXTENSIONS: &[&str] = &["wav", "mp3"];
+const REMOTE_IMPORT_AUDIO_EXTENSIONS: &[&str] = &["wav", "mp3", "flac", "ogg", "m4a", "mp4"];
 static NEXT_JOB_NONCE: AtomicU64 = AtomicU64::new(0);
 
 #[derive(Debug, serde::Serialize)]

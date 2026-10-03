@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from yap_server.knowledge.terminology_policy import TerminologyPolicy
+
 from contextlib import contextmanager
 from pathlib import Path
 import os
@@ -8,7 +10,6 @@ import unittest
 from unittest import mock
 
 from yap_server.agents.transcript_correction_terminology import (
-    PersonalOrganizationTerminologyMemberships,
     PostgresTranscriptCorrectionTerminologyResolver,
 )
 from yap_server.private_postgres_connection import read_private_postgres_dsn
@@ -66,7 +67,7 @@ class TranscriptCorrectionTerminologyTests(unittest.TestCase):
 
         resolver = PostgresTranscriptCorrectionTerminologyResolver(
             connection_factory=connection_factory,
-            memberships=PersonalOrganizationTerminologyMemberships(),
+            policy=TerminologyPolicy(),
         )
         with mock.patch(
             "yap_server.agents.transcript_correction_terminology."
@@ -98,7 +99,7 @@ class TranscriptCorrectionTerminologyTests(unittest.TestCase):
 
         resolver = PostgresTranscriptCorrectionTerminologyResolver(
             connection_factory=connection_factory,
-            memberships=PersonalOrganizationTerminologyMemberships(),
+            policy=TerminologyPolicy(),
         )
         with self.assertRaises(TranscriptCorrectionTerminologyUnavailable) as raised:
             resolver.resolve(
@@ -125,8 +126,11 @@ class TranscriptCorrectionTerminologyTests(unittest.TestCase):
                     read_private_postgres_dsn(path)
 
     def test_membership_boundary_never_invents_team_authority(self) -> None:
-        resolver = PersonalOrganizationTerminologyMemberships()
+        resolver = TerminologyPolicy()
         self.assertEqual(resolver.team_ids_for(PrincipalKey("tenant-a", "alice")), ())
+        self.assertEqual(
+            resolver.managed_team_ids_for(PrincipalKey("tenant-a", "alice")), ()
+        )
 
 
 if __name__ == "__main__":

@@ -50,7 +50,7 @@ describe("Coordinator product contract", () => {
 
   it("routes objectives through the native owner without renderer credentials", async () => {
     const requestId = completeView.requestId;
-    await startCoordinatorBundle("Coordinate reviewed proposals.", 3, null);
+    await startCoordinatorBundle("Coordinate reviewed proposals.", 3, null, "1");
     await coordinatorBundleStatus(requestId);
     await cancelCoordinatorBundle(requestId);
 
@@ -59,6 +59,7 @@ describe("Coordinator product contract", () => {
         objective: "Coordinate reviewed proposals.",
         maximumItems: 3,
         expectedGenerationSha256: null,
+        authorityRevision: "1",
       }],
       ["coordinator_bundle_status", { requestId }],
       ["cancel_coordinator_bundle", { requestId }],

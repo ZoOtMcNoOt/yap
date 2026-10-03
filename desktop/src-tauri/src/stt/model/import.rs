@@ -6,9 +6,9 @@ use std::{
 use crate::stt::error::SttError;
 
 use super::{
-    integrity::verify_download,
+    integrity::verify_artifact,
     io_error_to_stt,
-    path_safety::{create_model_directory, metadata_is_link_or_reparse},
+    path_safety::create_model_directory,
     temp::{cleanup_stale_download_temps, OperationTemp},
     DownloadOperation, DownloadRequest,
 };
@@ -22,18 +22,39 @@ pub fn import_verified_file(
     request: &DownloadRequest,
     operation: &DownloadOperation,
 ) -> Result<(), SttError> {
-    let source_metadata = std::fs::symlink_metadata(source).map_err(io_error_to_stt)?;
-    if !source_metadata.is_file()
-        || metadata_is_link_or_reparse(&source_metadata)
-        || source_metadata.len() != request.expected_bytes
-    {
+    import_verified_file_after_admission(source, request, operation, || {})
+}
+
+fn import_verified_file_after_admission(
+    source: &Path,
+    request: &DownloadRequest,
+    operation: &DownloadOperation,
+    after_admission: impl FnOnce(),
+) -> Result<(), SttError> {
+    if operation.is_cancelled() {
+        return Err(SttError::ModelInstallCancelled);
+    }
+    let (mut source, source_metadata) =
+        crate::bounded_file::open_regular_file(source, request.expected_bytes).map_err(
+            |error| {
+                if error.kind() == std::io::ErrorKind::InvalidData {
+                    SttError::ModelCorrupt
+                } else {
+                    io_error_to_stt(error)
+                }
+            },
+        )?;
+    if source_metadata.len() != request.expected_bytes {
         return Err(SttError::ModelCorrupt);
+    }
+    after_admission();
+    if operation.is_cancelled() {
+        return Err(SttError::ModelInstallCancelled);
     }
     let parent = request.destination.parent().ok_or(SttError::ModelMissing)?;
     create_model_directory(parent)?;
     cleanup_stale_download_temps(&request.destination, operation)?;
 
-    let mut source = std::fs::File::open(source).map_err(io_error_to_stt)?;
     let mut temp = OperationTemp::create(&request.destination, operation.clone())?;
     let mut copied = 0_u64;
     let mut buffer = [0_u8; COPY_BUFFER_BYTES];
@@ -59,7 +80,12 @@ pub fn import_verified_file(
         return Err(SttError::ModelCorrupt);
     }
     temp.sync()?;
-    verify_download(temp.path(), request, operation)?;
+    verify_artifact(
+        temp.path(),
+        request.expected_bytes,
+        &request.expected_sha256,
+        || operation.is_cancelled(),
+    )?;
     if operation.is_cancelled() {
         return Err(SttError::ModelInstallCancelled);
     }
@@ -69,6 +95,76 @@ pub fn import_verified_file(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn cancellation_after_source_admission_creates_no_destination_or_staging() {
+        let root = std::env::temp_dir().join(format!(
+            "yap-model-import-admission-cancel-{}-{:?}",
+            std::process::id(),
+            std::thread::current().id()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let source = root.join("source.onnx");
+        let approved = b"approved offline model bytes";
+        std::fs::write(&source, approved).unwrap();
+        let request = DownloadRequest {
+            url: "unused://offline".into(),
+            destination: root.join("models/model.onnx"),
+            expected_bytes: approved.len() as u64,
+            expected_sha256: crate::stt::model::sha256_file(&source).unwrap(),
+        };
+        let operation = DownloadOperation::new(1);
+        let result = import_verified_file_after_admission(&source, &request, &operation, || {
+            operation.cancel();
+        });
+        assert_eq!(result, Err(SttError::ModelInstallCancelled));
+        assert_eq!(std::fs::read(&source).unwrap(), approved);
+        assert!(!request.destination.parent().unwrap().exists());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn source_replacement_after_admission_keeps_the_opened_original() {
+        let root = std::env::temp_dir().join(format!(
+            "yap-model-import-source-swap-{}-{:?}",
+            std::process::id(),
+            std::thread::current().id()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let source = root.join("source.onnx");
+        let admitted = root.join("admitted.onnx");
+        let destination = root.join("models/model.onnx");
+        let approved = b"approved offline model bytes";
+        let replaced = b"replaced offline model bytes";
+        assert_eq!(approved.len(), replaced.len());
+        std::fs::write(&source, approved).unwrap();
+        let request = DownloadRequest {
+            url: "unused://offline".into(),
+            destination: destination.clone(),
+            expected_bytes: approved.len() as u64,
+            expected_sha256: crate::stt::model::sha256_file(&source).unwrap(),
+        };
+
+        let result = import_verified_file_after_admission(
+            &source,
+            &request,
+            &DownloadOperation::new(1),
+            || {
+                std::fs::rename(&source, &admitted).unwrap();
+                std::fs::write(&source, replaced).unwrap();
+            },
+        );
+        assert_eq!(
+            result,
+            Ok(()),
+            "the validated open source stays authoritative"
+        );
+        assert_eq!(std::fs::read(&destination).unwrap(), approved);
+        assert_eq!(std::fs::read(&admitted).unwrap(), approved);
+        assert_eq!(std::fs::read(&source).unwrap(), replaced);
+        std::fs::remove_dir_all(root).unwrap();
+    }
 
     #[test]
     fn offline_import_is_hash_verified_and_atomic() {

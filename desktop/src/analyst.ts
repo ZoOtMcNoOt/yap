@@ -32,11 +32,13 @@ export function startAnalystAnswer(
   question: string,
   maximumResults: number,
   expectedGenerationSha256: string | null,
+  authorityRevision: string,
 ) {
   return invoke<AnalystAnswerJobView>("start_analyst_answer", {
     question,
     maximumResults,
     expectedGenerationSha256,
+    authorityRevision,
   });
 }
 

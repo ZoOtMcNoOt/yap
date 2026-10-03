@@ -48,34 +48,46 @@ function dialogTargetRect(): MorphRect {
 
 export function TranscriptReviewDialog({
   elapsedSeconds,
+  exportBusy,
+  exportError,
   item,
   languageLabelReview,
   morphOrigin,
   onCopy,
+  onCorrect,
+  onExport,
   onOpen,
   onOpenChange,
   onOpenHelp,
   onRetry,
+  onReloadText,
   onReveal,
   open,
   running,
   speakerTranscript,
   text,
+  textError,
 }: {
   elapsedSeconds: number;
+  exportBusy?: boolean;
+  exportError?: string;
   item?: RecordingJobView;
   languageLabelReview?: ReactNode;
   morphOrigin?: MorphRect;
   onCopy: (item: RecordingJobView) => void;
+  onCorrect?: () => void;
+  onExport?: (item: RecordingJobView) => void;
   onOpen: (path: string) => void;
   onOpenChange: (open: boolean) => void;
   onOpenHelp?: () => void;
   onRetry: (id: string) => void;
+  onReloadText?: (path: string) => void;
   onReveal: (path: string) => void;
   open: boolean;
   running: boolean;
   speakerTranscript?: SpeakerTranscriptDetailState;
   text?: string;
+  textError?: string;
 }) {
   const morphLayerRef = useRef<HTMLDivElement>(null);
   const onOpenChangeRef = useRef(onOpenChange);
@@ -180,16 +192,22 @@ export function TranscriptReviewDialog({
           {item ? (
             <TranscriptPanel
               elapsedSeconds={elapsedSeconds}
+              exportBusy={exportBusy}
+              exportError={exportError}
               item={item}
               languageLabelReview={languageLabelReview}
               onCopy={onCopy}
+              onCorrect={onCorrect}
+              onExport={onExport}
               onOpen={onOpen}
               onOpenHelp={onOpenHelp}
               onRetry={onRetry}
+              onReloadText={onReloadText}
               onReveal={onReveal}
               running={running}
               speakerTranscript={speakerTranscript}
               text={text}
+              textError={textError}
               variant="modal"
             />
           ) : null}

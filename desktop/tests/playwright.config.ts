@@ -9,6 +9,7 @@ const testUrl = `http://127.0.0.1:${testPort}`;
 const reuseExistingServer = parsePlaywrightServerReuse(
   process.env.YAP_PLAYWRIGHT_REUSE_SERVER,
 );
+const executablePath = process.env.YAP_PLAYWRIGHT_EXECUTABLE_PATH;
 
 export default defineConfig({
   expect: {
@@ -18,7 +19,10 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      use: {
+        ...devices["Desktop Chrome"],
+        launchOptions: executablePath ? { executablePath } : undefined,
+      },
     },
   ],
   outputDir: "./results/playwright",
@@ -29,7 +33,7 @@ export default defineConfig({
     baseURL: testUrl,
     screenshot: "only-on-failure",
     trace: "retain-on-failure",
-    video: "retain-on-failure",
+    video: process.env.YAP_PLAYWRIGHT_VIDEO === "off" ? "off" : "retain-on-failure",
   },
   webServer: {
     command: `pnpm dev --host 127.0.0.1 --port ${testPort} --strictPort`,

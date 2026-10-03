@@ -1,3 +1,4 @@
+use super::connection_candidate::ConnectionCandidate;
 use reqwest::{StatusCode, Url};
 use serde::{Deserialize, Serialize};
 
@@ -46,9 +47,9 @@ impl CuratorSourceCitation {
         Ok(value)
     }
 
-    fn is_valid(&self) -> bool {
-        valid_conversation_concept_id(&self.concept_id)
-            && valid_sha256(&self.source_revision)
+    pub(super) fn is_valid(&self) -> bool {
+        valid_source_identity(&self.concept_id)
+            && valid_source_identity(&self.source_revision)
             && valid_sha256(&self.content_sha256)
             && self.char_end > self.char_start
             && self.char_end <= i64::MAX as u64
@@ -86,6 +87,8 @@ impl CuratorStudentQuestionSupport {
 
     fn is_valid(&self) -> bool {
         self.source_citation.is_valid()
+            && valid_conversation_concept_id(&self.source_citation.concept_id)
+            && valid_sha256(&self.source_citation.source_revision)
             && !self.support_quote.is_empty()
             && self.support_quote.trim() == self.support_quote
             && self.support_quote.chars().count() <= MAXIMUM_SUPPORT_QUOTE_CHARACTERS
@@ -152,16 +155,32 @@ impl CuratorReviewedStudentQuestion {
 pub(crate) struct CuratorRequest {
     schema_version: u16,
     pub(crate) submission_id: String,
-    trigger: CuratorTrigger,
     pub(crate) expected_generation_sha256: String,
     reviewed_content: String,
-    student_question: CuratorReviewedStudentQuestion,
+    #[serde(flatten)]
+    source: CuratorReviewSource,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "kebab-case")]
-enum CuratorTrigger {
-    ReviewedStudentAnswer,
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(
+    tag = "trigger",
+    rename_all = "kebab-case",
+    rename_all_fields = "camelCase"
+)]
+enum CuratorReviewSource {
+    ReviewedStudentAnswer {
+        student_question: CuratorReviewedStudentQuestion,
+    },
+    ReviewedConnection {
+        source_citations: [CuratorSourceCitation; 2],
+    },
+}
+
+fn valid_source_identity(value: &str) -> bool {
+    !value.is_empty()
+        && value.trim() == value
+        && value.chars().count() <= 512
+        && !value.chars().any(char::is_control)
 }
 
 impl CuratorRequest {
@@ -174,10 +193,47 @@ impl CuratorRequest {
         let value = Self {
             schema_version: 1,
             submission_id,
-            trigger: CuratorTrigger::ReviewedStudentAnswer,
             expected_generation_sha256,
             reviewed_content,
-            student_question,
+            source: CuratorReviewSource::ReviewedStudentAnswer { student_question },
+        };
+        if !value.is_valid() {
+            return Err(CuratorClientError::InvalidRequest);
+        }
+        Ok(value)
+    }
+
+    pub(crate) fn reviewed_connection(
+        submission_id: String,
+        expected_generation_sha256: String,
+        source_citations: [CuratorSourceCitation; 2],
+        relationship_type: String,
+        rationale: String,
+    ) -> Result<Self, CuratorClientError> {
+        if source_citations
+            .iter()
+            .any(|citation| !citation.is_valid() || citation.char_end - citation.char_start > 1_024)
+        {
+            return Err(CuratorClientError::InvalidRequest);
+        }
+        let candidate = ConnectionCandidate {
+            schema_version: 1,
+            source_concept_id: source_citations[0].concept_id.clone(),
+            target_concept_id: source_citations[1].concept_id.clone(),
+            relationship_type,
+            rationale,
+        };
+        if !candidate.is_valid() {
+            return Err(CuratorClientError::InvalidRequest);
+        }
+        let reviewed_content =
+            serde_json::to_string(&candidate).map_err(|_| CuratorClientError::InvalidRequest)?;
+        let value = Self {
+            schema_version: 1,
+            submission_id,
+            expected_generation_sha256,
+            reviewed_content,
+            source: CuratorReviewSource::ReviewedConnection { source_citations },
         };
         if !value.is_valid() {
             return Err(CuratorClientError::InvalidRequest);
@@ -189,10 +245,18 @@ impl CuratorRequest {
         self.schema_version == 1
             && valid_submission_id(&self.submission_id)
             && valid_sha256(&self.expected_generation_sha256)
-            && !self.reviewed_content.is_empty()
-            && self.reviewed_content.trim() == self.reviewed_content
-            && self.reviewed_content.chars().count() <= MAXIMUM_REVIEWED_CONTENT_CHARACTERS
-            && self.student_question.is_valid()
+            && match &self.source {
+                CuratorReviewSource::ReviewedStudentAnswer { student_question } => {
+                    !self.reviewed_content.is_empty()
+                        && self.reviewed_content.trim() == self.reviewed_content
+                        && self.reviewed_content.chars().count()
+                            <= MAXIMUM_REVIEWED_CONTENT_CHARACTERS
+                        && student_question.is_valid()
+                }
+                CuratorReviewSource::ReviewedConnection { source_citations } => {
+                    source_citations.iter().all(CuratorSourceCitation::is_valid)
+                }
+            }
     }
 }
 
@@ -627,6 +691,93 @@ mod tests {
             question(),
         )
         .unwrap()
+    }
+
+    fn connection_citations() -> [CuratorSourceCitation; 2] {
+        ["projects/yap", "decisions/interface"].map(|id| CuratorSourceCitation {
+            concept_id: id.into(),
+            source_revision: "reviewed-1".into(),
+            content_sha256: sha('b'),
+            char_start: 40,
+            char_end: 80,
+        })
+    }
+
+    #[test]
+    fn connection_request_preserves_direction_and_both_exact_citations_without_authority() {
+        let citations = connection_citations();
+        let request = CuratorRequest::reviewed_connection(
+            "submission-1".into(),
+            sha('a'),
+            citations.clone(),
+            "references".into(),
+            "The project references the decision.".into(),
+        )
+        .unwrap();
+        let wire = serde_json::to_value(request).unwrap();
+        assert_eq!(wire["trigger"], "reviewed-connection");
+        assert!(wire.get("studentQuestion").is_none());
+        assert_eq!(
+            wire["sourceCitations"],
+            serde_json::to_value(citations).unwrap()
+        );
+        let candidate: serde_json::Value =
+            serde_json::from_str(wire["reviewedContent"].as_str().unwrap()).unwrap();
+        assert_eq!(
+            candidate,
+            serde_json::json!({"schema_version": 1,
+            "source_concept_id": "projects/yap", "target_concept_id": "decisions/interface",
+            "relationship_type": "references", "rationale": "The project references the decision."})
+        );
+        assert!(candidate.get("relationship_authority").is_none());
+        let mut reversed = connection_citations();
+        reversed.swap(0, 1);
+        let reversed = CuratorRequest::reviewed_connection(
+            "submission-1".into(),
+            sha('a'),
+            reversed,
+            "references".into(),
+            "The project references the decision.".into(),
+        )
+        .unwrap();
+        assert_ne!(
+            wire["reviewedContent"],
+            serde_json::to_value(reversed).unwrap()["reviewedContent"]
+        );
+    }
+
+    #[test]
+    fn connection_request_rejects_unbounded_or_ambiguous_intent_without_widening_student_sources() {
+        let make = |citations, kind: &str, rationale: String| {
+            CuratorRequest::reviewed_connection(
+                "submission-1".into(),
+                sha('a'),
+                citations,
+                kind.into(),
+                rationale,
+            )
+        };
+        for kind in ["", "has space", "référence", &"x".repeat(129)] {
+            assert!(make(connection_citations(), kind, "Supported connection".into()).is_err());
+        }
+        for text in [
+            " leading".into(),
+            "bad\ttext".into(),
+            "x".repeat(2_001),
+            "🦀".repeat(2_000),
+        ] {
+            assert!(make(connection_citations(), "references", text).is_err());
+        }
+        assert!(make(connection_citations(), "references", "é".repeat(1_000)).is_ok());
+        let mut citations = connection_citations();
+        citations[1] = citations[0].clone();
+        assert!(make(citations, "references", "Supported connection".into()).is_err());
+        let mut citations = connection_citations();
+        citations[0].char_end = 1_065;
+        assert!(make(citations, "references", "Supported connection".into()).is_err());
+        let mut student = question();
+        student.source_supports[0].source_citation = connection_citations()[0].clone();
+        assert!(!student.is_valid());
     }
 
     #[test]

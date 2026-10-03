@@ -40,11 +40,13 @@ export function startLibrarianQuery(
   searchText: string,
   maximumResults: number,
   expectedGenerationSha256: string | null,
+  authorityRevision: string,
 ) {
   return invoke<LibrarianQueryJobView>("start_librarian_query", {
     searchText,
     maximumResults,
     expectedGenerationSha256,
+    authorityRevision,
   });
 }
 

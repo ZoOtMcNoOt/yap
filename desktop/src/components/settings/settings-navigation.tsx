@@ -5,7 +5,7 @@ import type { ComponentType } from "react";
 
 import { cn } from "@/lib/utils";
 
-export type SettingsSection = "general" | "system" | "about";
+export type SettingsSection = "general" | "personalization" | "system" | "about";
 
 const settingsSections: {
   id: SettingsSection;
@@ -13,12 +13,14 @@ const settingsSections: {
   label: string;
 }[] = [
   { id: "general", icon: Mic, label: "General" },
+  { id: "personalization", icon: BadgeCheck, label: "Personalization" },
   { id: "system", icon: Server, label: "System" },
   { id: "about", icon: BadgeCheck, label: "About" },
 ];
 
 export function settingsSectionTitle(section: SettingsSection) {
   if (section === "general") return "General";
+  if (section === "personalization") return "Personalization";
   if (section === "system") return "System";
   return "About";
 }
@@ -35,7 +37,7 @@ export function SettingsNavigation({
       <div className="mb-2 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground md:mb-4">
         Settings
       </div>
-      <nav className="grid grid-cols-3 gap-1 md:grid-cols-1">
+      <nav className="grid grid-cols-2 gap-1 sm:grid-cols-4 md:grid-cols-1">
         {settingsSections.map((item) => {
           const Icon = item.icon;
           return (

@@ -20,9 +20,19 @@ fn admitted_source_lease_is_not_retargeted_by_path_replacement() {
     }
 
     let response = request(&admission.url, "GET", None);
-    assert_eq!(response.status, 200);
-    assert_eq!(response.body, b"original bytes");
-    assert_eq!(owner.active_admission_count_for_test(), 1);
+    // Unix rename changes ctime, so the revision check revokes the lease.
+    // Windows sharing keeps the original open source stable instead.
+    if cfg!(unix) {
+        assert_eq!(response.status, 410);
+        assert!(response.body.is_empty());
+    } else {
+        assert_eq!(response.status, 200);
+        assert_eq!(response.body, b"original bytes");
+    }
+    assert_eq!(
+        owner.active_admission_count_for_test(),
+        usize::from(!cfg!(unix))
+    );
 }
 
 #[test]
@@ -40,8 +50,13 @@ fn removable_source_lease_does_not_block_owned_recording_deletion() {
     assert!(!path.exists());
 
     let response = request(&admission.url, "GET", None);
-    assert_eq!(response.status, 200);
-    assert_eq!(response.body, b"original bytes");
+    if cfg!(unix) {
+        assert_eq!(response.status, 410);
+        assert!(response.body.is_empty());
+    } else {
+        assert_eq!(response.status, 200);
+        assert_eq!(response.body, b"original bytes");
+    }
 }
 
 #[test]
@@ -72,4 +87,38 @@ fn preprocessing_rejects_same_identity_same_length_rewrites() {
     std::fs::write(&path, b"other bytes").unwrap();
 
     assert!(open_unchanged_media_source(&path, &fingerprint).is_err());
+}
+
+#[cfg(unix)]
+#[test]
+fn native_source_admission_refuses_a_fifo_without_waiting_for_a_writer() {
+    use std::os::unix::{
+        ffi::OsStrExt,
+        fs::{FileTypeExt, OpenOptionsExt},
+    };
+    let directory = TestDirectory::new("source-fifo");
+    let path = directory.join("meeting.flac");
+    let name = std::ffi::CString::new(path.as_os_str().as_bytes()).unwrap();
+    assert_eq!(unsafe { libc::mkfifo(name.as_ptr(), 0o600) }, 0);
+    let source = path.clone();
+    let (send, receive) = std::sync::mpsc::channel();
+    let reader = std::thread::spawn(move || {
+        send.send(inspect_media_source(&source).is_err()).unwrap();
+    });
+    let result = receive.recv_timeout(Duration::from_secs(1));
+    let writer = result.is_err().then(|| {
+        std::fs::OpenOptions::new()
+            .read(true)
+            .write(true)
+            .custom_flags(libc::O_NONBLOCK)
+            .open(&path)
+            .unwrap()
+    });
+    reader.join().unwrap();
+    drop(writer);
+    assert!(result.expect("native admission must not wait for a FIFO writer"));
+    assert!(std::fs::symlink_metadata(path)
+        .unwrap()
+        .file_type()
+        .is_fifo());
 }

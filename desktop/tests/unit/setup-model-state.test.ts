@@ -1,14 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  deriveSetupStateFromFallbackModel,
   type FallbackModelStatus,
   type FallbackModelView,
 } from "@/lib/setup-model";
 import {
   fallbackStatusText,
   projectFallbackModelState,
-  shouldOpenSetupPrompt,
 } from "@/lib/setup-model-state";
 
 function fallbackView(status: FallbackModelStatus, message?: string): FallbackModelView {
@@ -34,53 +32,10 @@ describe("setup model state", () => {
     expect(fallbackStatusText(fallbackView("corrupted"), false)).toBe("Local fallback disabled");
   });
 
-  it("does not prompt when fallback is disabled", () => {
-    expect(
-      shouldOpenSetupPrompt({
-        alreadyPrompted: false,
-        fallbackEnabled: false,
-        setupState: "fallback_missing",
-        skipped: false,
-      }),
-    ).toBe(false);
-  });
-
-  it("does not prompt when fallback is ready", () => {
-    expect(
-      shouldOpenSetupPrompt({
-        alreadyPrompted: false,
-        fallbackEnabled: true,
-        setupState: deriveSetupStateFromFallbackModel("ready", true),
-        skipped: false,
-      }),
-    ).toBe(false);
-  });
-
-  it("prompts once when fallback is enabled and missing", () => {
-    expect(
-      shouldOpenSetupPrompt({
-        alreadyPrompted: false,
-        fallbackEnabled: true,
-        setupState: "fallback_missing",
-        skipped: false,
-      }),
-    ).toBe(true);
-    expect(
-      shouldOpenSetupPrompt({
-        alreadyPrompted: true,
-        fallbackEnabled: true,
-        setupState: "fallback_missing",
-        skipped: false,
-      }),
-    ).toBe(false);
-  });
-
   it("never exposes imported queue mutation from setup projection", () => {
     const projection = projectFallbackModelState({
-      alreadyPrompted: true,
       currentFallbackEnabled: false,
       currentModelInstalled: false,
-      skipped: false,
       view: fallbackView("ready"),
     });
 
@@ -158,10 +113,8 @@ describe("setup model state", () => {
     ({ currentEnabled, currentInstalled, expected, modelStatus }) => {
       expect(
         projectFallbackModelState({
-          alreadyPrompted: true,
           currentFallbackEnabled: currentEnabled,
           currentModelInstalled: currentInstalled,
-          skipped: false,
           view: fallbackView(modelStatus, modelStatus === "downloading" ? "Fetching model" : undefined),
         }),
       ).toMatchObject(expected);
@@ -171,7 +124,6 @@ describe("setup model state", () => {
   it("applies explicit setup overrides before model-derived values", () => {
     expect(
       projectFallbackModelState({
-        alreadyPrompted: true,
         currentFallbackEnabled: false,
         currentModelInstalled: false,
         overrides: {
@@ -181,7 +133,6 @@ describe("setup model state", () => {
           modelInstalled: false,
           statusText: "Native setup pending",
         },
-        skipped: false,
         view: fallbackView("ready"),
       }),
     ).toMatchObject({
@@ -192,38 +143,5 @@ describe("setup model state", () => {
       setupState: "fallback_disabled",
       status: "Native setup pending",
     });
-  });
-
-  it("requests setup once and carries the prompted state forward", () => {
-    const first = projectFallbackModelState({
-      alreadyPrompted: false,
-      currentFallbackEnabled: true,
-      currentModelInstalled: false,
-      skipped: false,
-      view: fallbackView("missing"),
-    });
-    const second = projectFallbackModelState({
-      alreadyPrompted: first.setupPrompted,
-      currentFallbackEnabled: first.fallbackEnabled,
-      currentModelInstalled: first.modelInstalled,
-      skipped: false,
-      view: fallbackView("missing"),
-    });
-
-    expect(first.requestSetupPrompt).toBe(true);
-    expect(first.setupPrompted).toBe(true);
-    expect(second.requestSetupPrompt).toBe(false);
-  });
-
-  it("keeps setup prompting suppressed after Skip", () => {
-    expect(
-      projectFallbackModelState({
-        alreadyPrompted: false,
-        currentFallbackEnabled: true,
-        currentModelInstalled: false,
-        skipped: true,
-        view: fallbackView("missing"),
-      }),
-    ).toMatchObject({ requestSetupPrompt: false, setupPrompted: false });
   });
 });

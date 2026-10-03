@@ -90,7 +90,7 @@ fn healthy_v1_response_advertises_only_server_capabilities() {
         healthy_body(
             "1",
             "not_configured",
-            r#"{"batchJobs":true,"liveStreaming":false,"jobStatus":true,"transcriptCorrection":true,"librarianQueries":true,"analystAnswers":true,"coordinatorBundles":true,"auditorReports":true,"studentQuestions":true,"archivistIngestions":true,"curatorProposals":true}"#,
+            r#"{"batchJobs":true,"liveStreaming":false,"jobStatus":true,"transcriptCorrection":true,"librarianQueries":true,"analystAnswers":true,"coordinatorBundles":true,"auditorReports":true, "knowledgeConnections":false,"personalTerminology": false,"studentQuestions":true,"archivistIngestions":true,"curatorProposals":true}"#,
         ),
         Duration::ZERO,
     );
@@ -108,6 +108,8 @@ fn healthy_v1_response_advertises_only_server_capabilities() {
                 analyst_answers: true,
                 coordinator_bundles: true,
                 auditor_reports: true,
+                knowledge_connections: false,
+                personal_terminology: false,
                 student_questions: true,
                 archivist_ingestions: true,
                 curator_proposals: true,
@@ -123,7 +125,7 @@ fn unsupported_version_fails_closed_without_retry() {
         healthy_body(
             "2",
             "not_configured",
-            r#"{"batchJobs":true,"liveStreaming":true,"jobStatus":true,"transcriptCorrection":true,"librarianQueries":true,"analystAnswers":true,"coordinatorBundles":true,"auditorReports":true,"studentQuestions":true,"archivistIngestions":true,"curatorProposals":true}"#,
+            r#"{"batchJobs":true,"liveStreaming":true,"jobStatus":true,"transcriptCorrection":true,"librarianQueries":true,"analystAnswers":true,"coordinatorBundles":true,"auditorReports":true, "knowledgeConnections":false,"personalTerminology": false,"studentQuestions":true,"archivistIngestions":true,"curatorProposals":true}"#,
         ),
         Duration::ZERO,
     );
@@ -145,7 +147,7 @@ fn malformed_capabilities_fail_closed_as_incompatible() {
         healthy_body(
             "1",
             "not_configured",
-            r#"{"batchJobs":"yes","liveStreaming":true,"jobStatus":true,"transcriptCorrection":true,"librarianQueries":true,"analystAnswers":true,"coordinatorBundles":true,"auditorReports":true,"studentQuestions":true,"archivistIngestions":true,"curatorProposals":true}"#,
+            r#"{"batchJobs":"yes","liveStreaming":true,"jobStatus":true,"transcriptCorrection":true,"librarianQueries":true,"analystAnswers":true,"coordinatorBundles":true,"auditorReports":true, "knowledgeConnections":false,"personalTerminology": false,"studentQuestions":true,"archivistIngestions":true,"curatorProposals":true}"#,
         ),
         Duration::ZERO,
     );
@@ -186,7 +188,7 @@ fn missing_capability_field_fails_closed_without_retry() {
         healthy_body(
             "1",
             "not_configured",
-            r#"{"batchJobs":true,"liveStreaming":true,"transcriptCorrection":true,"librarianQueries":true,"analystAnswers":true,"coordinatorBundles":true,"auditorReports":true,"studentQuestions":true,"archivistIngestions":true,"curatorProposals":true}"#,
+            r#"{"batchJobs":true,"liveStreaming":true,"transcriptCorrection":true,"librarianQueries":true,"analystAnswers":true,"coordinatorBundles":true,"auditorReports":true, "knowledgeConnections":false,"personalTerminology": false,"studentQuestions":true,"archivistIngestions":true,"curatorProposals":true}"#,
         ),
         Duration::ZERO,
     );
@@ -233,7 +235,7 @@ fn authentication_status_and_health_auth_require_sign_in() {
         healthy_body(
             "1",
             "required",
-            r#"{"batchJobs":true,"liveStreaming":true,"jobStatus":true,"transcriptCorrection":true,"librarianQueries":true,"analystAnswers":true,"coordinatorBundles":true,"auditorReports":true,"studentQuestions":true,"archivistIngestions":true,"curatorProposals":true}"#,
+            r#"{"batchJobs":true,"liveStreaming":true,"jobStatus":true,"transcriptCorrection":true,"librarianQueries":true,"analystAnswers":true,"coordinatorBundles":true,"auditorReports":true, "knowledgeConnections":false,"personalTerminology": false,"studentQuestions":true,"archivistIngestions":true,"curatorProposals":true}"#,
         ),
         Duration::ZERO,
     );
@@ -250,6 +252,8 @@ fn authentication_status_and_health_auth_require_sign_in() {
                 analyst_answers: true,
                 coordinator_bundles: true,
                 auditor_reports: true,
+                knowledge_connections: false,
+                personal_terminology: false,
                 student_questions: true,
                 archivist_ingestions: true,
                 curator_proposals: true,
@@ -328,7 +332,7 @@ fn delayed_response_hits_the_three_second_total_timeout() {
         healthy_body(
             "1",
             "not_configured",
-            r#"{"batchJobs":false,"liveStreaming":false,"jobStatus":false,"transcriptCorrection":false,"librarianQueries":false,"analystAnswers":false,"coordinatorBundles":false,"auditorReports":false,"studentQuestions":false,"archivistIngestions":false,"curatorProposals":false}"#,
+            r#"{"batchJobs":false,"liveStreaming":false,"jobStatus":false,"transcriptCorrection":false,"librarianQueries":false,"analystAnswers":false,"coordinatorBundles":false,"auditorReports":false, "knowledgeConnections":false,"personalTerminology": false,"studentQuestions":false,"archivistIngestions":false,"curatorProposals":false}"#,
         ),
         Duration::from_millis(3_100),
     );

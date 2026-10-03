@@ -15,11 +15,11 @@ export const workspaceCopy: Record<WorkspaceView, { title: string; description: 
   },
   correct: {
     title: "Transcript correction",
-    description: "Review source-bound corrections without changing raw ASR.",
+    description: "Review suggested edits while keeping your original transcript.",
   },
   knowledge: {
     title: "Knowledge",
-    description: "Find permission-safe evidence in reviewed organization knowledge.",
+    description: "Find information in your organization's reviewed knowledge.",
   },
 };
 

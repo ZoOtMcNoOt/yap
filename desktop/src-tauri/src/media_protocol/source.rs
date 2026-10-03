@@ -88,22 +88,18 @@ pub(crate) fn open_unchanged_media_source(
     media_mime(path).ok_or_else(|| "Choose a supported audio or video file.".to_string())?;
     let file = open_no_follow(path, false)
         .map_err(|error| format!("Failed to open recording for preprocessing: {error}"))?;
-    let snapshot = file_snapshot(&file)?;
-    if &snapshot != expected {
-        return Err("Recording source changed before preprocessing began.".into());
-    }
+    verify_opened_media_source(&file, expected)?;
     Ok(file)
 }
 
-/// Opens a canonical WAV this build just decoded. No fingerprint is compared
-/// because Yap wrote the file itself moments earlier; the user's original was
-/// fingerprint-checked before the decode ran.
-pub(crate) fn open_decoded_media_source(path: &Path) -> Result<File, String> {
-    if !path.is_absolute() {
-        return Err("Recording preprocessing requires an absolute path.".into());
+pub(crate) fn verify_opened_media_source(
+    file: &File,
+    expected: &MediaSourceFingerprint,
+) -> Result<(), String> {
+    if &file_snapshot(file)? != expected {
+        return Err("Recording source changed during preprocessing.".into());
     }
-    open_no_follow(path, false)
-        .map_err(|error| format!("Failed to open decoded recording: {error}"))
+    Ok(())
 }
 
 pub(super) fn file_snapshot(file: &File) -> Result<MediaSourceFingerprint, String> {
@@ -299,7 +295,7 @@ fn open_no_follow(path: &Path, _allow_path_removal: bool) -> io::Result<File> {
 
     OpenOptions::new()
         .read(true)
-        .custom_flags(libc::O_NOFOLLOW)
+        .custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK)
         .open(path)
 }
 

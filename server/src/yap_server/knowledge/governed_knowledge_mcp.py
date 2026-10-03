@@ -29,6 +29,7 @@ from .knowledge_tool_contract import (
     TraversalDepth,
     TraversalResultLimit,
     TraverseKnowledgeRequest,
+    canonical_connection_proposal,
 )
 
 
@@ -76,6 +77,12 @@ def create_governed_knowledge_mcp_server(
         source_citations: ProposalCitations,
         expected_generation_sha256: GenerationSha256 | None,
     ) -> dict[str, object]:
+        citations = tuple(source_citations)
+        if proposal_type == "relationship":
+            proposed_content, citations = canonical_connection_proposal(
+                proposed_content, citations, expected_generation_sha256
+            )
+
         def execute(cancellation: threading.Event) -> dict[str, object]:
             with connection_factory() as connection:
                 response = proposals.propose(
@@ -85,7 +92,7 @@ def create_governed_knowledge_mcp_server(
                     purpose=purpose,
                     proposal_type=proposal_type,
                     proposed_content=proposed_content,
-                    source_citations=tuple(source_citations),
+                    source_citations=citations,
                     expected_generation_sha256=expected_generation_sha256,
                     cancellation=cancellation,
                 )
@@ -151,6 +158,11 @@ def create_governed_knowledge_mcp_server(
         source_citations: ProposalCitations,
         expected_generation_sha256: GenerationSha256 | None = None,
     ) -> dict[str, object]:
+        """Store a cited noncanonical proposal. Relationship content is JSON with
+        exactly schema_version:1, source_concept_id, target_concept_id,
+        relationship_type and rationale; supply one exact citation per distinct
+        endpoint and the current expected_generation_sha256. No authority grant.
+        """
         return await propose(
             purpose=purpose,
             proposal_type=proposal_type,

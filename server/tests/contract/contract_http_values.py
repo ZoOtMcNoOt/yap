@@ -7,6 +7,15 @@ LIVE_EVENTS_PATH = SERVER_ROOT / "openapi" / "live-events.schema.json"
 EXAMPLES_ROOT = SERVER_ROOT / "openapi" / "examples"
 
 HTTP_OPERATIONS = {
+    ("/v1/knowledge/concepts", "get"): "browseKnowledgeTopics",
+    ("/v1/knowledge/connections", "get"): "readKnowledgeConnections",
+    ("/v1/knowledge/connection-proposal", "get"): "inspectKnowledgeConnectionProposal",
+    ("/v1/terminology/scopes", "get"): "discoverTerminologyScopes",
+    ("/v1/terminology", "get"): "listTerminology",
+    ("/v1/terminology", "post"): "createTerminology",
+    ("/v1/terminology/{recordId}", "get"): "readTerminology",
+    ("/v1/terminology/{recordId}", "put"): "editTerminology",
+    ("/v1/terminology/{recordId}", "delete"): "deleteTerminology",
     ("/v1/health", "get"): "getHealth",
     ("/v1/asr/capabilities", "get"): "getAsrCapabilities",
     ("/v1/lid/preflight", "post"): "runLidPreflight",
@@ -57,6 +66,42 @@ HTTP_OPERATIONS = {
 }
 
 OPERATION_RUNTIME = {
+    ("/v1/knowledge/concepts", "get"): (
+        "Implemented when explicit authenticated knowledge connections Postgres configuration verifies",
+        "Authenticated permission-safe knowledge connections",
+    ),
+    ("/v1/knowledge/connection-proposal", "get"): (
+        "Implemented when explicit authenticated knowledge connections Postgres configuration verifies",
+        "Authenticated permission-safe knowledge connections",
+    ),
+    ("/v1/knowledge/connections", "get"): (
+        "Implemented when explicit authenticated knowledge connections Postgres configuration verifies",
+        "Authenticated permission-safe knowledge connections",
+    ),
+    ("/v1/terminology/scopes", "get"): (
+        "Implemented when explicit authenticated terminology Postgres configuration verifies",
+        "Authenticated scoped terminology ledger",
+    ),
+    ("/v1/terminology", "get"): (
+        "Implemented when explicit authenticated terminology Postgres configuration verifies",
+        "Authenticated scoped terminology ledger",
+    ),
+    ("/v1/terminology", "post"): (
+        "Implemented when explicit authenticated terminology Postgres configuration verifies",
+        "Authenticated scoped terminology ledger",
+    ),
+    ("/v1/terminology/{recordId}", "get"): (
+        "Implemented when explicit authenticated terminology Postgres configuration verifies",
+        "Authenticated scoped terminology ledger",
+    ),
+    ("/v1/terminology/{recordId}", "put"): (
+        "Implemented when explicit authenticated terminology Postgres configuration verifies",
+        "Authenticated scoped terminology ledger",
+    ),
+    ("/v1/terminology/{recordId}", "delete"): (
+        "Implemented when explicit authenticated terminology Postgres configuration verifies",
+        "Authenticated scoped terminology ledger",
+    ),
     ("/v1/health", "get"): ("Implemented", "Process health"),
     ("/v1/asr/capabilities", "get"): (
         "Implemented only when locked runtime artifacts verify",
@@ -211,6 +256,12 @@ OPERATION_RUNTIME = {
 CHUNK_PATH = "/v1/jobs/{jobId}/chunks/{trackId}/{sequenceStart}-{sequenceEnd}"
 
 RUNTIME_PATH_EXAMPLES = {
+    "/v1/knowledge/concepts": "/v1/knowledge/concepts",
+    "/v1/knowledge/connections": "/v1/knowledge/connections",
+    "/v1/knowledge/connection-proposal": "/v1/knowledge/connection-proposal",
+    "/v1/terminology/scopes": "/v1/terminology/scopes",
+    "/v1/terminology": "/v1/terminology",
+    "/v1/terminology/{recordId}": "/v1/terminology/term-01",
     "/v1/health": "/v1/health",
     "/v1/asr/capabilities": "/v1/asr/capabilities",
     "/v1/lid/preflight": "/v1/lid/preflight",
@@ -229,8 +280,7 @@ RUNTIME_PATH_EXAMPLES = {
     ),
     "/v1/coordinator-bundles": "/v1/coordinator-bundles",
     "/v1/coordinator-bundles/{requestId}": (
-        "/v1/coordinator-bundles/"
-        "coordinator-bundle-11111111111111111111111111111111"
+        "/v1/coordinator-bundles/coordinator-bundle-11111111111111111111111111111111"
     ),
     "/v1/auditor-reports": "/v1/auditor-reports",
     "/v1/auditor-reports/{requestId}": (

@@ -183,7 +183,7 @@ export function StackedUpload({
   }
 
   return (
-    <ScrollArea className="h-[260px] pr-3">
+    <ScrollArea className="@container/queue max-h-[260px] pr-3 [&>[data-slot=scroll-area-viewport]]:max-h-[260px]">
       <ul className="flex flex-col gap-2">
         {items.map((item, index) => (
           <UploadCard
@@ -245,7 +245,7 @@ function UploadCard({
     <li className="list-none">
       <Attachment
         className={cn(
-          "w-full cursor-pointer overflow-hidden outline-none transition-[border-color,box-shadow,background-color]",
+          "grid w-full grid-cols-[auto_minmax(0,1fr)] cursor-pointer overflow-hidden outline-none transition-[border-color,box-shadow,background-color] @sm/queue:flex",
           "focus-visible:ring-2 focus-visible:ring-ring/50",
           isSelected && "border-primary ring-2 ring-primary/15",
           offset > 0 && "shadow-sm",
@@ -261,7 +261,7 @@ function UploadCard({
           {description ? <AttachmentDescription>{description}</AttachmentDescription> : null}
         </AttachmentContent>
 
-        <AttachmentActions className="gap-2">
+        <AttachmentActions className="col-start-2 gap-2 @sm/queue:col-start-auto">
           {settledLabel ? null : (
             <Badge variant={meta.variant}>
               <Icon

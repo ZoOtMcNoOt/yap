@@ -914,6 +914,8 @@ class ServerMainTests(unittest.TestCase):
         serve.assert_called_once_with(
             settings,
             request_authenticator=ANY,
+            knowledge_connections_service=None,
+            terminology_service=None,
             job_service=runtime.service,
             lid_preflight_service=runtime.lid_preflight_service,
             asr_capabilities=runtime.asr_capabilities,

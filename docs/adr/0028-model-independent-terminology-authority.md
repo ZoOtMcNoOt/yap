@@ -77,6 +77,9 @@ The snapshot compiles into four replaceable projections:
 
 ### Privacy and audit
 
+Team membership grants visibility; editing and deletion require a separate
+trusted team-management grant. Neither authority is taken from request payloads.
+
 Only the terminology owner or an authorized tenant/team administrator may
 create a new record version or tombstone. Query and projection APIs receive a
 validated principal; callers cannot supply a different owner. Logs and public

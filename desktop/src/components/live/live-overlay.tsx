@@ -59,9 +59,10 @@ export function LiveOverlay({
       role="toolbar"
       onBlur={(event) => {
         if (
-          event.relatedTarget instanceof Node
-          && event.currentTarget.contains(event.relatedTarget)
-        ) return;
+          event.relatedTarget instanceof Node &&
+          event.currentTarget.contains(event.relatedTarget)
+        )
+          return;
         if (surface === "expanded") scheduleIdleCollapse();
       }}
       onFocus={() => {
@@ -69,10 +70,11 @@ export function LiveOverlay({
       }}
       onKeyDown={(event) => {
         if (
-          event.target !== event.currentTarget
-          || model.phase !== "idle"
-          || !["Enter", " "].includes(event.key)
-        ) return;
+          event.target !== event.currentTarget ||
+          model.phase !== "idle" ||
+          !["Enter", " "].includes(event.key)
+        )
+          return;
         event.preventDefault();
         openIdleIsland();
       }}
@@ -85,43 +87,25 @@ export function LiveOverlay({
         scheduleIdleCollapseWithoutFocus(event.currentTarget);
       }}
       onPointerOut={(event) => {
-        if (event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget)) return;
+        if (
+          event.relatedTarget instanceof Node &&
+          event.currentTarget.contains(event.relatedTarget)
+        )
+          return;
         setPreviewPointerWithin(false);
         scheduleIdleCollapseWithoutFocus(event.currentTarget);
       }}
       style={rootFrameStyle}
       tabIndex={model.phase === "idle" ? 0 : -1}
     >
-      {/*
-        Upstream clips with `UnevenRoundedRectangle(bottomLeadingRadius: 12,
-        bottomTrailingRadius: 12)`: square at the top because the strip is flush
-        with the top of the display and is meant to read as part of the bezel,
-        rounded at the bottom because that is the edge that hangs into the
-        desktop. On Windows the native window region does the same clip for hit
-        testing; painting it here as well is what keeps the curve smooth rather
-        than stair-stepped along the region boundary.
-      */}
+      {/* Top-bezel geometry derives from FreeFlow's RecordingOverlay.swift (MIT,
+          revision 7427ca9). Native code owns the frame; CSS owns the reveal. */}
       <div
-        className="pointer-events-auto h-full w-full text-white motion-reduce:transition-none"
+        className="live-island-surface pointer-events-auto h-full w-full text-white motion-reduce:transition-none"
         data-overlay-revealed={revealed ? "true" : "false"}
         data-testid="live-overlay-island"
         style={{
-          backgroundColor: "black",
-          borderRadius: "0 0 12px 12px",
-          overflow: "hidden",
-          // Upstream animates its panel down out of the menu bar on a 0.18s
-          // curve with a little overshoot -- `CAMediaTimingFunction(0.34, 1.56,
-          // 0.64, 1.0)`, transcribed here. The overshoot is most of why it
-          // reads as native rather than as a div appearing.
-          //
-          // The pill moves, not the window. A Tauri window repositioned from a
-          // Rust timer arrives in discrete jumps; a transform inside a
-          // transparent window is composited by WebView2 and is actually
-          // smooth. The window stays a fixed strip at the top edge and ignores
-          // the cursor while the pill is tucked away.
           transform: revealed ? "translateY(0)" : "translateY(-101%)",
-          transition: "transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1)",
-          willChange: "transform",
         }}
       >
         <div className="h-full w-full" ref={contentRef}>

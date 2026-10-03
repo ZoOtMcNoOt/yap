@@ -9,13 +9,16 @@ mod capabilities;
 mod capability_snapshot;
 mod client;
 pub mod config;
+mod connection_candidate;
 pub(crate) mod coordinator;
 mod core;
 pub(crate) mod curator;
 mod desktop;
+pub(crate) mod knowledge_connections;
 pub(crate) mod librarian;
 pub(crate) mod lid;
 pub(crate) mod student;
+pub(crate) mod terminology;
 // Never in a shipped binary: it trusts a synthetic issuer and carries a
 // published client secret.
 #[cfg(debug_assertions)]

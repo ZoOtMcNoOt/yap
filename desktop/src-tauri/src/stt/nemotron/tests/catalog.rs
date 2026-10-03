@@ -1,5 +1,50 @@
 use super::*;
 
+#[cfg(unix)]
+#[test]
+fn a_valid_marker_cannot_make_a_linked_artifact_ready() {
+    let dir = TestDir::new();
+    for artifact in TEST_ARTIFACTS {
+        write_verified_artifact(dir.path(), artifact);
+    }
+    let artifact = &TEST_ARTIFACTS[0];
+    let path = dir.path().join(artifact.file);
+    let original = dir.path().join("original.onnx");
+    std::fs::rename(&path, &original).unwrap();
+    std::os::unix::fs::symlink(&original, &path).unwrap();
+    assert_eq!(
+        model_status_at_with_artifacts(dir.path(), true, TEST_ARTIFACTS).status,
+        FallbackModelStatus::Corrupted
+    );
+    assert_ne!(marker_state(&path, artifact), MarkerState::Valid);
+    assert!(verify_sha_and_mark(&path, artifact, || false).is_err());
+    assert_eq!(std::fs::read(&original).unwrap(), TEST_ARTIFACT_CONTENTS);
+}
+
+#[test]
+fn cancelling_artifact_verification_preserves_the_artifact_and_marker() {
+    let dir = TestDir::new();
+    let artifact = &TEST_ARTIFACTS[0];
+    let path = dir.path().join(artifact.file);
+    let marker = path.with_extension("verified");
+    std::fs::write(&path, TEST_ARTIFACT_CONTENTS).unwrap();
+    std::fs::write(&marker, b"stale marker").unwrap();
+    let operation = crate::stt::model::DownloadOperation::new(1);
+    let first_query = std::cell::Cell::new(true);
+    let result = verify_sha_and_mark(&path, artifact, || {
+        if first_query.replace(false) {
+            // A cancellation arrives just after the initial inactive poll.
+            operation.cancel();
+            false
+        } else {
+            operation.is_cancelled()
+        }
+    });
+    assert_eq!(result, Err(SttError::ModelInstallCancelled));
+    assert_eq!(std::fs::read(&path).unwrap(), TEST_ARTIFACT_CONTENTS);
+    assert_eq!(std::fs::read(&marker).unwrap(), b"stale marker");
+}
+
 #[test]
 fn model_root_is_named_for_nemotron() {
     assert!(root_dir().ends_with(MODEL_DIR));
@@ -62,7 +107,7 @@ fn verification_rejects_length_before_accepting_a_matching_hash() {
     std::fs::write(&path, TEST_ARTIFACT_CONTENTS).unwrap();
 
     assert_eq!(
-        verify_sha_and_mark(&path, &artifact),
+        verify_sha_and_mark(&path, &artifact, || false),
         Err(SttError::ModelCorrupt)
     );
     assert!(!path.with_extension("verified").exists());
@@ -79,7 +124,7 @@ fn verification_publishes_the_verified_marker() {
     let path = dir.path().join(artifact.file);
     std::fs::write(&path, TEST_ARTIFACT_CONTENTS).unwrap();
 
-    verify_sha_and_mark(&path, &artifact).unwrap();
+    verify_sha_and_mark(&path, &artifact, || false).unwrap();
 
     assert_eq!(
         std::fs::read_to_string(path.with_extension("verified")).unwrap(),

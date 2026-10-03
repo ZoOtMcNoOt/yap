@@ -18,6 +18,13 @@ from yap_server.auth import (
 )
 from yap_server.config import ServerSettings, ensure_private_application_bind
 from yap_server.jobs import RecordingJobService
+from yap_server.knowledge.terminology_service import TerminologyService
+
+from yap_server.knowledge.knowledge_connections_service import (
+    KnowledgeConnectionsService,
+)
+from .knowledge_connections_requests import KnowledgeConnectionsRequestMixin
+from .terminology_requests import TerminologyRequestMixin
 
 from .analyst_answer_requests import (
     AnalystAnswerRequestMixin,
@@ -95,6 +102,8 @@ _REQUEST_LOGGER = logging.getLogger("yap_server.requests")
 
 
 class _HealthRequestHandler(
+    KnowledgeConnectionsRequestMixin,
+    TerminologyRequestMixin,
     AuditorReportRequestMixin,
     CoordinatorBundleRequestMixin,
     AnalystAnswerRequestMixin,
@@ -127,6 +136,8 @@ class _HealthRequestHandler(
         coordinator_bundle_service: CoordinatorBundleServiceProtocol | None,
         auditor_report_service: AuditorReportServiceProtocol | None,
         transcript_correction_service: TranscriptCorrectionServiceProtocol | None,
+        knowledge_connections_service: KnowledgeConnectionsService | None,
+        terminology_service: TerminologyService | None,
         asr_capabilities: Mapping[str, object] | None,
         **kwargs: Any,
     ) -> None:
@@ -143,6 +154,8 @@ class _HealthRequestHandler(
         self._coordinator_bundle_service = coordinator_bundle_service
         self._auditor_report_service = auditor_report_service
         self._transcript_correction_service = transcript_correction_service
+        self._knowledge_connections_service = knowledge_connections_service
+        self._terminology_service = terminology_service
         self._asr_capabilities = asr_capabilities
         self._request_id = f"req-{uuid4().hex}"
         self._request_logged = False
@@ -241,11 +254,41 @@ class _HealthRequestHandler(
                     analyst_answers=(self._analyst_answer_service is not None),
                     coordinator_bundles=(self._coordinator_bundle_service is not None),
                     auditor_reports=(self._auditor_report_service is not None),
+                    knowledge_connections=(
+                        self._knowledge_connections_service is not None
+                    ),
+                    personal_terminology=(self._terminology_service is not None),
                 ),
             )
             return
 
         if not self._authenticate_request():
+            return
+
+        if path in {
+            "/v1/knowledge/concepts",
+            "/v1/knowledge/connections",
+            "/v1/knowledge/connection-proposal",
+        }:
+            if self._knowledge_connections_service is None:
+                self._send_error(
+                    HTTPStatus.NOT_IMPLEMENTED,
+                    code="NOT_IMPLEMENTED",
+                    message="Knowledge connections are not configured.",
+                )
+                return
+            self._dispatch_knowledge_connections_request(path)
+            return
+
+        if path == "/v1/terminology" or path.startswith("/v1/terminology/"):
+            if self._terminology_service is None:
+                self._send_error(
+                    HTTPStatus.NOT_IMPLEMENTED,
+                    code="NOT_IMPLEMENTED",
+                    message="Terminology is not configured.",
+                )
+                return
+            self._dispatch_terminology_request(path)
             return
 
         if path == "/v1/asr/capabilities":
@@ -444,9 +487,18 @@ def create_server(
     coordinator_bundle_service: CoordinatorBundleServiceProtocol | None = None,
     auditor_report_service: AuditorReportServiceProtocol | None = None,
     transcript_correction_service: TranscriptCorrectionServiceProtocol | None = None,
+    knowledge_connections_service: KnowledgeConnectionsService | None = None,
+    terminology_service: TerminologyService | None = None,
     asr_capabilities: Mapping[str, object] | None = None,
 ) -> HTTPServer:
     ensure_private_application_bind(settings.host)
+    if (
+        knowledge_connections_service is not None
+        and not settings.authentication.required
+    ):
+        raise ValueError("knowledge connections require organization authentication")
+    if terminology_service is not None and not settings.authentication.required:
+        raise ValueError("personal terminology requires organization authentication")
     request_logger = logger or _REQUEST_LOGGER
     if request_authenticator is None:
         if settings.authentication.required:
@@ -486,6 +538,8 @@ def create_server(
         coordinator_bundle_service=coordinator_bundle_service,
         auditor_report_service=auditor_report_service,
         transcript_correction_service=transcript_correction_service,
+        knowledge_connections_service=knowledge_connections_service,
+        terminology_service=terminology_service,
         asr_capabilities=asr_capabilities,
     )
     server = server_type(
@@ -501,6 +555,8 @@ def create_server(
             or coordinator_bundle_service is not None
             or auditor_report_service is not None
             or transcript_correction_service is not None
+            or knowledge_connections_service is not None
+            or terminology_service is not None
         ),
     )((settings.host, settings.port), handler)
     server._request_error_logger = request_logger
@@ -523,6 +579,8 @@ def serve(
     coordinator_bundle_service: CoordinatorBundleServiceProtocol | None = None,
     auditor_report_service: AuditorReportServiceProtocol | None = None,
     transcript_correction_service: TranscriptCorrectionServiceProtocol | None = None,
+    knowledge_connections_service: KnowledgeConnectionsService | None = None,
+    terminology_service: TerminologyService | None = None,
     asr_capabilities: Mapping[str, object] | None = None,
 ) -> None:
     with create_server(
@@ -538,6 +596,8 @@ def serve(
         coordinator_bundle_service=coordinator_bundle_service,
         auditor_report_service=auditor_report_service,
         transcript_correction_service=transcript_correction_service,
+        knowledge_connections_service=knowledge_connections_service,
+        terminology_service=terminology_service,
         asr_capabilities=asr_capabilities,
     ) as server:
         server.serve_forever()

@@ -39,7 +39,7 @@ describe("Librarian product contract", () => {
   beforeEach(() => invokeMock.mockReset().mockResolvedValue({}));
 
   it("routes every query through the native owner without renderer credentials", async () => {
-    await startLibrarianQuery("reviewed launch decision", 3, null);
+    await startLibrarianQuery("reviewed launch decision", 3, null, "1");
     await librarianQueryStatus(`librarian-query-${"1".repeat(32)}`);
     await cancelLibrarianQuery(`librarian-query-${"1".repeat(32)}`);
 
@@ -48,6 +48,7 @@ describe("Librarian product contract", () => {
         searchText: "reviewed launch decision",
         maximumResults: 3,
         expectedGenerationSha256: null,
+        authorityRevision: "1",
       }],
       ["librarian_query_status", { requestId: `librarian-query-${"1".repeat(32)}` }],
       ["cancel_librarian_query", { requestId: `librarian-query-${"1".repeat(32)}` }],
@@ -91,10 +92,20 @@ describe("Librarian product contract", () => {
   });
 
   it("keeps local controls available when organization knowledge is unavailable", () => {
-    const markup = renderToStaticMarkup(<LibrarianPanel available={false} />);
+    const markup = renderToStaticMarkup(<LibrarianPanel available={false} serverSnapshot={{
+      authorityRevision: "0", state: "not_set", checkedAtMs: null, retryAtMs: null,
+      apiVersion: null, errorCode: null,
+      capabilities: {
+        batchJobs: false, liveStreaming: false, jobStatus: false,
+        transcriptCorrection: false, librarianQueries: false,
+        analystAnswers: false, coordinatorBundles: false, auditorReports: false,
+        knowledgeConnections: false, personalTerminology: false,
+        studentQuestions: false, archivistIngestions: false, curatorProposals: false,
+      },
+    }} />);
 
-    expect(markup).toContain("Knowledge search needs your connected organization server");
-    expect(markup).toContain("Local recording, playback, transcripts, export, and deletion remain available.");
+    expect(markup).toContain("Knowledge search is unavailable on the current server connection.");
+    expect(markup).toContain("Local recording, playback, and saved transcripts remain available.");
     expect(markup).toContain("Search knowledge");
     expect(markup).toContain("disabled");
     expect(markup).not.toContain("chat");

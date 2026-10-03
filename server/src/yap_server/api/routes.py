@@ -61,9 +61,26 @@ STAGE_RETRY_PATH = re.compile(
 )
 
 SUPPORTED_HTTP_VERSIONS = frozenset({"HTTP/1.0", "HTTP/1.1"})
+TERMINOLOGY_PATH = "/v1/terminology"
+TERMINOLOGY_SCOPES_PATH = "/v1/terminology/scopes"
+TERMINOLOGY_RECORD_PATH = re.compile(
+    r"^/v1/terminology/(?P<record_id>[A-Za-z0-9][A-Za-z0-9._:%-]{0,383})$"
+)
 
 
 def allowed_methods(path: str) -> frozenset[str] | None:
+    if path in {
+        "/v1/knowledge/concepts",
+        "/v1/knowledge/connections",
+        "/v1/knowledge/connection-proposal",
+    }:
+        return frozenset({"GET"})
+    if path == TERMINOLOGY_SCOPES_PATH:
+        return frozenset({"GET"})
+    if path == TERMINOLOGY_PATH:
+        return frozenset({"GET", "POST"})
+    if TERMINOLOGY_RECORD_PATH.fullmatch(path):
+        return frozenset({"GET", "PUT", "DELETE"})
     if path == "/v1/health":
         return frozenset({"GET"})
     if path == "/v1/asr/capabilities":

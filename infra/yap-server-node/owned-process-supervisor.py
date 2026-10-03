@@ -142,14 +142,22 @@ def read_process_owner_token(pid: int) -> str | None:
 
 
 def read_direct_children(pid: int) -> tuple[int, ...]:
-    children_path = Path(f"/proc/{pid}/task/{pid}/children")
-    try:
-        children = children_path.read_text(encoding="ascii").split()
-    except (FileNotFoundError, ProcessLookupError) as error:
-        raise ProcessLookupError(pid) from error
-    if any(not child.isdecimal() for child in children):
-        raise SupervisorError(f"process {pid} has an invalid child inventory")
-    return tuple(int(child) for child in children)
+    # Parent IDs are available in ordinary procfs, including kernels built
+    # without CONFIG_CHECKPOINT_RESTORE's task/children interface.
+    parent = read_process_identity(pid)
+    children: list[int] = []
+    for entry in Path("/proc").iterdir():
+        if not entry.name.isdecimal():
+            continue
+        try:
+            identity = read_process_identity(int(entry.name))
+        except ProcessLookupError:
+            continue
+        if identity.parent_pid == pid:
+            children.append(identity.pid)
+    if not same_process(read_process_identity(pid), parent):
+        raise ProcessLookupError(pid)
+    return tuple(sorted(children))
 
 
 def process_group_members(process_group_id: int) -> tuple[ProcessIdentity, ...]:

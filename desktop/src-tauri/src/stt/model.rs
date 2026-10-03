@@ -14,7 +14,7 @@ use crate::stt::error::SttError;
 pub use download::{download_verified_file, DownloadRequest};
 pub use import::import_verified_file;
 pub use install_state::ModelInstallState;
-pub use integrity::{sha256_file, verify_sha256};
+pub use integrity::{sha256_file, verify_artifact};
 pub use operation::DownloadOperation;
 pub(crate) use path_safety::{
     metadata_is_link_or_reparse, model_directory_state, ModelDirectoryState,

@@ -6,7 +6,8 @@ use std::{
 
 use crate::server_connector::{
     librarian::{
-        LibrarianApiClient, LibrarianQueryJobView, LibrarianQueryStatus, LibrarianRequest,
+        LibrarianApiClient, LibrarianEvidenceItem, LibrarianQueryJobView, LibrarianQueryStatus,
+        LibrarianRequest,
     },
     LibrarianConnectionLease, ServerConnector,
 };
@@ -20,6 +21,12 @@ struct OwnedLibrarianQuery {
     request: LibrarianRequest,
     lease: LibrarianConnectionLease,
     latest: LibrarianQueryJobView,
+}
+
+pub(crate) struct LibrarianConnectionSources {
+    pub(crate) lease: LibrarianConnectionLease,
+    pub(crate) generation_sha256: String,
+    pub(crate) items: [LibrarianEvidenceItem; 2],
 }
 
 #[derive(Clone)]
@@ -68,6 +75,41 @@ impl LibrarianQueryOwner {
             .get(request_id)
             .cloned()
             .ok_or_else(|| "This device does not own that knowledge query.".to_string())
+    }
+
+    pub(crate) fn connection_sources(
+        &self,
+        request_id: &str,
+        source_index: usize,
+        target_index: usize,
+    ) -> Result<LibrarianConnectionSources, String> {
+        let owned = self.request(request_id)?;
+        let evidence = owned
+            .latest
+            .evidence_pack
+            .filter(|_| owned.latest.status == LibrarianQueryStatus::Complete)
+            .ok_or_else(|| "Choose sources from a completed knowledge search.".to_string())?;
+        let source = evidence.items.get(source_index);
+        let target = evidence.items.get(target_index);
+        let (Some(source), Some(target)) = (source, target) else {
+            return Err("Those sources are no longer in this knowledge search.".into());
+        };
+        if source.concept_id == target.concept_id {
+            return Err("Choose two different knowledge sources.".into());
+        }
+        if [source, target]
+            .iter()
+            .any(|item| item.char_end - item.char_start > 1_024)
+        {
+            return Err(
+                "Refine your search to select excerpts of at most 1,024 characters.".into(),
+            );
+        }
+        Ok(LibrarianConnectionSources {
+            lease: owned.lease,
+            generation_sha256: evidence.generation_sha256,
+            items: [source.clone(), target.clone()],
+        })
     }
 
     fn update(
@@ -220,6 +262,7 @@ pub(crate) async fn start_librarian_query(
     search_text: String,
     maximum_results: u8,
     expected_generation_sha256: Option<String>,
+    authority_revision: String,
 ) -> Result<LibrarianQueryJobView, String> {
     crate::authorization::ensure_main(&window)?;
     let request = LibrarianRequest::new(search_text, maximum_results, expected_generation_sha256)
@@ -228,6 +271,7 @@ pub(crate) async fn start_librarian_query(
         "Knowledge queries require a connected organization server with Librarian enabled."
             .to_string()
     })?;
+    lease.require_authority_revision(&authority_revision)?;
     let submission = owner.reserve_submission()?;
     let view = lease
         .client()
@@ -332,6 +376,76 @@ mod tests {
             status,
             reason.map(str::to_owned),
         )
+    }
+
+    fn source(id: &str, text: &str, start: u64) -> LibrarianEvidenceItem {
+        LibrarianEvidenceItem {
+            concept_id: id.into(),
+            source_revision: "reviewed-1".into(),
+            content_sha256: "d".repeat(64),
+            char_start: start,
+            char_end: start + text.chars().count() as u64,
+            text: text.into(),
+        }
+    }
+
+    #[test]
+    fn connection_sources_are_owned_completed_exact_and_directional() {
+        let owner = LibrarianQueryOwner::new();
+        let items = vec![
+            source("projects/yap", "The project references this decision.", 40),
+            source(
+                "decisions/interface",
+                "The reviewed decision applies to Yap.",
+                80,
+            ),
+        ];
+        let complete = LibrarianQueryJobView::complete_for_test(items.clone());
+        let id = complete.request_id.clone();
+        owner
+            .insert_for_test(request(), librarian_connection_lease_for_test(), complete)
+            .unwrap();
+        let sources = owner.connection_sources(&id, 0, 1).unwrap();
+        assert_eq!(sources.items, [items[0].clone(), items[1].clone()]);
+        assert_eq!(sources.generation_sha256, "a".repeat(64));
+        assert_eq!(
+            owner.connection_sources(&id, 1, 0).unwrap().items[0],
+            items[1]
+        );
+        assert!(owner.connection_sources(&id, 0, 0).is_err());
+        assert!(owner.connection_sources(&id, 0, 2).is_err());
+        assert!(owner.connection_sources("foreign-query", 0, 1).is_err());
+    }
+
+    #[test]
+    fn connection_sources_reject_pending_same_concept_and_long_excerpts() {
+        let owner = LibrarianQueryOwner::new();
+        let pending = view(LibrarianQueryStatus::Queued, None);
+        let id = pending.request_id.clone();
+        owner
+            .insert_for_test(request(), librarian_connection_lease_for_test(), pending)
+            .unwrap();
+        assert!(owner.connection_sources(&id, 0, 1).is_err());
+        for items in [
+            vec![
+                source("projects/yap", "First excerpt", 0),
+                source("projects/yap", "Second excerpt", 30),
+            ],
+            vec![
+                source("projects/yap", &"x".repeat(1_025), 0),
+                source("decisions/interface", "The decision", 0),
+            ],
+        ] {
+            let owner = LibrarianQueryOwner::new();
+            owner
+                .insert_for_test(
+                    request(),
+                    librarian_connection_lease_for_test(),
+                    LibrarianQueryJobView::complete_for_test(items),
+                )
+                .unwrap();
+            assert!(owner.connection_sources(&id, 0, 1).is_err());
+        }
     }
 
     #[test]

@@ -45,7 +45,7 @@ def private_postgres_connection_factory(
 
 def read_private_postgres_dsn(path: Path) -> str:
     requested = Path(path)
-    flags = os.O_RDONLY
+    flags = os.O_RDONLY | getattr(os, "O_NONBLOCK", 0)
     if hasattr(os, "O_NOFOLLOW"):
         flags |= os.O_NOFOLLOW
     try:

@@ -1,219 +1,177 @@
 import { isTauri } from "@tauri-apps/api/core";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { usePrimaryLanguage } from "@/hooks/use-primary-language";
-import {
-  localDictationLanguages,
-  type RecordingImportLanguageOption,
-} from "@/language-preference";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { fixedBatchLanguageOptions, type PrimaryLanguageStatus } from "@/language-preference";
 import { formatLanguageTag } from "@/lib/language-display";
+import { fallbackStatusText } from "@/lib/setup-model-state";
+import { type FallbackModelView, serverConnectionLabel } from "@/lib/setup-model";
+import type { ServerConnectionSnapshot } from "@/server";
 
-// The utterance is scripted so the first dictation cannot fail interestingly:
-// short, phonetically plain, and the words are the product's privacy promise.
-const PRACTICE_SCRIPT = "Yap is running entirely on this computer.";
-// Long enough that a stray keypress does not count as a dictation.
-const PRACTICE_SUCCESS_CHARS = 8;
+type LanguageControl = {
+  confirm: (languageBcp47: string) => Promise<boolean>;
+  error: string;
+  localLanguages: string[];
+  pending: boolean;
+  status: PrimaryLanguageStatus | null;
+};
 
-type Phase = "language" | "practice" | "celebrate";
-
-// Full-window first-run, one surface with three phases: choose the language,
-// perform the hotkey once into a practice field the takeover owns, then a
-// success screen whose last words push the user into a real app. Dictation
-// types into the focused field, so the practice box IS the proof — no extra
-// audio plumbing, and a silent mic cannot fail invisibly because nothing
-// arrives in the box.
-//
-// It renders only in the Tauri shell: the browser preview cannot confirm a
-// language or receive dictation, and a takeover that cannot complete would
-// just wall off the app.
+// Setup and Settings share the same native language projection. Saving a
+// preference confirms a choice; it does not verify a microphone or inference.
 export function FirstRunTakeover({
-  hotkey,
-  languageOptions,
+  fallbackModel,
+  language,
+  onOpenSettings,
+  onOpenTranscribe,
+  onRetry,
+  serverSnapshot,
 }: {
-  hotkey: string;
-  languageOptions: RecordingImportLanguageOption[];
+  fallbackModel: FallbackModelView | null;
+  language: LanguageControl;
+  onOpenSettings: () => void;
+  onOpenTranscribe: () => void;
+  onRetry: () => void;
+  serverSnapshot: ServerConnectionSnapshot;
 }) {
-  const primary = usePrimaryLanguage();
-  const [localLanguages, setLocalLanguages] = useState<string[]>([]);
-  const [choice, setChoice] = useState("");
-  const [phase, setPhase] = useState<Phase>("language");
+  const [phase, setPhase] = useState<"language" | "routes">("language");
   const [dismissed, setDismissed] = useState(false);
-  const [practiceText, setPracticeText] = useState("");
+  const [choice, setChoice] = useState("");
+  const heading = useRef<HTMLHeadingElement>(null);
+  const languages = useMemo(() => {
+    const merged = [...new Set([
+      ...language.localLanguages,
+      ...fixedBatchLanguageOptions(language.status?.capabilityCatalog).map((option) => option.languageBcp47),
+    ])];
+    const suggestion = language.status?.suggestedLanguageBcp47;
+    return suggestion && merged.includes(suggestion)
+      ? [suggestion, ...merged.filter((tag) => tag !== suggestion)]
+      : merged;
+  }, [language.localLanguages, language.status]);
+  const preferred = choice || language.status?.suggestedLanguageBcp47 || "";
+  const selectedLanguage = languages.includes(preferred) ? preferred : "";
+  const incompatiblePreference = language.status?.preferenceIssue === "incompatibleSchema";
+  const open = isTauri() && !dismissed && (phase === "routes"
+    || language.status?.requiresConfirmation === true
+    || (!language.status && Boolean(language.error)));
 
   useEffect(() => {
-    if (!isTauri()) return;
-    void primary.load().catch(() => undefined);
-    // A harness that answers nothing must not crash the surface.
-    localDictationLanguages()
-      .then((languages) => setLocalLanguages(Array.isArray(languages) ? languages : []))
-      .catch(() => undefined);
-    // Load once on mount; the confirm result updates status directly.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (open) heading.current?.focus();
+  }, [open, phase]);
 
-  // The server catalog's fixed-batch locales when one exists, the local
-  // dictation catalog always; deduplicated, suggestion first.
-  const firstRunLanguages = useMemo(() => {
-    const fromServer = (primary.status?.capabilityCatalog ? languageOptions : [])
-      .flatMap((option) => (option.mode === "fixed" ? [option.languageBcp47] : []));
-    const merged = [...new Set([...localLanguages, ...fromServer])];
-    const suggested = primary.status?.suggestedLanguageBcp47;
-    if (suggested && merged.includes(suggested)) {
-      return [suggested, ...merged.filter((language) => language !== suggested)];
-    }
-    return merged;
-  }, [languageOptions, localLanguages, primary.status]);
-
-  const suggestion = primary.status?.suggestedLanguageBcp47 ?? "";
-  const selectedLanguage = choice || suggestion;
-
-  // Confirmation is durable after phase one, so the takeover keeps itself
-  // alive across the remaining phases and only the initial mount decides
-  // whether a first run is happening at all.
-  const [active] = useState(() => isTauri());
-  const needsFirstRun = primary.status?.requiresConfirmation !== false;
-  if (!active || dismissed) return null;
-  if (phase === "language" && (primary.status === undefined || !needsFirstRun)) return null;
+  function finish(action?: () => void) {
+    setDismissed(true);
+    action?.();
+  }
 
   return (
-    <div
-      aria-label="Welcome to Yap"
-      aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-background"
-      data-testid="first-run-welcome"
-      role="dialog"
-    >
-      <div className="mx-auto flex w-full max-w-xl flex-col gap-8 px-8 py-12 text-center">
-        {phase === "language" ? (
-          <>
-            <div>
-              <h1 className="text-3xl font-semibold tracking-tight">Welcome to Yap</h1>
-              <p className="mt-3 text-base leading-7 text-muted-foreground">
-                Yap types what you say — on this machine, into any app.
-              </p>
-            </div>
-            <div className="flex flex-col items-center gap-4">
-              <p className="text-sm font-medium">What language do you speak?</p>
-              <Select
-                disabled={!firstRunLanguages.length || primary.pending}
-                onValueChange={setChoice}
-                value={selectedLanguage || undefined}
-              >
-                <SelectTrigger
-                  aria-label="Dictation language"
-                  className="min-w-[240px]"
-                  data-testid="first-run-language"
+    <Dialog onOpenChange={(next) => { if (!next) finish(); }} open={open}>
+      <DialogContent
+        className="inset-0 top-0 left-0 flex h-full w-full max-w-none translate-x-0 translate-y-0 items-center justify-center overflow-y-auto rounded-none border-0 shadow-none sm:max-w-none"
+        data-testid="first-run-welcome"
+        onOpenAutoFocus={(event) => {
+          event.preventDefault();
+          heading.current?.focus();
+        }}
+        showCloseButton={false}
+      >
+        <div className="mx-auto flex w-full max-w-xl flex-col gap-6 px-4 py-8">
+          <header>
+            <DialogTitle asChild>
+              <h1 className="text-3xl font-semibold tracking-tight outline-none" ref={heading} tabIndex={-1}>
+                {phase === "language" ? "Welcome to Yap" : "Choose how to transcribe"}
+              </h1>
+            </DialogTitle>
+            <DialogDescription className="mt-3 text-base leading-7">
+              {phase === "language"
+                ? "Turn recordings into readable transcripts on your organization's server, or use local dictation with an installed model."
+                : `${formatLanguageTag(language.status?.confirmedLanguageBcp47 ?? selectedLanguage)} is saved as your primary language. You can change it in Settings.`}
+            </DialogDescription>
+          </header>
+          {phase === "language" ? (
+            <>
+              <div className="grid gap-3">
+                <label className="text-sm font-medium" htmlFor="first-run-language">Primary language</label>
+                <Select
+                  disabled={!languages.length || language.pending || incompatiblePreference}
+                  onValueChange={setChoice}
+                  value={selectedLanguage}
                 >
-                  <SelectValue placeholder="Choose language" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {firstRunLanguages.map((language) => (
-                      <SelectItem key={language} value={language}>
-                        {formatLanguageTag(language)}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-              <Button
-                disabled={!selectedLanguage || primary.pending}
-                onClick={() => {
-                  void primary
-                    .confirm(selectedLanguage)
-                    .then(() => setPhase("practice"))
-                    .catch(() => undefined);
-                }}
-                size="lg"
-                type="button"
-              >
-                {primary.pending ? "Saving…" : "Confirm"}
-              </Button>
-              {primary.error ? (
-                <p className="max-w-md text-xs leading-5 text-destructive" role="alert">
-                  {primary.error}
+                  <SelectTrigger aria-label="Primary language" data-testid="first-run-language" id="first-run-language">
+                    <SelectValue placeholder="Choose language" />
+                  </SelectTrigger>
+                  <SelectContent><SelectGroup>
+                    {languages.map((tag) => <SelectItem key={tag} value={tag}>{formatLanguageTag(tag)}</SelectItem>)}
+                  </SelectGroup></SelectContent>
+                </Select>
+                <p className="text-sm leading-6 text-muted-foreground">
+                  {selectedLanguage
+                    ? "Nothing is saved until you confirm this language."
+                    : "Choose a supported primary language. Nothing is saved until you confirm."}
                 </p>
-              ) : null}
-            </div>
-            <p className="text-xs leading-5 text-muted-foreground">
-              No account. No downloads. Everything stays on this computer.
-            </p>
-          </>
-        ) : phase === "practice" ? (
-          <>
-            <div>
-              <h1 className="text-3xl font-semibold tracking-tight">Try it right now</h1>
-              <p className="mt-3 text-base leading-7 text-muted-foreground">
-                Click into the box, hold{" "}
-                <kbd className="rounded border px-1.5 py-0.5 text-sm font-semibold">{hotkey}</kbd>,
-                and say:
+                {incompatiblePreference ? (
+                  <p className="text-sm leading-6 text-destructive" role="alert">
+                    Your language setting was saved by a newer version of Yap. Update the app before changing it.
+                  </p>
+                ) : language.error ? (
+                  <div className="grid gap-2" role="alert">
+                    <p className="text-sm text-destructive">{language.error}</p>
+                    {!language.status ? <Button onClick={onRetry} type="button" variant="outline">Retry setup check</Button> : null}
+                  </div>
+                ) : !languages.length ? (
+                  <p className="text-sm text-muted-foreground" role="status">
+                    {language.pending ? "Checking available languages…" : "Languages are unavailable. You can continue and retry in Settings."}
+                  </p>
+                ) : null}
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  disabled={!selectedLanguage || !language.status || language.pending || incompatiblePreference}
+                  onClick={() => void language.confirm(selectedLanguage).then((saved) => {
+                    if (saved) setPhase("routes");
+                  })}
+                  type="button"
+                >
+                  {language.pending ? "Saving…" : "Confirm language"}
+                </Button>
+                <Button onClick={() => finish()} type="button" variant="outline">Skip for now</Button>
+              </div>
+              <p className="text-sm leading-6 text-muted-foreground">
+                No model is downloaded and no server is connected by this step. Local dictation stays on this device; server jobs use the organization server you configure.
               </p>
-              <p className="mt-3 text-lg font-medium">“{PRACTICE_SCRIPT}”</p>
-            </div>
-            <textarea
-              aria-label="Practice dictation"
-              autoFocus
-              className="min-h-[96px] w-full resize-none rounded-lg border border-input bg-[var(--surface-transcript)] px-4 py-3 text-base text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
-              data-testid="first-run-practice"
-              onChange={(event) => {
-                const text = event.target.value;
-                setPracticeText(text);
-                if (text.trim().length >= PRACTICE_SUCCESS_CHARS) setPhase("celebrate");
-              }}
-              placeholder="Your words will appear here"
-              value={practiceText}
-            />
-            <div className="flex flex-col items-center gap-2">
-              <p className="text-xs leading-5 text-muted-foreground">
-                Nothing appearing? Your microphone may be muted or in use — you can fix it later
-                under Settings.
-              </p>
-              <Button
-                className="text-muted-foreground"
-                onClick={() => setDismissed(true)}
-                size="sm"
-                type="button"
-                variant="link"
-              >
-                Skip for now
-              </Button>
-            </div>
-          </>
-        ) : (
-          <>
-            <div>
-              <h1 className="text-3xl font-semibold tracking-tight">That's it — you're dictating.</h1>
-              <p className="mt-3 text-base leading-7 text-muted-foreground">
-                Transcribed on this machine. Nothing left this computer.
-              </p>
-            </div>
-            {practiceText.trim() ? (
-              <blockquote className="rounded-xl bg-[var(--primary-soft)] px-5 py-4 text-base text-primary">
-                {practiceText.trim()}
-              </blockquote>
-            ) : null}
-            <p className="text-base leading-7">
-              Now click into any text box — Notepad, email, Slack — and do it again. The island at
-              the top of your screen is always ready for{" "}
-              <kbd className="rounded border px-1.5 py-0.5 text-sm font-semibold">{hotkey}</kbd>.
-            </p>
-            <div>
-              <Button onClick={() => setDismissed(true)} size="lg" type="button">
-                Start using Yap
-              </Button>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
+            </>
+          ) : (
+            <>
+              <section className="grid gap-2 rounded-xl border p-4" aria-label="Recording transcription">
+                <h2 className="font-semibold">Transcribe recordings</h2>
+                <p className="text-sm text-muted-foreground">
+                  {serverSnapshot.state === "ready" && serverSnapshot.capabilities.batchJobs
+                    ? "Your organization server is available. Choose a recording language and add files in Transcribe."
+                    : "Configure an organization server in Settings → System. Imported recordings wait for their server route; they do not switch to local dictation."}
+                </p>
+                <p className="text-sm">Server: {serverConnectionLabel(serverSnapshot.state)}</p>
+                <Button onClick={() => finish(onOpenTranscribe)} type="button" variant="outline">Open Transcribe</Button>
+              </section>
+              <section className="grid gap-2 rounded-xl border p-4" aria-label="Local dictation">
+                <h2 className="font-semibold">Local dictation</h2>
+                <p className="text-sm">
+                  {fallbackModel ? fallbackStatusText(fallbackModel, fallbackModel.status !== "disabled") : "Model status unavailable"}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {fallbackModel?.status === "ready"
+                    ? "Set your microphone and shortcut in Settings, then try your first dictation."
+                    : "Install or repair the local model in Settings → System when you are ready. You can browse transcripts and configure the app first."}
+                </p>
+              </section>
+              <div className="flex flex-wrap gap-3">
+                <Button onClick={() => finish(onOpenSettings)} type="button">Open Settings</Button>
+                <Button onClick={() => finish()} type="button" variant="outline">Explore Yap</Button>
+              </div>
+            </>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

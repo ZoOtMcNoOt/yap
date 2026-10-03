@@ -29,6 +29,8 @@ class HealthRoutingTests(HealthServerTestCase):
                     "analystAnswers": False,
                     "coordinatorBundles": False,
                     "auditorReports": False,
+                    "knowledgeConnections": False,
+                    "personalTerminology": False,
                 },
             },
         )

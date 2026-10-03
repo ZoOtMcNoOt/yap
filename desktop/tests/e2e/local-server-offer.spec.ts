@@ -73,9 +73,9 @@ test("an optional server refresh cannot hold local recovery busy", async ({ page
   });
   await page.goto("/");
 
-  await expect(page.getByRole("button", { name: "Ready", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Local ready", exact: true })).toBeVisible();
   await expect(page.getByText("Setup check failed", { exact: true })).toHaveCount(0);
-  await expect(page.getByTestId("server-route-status")).toContainText("On this device");
+  await expect(page.getByTestId("server-route-status")).toContainText("Server not configured");
 
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.getByRole("button", { name: "System", exact: true }).click();
@@ -92,6 +92,8 @@ test("a missing local model remains directly setup-able without server or auth",
   });
   await page.goto("/");
 
+  await expect(page.getByRole("dialog", { name: "Settings" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
   const settings = page.getByRole("dialog", { name: "Settings" });
   await expect(settings).toBeVisible();
   const localRow = settings.getByText("On-device dictation", { exact: true }).locator("..");
@@ -110,7 +112,7 @@ test("on-device setup stays primary and server or SSO configuration stays option
 
   await expect(page.getByText("On-device dictation", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Server URL")).toHaveCount(0);
-  await page.getByRole("button", { name: "Advanced", exact: true }).click();
+  await page.getByRole("button", { name: "Organization server", exact: true }).click();
   await expect(page.getByLabel("Server URL")).toBeVisible();
   await expect(page.getByText("Local dictation does not require a server or account."))
     .toBeVisible();

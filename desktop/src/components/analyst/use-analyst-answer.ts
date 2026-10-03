@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useConnectionAuthority } from "@/hooks/use-connection-authority";
+
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   analystAnswerIsActive,
@@ -55,10 +57,11 @@ function validQuestion(value: string) {
     && [...question].some((character) => /[\p{L}\p{N}]/u.test(character));
 }
 
-export function useAnalystAnswer({ available }: { available: boolean }) {
+export function useAnalystAnswer({ available, authorityRevision }: { available: boolean; authorityRevision: string }) {
   const [question, setQuestion] = useState("");
   const [view, setView] = useState<AnalystAnswerJobView>();
   const [starting, setStarting] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState("");
   const activeRequestRef = useRef<string | undefined>(undefined);
   const epochRef = useRef(0);
@@ -66,28 +69,31 @@ export function useAnalystAnswer({ available }: { available: boolean }) {
   const cancelPendingRef = useRef(false);
   const lastSubmittedQuestionRef = useRef("");
 
-  const abandonActiveRequest = useCallback((showError: boolean) => {
+  const abandonActiveRequest = useCallback(() => {
     const requestId = activeRequestRef.current;
     activeRequestRef.current = undefined;
-    if (!requestId) return;
-    void cancelAnalystAnswer(requestId).catch((cause) => {
-      if (showError) setError(cause instanceof Error ? cause.message : String(cause));
-    });
+    if (!requestId || cancelPendingRef.current) return;
+    void cancelAnalystAnswer(requestId).catch(() => undefined);
   }, []);
 
   useEffect(() => () => {
     epochRef.current += 1;
-    abandonActiveRequest(false);
+    abandonActiveRequest();
   }, [abandonActiveRequest]);
 
-  useEffect(() => {
-    if (available) return;
+  const invalidate = useCallback((changed: boolean) => {
     epochRef.current += 1;
-    abandonActiveRequest(false);
+    abandonActiveRequest();
+    if (changed) {
+      setQuestion("");
+      lastSubmittedQuestionRef.current = "";
+    }
     setView(undefined);
-    setStarting(false);
     setError("");
-  }, [abandonActiveRequest, available]);
+  }, [abandonActiveRequest]);
+  const ownsDraft = useConnectionAuthority(available, authorityRevision, invalidate);
+  const current = available && ownsDraft;
+  const currentView = current ? view : undefined;
 
   const pollUntilTerminal = useCallback(async (requestId: string, epoch: number) => {
     while (activeRequestRef.current === requestId) {
@@ -117,8 +123,9 @@ export function useAnalystAnswer({ available }: { available: boolean }) {
   const submit = useCallback(async (requestedQuestion: string) => {
     const normalized = requestedQuestion.trim();
     if (
-      !available
+      !current
       || !validQuestion(normalized)
+      || cancelPendingRef.current
       || startPendingRef.current
       || activeRequestRef.current
     ) return;
@@ -129,7 +136,7 @@ export function useAnalystAnswer({ available }: { available: boolean }) {
     setError("");
     lastSubmittedQuestionRef.current = normalized;
     try {
-      const next = await startAnalystAnswer(normalized, maximumResults, null);
+      const next = await startAnalystAnswer(normalized, maximumResults, null, authorityRevision);
       if (epochRef.current !== epoch) {
         if (analystAnswerIsActive(next.status)) {
           void cancelAnalystAnswer(next.requestId).catch(() => undefined);
@@ -149,9 +156,9 @@ export function useAnalystAnswer({ available }: { available: boolean }) {
       }
     } finally {
       startPendingRef.current = false;
-      if (epochRef.current === epoch) setStarting(false);
+      setStarting(false);
     }
-  }, [available, pollUntilTerminal]);
+  }, [authorityRevision, current, pollUntilTerminal]);
 
   const run = useCallback(() => submit(question), [question, submit]);
   const retry = useCallback(
@@ -164,6 +171,7 @@ export function useAnalystAnswer({ available }: { available: boolean }) {
     if (!requestId || cancelPendingRef.current) return;
     const epoch = epochRef.current;
     cancelPendingRef.current = true;
+    setCancelling(true);
     try {
       const next = await cancelAnalystAnswer(requestId);
       if (epochRef.current !== epoch) return;
@@ -175,26 +183,26 @@ export function useAnalystAnswer({ available }: { available: boolean }) {
       }
     } finally {
       cancelPendingRef.current = false;
+      setCancelling(false);
     }
   }, []);
 
-  const active = starting || (view ? analystAnswerIsActive(view.status) : false);
-  const statusLine = useMemo(
-    () => analystStatusLine({ available, starting, view }),
-    [available, starting, view],
-  );
+  const active = starting || cancelling || (currentView ? analystAnswerIsActive(currentView.status) : false);
+  const statusLine = cancelling
+    ? "Waiting for cancellation acknowledgement…"
+    : analystStatusLine({ available, starting, view: currentView });
 
   return {
     active,
-    answer: view?.status === "complete" ? view.citedAnswer ?? undefined : undefined,
-    canRun: available && validQuestion(question) && !active,
+    answer: currentView?.status === "complete" ? currentView.citedAnswer ?? undefined : undefined,
+    canRun: current && validQuestion(question) && !active,
     cancel,
-    error,
-    question,
+    error: current ? error : "",
+    question: ownsDraft ? question : "",
     retry,
     run,
     setQuestion,
     statusLine,
-    view,
+    view: currentView,
   };
 }

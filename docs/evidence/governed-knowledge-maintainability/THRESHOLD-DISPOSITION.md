@@ -85,7 +85,7 @@ Each line contains up to two independent entries in the form
   422 CURRENT-DOC          docs/adr/0031-eight-agent-voice-os-roster.md ||  1357 CURRENT-DOC          docs/architecture/boundaries/EXECUTABLE-OWNERSHIP.md
  1394 CURRENT-DOC          docs/architecture/CURRENT-ARCHITECTURE.md ||  1475 CURRENT-DOC          docs/CURRENT-STATUS.md
   391 CURRENT-DOC          docs/evidence/governed-knowledge-maintainability/COVERAGE.md ||  1050 CURRENT-DOC          docs/evidence/governed-knowledge-maintainability/VERIFICATION.md
- 1044 CURRENT-DOC          docs/plans/active/2026-07-17-voiceos-decision-evidence-queue.md ||   627 HISTORICAL-DOC       docs/plans/archived/2026-07-05-client-state-machine-implementation.md
+ 1044 CURRENT-DOC          docs/plans/archived/2026-07-17-voiceos-decision-evidence-queue.md ||   627 HISTORICAL-DOC       docs/plans/archived/2026-07-05-client-state-machine-implementation.md
   561 HISTORICAL-DOC       docs/plans/archived/2026-07-08-local-audio-preprocessing-stack.md ||   525 HISTORICAL-DOC       docs/plans/archived/2026-07-09-client-hardening-storage.md
   988 HISTORICAL-DOC       docs/plans/archived/2026-07-10-client-audio-foundation.md ||   450 HISTORICAL-DOC       docs/plans/completed/2026-07-08-model-download-ux.md
   855 HISTORICAL-DOC       docs/plans/completed/2026-07-10-server-contract-durable-connector.md ||  1953 HISTORICAL-DOC       docs/plans/completed/2026-07-16-audio-preprocessing-and-language-routing.md

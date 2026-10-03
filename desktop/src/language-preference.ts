@@ -126,9 +126,8 @@ export function confirmPrimaryLanguage(
   languageBcp47: string,
   catalogRevision: string | null,
 ): Promise<PrimaryLanguageStatus> {
-  // No catalog revision means no server catalog exists: the command validates
-  // against the local dictation catalog instead — the same list live routing
-  // enforces at start.
+  // A null revision requests native local-catalog validation. A server choice
+  // names its current catalog; either path confirms only a preference.
   return invoke<PrimaryLanguageStatus>("confirm_primary_language", {
     languageBcp47,
     catalogRevision,

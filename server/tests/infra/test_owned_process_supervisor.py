@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+from dataclasses import replace
 import importlib.util
 from pathlib import Path
 import shlex
@@ -38,6 +39,50 @@ def load_supervisor_module():
 
 
 class OwnedProcessSupervisorTests(unittest.TestCase):
+    def test_child_inventory_uses_parent_identity_and_tolerates_exited_processes(self) -> None:
+        module = load_supervisor_module()
+        parent = module.ProcessIdentity(
+            pid=40, parent_pid=1, process_group_id=40, session_id=40,
+            state="S", thread_count=1, start_ticks=100, user_id=1000,
+        )
+        identities = {
+            40: parent,
+            42: replace(parent, pid=42, parent_pid=40),
+            41: replace(parent, pid=41, parent_pid=40, state="Z"),
+            43: replace(parent, pid=43, parent_pid=1),
+        }
+
+        def read_identity(pid):
+            if pid not in identities:
+                raise ProcessLookupError(pid)
+            return identities[pid]
+
+        with (
+            mock.patch.object(module.Path, "iterdir", return_value=iter(
+                Path(f"/proc/{name}") for name in ("self", "40", "42", "41", "43", "44")
+            )),
+            mock.patch.object(module, "read_process_identity", side_effect=read_identity),
+        ):
+            self.assertEqual(module.read_direct_children(40), (41, 42))
+
+        with (
+            mock.patch.object(module.Path, "iterdir", return_value=iter(())),
+            mock.patch.object(module, "read_process_identity", side_effect=(
+                parent, replace(parent, start_ticks=101),
+            )),
+        ):
+            with self.assertRaises(ProcessLookupError):
+                module.read_direct_children(40)
+
+    def test_child_inventory_fails_closed_when_procfs_is_unreadable(self) -> None:
+        module = load_supervisor_module()
+        with (
+            mock.patch.object(module, "read_process_identity"),
+            mock.patch.object(module.Path, "iterdir", side_effect=PermissionError),
+        ):
+            with self.assertRaises(PermissionError):
+                module.read_direct_children(40)
+
     def test_linux_bash_discovery_allows_cold_wsl_startup(self) -> None:
         completed = subprocess.CompletedProcess(
             args=["bash"],

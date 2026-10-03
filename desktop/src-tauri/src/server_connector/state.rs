@@ -23,6 +23,8 @@ pub struct ServerCapabilities {
     pub analyst_answers: bool,
     pub coordinator_bundles: bool,
     pub auditor_reports: bool,
+    pub knowledge_connections: bool,
+    pub personal_terminology: bool,
     pub student_questions: bool,
     pub archivist_ingestions: bool,
     pub curator_proposals: bool,
@@ -31,6 +33,7 @@ pub struct ServerCapabilities {
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ServerConnectionSnapshot {
+    pub authority_revision: String,
     pub state: ServerConnectorState,
     pub checked_at_ms: Option<u64>,
     pub retry_at_ms: Option<u64>,
@@ -42,6 +45,7 @@ pub struct ServerConnectionSnapshot {
 impl Default for ServerConnectionSnapshot {
     fn default() -> Self {
         Self {
+            authority_revision: "0".to_owned(),
             state: ServerConnectorState::NotSet,
             checked_at_ms: None,
             retry_at_ms: None,
@@ -125,6 +129,7 @@ impl ConnectorInner {
         self.settings = settings;
         self.base_url = None;
         self.snapshot = ServerConnectionSnapshot {
+            authority_revision: generation.to_string(),
             state: match settings {
                 SettingsDisposition::NotSet | SettingsDisposition::Enabled => {
                     ServerConnectorState::NotSet
@@ -411,6 +416,48 @@ mod tests {
     }
 
     #[test]
+    fn native_revision_is_exact_and_stable_across_health_rechecks() {
+        let mut inner = ConnectorInner::default();
+        assert_eq!(inner.snapshot().authority_revision, "0");
+        let generation = u64::MAX - 1;
+        enabled(&mut inner, generation);
+        for time in [10, 20] {
+            assert!(inner.begin_health_request(generation, time));
+            assert!(inner
+                .finish_health_request(
+                    generation,
+                    HealthCheckResult::Ready {
+                        api_version: "1".to_owned(),
+                        capabilities: ServerCapabilities::default(),
+                    },
+                    time + 1,
+                    zero_jitter
+                )
+                .is_some());
+            assert_eq!(inner.snapshot().authority_revision, generation.to_string());
+        }
+        assert!(inner.begin_health_request(generation, 30));
+        inner.apply_settings(u64::MAX, SettingsDisposition::Disabled);
+        assert_eq!(inner.snapshot().authority_revision, u64::MAX.to_string());
+        let mut encoded = serde_json::to_value(inner.snapshot()).unwrap();
+        assert_eq!(encoded["authorityRevision"], u64::MAX.to_string());
+        encoded.as_object_mut().unwrap().remove("authorityRevision");
+        assert!(serde_json::from_value::<super::ServerConnectionSnapshot>(encoded).is_err());
+        assert!(inner
+            .finish_health_request(
+                generation,
+                HealthCheckResult::Ready {
+                    api_version: "1".to_owned(),
+                    capabilities: ServerCapabilities::default(),
+                },
+                31,
+                zero_jitter
+            )
+            .is_none());
+        assert_eq!(inner.snapshot().authority_revision, u64::MAX.to_string());
+    }
+
+    #[test]
     fn only_the_newest_generation_can_complete_a_request() {
         let mut inner = ConnectorInner::default();
         enabled(&mut inner, 1);
@@ -430,6 +477,8 @@ mod tests {
                     analyst_answers: true,
                     coordinator_bundles: true,
                     auditor_reports: true,
+                    knowledge_connections: false,
+                    personal_terminology: false,
                     student_questions: true,
                     archivist_ingestions: true,
                     curator_proposals: true,
@@ -743,6 +792,8 @@ mod tests {
                         analyst_answers: true,
                         coordinator_bundles: true,
                         auditor_reports: true,
+                        knowledge_connections: false,
+                        personal_terminology: false,
                         student_questions: true,
                         archivist_ingestions: true,
                         curator_proposals: true,
@@ -766,6 +817,8 @@ mod tests {
                 analyst_answers: true,
                 coordinator_bundles: true,
                 auditor_reports: true,
+                knowledge_connections: false,
+                personal_terminology: false,
                 student_questions: true,
                 archivist_ingestions: true,
                 curator_proposals: true,

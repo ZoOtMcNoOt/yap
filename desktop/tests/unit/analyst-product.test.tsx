@@ -41,7 +41,7 @@ describe("Analyst product contract", () => {
 
   it("routes questions through the native owner without renderer credentials", async () => {
     const requestId = completeView.requestId;
-    await startAnalystAnswer("What was approved?", 3, null);
+    await startAnalystAnswer("What was approved?", 3, null, "1");
     await analystAnswerStatus(requestId);
     await cancelAnalystAnswer(requestId);
 
@@ -50,6 +50,7 @@ describe("Analyst product contract", () => {
         question: "What was approved?",
         maximumResults: 3,
         expectedGenerationSha256: null,
+        authorityRevision: "1",
       }],
       ["analyst_answer_status", { requestId }],
       ["cancel_analyst_answer", { requestId }],
