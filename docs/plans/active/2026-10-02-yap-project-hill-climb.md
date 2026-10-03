@@ -175,7 +175,7 @@ knowledge stays unchanged and no model runs.
 - [x] Keep discard idempotent, preserve provenance/sources/graph, release unresolved capacity and atomically commit the tombstone with its content-free success audit; failures cannot report a false success or resurrect a proposal.
 - [x] Bound service admission and SQL work; bind native dispatch/results to the exact current connection/sign-in and main window, with strict typed receipts and no caller-supplied identity.
 - [x] Add accessible explicit confirmation and a durable discarded result in Review proposals, preserving navigation, local controls and narrow layouts.
-- [x] Support retry after uncertain delivery without claiming a cancelled write; account changes hide old evidence and cannot apply a delayed result to the new account.
+- [x] Support retry after uncertain delivery without claiming a cancelled write; retain the retry reference across Curator handoffs during or after the write. Account changes hide old evidence and cannot apply a delayed result to the new account.
 - [ ] Verify real Postgres/API, native and browser journeys, review/push and integrate through all exact-head checks; continue human publication/rebuilding and the full queue.
 
 
@@ -221,5 +221,7 @@ record the real SQL, native and browser checks and target limits.
 | 2026-10-03 | Owner-controlled discard completes the model-free server/native/UI path. Atomic tombstones/audits, retained provenance, 64-proposal capacity release, uncertain retries and account isolation pass actual PostgreSQL checks. Linux native 1,364 + 27, frontend 393, browser 189 + one Windows-only skip, build and contracts pass; confirmation/confirmed screens retained. | Push and integrate through all exact-head hosted checks, then retire the iteration branch and continue human publication/rebuilding and the full queue. |
 
 | 2026-10-03 | PR review exposed a new Curator handoff cancelling a pending discard and replacing its retry reference. Two browser cases fail on the original head and pass with retained writes and an explicit queued handoff; all 52 related browser journeys, both narrow handoff cases, frontend units/build and documentation contracts pass. | Renew all exact-head checks for the correction before merging PR #202; run 538 qualifies only the earlier head. |
+
+| 2026-10-03 | Final review reproduced a post-receipt handoff replacing an uncertain discard reference. Handoffs now wait until discard retry resolves uncertainty; proposal reads cannot reset it. All 53 related browser journeys, frontend units/build and seven documentation/population contracts pass. | Push the correction and renew all six checks on the final PR #202 head before integration. |
 
 Attribute project work to Grant McNatt. Preserve third-party attribution/provenance; do not add AI branding or coauthor trailers.

@@ -120,7 +120,8 @@ reference. It offers no write-cancellation claim while discard is pending. Lost
 confirmation may mean the server already committed; retrying the same reference
 confirms its disposition. Changing account or server closes the dialog, hides old
 evidence and ignores delayed results. A Curator handoff arriving during discard
-waits without cancelling the write or replacing its reference. After confirmation,
-an explicit action opens the queued proposal; uncertain delivery retains the old
-reference until its retry confirms disposition. Local controls and source navigation remain
+or after uncertain delivery waits without cancelling the write or replacing its
+reference. After confirmation, an explicit action opens the queued proposal.
+Opening the old proposal is disabled while its discard remains unconfirmed;
+only the discard retry resolves that uncertainty. Local controls and source navigation remain
 available. Canonical publication and rebuilding still use a separate review process.

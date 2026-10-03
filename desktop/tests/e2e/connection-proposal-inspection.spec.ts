@@ -461,3 +461,37 @@ for (const delivery of ["confirmed", "lost"])
       );
     expect(calls.some((c: any) => c.command === "cancel_knowledge_connections")).toBe(false);
   });
+
+test("a handoff after lost confirmation retains the discard reference until retry succeeds", async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 900 });
+  await installProposalInspectionBridge(page);
+  await enter(page);
+  const oldReference = "f".repeat(64);
+  await page.getByLabel("Connection proposal reference").fill(oldReference);
+  await control(page, "mode", "lostDiscardReceipt");
+  await confirmDiscard(page);
+  await expect(page.getByText(/It may already have completed/)).toBeVisible();
+  await createConnection(page);
+  await expect(page.getByLabel("Connection proposal reference")).toHaveValue(oldReference);
+  const next = page.getByRole("button", { name: "Open new saved connection" });
+  await expect(next).toBeDisabled();
+  const readAgain = page.getByRole("button", { name: "Try again: Open connection proposal" });
+  await expect(readAgain).toBeDisabled();
+  await page.getByLabel("Connection proposal reference").focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByText(/It may already have completed/)).toBeVisible();
+  await confirmDiscard(page);
+  await expect(page.getByText(/Proposal discarded\. Its history/)).toBeVisible();
+  await expect(next).toBeEnabled();
+  await next.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByLabel("Connection proposal reference")).toHaveValue(proposalReference);
+  await expect(page.getByRole("article", { name: "Saved connection proposal" })).toBeVisible();
+  const calls = await page.evaluate(() => (globalThis as any).__proposalInspection.calls);
+  expect(calls.filter((c: any) => c.args.request?.action === "discard")
+    .map((c: any) => c.args.request.proposalId)).toEqual([oldReference, oldReference]);
+  expect(calls.filter((c: any) => c.args.request?.action === "proposal")
+    .map((c: any) => c.args.request.proposalId)).toEqual([proposalReference]);
+  expect(calls.some((c: any) => c.command === "cancel_knowledge_connections")).toBe(false);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+});
