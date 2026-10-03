@@ -32,17 +32,32 @@ function specFiles() {
 // but losing them must fail. Raise a floor only alongside the tests that earn
 // it.
 const MINIMUM_TESTS_PER_SPEC = Object.freeze({
+  "accepted-correction-export.spec.ts": 7,
+  "accepted-correction-recovery.spec.ts": 8,
   "app-history.spec.ts": 2,
   "app-language-accessibility.spec.ts": 3,
   "app-queue.spec.ts": 1,
   "app-shortcuts.spec.ts": 1,
   "app.spec.ts": 6,
   "archivist-ingestion.spec.ts": 1,
+  "connection-proposal-inspection.spec.ts": 8,
+  "connection-proposals.spec.ts": 7,
+  "connections.spec.ts": 9,
+  "correction-journey.spec.ts": 2,
+  "design-refresh.spec.ts": 5,
+  "first-run.spec.ts": 7,
   "history-recoverable-actions.spec.ts": 1,
+  "knowledge-journey.spec.ts": 10,
   "live-overlay.spec.ts": 13,
-  "local-server-offer.spec.ts": 3,
+  "local-server-offer.spec.ts": 8,
+  "pending-admission.spec.ts": 1,
+  "personalization.spec.ts": 16,
   "playback-authorization.spec.ts": 4,
+  "recording-journey.spec.ts": 5,
   "transcript-correction.spec.ts": 1,
+  "transcript-export.spec.ts": 5,
+  "workspace-acceptance.spec.ts": 11,
+  "workspace-recovery.spec.ts": 2,
 });
 
 test("every e2e spec file is still discovered", () => {

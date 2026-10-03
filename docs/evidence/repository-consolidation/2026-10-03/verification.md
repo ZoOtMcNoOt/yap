@@ -11,7 +11,7 @@ Before deleting any branch, all 27 original tips were retained as parents of
 archive commit `18f590fc831a1c26bc744443cb475e81d9cf4241`. Its tree is the previous
 `main` tree; it archives history without installing old code or dependency
 proposals. The annotated tag
-[`archive/branch-consolidation-2026-10-03`](https://github.com/ZoOtMcNoOt/yap/releases/tag/archive/branch-consolidation-2026-10-03)
+[`archive/branch-consolidation-2026-10-03`](https://github.com/ZoOtMcNoOt/yap/commit/18f590fc831a1c26bc744443cb475e81d9cf4241)
 was pushed and its remote object/peeled commit verified before cleanup.
 
 Several old branches were integrated through squash/reworked successors rather
@@ -77,5 +77,9 @@ evidence remain reachable. The active project goal and AGENTS.md now require
 committing/pushing each verified iteration, using required checks before merge
 and deleting finished temporary branches.
 
-Development integration into current `main` is pending final local and hosted
-checks. The archive does not establish production/model/Windows qualification.
+Development and documentation commits `454b859f` and `3bced5f` are pushed in
+[PR #199](https://github.com/ZoOtMcNoOt/yap/pull/199). The
+[dependency refresh](../../dependency-refresh/2026-10-03/verification.md) replaces
+selected stale proposals with verified locked releases; the remaining archived
+proposals are not installed blindly. Integration into `main` is pending final
+local and required hosted checks. The archive does not establish production/model/Windows qualification.

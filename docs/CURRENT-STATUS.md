@@ -20,7 +20,7 @@ Installed and exercised: Node 24.19, pnpm 11.7.0, Python 3.12.14 with locked uv 
 | --- | --- |
 | Desktop frontend unit tests | 388 passed, 2 declared skips |
 | TypeScript/Vite production build | Passed |
-| Browser workflows with system Chromium | 183 passed, 1 declared Windows-only skip |
+| Browser workflows with system Chromium | 183 passed, 1 declared Windows-only skip; refreshed locked dependencies |
 | Linux Tauri native debug build, no installer bundle | Passed; platform-specific unused-code warnings remain |
 | Desktop Rust tests | 1,363 unit + 27 integration passed, 11 declared model/hardware ignores |
 | Orchestrator release build and strict Clippy | Passed |
@@ -38,7 +38,7 @@ Installed and exercised: Node 24.19, pnpm 11.7.0, Python 3.12.14 with locked uv 
 | Native rustfmt and diff whitespace | Passed |
 | Shipped dependency inventory/license checks | 3 passed |
 
-AAC import renews desktop native/frontend/browser and application checks; saved connection inspection retains the latest server and real-database/service receipts.
+The dependency refresh renews native/frontend/browser/application checks; saved connection inspection retains the latest server and real-database/service receipts.
 Nine new inspection database/HTTP
 cases join the prior 51 new-feature database exclusions, all verified against
 real local Postgres. The isolated suite retains 36 preexisting skips. The
@@ -68,11 +68,16 @@ actual inference and Windows playback remain separate release/target checks.
 Documentation entry points are refreshed; the complete prior server narrative
 remains in a linked archive. [Repository consolidation](evidence/repository-consolidation/2026-10-03/verification.md)
 preserves all 27 original branch tips under one archive tag, closes nine stale
-dependency PRs and removes 26 branches. Integration of development work into
-`main` is in progress. The current locked npm audit reports 11 high advisories;
-repair and exact-head checks precede merge. [Issue #92](https://github.com/ZoOtMcNoOt/yap/issues/92)
-remains open with Tao 0.35.3 until the dependency change and target verification
-are recorded.
+dependency PRs and removes 26 branches. Development work and documentation are
+pushed through [PR #199](https://github.com/ZoOtMcNoOt/yap/pull/199); its status
+records required exact-head integration checks.
+The [dependency refresh](evidence/dependency-refresh/2026-10-03/verification.md)
+removes the 11 high npm findings: one low finding remains, with no ignores. Rust
+has zero vulnerability-class findings and two reviewed warnings. The working
+lockfile uses official Tauri 2.12.1 / Tao 0.37.1, whose Windows source removes the
+global mutex implicated in [issue #92](https://github.com/ZoOtMcNoOt/yap/issues/92).
+That issue stays open until actual Windows RDP/session-lock checks pass. Exact-head
+hosted checks precede integration.
 
 
 [Saved connection inspection](evidence/connection-proposal-inspection/2026-10-03/verification.md)

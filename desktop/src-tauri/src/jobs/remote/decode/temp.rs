@@ -6,6 +6,9 @@ use std::{
 /// Holds the reserved plaintext handle until canonical preparation finishes.
 /// Reservation never replaces a path; cleanup never owns an occupied path.
 pub(super) struct DecodedFile {
+    // Unix cleanup needs the pathname; Windows cleanup belongs to the handle.
+    // Tests retain it to assert that owned files disappear after handle close.
+    #[cfg(any(unix, test))]
     pub(super) path: PathBuf,
     pub(super) file: File,
 }
@@ -38,7 +41,11 @@ impl DecodedFile {
             "private decoded-file ownership is unsupported on this platform",
         ));
         let file = options.open(&path)?;
-        Ok(Self { path, file })
+        Ok(Self {
+            #[cfg(any(unix, test))]
+            path,
+            file,
+        })
     }
 
     pub(super) fn create(root: &Path, job_id: &str) -> Result<Self, String> {
