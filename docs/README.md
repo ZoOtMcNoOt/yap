@@ -1,138 +1,63 @@
-# Yap Documentation
+# Yap documentation
 
-This index separates current truth, accepted decisions/contracts, active work,
-completed evidence, historical rationale, operations, security, and provenance.
+Find the guide you need without reading the whole project history.
 
-If documents disagree, use this priority:
+## Start here
 
-1. executable code, machine-readable contracts, and observed runtime behavior;
-2. accepted ADRs and current normative specs;
-3. [current status](CURRENT-STATUS.md) and
-   [current architecture](architecture/CURRENT-ARCHITECTURE.md);
-4. the [long-term Voice OS architecture frame](VOICE-OS-ARCHITECTURE.md) for
-   eventual-system intent, subject to accepted ADR precedence;
-5. active plans;
-6. completed implementation records;
-7. archived plans and historical designs.
+| I want to… | Read this |
+| --- | --- |
+| Understand what Yap does | [Project overview](../README.md) and [Product](../PRODUCT.md) |
+| See what works today | [Current status](CURRENT-STATUS.md) |
+| Set up a development environment | [Cloud development](runbooks/cloud-development.md), [desktop](../desktop/README.md) or [server](../server/README.md) |
+| Pick up the next piece of work | [The project goal and execution queue](plans/active/2026-10-02-yap-project-hill-climb.md) |
+| See the full feature direction | [Roadmap](roadmap/ROADMAP.md) and [Voice OS architecture](VOICE-OS-ARCHITECTURE.md) |
+| Understand how the pieces fit | [Current architecture](architecture/CURRENT-ARCHITECTURE.md) |
+| Review the interface and its references | [Design](../DESIGN.md), [screen review](evidence/design-refresh/2026-10-03/review.md) and [Mobbin references](evidence/ui-completion/2026-10-02-design-references.md) |
+| Check the evidence behind a claim | [Verification evidence](evidence/README.md) |
 
-Unchecked boxes in a completed/archived plan are execution history, not current
-backlog.
+There is **one active execution queue**. The roadmap keeps the feature inventory;
+the goal orders the work. Earlier plans and evidence remain available through the
+[plan index](plans/README.md) and [archive](archive/README.md).
 
-## Current truth
+## Build and verify
 
-- [Current status](CURRENT-STATUS.md)
-- [Current architecture](architecture/CURRENT-ARCHITECTURE.md)
-- [Executable ownership and trust boundaries](architecture/boundaries/EXECUTABLE-OWNERSHIP.md)
-- [Roadmap](roadmap/ROADMAP.md)
-- [Changelog](../CHANGELOG.md)
-- [Librarian product-vertical qualified-candidate verification](evidence/librarian-product-vertical/VERIFICATION.md)
-- [Archivist product-vertical qualified-candidate verification](evidence/archivist-product-vertical/VERIFICATION.md)
-- [Student product-vertical verification](evidence/student-product-vertical/VERIFICATION.md)
-- [Curator product-vertical verification](evidence/curator-product-vertical/VERIFICATION.md)
-- [Analyst product-vertical exact-head verification](evidence/analyst-product-vertical/VERIFICATION.md)
-- [Coordinator product-vertical exact-head verification](evidence/coordinator-product-vertical/VERIFICATION.md)
-- [Auditor product-vertical exact-head verification](evidence/auditor-product-vertical/VERIFICATION.md)
+- [Cloud setup and checks](runbooks/cloud-development.md) — frontend, browser,
+  native Rust, server and local database work without model hardware.
+- [Testing strategy](specs/testing-strategy.md) — which checks belong at each layer.
+- [UI acceptance](evidence/ui-completion/2026-10-02-acceptance.md) — supported
+  journeys and the remaining target-platform handoff.
+- [Dependency audit](runbooks/dependency-audit-policy.md) and
+  [third-party provenance](provenance/THIRD-PARTY.md) — origins, notices and review.
 
-## Long-term architecture frame
+## Understand the system
 
-- [Yap & Voice OS system architecture](VOICE-OS-ARCHITECTURE.md)
+- [Executable ownership](architecture/boundaries/EXECUTABLE-OWNERSHIP.md) explains
+  which component owns credentials, source files, jobs and results.
+- [Architecture decisions](adr/README.md) record choices and their reasons;
+  [implementation status](ADR-IMPLEMENTATION-STATUS.md) tracks what is wired up.
+- [Specifications](specs/) and [OpenAPI](../server/openapi/README.md) describe
+  interfaces. Each server feature still needs its explicitly configured runtime.
+- [Knowledge connections](specs/knowledge-connections.md) explains source-cited
+  relationships, proposals and human publication boundaries.
 
-This is the first-class readable frame for the eventual Voice OS system. It is
-not an archive and must not be silently redefined during cleanup. Executable
-behavior, accepted ADRs, current architecture/status, and the ordered roadmap
-still control implementation and completion claims.
+Code and observed behavior establish what executes. Specifications and accepted
+decisions describe requirements. Current status and evidence distinguish
+development checks from model, Windows and enterprise qualification.
 
-## Decisions and normative contracts
-
-- [ADR index](adr/README.md)
-- [ADR implementation status](ADR-IMPLEMENTATION-STATUS.md)
-- [Client state machine](specs/client-state-machine.md)
-- [Live dictation client](specs/live-dictation-client-ux.md)
-- [Local live fallback](specs/local-live-fallback-sidecar.md)
-- [Model download UX](specs/model-download-ux.md)
-- [Audio preprocessing contract](specs/local-audio-preprocessing-stack.md)
-- [Source-aware diarization](specs/source-aware-diarization.md)
-- [Server tier MVP](specs/server-tier-mvp.md)
-- [Testing strategy](specs/testing-strategy.md)
-
-The [local LLM sidecar](specs/local-llm-sidecar.md) is an explicitly deferred,
-non-normative design draft. It is discoverable for future re-evaluation but is
-not current architecture, an active plan, or permission to add a runtime.
-
-`server/openapi/openapi.json` and `server/openapi/live-events.schema.json` are
-the normative machine-readable wire contracts. A route in a contract is not an
-implementation claim; dynamic server capabilities and executable tests decide
-availability.
-
-## Plans
-
-### Active
-
-- [CI actions and cache hardening](plans/active/2026-07-13-ci-actions-cache-hardening.md)
-- [VoiceOS/Yap decision, evidence, and future-work queue](plans/active/2026-07-17-voiceos-decision-evidence-queue.md)
-- [Integrated MVP validation and delivery control](plans/active/2026-07-23-integrated-mvp-validation-and-delivery-control.md)
-- [Complete eight-agent Voice OS delivery](plans/completed/2026-08-11-eight-agent-voice-os-delivery.md)
-- [Phase 10 supervised provider services](plans/active/2026-08-11-phase-10-supervised-provider-services.md)
-
-### Queued
-
-None currently.
-
-### Completed implementation records
-
-- [Governed knowledge ownership and maintainability review](plans/completed/2026-08-10-governed-knowledge-ownership-and-maintainability-review.md)
-- [Governed knowledge and agents](plans/completed/2026-08-09-governed-knowledge-and-agents.md)
-- [Meeting transcription production qualification](plans/completed/2026-08-03-meeting-transcription-production-qualification.md)
-- [Meeting transcription ownership and maintainability review](plans/completed/2026-08-03-meeting-transcription-ownership-and-maintainability-review.md)
-- [Tenant-scoped identity and job authorization](plans/completed/2026-07-25-tenant-scoped-identity-and-job-authorization.md)
-- [Joint speaker-attributed meeting transcription](plans/completed/2026-07-22-joint-speaker-attributed-meeting-transcription.md)
-- [Codebase ownership and maintainability review](plans/completed/2026-07-18-codebase-ownership-and-maintainability-review.md)
-- [Local Nemotron live transcription](plans/completed/2026-07-05-local-nemotron-live-transcription.md)
-- [Model download UX](plans/completed/2026-07-08-model-download-ux.md)
-- [Phase 3 server contract and durable connector](plans/completed/2026-07-10-server-contract-durable-connector.md)
-- [Private ASR node](plans/completed/2026-07-13-private-asr-node.md)
-- [Remote recording transcription](plans/completed/2026-07-14-remote-recording-transcription.md)
-- [Executable ownership and maintainability review](plans/completed/2026-07-15-executable-ownership-and-maintainability-review.md)
-- [Audio preprocessing and language routing](plans/completed/2026-07-16-audio-preprocessing-and-language-routing.md)
-
-### Archived plans and historical designs
-
-The [plans index](plans/README.md) defines lifecycle rules. Superseded recipes
-live under [plans/archived](plans/archived/). Retired design snapshots live
-under [archive/historical-designs](archive/historical-designs/).
-They preserve rationale and provenance but are not current implementation
-instructions. Detailed historical task reports live under
-[archive/implementation-evidence](archive/implementation-evidence/); see the
-[archive index](archive/README.md).
-
-## Operations, research, security, and provenance
+## Operate a private server
 
 - [Server-node setup](runbooks/yap-server-node-setup.md)
-- [Provider supervisor service](runbooks/provider-supervisor-service.md)
-- [Agent admission service](runbooks/agent-admission-service.md)
-- [Dependency audit policy](runbooks/dependency-audit-policy.md)
-- [Repository housekeeping](runbooks/repo-housekeeping.md)
-- [Target-client language-routing qualification](runbooks/target-client-language-routing-qualification.md)
-- [Integrated product checkpoint gate](runbooks/integrated-product-checkpoint-gate.md)
-- [Meeting-transcription maintainability checkpoint](runbooks/meeting-transcription-maintainability-checkpoint.md)
-- [Integrated identity and access gate](runbooks/integrated-identity-access-gate.md)
-- [Phase 9 governed-knowledge gate command and private-evidence boundary](../server/README.md#governed-knowledge-candidate-and-complete-gate)
-- [Historical Phase 6 preprocessing and language-routing gate](runbooks/integrated-preprocessing-language-routing-gate.md)
-- [Independent transcript-reference review](runbooks/independent-transcript-reference-review.md)
-- [Research index](research/README.md)
-- [Public security posture](security/SECURITY-POSTURE.md)
-- [Third-party provenance](provenance/THIRD-PARTY.md)
+- [Provider supervision](runbooks/provider-supervisor-service.md)
+- [Agent admission](runbooks/agent-admission-service.md)
+- [Security posture](security/SECURITY-POSTURE.md)
 
-## Verification evidence
+## Follow the work
 
-- [Evidence policy and index](evidence/README.md)
-- [Auditor source-cited review-findings verification](evidence/auditor-source-cited-review-findings/VERIFICATION.md)
-- [Auditor product-vertical verification](evidence/auditor-product-vertical/VERIFICATION.md)
-- [Coordinator proposal-bundle verification](evidence/coordinator-proposal-bundles/VERIFICATION.md)
-- [Executable ownership findings](evidence/executable-ownership-review/FINDINGS.md)
-- [Reviewed file inventory](evidence/executable-ownership-review/FILE-INVENTORY.md)
-- [Checked-head verification](evidence/executable-ownership-review/VERIFICATION.md)
-
-Private scans, scan identifiers, sensitive audio/transcript data, host paths,
-and raw machine evidence do not belong in this documentation tree, PRs, CI
-logs, or tracked test results.
+The [evidence index](evidence/README.md) collects verification records for imports,
+exports, terminology, model lifecycle, knowledge workflows and UI changes. Use
+the [changelog](../CHANGELOG.md) for the change history, the
+[research index](research/README.md) for investigations, and the
+[archive](archive/README.md) for earlier plans and implementation narratives.
+The [server implementation history](archive/implementation-evidence/2026-10-03-server-implementation-history.md)
+preserves its full earlier README, including qualification receipts and evaluation
+commands; use the [server guide](../server/README.md) for current setup.
