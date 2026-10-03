@@ -78,3 +78,37 @@ fn reserve_sibling_temp_file(path: &Path) -> std::io::Result<(PathBuf, std::fs::
         "could not reserve temporary text path",
     ))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn post_commit_error_preserves_exact_new_file_and_refuses_replacement_on_retry() {
+        let root = std::env::temp_dir().join(format!(
+            "yap-export-post-commit-{}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir(&root).unwrap();
+        let destination = root.join("review.txt");
+        let text = "Reviewed café — 日本語\nDose: 25 mg.";
+        let result = publish(&destination, text, |staging, destination| {
+            atomic_file::rename_same_directory_no_replace(staging, destination)?;
+            Err(std::io::Error::other("commit acknowledgement unavailable"))
+        });
+        assert_eq!(result.unwrap_err().kind(), ErrorKind::Other);
+        assert_eq!(std::fs::read(&destination).unwrap(), text.as_bytes());
+        assert_eq!(std::fs::read_dir(&root).unwrap().count(), 1);
+        assert_eq!(
+            write_new(&destination, "replacement").unwrap_err().kind(),
+            ErrorKind::AlreadyExists
+        );
+        assert_eq!(std::fs::read(&destination).unwrap(), text.as_bytes());
+        assert_eq!(std::fs::read_dir(&root).unwrap().count(), 1);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+}

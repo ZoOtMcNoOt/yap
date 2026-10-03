@@ -51,6 +51,8 @@ async function installExportBridge(page: Page, preaccepted = true) {
         await new Promise<void>((resolve) => {
           fixture.finish = resolve;
         });
+      if (fixture.mode === "unconfirmed")
+        throw "Export could not be confirmed. Check the selected destination before trying again; the file may already have been saved.";
       if (fixture.mode === "failed")
         throw "That file already exists. Choose a new filename; existing files are preserved.";
       if (fixture.mode === "cancelled") return { status: "cancelled" };
@@ -291,8 +293,76 @@ test("a misbound export receipt fails visibly without claiming the wrong revisio
     page.getByRole("alert").filter({ hasText: "receipt did not match" }),
   ).toBeVisible();
   await expect(
+    page.getByRole("alert").filter({ hasText: "receipt did not match" }),
+  ).toContainText("Check the selected destination");
+  await expect(
     page.getByText("Saved correction revision 1 exported", { exact: true }),
   ).toHaveCount(0);
+});
+
+test("unconfirmed saved correction export retains its revision and explicit recovery at 360px", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 360, height: 1000 });
+  await installExportBridge(page);
+  await page.goto("/");
+  await openPlanning(page);
+  await change(page, "unconfirmed");
+  const button = page.getByRole("button", {
+    name: "Export saved correction",
+    exact: true,
+  });
+  await button.focus();
+  await page.keyboard.press("Enter");
+  const alert = page.getByRole("alert").filter({
+    hasText: "Export could not be confirmed",
+  });
+  await expect(alert).toContainText("file may already have been saved");
+  await expect(alert).toBeInViewport({ ratio: 1 });
+  await expect(page.locator("pre").first()).toHaveText(originalPlanningText);
+  await expect(page.locator("pre").nth(1)).toHaveText(correctedPlanningText);
+  await expect(button).toBeFocused();
+  expect(
+    (await calls(page)).filter(
+      ({ command }) => command === "export_accepted_transcript_correction",
+    ),
+  ).toHaveLength(1);
+  expect(
+    await alert.evaluate((node) => node.scrollWidth <= node.clientWidth),
+  ).toBe(true);
+  if (process.env.YAP_CAPTURE_EXPORT_UNCERTAINTY_EVIDENCE === "1") {
+    await page.screenshot({
+      path: "../docs/evidence/transcript-export-recovery/2026-10-03/accepted-360.png",
+      fullPage: true,
+    });
+  }
+  await change(page, "saved");
+  await button.click();
+  await expect(
+    page.getByText("Saved correction revision 1 exported", { exact: true }),
+  ).toBeVisible();
+  await expect(alert).toHaveCount(0);
+});
+
+test("a late failed saved export does not move focus or scroll after the owner chooses another control", async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 1000 });
+  await installExportBridge(page);
+  await page.goto("/");
+  await openPlanning(page);
+  await change(page, "pending");
+  const button = page.getByRole("button", { name: "Export saved correction", exact: true });
+  await button.click();
+  await expect(button).toHaveAttribute("aria-disabled", "true");
+  const copy = page.getByRole("button", { name: "Copy saved correction", exact: true });
+  await copy.focus();
+  const before = await copy.boundingBox();
+  await change(page, "unconfirmed");
+  await page.evaluate(() => (globalThis as unknown as { __acceptedExport: { finish?: () => void } }).__acceptedExport.finish?.());
+  await expect(page.getByRole("alert").filter({ hasText: "Export could not be confirmed" })).toContainText("file may already have been saved");
+  await expect(copy).toBeFocused();
+  expect((await copy.boundingBox())?.y).toBe(before?.y);
+  await expect(page.locator("pre").first()).toHaveText(originalPlanningText);
+  await expect(page.locator("pre").nth(1)).toHaveText(correctedPlanningText);
 });
 
 test("an unsaved suggestion cannot use accepted-correction export", async ({

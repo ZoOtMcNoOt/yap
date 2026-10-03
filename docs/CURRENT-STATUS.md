@@ -71,10 +71,19 @@ Earlier dependency/consolidation results remain in the [desktop evidence](eviden
 
 ## Current increment
 
-The [execution queue](plans/active/2026-10-02-yap-project-hill-climb.md#current-local-increment-read-and-export-earlier-accepted-corrections)
-now targets **reading and exporting earlier accepted corrections** offline.
+The [execution queue](plans/active/2026-10-02-yap-project-hill-climb.md#current-local-increment-truthful-transcript-export-recovery)
+now targets **truthful transcript export recovery**. Original and accepted exports
+explain unconfirmed completion and destination inspection before retry; malformed
+receipts cannot claim success/cancellation. Narrow saved-export feedback enters
+view only while its export action retains focus. Five of six software outcomes
+pass locally: 1,377 native units + 27 integrations (11 declared ignores), 404
+frontend units (two Windows-only skips), production build and all 38 related
+browser cases. [Recovery evidence/screens](evidence/transcript-export-recovery/2026-10-03/verification.md)
+retain the real post-commit reproduction and integration limits.
+
+**Earlier accepted corrections** now support offline reading, copying and export.
 The selector preserves original transcripts, latest acceptance and saved history;
-late reads and repeated selection retain their owner. Native checks pass with
+late reads and repeated selection retain their owner. That increment's checks pass with
 1,375 units and 27 integrations (11 declared model/hardware ignores); frontend
 units pass 404 cases with two Windows-only skips, and the production build passes.
 All 27 related browser cases and the complete 231-case Linux browser regression

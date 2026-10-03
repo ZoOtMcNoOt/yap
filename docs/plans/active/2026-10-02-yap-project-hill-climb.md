@@ -167,7 +167,7 @@ the identical tree tested at `7622a5a6`; all six jobs in
 The iteration branch and superseded Dependabot PR #200 are retired; the latter's
 exact tip remains under `archive/dependency-proposal-200-2026-10-03`.
 
-## Current increment: export a connection review package
+## Awaiting integration: export a connection review package
 
 **Status:** 5/6 local software outcomes; exact-head integration pending. Owners can
 export an inspected candidate and its exact evidence into human Git review through
@@ -188,7 +188,7 @@ Restore access before hosted checks/merging. Local development remains available
 `9cb8d310` retains the verified implementation and the evidence records the full
 221-pass Linux browser regression (one declared Windows-only skip).
 
-## Next local increment: verify a review package against its source bundle
+## Awaiting integration: verify a review package against its source bundle
 
 **Status:** 4/5 local software outcomes; integration waits for GitHub access.
 The read-only operator command checks exported citations using the existing
@@ -207,7 +207,7 @@ records 29 focused, all 185 governed portable and 1,648 isolated full-server
 passes (114 declared exclusions), including actual files and CLI execution.
 The checker is read-only; approval and activation remain open.
 
-## Current local increment: preserve published vectors through rollback
+## Awaiting integration: preserve published vectors through rollback
 
 **Status:** 4/5 local software outcomes; exact-head integration pending.
 The embedding writer now freezes every previously published projection using
@@ -225,7 +225,7 @@ remains usable; no model or publication authority is added.
 records both original-code failures, eight real ledger passes, all 119
 skip-free disposable database cases and all 185 governed portable passes.
 
-## Current local increment: read and export earlier accepted corrections
+## Awaiting integration: read and export earlier accepted corrections
 
 **Status:** 6/7 software outcomes checked locally; reviewed hosted integration pending.
 Owners can now select, read, copy and export an earlier accepted revision offline.
@@ -246,6 +246,29 @@ selection to Latest; a repeated selection keeps its pending read alive.
 record 1,375 native units + 27 integrations, 404 frontend units and all 231
 Linux browser passes (one declared Windows-only skip), plus the reproduced
 same-text acceptance and repeated pending-selection failures and their fixes.
+
+## Current local increment: truthful transcript export recovery
+
+**Status:** 5/6 software outcomes checked locally; reviewed hosted integration pending.
+Original and accepted exports now explain unconfirmed write/join completion and
+ask the user to inspect the selected destination before retry. Original receipts
+must prove saved/cancelled status; malformed or misbound receipts cannot claim
+completion. Focus-owned error visibility keeps narrow feedback readable while
+leaving another chosen control's focus and scroll position alone.
+
+- [x] Keep definite precondition refusals and genuine picker cancellation precise; generic write/join errors explain unconfirmed completion and destination inspection before retry.
+- [x] Validate original success/cancellation receipts; accepted misbound receipts explain uncertainty without claiming that no file was saved.
+- [x] Retain source/revision text, copy and explicit retry beside an unconfirmed export. Never retry automatically or claim success/cancellation without its receipt.
+- [x] Verify actual post-commit errors retain exact destination bytes and existing-file protection; preserve shared worker admission and original/history data.
+- [x] Exercise malformed receipts and original/accepted export recovery, keyboard focus and responsive alerts; run applicable native/frontend/build/contracts and retain actual evidence.
+- [ ] Commit the verified iteration and push/integrate through all six reviewed exact-head checks when GitHub access returns. Physical Windows and the entire remaining queue stay open.
+
+[Recovery evidence and screens](../../evidence/transcript-export-recovery/2026-10-03/verification.md)
+record the real Linux post-commit error, malformed receipt and hidden-alert
+reproductions; 1,377 native units + 27 integrations, 404 frontend units, all 38
+related browser cases, production build and release checks pass. Complete
+canonical human publication/rebuilding and supervised ASR remain available
+software work; timed/speaker export, history repair and target checks stay queued.
 
 ## Execution record
 

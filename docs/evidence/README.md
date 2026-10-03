@@ -57,6 +57,7 @@ Current product-completion evidence:
 - [Published-vector rollback integrity](knowledge-rollback-integrity/2026-10-03/verification.md): retained projections and concurrent-write refusal.
 
 - [Earlier accepted correction selection](accepted-correction-selection/2026-10-03/verification.md): offline reading/copy/export, history ownership and responsive screens.
+- [Transcript export completion and recovery](transcript-export-recovery/2026-10-03/verification.md): post-commit uncertainty, strict receipts and destination-inspection guidance.
 
 Do not commit private scans, scan identifiers, sensitive audio/transcripts, raw
 host snapshots, credentials, or enterprise configuration. Public evidence may

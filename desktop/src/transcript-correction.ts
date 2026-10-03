@@ -99,9 +99,11 @@ export async function exportAcceptedTranscriptCorrection(
         result.revision !== revision.revision ||
         result.correctedSha256 !== revision.correctedSha256 ||
         typeof result.path !== "string" ||
-        !result.path))
+        !result.path.trim()))
   ) {
-    throw new Error("The export receipt did not match the saved correction.");
+    throw new Error(
+      "The export receipt did not match the saved correction. Check the selected destination before trying again; the file may already have been saved.",
+    );
   }
   return result;
 }

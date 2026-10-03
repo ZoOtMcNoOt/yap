@@ -2,6 +2,7 @@ import { Copy } from "@phosphor-icons/react/Copy";
 import { DownloadSimple } from "@phosphor-icons/react/DownloadSimple";
 import { FloppyDisk as Save } from "@phosphor-icons/react/FloppyDisk";
 import { Sparkle as Sparkles } from "@phosphor-icons/react/Sparkle";
+import { useEffect, useRef } from "react";
 
 import { TranscriptCorrectionPreview } from "@/components/transcript-correction/transcript-correction-preview";
 import { useAcceptedTranscriptCorrection } from "@/components/transcript-correction/use-accepted-transcript-correction";
@@ -59,6 +60,16 @@ export function TranscriptCorrectionPanel({
     exportFailure?.correctedSha256 === saved.revision?.correctedSha256
       ? exportFailure?.message
       : undefined;
+  const exportButtonRef = useRef<HTMLButtonElement>(null);
+  const exportErrorRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (exportError && document.activeElement === exportButtonRef.current) {
+      exportErrorRef.current?.scrollIntoView({
+        block: "nearest",
+        behavior: "instant",
+      });
+    }
+  }, [exportError]);
   return (
     <Card className="surface-workspace-inset min-w-0 bg-card py-0">
       <CardHeader className="p-4 sm:p-5">
@@ -185,6 +196,7 @@ export function TranscriptCorrectionPanel({
                   </Button>
                   <Button
                     aria-label="Export saved correction"
+                    ref={exportButtonRef}
                     aria-disabled={exportBusy || undefined}
                     className="aria-disabled:pointer-events-none aria-disabled:opacity-50"
                     onClick={() => {
@@ -231,7 +243,7 @@ export function TranscriptCorrectionPanel({
               </div>
             ) : null}
             {exportError ? (
-              <Alert variant="destructive">
+              <Alert ref={exportErrorRef} variant="destructive">
                 <AlertDescription>{exportError}</AlertDescription>
               </Alert>
             ) : null}

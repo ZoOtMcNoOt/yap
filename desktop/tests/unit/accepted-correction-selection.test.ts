@@ -57,4 +57,6 @@ it("exports only the selected earlier revision and rejects a substituted saved r
   expect(invokeMock).toHaveBeenLastCalledWith("export_accepted_transcript_correction", {outputPath: path, revision: 1, correctedSha256: selected.correctedSha256});
   invokeMock.mockResolvedValue({status: "saved", path: "/review/latest.txt", revision: 2, correctedSha256: selected.correctedSha256});
   await expect(exportAcceptedTranscriptCorrection(path, selected)).rejects.toThrow("did not match");
+  invokeMock.mockResolvedValue({status: "saved", path: "  ", revision: 1, correctedSha256: selected.correctedSha256});
+  await expect(exportAcceptedTranscriptCorrection(path, selected)).rejects.toThrow("did not match");
 });

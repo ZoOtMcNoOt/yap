@@ -210,6 +210,27 @@ fn export_write_failure_preserves_the_destination_and_cleans_staging() {
 }
 
 #[test]
+fn changed_destination_reports_unconfirmed_without_losing_source_or_replacement() {
+    let fixture = Fixture::new();
+    let original = fixture.read().unwrap();
+    let target = fixture.output.join("meeting.txt");
+    let error = export_selected_transcript(&original, &target, &fixture.data, || {
+        std::fs::remove_dir(&fixture.output).unwrap();
+        std::fs::write(&fixture.output, "retained replacement").unwrap();
+        Ok(original.clone())
+    })
+    .unwrap_err();
+    assert!(error.contains("could not be confirmed"));
+    assert!(error.contains("file may already have been saved"));
+    assert_eq!(fixture.read().unwrap(), original);
+    assert_eq!(
+        std::fs::read_to_string(&fixture.output).unwrap(),
+        "retained replacement"
+    );
+    assert!(!target.exists());
+}
+
+#[test]
 fn export_byte_limit_rejects_oversized_text_before_publication() {
     let fixture = Fixture::new();
     let target = fixture.output.join("meeting.txt");

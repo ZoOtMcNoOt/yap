@@ -66,7 +66,7 @@ pub(crate) async fn export_accepted_transcript_correction(
         )
     })
     .await
-    .map_err(|_| "Saved correction export could not finish. Please retry.".to_string())?
+    .map_err(|_| super::EXPORT_UNCONFIRMED.to_string())?
 }
 
 pub(crate) fn require_displayed_revision(

@@ -35,6 +35,11 @@ selection. A changed original, changed revision/count, or invalid history preven
 export. Selection stays disabled during export; finish or cancel the native picker
 there. A saved receipt identifies the exported revision and destination.
 
+For both **Export text** and **Export saved correction**, an unconfirmed result
+means a file may already have been saved. Inspect the destination before trying
+again; choose another new filename if needed. Yap retains source text and never
+retries automatically or removes a file to turn an uncertain result into a failure.
+
 ## If saved history is unavailable
 
 | What happens | Recovery |
@@ -42,6 +47,7 @@ there. A saved receipt identifies the exported revision and destination.
 | History cannot be read or a selected revision is missing | Use **Retry saved corrections**. Original and revision files stay intact. |
 | History changes while choosing an export destination | Use **Refresh saved corrections**, review the selected text, then export again. |
 | Destination already exists or is unavailable | Choose another new filename or folder. |
+| Export could not be confirmed | Check the chosen destination first; a file may exist. Retry only explicitly. |
 | You switch transcripts or revisions during a read | Yap hides stale text and ignores that read's late result. |
 
 Yap refuses damaged or inconsistent history as a whole; selecting an older entry
@@ -64,10 +70,11 @@ native source owners and the shared new-file export owner retain those decisions
 ## Verification and remaining work
 
 [Selection evidence](../evidence/accepted-correction-selection/2026-10-03/verification.md)
-records local checks and screen captures. Earlier
+records local checks and screen captures. [Export recovery](../evidence/transcript-export-recovery/2026-10-03/verification.md) records its separate verification status. Earlier
 [latest-only recovery](../evidence/accepted-correction-recovery/2026-10-03/verification.md)
 and [export](../evidence/accepted-correction-export/2026-10-03/verification.md)
-receipts remain historical. The complete Linux browser regression passes;
-reviewed hosted integration is pending. Physical Windows picker, clipboard and filesystem behavior need target
+receipts remain historical. The selection increment's complete Linux browser
+regression passed; export recovery renews 38 related cases. Reviewed hosted
+integration is pending. Physical Windows picker, clipboard and filesystem behavior need target
 checks. No model quality is qualified; timed/speaker exports and explicit history
 repair remain in the [project queue](../plans/active/2026-10-02-yap-project-hill-climb.md).

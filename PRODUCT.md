@@ -20,7 +20,7 @@ Supported navigation:
 - **Knowledge** — cited search/answers and human review of proposals/conflicts
 - **Settings and Help** — setup, recovery, and concise guidance
 
-Transcript history lives on Home. Review offers copy, open, reveal and **Export text** for the original UTF-8 transcript. Export creates a new file outside Yap data and preserves existing files. Timed/speaker exports remain planned.
+Transcript history lives on Home. Review offers copy, open, reveal and **Export text** for the original UTF-8 transcript. Export creates a new file outside Yap data and preserves existing files. If completion is unconfirmed, a file may already exist: check the destination before explicitly retrying. This guidance also applies to saved-correction exports. Timed/speaker exports remain planned.
 
 Correct requests source-bound suggestions through Scribe on the connected organization server. **Save revision** accepts edits separately and preserves raw ASR. Reopening starts with the latest accepted revision; **Accepted revision** can select an earlier one for offline reading, copying and **Export saved correction**. Reading an older revision does not replace the latest acceptance. A new acceptance resets selection to latest. Export revalidates the selected revision and source/history after destination selection. Unsaved suggestions stay separate; damaged history reports an error without replacing files. [Selection guidance and local verification](docs/specs/accepted-correction-history.md) retain the remaining integration and target checks.
 

@@ -32,7 +32,7 @@ function specFiles() {
 // but losing them must fail. Raise a floor only alongside the tests that earn
 // it.
 const MINIMUM_TESTS_PER_SPEC = Object.freeze({
-  "accepted-correction-export.spec.ts": 7,
+  "accepted-correction-export.spec.ts": 9,
   "accepted-correction-recovery.spec.ts": 8,
   "accepted-correction-selection.spec.ts": 7,
   "app-history.spec.ts": 2,
@@ -58,7 +58,7 @@ const MINIMUM_TESTS_PER_SPEC = Object.freeze({
   "recording-journey.spec.ts": 5,
   "saved-connection-proposals.spec.ts": 10,
   "transcript-correction.spec.ts": 1,
-  "transcript-export.spec.ts": 5,
+  "transcript-export.spec.ts": 7,
   "workspace-acceptance.spec.ts": 11,
   "workspace-recovery.spec.ts": 2,
 });

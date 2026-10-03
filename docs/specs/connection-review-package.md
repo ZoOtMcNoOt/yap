@@ -4,7 +4,7 @@
 
 Export a saved connection proposal and its two cited excerpts for Git review.
 The suggestion stays **proposed**: export does not approve or discard it, publish
-a graph edge or activate a generation. The [active queue](../plans/active/2026-10-02-yap-project-hill-climb.md#current-increment-export-a-connection-review-package)
+a graph edge or activate a generation. The [active queue](../plans/active/2026-10-02-yap-project-hill-climb.md#awaiting-integration-export-a-connection-review-package)
 tracks verification and the remaining publication work.
 
 ## Export a proposal
