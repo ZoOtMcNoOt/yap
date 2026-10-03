@@ -40,28 +40,22 @@ Installed and exercised: Node 24.19, pnpm 11.7.0, Python 3.12.14 with locked uv 
 | Native rustfmt and diff whitespace | Passed |
 | Shipped dependency inventory/license checks | 3 passed |
 
-[Hosted run 536](https://github.com/ZoOtMcNoOt/yap/actions/runs/37121648208)
-passed all six jobs on `7622a5a654193dfd23c54219177fa72e73c35323`: 1,367 Windows
-native units + 27 integration cases (11 declared ignores), native WDIO and both
-actual connector runtimes; 392 frontend units, all 184 browser workflows and 71
-release contracts; 1,601 portable Windows server cases with 135 declared
-exclusions; the complete 40-version core audit; Linux identity and all 54
-orchestrator cases. [PR #201](https://github.com/ZoOtMcNoOt/yap/pull/201) merged
-to `85d87c0fc7bebbeff877c97a8c6f1fc77ff0d7be` with the identical tested tree.
-The [core server evidence](evidence/server-dependencies/2026-10-03/verification.md)
-retains local checks, the earlier checkout failure and its verified repair.
-Earlier [run 532](https://github.com/ZoOtMcNoOt/yap/actions/runs/37118650222)
-closed the desktop dependency/consolidation work through PR #199; its
-[evidence](evidence/dependency-refresh/2026-10-03/verification.md) preserves those
-dated results and repairs.
-Nine new inspection database/HTTP
-cases join the prior 51 new-feature database exclusions, all verified against
-real local Postgres. The isolated suite retains 36 preexisting skips. The
-expanded regression passes 102 cases, including existing Curator journal checks.
-The local orchestrator release build and headless startup smoke retain their
-earlier environment receipts. Hosted run 536 establishes exact-head software
-verification; neither local nor hosted checks establish model or enterprise
-qualification.
+[Hosted run 541](https://github.com/ZoOtMcNoOt/yap/actions/runs/37127757876)
+passed all six jobs on `853261129f3c720d97ee2b5556fae00f8934da3e`: Windows native
+1,368 units + 27 integrations (11 declared ignores), strict Clippy, native WDIO
+and both connector runtimes; frontend 395 units, all 193 browser workflows and
+71 release contracts; portable Windows server 1,601 passes with 143 declared
+exclusions; the 40-version core audit; Linux identity and all 54 service-lifecycle
+cases. [PR #202](https://github.com/ZoOtMcNoOt/yap/pull/202) merged to
+`b32e7b7ad603b26c1606dcee8c2e3bd5efe6815a` with the identical tested tree; its
+branch is retired. [Discard evidence](evidence/connection-proposal-discard/2026-10-03/verification.md)
+retains the reproduced review defects, corrections, local real-database checks,
+platform exclusions and screen review. The existing frontend policy retains one
+low-severity finding. These results do not qualify inference or enterprise operation.
+
+Earlier dependency/consolidation results remain in the [desktop evidence](evidence/dependency-refresh/2026-10-03/verification.md)
+(PR #199, run 532) and [core server evidence](evidence/server-dependencies/2026-10-03/verification.md)
+(PR #201, run 536). Historical receipts and their repairs remain preserved.
 
 ## Changes made to enable development
 
@@ -74,14 +68,17 @@ qualification.
 
 ## Current increment
 
-The [execution queue](plans/active/2026-10-02-yap-project-hill-climb.md#current-increment-owner-controlled-proposal-discard)
-now targets **owner-controlled proposal discard**. The local implementation adds
-explicit confirmation, owner-only idempotent discard and uncertain-delivery retries
-through the API, native client and review interface. It retains the journal,
-sources and published graph while freeing pending proposal capacity. [Local evidence](evidence/connection-proposal-discard/2026-10-03/verification.md)
-records checks, screens and the reproduced handoff correction; hosted integration
-is pending. Canonical publication and rebuild
-recovery remain open. The full goal stays active.
+The [execution queue](plans/active/2026-10-02-yap-project-hill-climb.md#current-increment-discover-owned-pending-connections)
+now targets **discovering owned pending connections**. Review opens a pasted
+reference or an explicit Curator handoff; it has no owned proposal list yet. The
+next increment will let the owner load a dated list and open permission-checked
+source inspection. Its six
+acceptance outcomes are defined; implementation has not started.
+
+Owner-controlled discard is merged and software verified. It retains journal,
+source and graph history, frees pending capacity and recovers uncertain delivery
+without losing the retry reference to a Curator handoff. Canonical publication and
+rebuilding remain open. The full project goal stays active.
 
 ## Recent verified work
 

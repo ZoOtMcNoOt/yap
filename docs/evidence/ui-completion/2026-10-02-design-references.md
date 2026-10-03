@@ -1,6 +1,6 @@
 # UI design references
 
-**Owner:** Grant McNatt. **Reviewed:** 2026-10-02; shared terminology references added 2026-10-03.
+**Owner:** Grant McNatt. **Reviewed:** 2026-10-02; shared terminology and proposal-discovery references added 2026-10-03.
 
 References inform the [hardware-free completion goal](../../plans/completed/2026-10-02-hardware-free-product-completion.md). Preserve Yap's identity and native ownership; adapt interaction patterns without copying brand assets or unrelated product behavior.
 
@@ -35,3 +35,17 @@ Only the returned preview steps were visually inspected; a full flow inspection 
 | [KÖPPEN FAQ](https://mobbin.com/sites/sections/09028542-9505-40c7-b979-f26d42605598) | A compact list of questions keeps most answers collapsed. | Keep common controls visible and detailed explanations optional. The marketing imagery and commerce actions do not apply. |
 
 The connected Mobbin interface provides screen, flow and website-section search. This review used all three. Links point to canonical Mobbin references; third-party screenshots and branding are not shipped in Yap.
+
+## Saved proposal discovery
+
+**Reviewed:** 2026-10-03. These references inform the next owned-list increment.
+
+| Reference | Inspected pattern | Yap disposition |
+| --- | --- | --- |
+| [Linear inbox](https://mobbin.com/screens/18c6955a-c42f-4cc1-9aa2-0276456720fb) | Dated rows sit beside a neutral detail pane before selection. | Use a readable owned list and an explicit selection; never expose foreign counts or source content in discovery. |
+| [Linear selected item](https://mobbin.com/screens/8337813e-f0dd-4415-8a29-87c114b0442b) | The selected row stays visible while its detail opens alongside it. | Preserve list context through permission-checked inspection; stack the list and reading view on narrow screens. |
+| [Cofounder document detail](https://mobbin.com/flows/d92842d7-885c-4606-a62c-54b2c6fbabbf) | Re-inspected all three returned previews: contextual reading, enlarged preview and source view. | Keep exact-source disclosure readable. This flow does not demonstrate inbox selection or count semantics. |
+
+Only links and observed interaction decisions are retained. Third-party screenshots,
+assets and branding are not shipped. Website-section references remain recorded
+above; this product-list increment does not add a marketing section.
