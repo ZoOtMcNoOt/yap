@@ -68,16 +68,21 @@ Earlier dependency/consolidation results remain in the [desktop evidence](eviden
 
 ## Current increment
 
-The [execution queue](plans/active/2026-10-02-yap-project-hill-climb.md#current-increment-discover-owned-pending-connections)
-now targets **discovering owned pending connections**. The dated list, private
-server/native boundary and permission-checked selection are implemented. Five local software outcomes are verified;
-hosted integration is pending; [evidence](evidence/saved-connection-proposals/2026-10-03/verification.md)
-keeps local checks separate from the merged baseline below.
+The [execution queue](plans/active/2026-10-02-yap-project-hill-climb.md#current-increment-complete-the-postgresql-ci-gate)
+now targets a **complete, skip-free PostgreSQL CI gate**. Hosted portable checks
+exclude real database cases; the dedicated local gate covers only four modules.
+The next increment runs every database-backed knowledge/agent/API module on an
+owned disposable runtime, preserving production authority and qualification limits.
 
-Owner-controlled discard is merged and software verified. It retains journal,
-source and graph history, frees pending capacity and recovers uncertain delivery
-without losing the retry reference to a Curator handoff. Canonical publication and
-rebuilding remain open. The full project goal stays active.
+Owned connection discovery is merged and **6/6 software verified**. [PR #203](https://github.com/ZoOtMcNoOt/yap/pull/203)
+and [run 544](https://github.com/ZoOtMcNoOt/yap/actions/runs/37133293613) pass all six jobs:
+Windows native 1,370 units + 27 integrations, frontend 398 units, all 205 browser
+cases, native WDIO, server, identity and service lifecycle. Main has the identical
+tested tree; the reviewed head is retained and its branch retired.
+[Evidence](evidence/saved-connection-proposals/2026-10-03/verification.md) keeps
+local, hosted and physical-target checks separate. Canonical publication/rebuilding
+and the full project goal remain open. Issue #92 still needs actual Windows
+RDP/session-lock responsiveness qualification.
 
 ## Recent verified work
 

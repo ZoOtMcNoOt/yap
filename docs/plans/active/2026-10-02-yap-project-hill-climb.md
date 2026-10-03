@@ -84,6 +84,8 @@ The linked records retain each increment's acceptance conditions, before/after b
 | AAC in M4A/MP4 | 6/6 | Real single-track AAC-LC container timing/content, retained source/durable preparation, bounded refusal/cancellation and responsive Recording/History; [evidence/screens](../../evidence/aac-import/2026-10-03/verification.md). Distribution patent clearance, inference and Windows playback remain open. |
 | Owned connection discard | 6/6 | Explicit confirmation, retained provenance, atomic audit, capacity release and uncertain-delivery recovery; [acceptance/screens/integration](../../evidence/connection-proposal-discard/2026-10-03/verification.md). Human publication/rebuilding remain open. |
 
+| Owned connection discovery | 6/6 | Dated owner-only list, strict native receipts, permission-checked selection and confirmed-only cleanup; [acceptance/screens/integration](../../evidence/saved-connection-proposals/2026-10-03/verification.md). Canonical publication/rebuilding remains open. |
+
 ## Connections: remaining publication outcome
 
 **Status:** 6/7 software outcomes verified; human canonical publication/rebuilding remain open. Broad read-path checks and the Linux application build pass. Permission-filtered topic browsing and bounded incoming/outgoing neighborhoods now run through a model-free authenticated service, strict native connection leases, and responsive graph/list controls. Twenty focused storage/API/configuration cases, seven native cases and ten browser cases pass. Generic agent/MCP responses now preserve source authority; 65 focused agent/storage/API regression cases pass. [Contract](../../specs/knowledge-connections.md) and [screens/evidence](../../evidence/knowledge-connections/2026-10-03/verification.md) record the limits. Preserve the existing compiler/projection/permission owners and eight agent workflows. Curator now implements the typed proposal journey recorded above. Complete human canonical publication and rebuilding before closing the remaining outcome.
@@ -165,25 +167,19 @@ the identical tree tested at `7622a5a6`; all six jobs in
 The iteration branch and superseded Dependabot PR #200 are retired; the latter's
 exact tip remains under `archive/dependency-proposal-200-2026-10-03`.
 
-## Current increment: discover owned pending connections
+## Current increment: complete the PostgreSQL CI gate
 
-**Status:** 5/6 software outcomes verified locally; hosted integration pending. Review now
-explicitly loads a dated list through the existing journal and connection owner.
-Selecting a proposal opens permission-checked source inspection; copied references
-and Curator handoffs remain available. [Evidence](../../evidence/saved-connection-proposals/2026-10-03/verification.md)
-records the checks and integration status. Canonical publication and rebuilding
-remain separate open work.
+**Status:** Acceptance defined; implementation follows the verified discovery baseline.
+Hosted portable checks exclude real database cases, and the dedicated local gate
+covers only four modules/19 cases. Complete the model-free regression gate before
+expanding canonical publication and rebuilding. Preserve every production
+permission, source-admission and generation requirement.
 
-- [x] Return only the authenticated tenant/subject's pending relationship references and creation times. Include no candidate/source content, caller identity selectors or foreign counts. Bound the complete list to 64 and refuse invalid/excess metadata instead of returning partial truth.
-- [x] Exercise real model-free PostgreSQL reads and content-free auditing within the existing admission, SQL timeouts and response budget. Listing cannot change the journal or published graph.
-- [x] Add strict main-window/current-lease native list receipts. Validate hashes, UTC timestamps, duplicates and the 64-item limit; add no renderer credentials or native command.
-- [x] Explicitly load/refresh an accessible owned list. Selecting an item opens existing permission-checked inspection. Empty, failed and offline states retain local controls and pasted-reference recovery.
-- [x] Remove a row locally only after confirmed discard; retain it after uncertain delivery. Contain identity changes and delayed reads, preserve pending-write/retry ownership, and verify keyboard access and narrow layouts with one native request owner.
-- [ ] Verify real SQL/API/native/browser cases and screens, review/push, then integrate through all exact-head jobs before retiring the branch. Continue publication/rebuilding and the full queue.
-
-[Reviewed interaction references](../../evidence/ui-completion/2026-10-02-design-references.md#saved-proposal-discovery)
-inform dated rows and deliberate selection. Titles and sources are shown only
-through current permission-checked inspection.
+- [ ] Require every database-backed knowledge, agent and authenticated API module: all 23 modules/117 cases must execute successfully with no skips, expected failures or incomplete receipts.
+- [ ] Own a digest-pinned disposable PostgreSQL/pgvector runtime with fresh credentials, loopback-only routing, bounded startup/tests and cleanup. Ignore inherited database/Docker routes and remove only this run's container.
+- [ ] Make fixtures self-contained on a fresh database. Reproduce existing failures independently; correct synthetic evidence/schema setup without weakening production authority or model behavior.
+- [ ] Add the same unconditional gate to existing Linux CI, using locked Python dependencies. Verify local execution, runtime provenance, documentation and the release contract that keeps it required.
+- [ ] Review/push and integrate only after all exact-head jobs pass; preserve the reviewed head and retire the temporary branch. Continue publication/rebuilding and every available workstream.
 
 ## Execution record
 
@@ -231,5 +227,7 @@ through current permission-checked inspection.
 
 
 | 2026-10-03 | Owned proposal discovery verifies five local software outcomes: owner-only dated metadata, bounded read/audits, strict native receipts, keyboard inspection and confirmed-only cleanup. Actual SQL/API 20, Linux native 1,366 + 27, frontend 396 and 50 related browser cases pass; 31 inspection/discovery cases renew visible-detail focus. The portable server passes 1,640 with 114 declared exclusions. | Push the reviewed increment, renew all six exact-head jobs and integrate before retiring the branch; publication/rebuilding and real PostgreSQL CI remain open. |
+
+| 2026-10-03 | PR #203 merges after run 544 passes all six exact-head jobs: Windows native 1,370 + 27, frontend 398, all 205 browser cases, native WDIO, server, identity and service lifecycle. Main has the identical tested tree; the reviewed head is retained and branch retired. Discovery completes 6/6 software outcomes. | Finish the complete skip-free PostgreSQL CI gate, then continue canonical publication/rebuilding and the full queue. Issue #92 remains open for actual Windows RDP/session-lock qualification. |
 
 Attribute project work to Grant McNatt. Preserve third-party attribution/provenance; do not add AI branding or coauthor trailers.
