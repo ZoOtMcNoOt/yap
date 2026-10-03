@@ -54,6 +54,7 @@ Current product-completion evidence:
 - [Mobbin design references](ui-completion/2026-10-02-design-references.md)
 - [Connection review export](connection-review-export/2026-10-03/verification.md): native new-file export, recovery and responsive screens.
 - [Connection review source check](connection-review-source-check/2026-10-03/verification.md): complete-bundle matching and a read-only operator command.
+- [Published-vector rollback integrity](knowledge-rollback-integrity/2026-10-03/verification.md): retained projections and concurrent-write refusal.
 
 Do not commit private scans, scan identifiers, sensitive audio/transcripts, raw
 host snapshots, credentials, or enterprise configuration. Public evidence may

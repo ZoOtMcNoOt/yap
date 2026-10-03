@@ -84,6 +84,11 @@ verifies exported evidence against an explicitly selected complete OKF bundle.
 All 185 governed portable cases pass without skips. The receipt proves source
 matching; authorized review and activation remain separate.
 
+[Rollback integrity](evidence/knowledge-rollback-integrity/2026-10-03/verification.md)
+now protects published vectors after replacement. Eight real ledger checks,
+all 119 current database cases and all 185 governed portable cases pass locally
+without skips. Integration remains pending GitHub access.
+
 The [complete PostgreSQL gate](evidence/governed-postgres-ci/2026-10-03/verification.md)
 is merged and **5/5 software verified**. [PR #204](https://github.com/ZoOtMcNoOt/yap/pull/204)
 and [run 547](https://github.com/ZoOtMcNoOt/yap/actions/runs/37137161514) pass all six jobs,

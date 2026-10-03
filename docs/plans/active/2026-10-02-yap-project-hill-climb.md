@@ -207,6 +207,24 @@ records 29 focused, all 185 governed portable and 1,648 isolated full-server
 passes (114 declared exclusions), including actual files and CLI execution.
 The checker is read-only; approval and activation remain open.
 
+## Current local increment: preserve published vectors through rollback
+
+**Status:** 4/5 local software outcomes; exact-head integration pending.
+The embedding writer now freezes every previously published projection using
+durable activation history and the existing tenant lock. Replacement no longer
+permits a vector overwrite of a retained rollback target. Staged preparation
+remains usable; no model or publication authority is added.
+
+- [x] Reproduce an overwritten retained projection against actual PostgreSQL, then freeze previously published vectors using durable activation history alongside the active pointer.
+- [x] Keep initial staged embedding preparation usable; refusals preserve vectors, model identity, active state and activation history. Rollback restores the original projection.
+- [x] Verify a concurrent writer waits for tenant activation, then refuses after publication rather than overwriting the newly published generation.
+- [x] Run the complete skip-free disposable PostgreSQL gate with the expanded population and applicable portable/lint/documentation regressions; distinguish synthetic vectors from qualified inference.
+- [ ] Record the reviewed result and commit it locally; push/integrate through all six exact-head checks when GitHub access returns. Continue canonical review/rebuilding and the complete software queue.
+
+[Rollback evidence](../../evidence/knowledge-rollback-integrity/2026-10-03/verification.md)
+records both original-code failures, eight real ledger passes, all 119
+skip-free disposable database cases and all 185 governed portable passes.
+
 ## Execution record
 
 The [dated execution history](../../archive/implementation-evidence/2026-10-02-project-hill-climb-history.md) retains every iteration, evidence link and next action recorded at the time. Those next actions are historical; the current increment above determines what to do now. Append new iteration receipts there and keep this queue current.

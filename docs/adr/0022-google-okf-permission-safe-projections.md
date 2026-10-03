@@ -224,6 +224,12 @@ projection before advancing the active pointer. Focused real-Postgres race and
 tamper tests are green; checkpoint merge and its one final aggregate gate remain
 open.
 
+Published vector projections remain immutable after replacement, including
+retained rollback targets. The embedding writer checks activation history
+under the same tenant lock; only never-published staged preparation may retry.
+[Rollback integrity evidence](../evidence/knowledge-rollback-integrity/2026-10-03/verification.md)
+records the reproduced overwrite, concurrent refusal and synthetic-vector limits.
+
 ## Consequences
 
 ### Positive

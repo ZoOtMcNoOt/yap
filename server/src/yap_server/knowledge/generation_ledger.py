@@ -224,9 +224,7 @@ def stage_compiled_generation(
         ).fetchone()
         if existing is not None:
             if existing[6] != source_admission_sha256:
-                raise ValueError(
-                    "staged knowledge generation source admission differs"
-                )
+                raise ValueError("staged knowledge generation source admission differs")
             persisted = _load_persisted_generation(
                 connection,
                 tenant_id=generation.tenant_id,
@@ -408,7 +406,7 @@ def store_generation_embeddings(
     embedding_model_revision: str,
     embeddings: Mapping[str, tuple[float, ...]],
 ) -> None:
-    """Store one complete, model-bound vector projection on a staged generation."""
+    """Prepare vectors on a generation that has never been published."""
 
     model_id = identity(embedding_model_id, "embedding_model_id")
     model_revision = identity(embedding_model_revision, "embedding_model_revision")
@@ -431,13 +429,17 @@ def store_generation_embeddings(
             "SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))",
             (tenant_id,),
         )
-        active = connection.execute(
+        published = connection.execute(
             """SELECT 1 FROM yap_knowledge_active_builds
-               WHERE tenant_id = %s AND generation_sha256 = %s""",
-            (tenant_id, generation_sha256),
+               WHERE tenant_id = %s AND generation_sha256 = %s
+               UNION ALL
+               SELECT 1 FROM yap_knowledge_activation_history
+               WHERE tenant_id = %s AND generation_sha256 = %s
+               LIMIT 1""",
+            (tenant_id, generation_sha256, tenant_id, generation_sha256),
         ).fetchone()
-        if active is not None:
-            raise ValueError("active knowledge generation is immutable")
+        if published is not None:
+            raise ValueError("published knowledge generation is immutable")
         for chunk_id, vector in prepared.items():
             connection.execute(
                 """UPDATE yap_knowledge_chunks
@@ -620,7 +622,10 @@ def _load_persisted_generation(
         (tenant_id, generation_sha256),
     ).fetchall():
         permission = compiled_permission_from_record(dict(policy), tenant_id=tenant_id)
-        if permission.path_prefix != path_prefix or permission.permission_sha256 != stored_sha256:
+        if (
+            permission.path_prefix != path_prefix
+            or permission.permission_sha256 != stored_sha256
+        ):
             raise ValueError("stored permission identity differs from its policy")
         audience = tuple(
             PrincipalKey(tenant_id, row[0])
