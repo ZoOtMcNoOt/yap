@@ -20,6 +20,7 @@ from yap_server.knowledge.knowledge_tool_audit import (
     install_knowledge_tool_audit_schema,
 )
 from yap_server.knowledge.knowledge_tool_contract import ProposalCitation
+from yap_server.knowledge.reviewed_capture_ledger import install_reviewed_capture_schema
 from tests.agents.test_curator import _Admission, _Transport, _tool_response
 from tests.agents.test_curator_postgres import _cleanup, _runtime_identity
 from tests.knowledge.knowledge_connections_fixtures import activate_connection_fixture
@@ -39,6 +40,7 @@ class CuratorConnectionFixture:
         )
         with connect() as connection:
             install_knowledge_schema(connection)
+            install_reviewed_capture_schema(connection)
             install_knowledge_tool_audit_schema(connection)
             install_curator_result_audit_schema(connection)
             self.generation = activate_connection_fixture(connection, self.tenant)

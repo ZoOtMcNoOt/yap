@@ -588,7 +588,7 @@ jobs:
         run: uv sync --locked --exact --extra evaluation --extra test --python (Get-Command python.exe).Source --no-python-downloads
       - name: Lint the Python server
         working-directory: server
-        run: uv run --locked ruff check . ../infra/yap-server-node/owned-process-supervisor.py ../verification/audit-server-dependencies.py
+        run: uv run --locked ruff check . ../infra/yap-server-node/owned-process-supervisor.py ../verification/audit-server-dependencies.py ../verification/run-disposable-governed-postgres-suite.py ../verification/run-governed-knowledge-postgres-suite.py
       - name: Audit every locked core server dependency
         working-directory: ${{ github.workspace }}
         run: python verification/audit-server-dependencies.py
@@ -867,7 +867,7 @@ jobs:
           $PythonCommand = Get-Command python -CommandType Application |
             Select-Object -First 1
           $Python = $PythonCommand.Source
-          uv sync --locked --exact --python $Python --no-python-downloads
+          uv sync --locked --exact --extra evaluation --extra test --python $Python --no-python-downloads
           if ($LASTEXITCODE -ne 0) {
             throw "Mock OIDC CI could not populate the locked server environment."
           }
@@ -885,6 +885,9 @@ jobs:
             tests.infra.test_resident_provider_lifecycle_gate \
             tests.infra.test_private_container_loopback_proxy \
             tests.infra.test_private_container_loopback_proxy_behavior
+      - name: Run required governed PostgreSQL suite without skips
+        shell: bash
+        run: server/.venv/bin/python verification/run-disposable-governed-postgres-suite.py
       - name: Run the pinned mock OIDC owner flow
         run: ./verification/test-mock-oidc-owner-flow.ps1
       - name: Verify exact GitHub-hosted checkout remained unchanged

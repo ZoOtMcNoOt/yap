@@ -154,7 +154,7 @@ class AuditorPostgresTests(unittest.TestCase):
             result_auditor=PostgresAuditorResultAuditor(_connect, _identity()),
         )
         principal = _principal(tenant_id, "alice")
-        request = AuditorRequest("approved release", 2, generation.generation_sha256)
+        request = AuditorRequest("approved", 2, generation.generation_sha256)
 
         visible = service.audit(
             request,
@@ -288,7 +288,7 @@ class AuditorPostgresTests(unittest.TestCase):
                 generation_sha256=generation.generation_sha256,
             )
         principal = _principal(tenant_id, "alice")
-        request = AuditorRequest("approved release", 2, generation.generation_sha256)
+        request = AuditorRequest("approved", 2, generation.generation_sha256)
         evidence = PostgresAuditorEvidenceReader(_connect).read(
             request,
             principal=principal,

@@ -67,13 +67,27 @@ external network. The wrapper mounts the checkout and existing Python/Rust
 runtimes and runs under your user ID with Docker's init. It does not mount the
 Docker socket or start real model services.
 
-The managed network currently permits the GitHub Container Registry image;
-Docker Hub hit an anonymous pull limit, and the MCR image's blob download was
-denied. Use the documented image rather than changing network settings.
+Portable server checks use the documented GitHub Container Registry image.
+The disposable database gate below uses its own pinned PostgreSQL image.
 
 ## Local database tests
 
-The cloud can exercise real knowledge/terminology persistence without models:
+The complete database gate needs Linux, Docker and the locked server environment;
+it needs no model hardware or configured database:
+
+```bash
+source verification/cloud-env.sh
+server/.venv/bin/python verification/run-disposable-governed-postgres-suite.py
+```
+
+It requires all 117 knowledge/agent/API cases without skips, using digest-pinned
+PostgreSQL 17.11/pgvector 0.8.7 on a random loopback port. Generated credentials,
+data and container belong to this run; cleanup removes only that container.
+Inherited Docker/database routes cannot redirect it. [Evidence and runtime
+provenance](../evidence/governed-postgres-ci/2026-10-03/verification.md) record the
+bounds and qualification limits. Hosted CI runs the same required gate.
+
+For a retained development database, explicitly select its private environment:
 
 ```bash
 bash verification/setup-cloud-postgres.sh
@@ -86,9 +100,9 @@ PYTHONPATH=src .venv/bin/python -m unittest tests.knowledge.test_terminology_pol
 The script installs Debian Postgres 17.11 and pgvector 0.8.0 in a separate user-owned
 prefix, starts a loopback-only cluster with private data/credentials, and enables
 the vector extension. Repeated setup retains the database. Its test DSN stays in
-ignored `.tools/postgres/env`; do not commit or print it. Nineteen real database
-tests passed with no skips, including permission-safe retrieval, durable reviewed
-sources, snapshots and explicit team management. These development versions do
+ignored `.tools/postgres/env`; do not commit or print it. The same complete runner
+requires all 117 cases, including permission-safe retrieval, durable reviewed
+sources, agent persistence and authenticated APIs. These development versions do
 not renew the separate ARM64 production database lock or enterprise qualification.
 
 Personal/shared terminology HTTP tests use an owner-private credential file and the
