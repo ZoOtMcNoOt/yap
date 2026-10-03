@@ -15,7 +15,7 @@ permissions:
 jobs:
   frontend:
     runs-on: windows-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     env:
       POWERSHELL_74_SHA256: 266479A93B82CD0DC0F043419388FD4A738A51082821C301FFF497212FAF6760
       POWERSHELL_74_VERSION: 7.4.17
