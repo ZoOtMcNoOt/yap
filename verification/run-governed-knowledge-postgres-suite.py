@@ -8,33 +8,12 @@ import unittest
 from pathlib import Path
 
 import psycopg
-
-_MODULES = (
-    "tests.knowledge.test_agent_relationship_authority",
-    "tests.knowledge.test_connection_proposal_discard",
-    "tests.knowledge.test_connection_proposal_inspection",
-    "tests.knowledge.test_pending_connection_proposals",
-    "tests.knowledge.test_postgres_connection_proposals",
-    "tests.knowledge.test_postgres_generation_ledger",
-    "tests.knowledge.test_postgres_knowledge_connections",
-    "tests.knowledge.test_postgres_permission_safe_retrieval",
-    "tests.knowledge.test_reviewed_meeting_postgres_route",
-    "tests.knowledge.test_terminology_ledger",
-    "tests.knowledge.test_terminology_service",
-    "tests.agents.test_analyst_postgres",
-    "tests.agents.test_archivist_postgres",
-    "tests.agents.test_auditor_postgres",
-    "tests.agents.test_coordinator_postgres",
-    "tests.agents.test_curator_connections_postgres",
-    "tests.agents.test_curator_postgres",
-    "tests.agents.test_librarian_postgres",
-    "tests.agents.test_student_postgres",
-    "tests.api.test_connection_proposal_inspection_api",
-    "tests.api.test_curator_connections_api",
-    "tests.api.test_knowledge_connections_api",
-    "tests.api.test_terminology_api",
+from yap_server.evaluation.governed_knowledge_gate import (
+    _EXPECTED_DATABASE_MODULES as _MODULES,
 )
-_EXPECTED_TEST_COUNT = 117
+from yap_server.evaluation.governed_knowledge_gate import (
+    _EXPECTED_DATABASE_TEST_COUNT as _EXPECTED_TEST_COUNT,
+)
 
 
 def _configure_server_test_imports() -> None:

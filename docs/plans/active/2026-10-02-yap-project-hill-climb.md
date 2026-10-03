@@ -233,4 +233,6 @@ permission, source-admission and generation requirement.
 
 | 2026-10-03 | The complete PostgreSQL gate requires 23 modules/117 cases and passes against fresh owned runtimes, including refusal of inherited Docker/database routes. Corrected existing Auditor evidence and missing Curator cleanup schema fixtures. The Linux CI step is unconditional; 72 release contracts run (67 local passes/five Windows-only skips), with Ruff and docs checks passing. | Integrate after all exact-head hosted checks pass; retain the reviewed head, retire the branch and continue canonical publication/rebuilding and the full queue. |
 
+| 2026-10-03 | Run 546 passes all 117 database cases on hosted Linux. Review reproduces an old 19-case aggregate validator rejecting the new receipt; shared constants and contract regressions restore consistency. An existing OIDC fixture crosses its one-second skew margin; fixed clocks now verify both sides without changing authentication policy. All 23 focused aggregate/authentication cases pass. | Renew full portable and all exact-head hosted checks, then integrate the reviewed gate and continue the full queue. |
+
 Attribute project work to Grant McNatt. Preserve third-party attribution/provenance; do not add AI branding or coauthor trailers.

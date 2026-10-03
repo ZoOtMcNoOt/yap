@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 import unittest
+from unittest.mock import patch
 from uuid import uuid4
 
 import jwt
@@ -318,27 +319,51 @@ class OidcAccessTokenTests(unittest.TestCase):
         )
 
     def test_expiry_not_before_issued_at_and_skew_are_enforced(self) -> None:
-        now = datetime.now(UTC)
-        mutations = (
-            ("exp", now - timedelta(seconds=61)),
-            ("nbf", now + timedelta(seconds=61)),
-            ("iat", now + timedelta(seconds=61)),
-        )
-        for field, value in mutations:
-            with self.subTest(field=field):
-                claims = self._claims()
-                claims[field] = value
-                self.assertEqual(
-                    self._failure(self._token(claims)).code,
-                    "INVALID_ACCESS_TOKEN",
-                )
+        now = datetime(2026, 10, 3, tzinfo=UTC)
+        now_unix = int(now.timestamp())
+        skew = self.policy.clock_skew_seconds
 
-        within_skew = self._claims()
-        within_skew["nbf"] = now + timedelta(seconds=30)
-        principal = self.authenticator.authenticate(
-            f"Bearer {self._token(within_skew)}"
+        class FixedClock(datetime):
+            @classmethod
+            def now(cls, tz=None) -> datetime:
+                return now if tz is None else now.astimezone(tz)
+
+        # NumericDates avoid encode-time clock dependence. Both validators
+        # observe the same instant even when signing or CI scheduling is slow.
+        baseline = self._claims()
+        baseline.update(
+            exp=now_unix + 300,
+            nbf=now_unix - skew - 60,
+            iat=now_unix - skew - 60,
         )
-        self.assertEqual(principal.key.tenant_id, TENANT_ID)
+        mutations = (
+            ("exp", now_unix - skew),
+            ("nbf", now_unix + skew + 1),
+            ("iat", now_unix + skew + 1),
+        )
+        within_skew = (
+            ("exp", now_unix - skew + 1),
+            ("nbf", now_unix + skew),
+            ("iat", now_unix + skew),
+        )
+        with (
+            patch("jwt.api_jwt.datetime", FixedClock),
+            patch("yap_server.auth.oidc_access_tokens.datetime", FixedClock),
+        ):
+            for field, value in mutations:
+                with self.subTest(field=field, accepted=False):
+                    claims = dict(baseline, **{field: value})
+                    self.assertEqual(
+                        self._failure(self._token(claims)).code,
+                        "INVALID_ACCESS_TOKEN",
+                    )
+            for field, value in within_skew:
+                with self.subTest(field=field, accepted=True):
+                    claims = dict(baseline, **{field: value})
+                    principal = self.authenticator.authenticate(
+                        f"Bearer {self._token(claims)}"
+                    )
+                    self.assertEqual(principal.key.tenant_id, TENANT_ID)
 
     def test_id_app_and_non_access_token_types_are_rejected(self) -> None:
         self.assertEqual(
