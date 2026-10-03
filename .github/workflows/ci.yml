@@ -126,6 +126,7 @@ jobs:
         run: pnpm audit:dependencies
       - run: pnpm test:release-contract
       - run: pnpm test
+      - run: pnpm test:wdio-framework
       - run: pnpm build
       - run: pnpm exec playwright install chromium
       - run: pnpm test:e2e

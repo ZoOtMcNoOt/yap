@@ -18,7 +18,7 @@
     {
       "ecosystem": "rust",
       "name": "alloc-stdlib",
-      "version": "0.2.4",
+      "version": "0.3.0",
       "sourceFile": "Cargo.toml.orig",
       "reason": "The installed crate archive omits a standalone license file; its original crate metadata is the exact installed declaration available for review."
     },
@@ -39,49 +39,7 @@
     {
       "ecosystem": "rust",
       "name": "selectors",
-      "version": "0.36.1",
-      "sourceFile": "Cargo.toml.orig",
-      "reason": "The installed crate archive omits a standalone license file; its original crate metadata is the exact installed declaration available for review."
-    },
-    {
-      "ecosystem": "rust",
-      "name": "unic-char-property",
-      "version": "0.9.0",
-      "sourceFile": "Cargo.toml.orig",
-      "reason": "The installed crate archive omits a standalone license file; its original crate metadata is the exact installed declaration available for review."
-    },
-    {
-      "ecosystem": "rust",
-      "name": "unic-char-range",
-      "version": "0.9.0",
-      "sourceFile": "Cargo.toml.orig",
-      "reason": "The installed crate archive omits a standalone license file; its original crate metadata is the exact installed declaration available for review."
-    },
-    {
-      "ecosystem": "rust",
-      "name": "unic-common",
-      "version": "0.9.0",
-      "sourceFile": "Cargo.toml.orig",
-      "reason": "The installed crate archive omits a standalone license file; its original crate metadata is the exact installed declaration available for review."
-    },
-    {
-      "ecosystem": "rust",
-      "name": "unic-ucd-ident",
-      "version": "0.9.0",
-      "sourceFile": "Cargo.toml.orig",
-      "reason": "The installed crate archive omits a standalone license file; its original crate metadata is the exact installed declaration available for review."
-    },
-    {
-      "ecosystem": "rust",
-      "name": "unic-ucd-version",
-      "version": "0.9.0",
-      "sourceFile": "Cargo.toml.orig",
-      "reason": "The installed crate archive omits a standalone license file; its original crate metadata is the exact installed declaration available for review."
-    },
-    {
-      "ecosystem": "rust",
-      "name": "webview2-com",
-      "version": "0.38.2",
+      "version": "0.38.0",
       "sourceFile": "Cargo.toml.orig",
       "reason": "The installed crate archive omits a standalone license file; its original crate metadata is the exact installed declaration available for review."
     },
@@ -94,10 +52,17 @@
     },
     {
       "ecosystem": "rust",
+      "name": "webview2-com",
+      "version": "0.39.1",
+      "sourceFile": "Cargo.toml",
+      "reason": "The 0.39.1 crate archive omits a standalone license file; its exact normalized registry metadata declares MIT and the original workspace metadata/source attribution was reviewed."
+    },
+    {
+      "ecosystem": "rust",
       "name": "webview2-com-sys",
-      "version": "0.38.2",
-      "sourceFile": "Cargo.toml.orig",
-      "reason": "The installed crate archive omits a standalone license file; its original crate metadata is the exact installed declaration available for review."
+      "version": "0.39.1",
+      "sourceFile": "Cargo.toml",
+      "reason": "The 0.39.1 crate archive omits a standalone license file; its exact normalized registry metadata declares MIT and the original workspace metadata/source attribution was reviewed."
     }
   ]
 }

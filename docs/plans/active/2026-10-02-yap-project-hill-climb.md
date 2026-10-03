@@ -129,8 +129,8 @@ issues or promote unqualified models/platforms.
 - [x] Make the root README, documentation index and server README readable entry points; retain product goals/features, operational requirements and complete historical evidence.
 - [x] Preserve every original branch tip before cleanup; close stale dependency PRs and retire historical branches without losing their commits.
 - [ ] Commit and push the verified development backlog and documentation as reviewable iterations; integrate through required exact-head checks, then remove the temporary integration branch.
-- [ ] Repair the current locked dependency audit's high advisories through supported upstream releases, retaining license/provenance checks and avoiding audit suppression.
-- [ ] Inspect the official Tauri/Tao update for issue #92; verify removal of the affected source path in software, keeping actual Windows RDP/session-lock reproduction/recovery as an explicit target check before issue closure.
+- [x] Repair the current locked dependency audit's high advisories through supported upstream releases, retaining license/provenance checks and avoiding audit suppression.
+- [x] Inspect the official Tauri/Tao update for issue #92; verify removal of the affected source path in software, keeping actual Windows RDP/session-lock reproduction/recovery as an explicit target check before issue closure.
 - [ ] Renew the relevant native/frontend/browser/build/contracts, review changes and record the actual `main` head and remaining qualification limits.
 
 ## Execution record
@@ -163,5 +163,7 @@ issues or promote unqualified models/platforms.
 | 2026-10-03 | Verified six saved-connection inspection outcomes through persisted Curator records, strict camelCase API/native projection and source-bound responsive review. Full server 1,639, native 1,353 + 27, frontend 388, browser 179 and real Postgres regression 102 pass. Ten final inspection cases and final builds pass, including reproduced clipping and late-cancellation recovery. Consolidated completed checklists into linked evidence without removing requirements or historical plans. | Expand verified AAC audio in M4A/MP4 through existing import/preparation owners. Human publication/rebuilding and every other workstream remain queued. |
 
 | 2026-10-03 | AAC import verifies six software outcomes; actual AAC/video/fractional/no-edit fixtures, native 1,363 + 27, frontend 388, browser 183 and builds pass. Narrow queue clipping/empty space corrected. Readable documentation and branch consolidation authorized; all 27 old tips archived, nine stale dependency PRs closed and 26 old branches retired. | Commit/push development, repair audited dependencies, inspect Tao #92, and integrate through required checks. The full product goal remains active. |
+
+| 2026-10-03 | Readable documentation is pushed; all historical branches are archived and retired. Locked Tauri 2.12.1/Tao 0.37.1 removes #92's global mutex source path; npm high/critical/moderate findings clear (one low remains), Rust vulnerability findings clear (two reviewed warnings). Native 1,363 + 27, frontend 388, browser 183, builds and contracts pass. [Dependency evidence](../../evidence/dependency-refresh/2026-10-03/verification.md) retains target limits. | Integrate [PR #199](https://github.com/ZoOtMcNoOt/yap/pull/199) after required green exact-head checks, then remove its temporary branch. Windows RDP verification remains open; continue human publication/rebuild recovery and the full software queue. |
 
 Attribute project work to Grant McNatt. Preserve third-party attribution/provenance; do not add AI branding or coauthor trailers.

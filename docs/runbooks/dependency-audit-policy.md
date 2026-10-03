@@ -1,139 +1,139 @@
-# Dependency Audit Policy
+# Dependency audit policy
 
-Yap treats `cargo audit` vulnerabilities as release blockers unless the risk is
-explicitly accepted in CI with a removal condition. Warnings are reviewed, but
-they do not fail CI by themselves.
+Audit findings are release inputs, not something to hide to obtain a green build.
+Yap currently has **no frontend advisory exceptions and no Rust advisory ignores**.
+High/critical frontend findings and Rust vulnerability-class findings block
+release. Warning-class findings require review at the actual shipping target.
 
-## Frontend Registry Audit
+## Run the gates
 
-The desktop release gate and hosted CI run:
+From the repository root:
 
 ```powershell
-pnpm audit:dependencies
+pnpm --dir desktop audit:dependencies
 ```
 
-That command executes the real `pnpm audit --audit-level high` check. It retries
-only explicit transient registry or network failures on a bounded
-10-second, 30-second, 60-second, and 120-second schedule. It disables pnpm's
-internal fetch retries so the enclosing schedule remains bounded. A reported
-vulnerability, certificate or configuration error, unrecognized failure, or
-exhausted registry retry still fails the audit. Do not use
-`--ignore-registry-errors` in a release gate.
+This runs the real `pnpm audit --audit-level high`. Only recognized transient
+registry/network failures receive retries, after 10, 30, 60 and 120 seconds.
+Internal fetch retries are disabled. High/critical vulnerability findings,
+certificate/configuration errors, unknown failures and exhausted retries fail
+the gate. Never use
+`--ignore-registry-errors`. A unit test requires `auditConfig` to remain absent.
 
-The workspace has no frontend advisory exceptions. A unit test requires
-`auditConfig` to remain absent so a future ignore cannot enter silently.
-
-On August 3, 2026, compatible `brace-expansion` backports made the earlier
-development-tool exception obsolete. The workspace now pins the older
-`minimatch` major lines to exact releases `1.1.18` and `2.1.4`. Those releases
-resolve both `GHSA-mh99-v99m-4gvg` and the later
-`GHSA-rgw5-rvv9-x895` without forcing a breaking `brace-expansion` major into
-WebdriverIO's glob graph. The exception and its production-only reachability
-guard were removed together.
-
-PostCSS is pinned to exact release `8.5.23`. It contains compatible fixes for
-the earlier `GHSA-r28c-9q8g-f849` finding and the August 3 residual
-`GHSA-fxqj-rqcc-2cmp` finding. Neither advisory is ignored.
-
-WebdriverIO's two transitive Undici major lines are pinned to exact compatible
-releases `6.28.0` and `7.29.0`. Those releases resolve
-`GHSA-8xcm-r25x-g524` on both lines and `GHSA-4cwx-7wf7-3272` on the 7.x line.
-Both advisories appeared during the August 3 checkpoint closure; neither is
-ignored.
-
-WebdriverIO's Puppeteer proxy chain resolves `ip-address` only through desktop
-development dependencies. The workspace nevertheless pins it to exact patched
-release `10.3.1`, which resolves high-severity
-`GHSA-mwp4-54f8-5fhr` without an advisory exception. The registry published the
-advisory during the August 3 checkpoint closure after the executable candidate's
-audit had passed; the first documentation-successor frontend audit exposed it.
-
-## Current Rust Policy
-
-CI runs `cargo audit` for the Windows desktop target:
+For the desktop Rust lockfile, run from `desktop/src-tauri/`:
 
 ```powershell
 cargo audit --target-os windows --target-arch x86_64
 ```
 
-Warnings from Tauri's transitive target-all desktop stack are allowed while the
-desktop app targets Windows first. The current warning set includes GTK3
-bindings, `glib`, `proc-macro-error`, and `unic-*` crates pulled through that
-graph. Do not add `cargo audit -D warnings` until the upstream Tauri dependency
-graph no longer reports those warnings for crates we do not ship directly.
+CI also checks the complete locked Windows dependency graph through the
+[Windows boundary guard](../../verification/test-windows-rust-dependency-boundary.ps1).
+Failure to inspect that graph is a failure, not evidence of absence.
 
-As of July 13, 2026, the CI command reports 17 allowed warning-class findings
-and no vulnerability-class failure. Those warnings include the `glib`
-unsoundness advisory described below.
+## Current dependency refresh
 
-## Open Target-Specific Alerts
+The locked refresh passes the frontend high/critical gate with **one low finding**
+and the Rust vulnerability gate with **zero vulnerability-class findings** and
+two reviewed warning-class findings. There are no advisory ignores.
+[Verification](../evidence/dependency-refresh/2026-10-03/verification.md) records
+consumer checks and target limits; [PR #199](https://github.com/ZoOtMcNoOt/yap/pull/199)
+records required hosted integration checks.
 
-GitHub Dependabot alert `GHSA-wrw7-89jp-8q8g` remains open for `glib` 0.18.5.
-The advisory is medium severity, affects versions from 0.15.0 through 0.19.x,
-and is patched in 0.20.0. The vulnerable crate is present in `Cargo.lock`
-through Tauri's Linux GTK dependency path when Cargo resolves all targets.
-CI enumerates the full locked Windows graph with `cargo tree --locked --offline
---target x86_64-pc-windows-msvc --prefix none --format "{p}"` and fails if any
-package line starts with `glib v`. This broader boundary prevents a second
-advisory-affected `glib` version from becoming Windows-reachable while 0.18.5
-remains present only in the Linux graph. CI also fails if Cargo cannot complete
-the graph inspection.
+| Dependency path | Selected update | Reason or remaining check |
+| --- | --- | --- |
+| Older glob dependencies | `brace-expansion@1` → `1.1.21`; `@2` → `2.1.7` | Keep fixes within the existing major lines. |
+| WebdriverIO HTTP dependencies | `undici@6` → `6.28.1`; `@7` → `7.29.1` | Compatible patched releases for both transitive lines. |
+| YAML parser | `js-yaml@4` → `4.3.2` | Apply the available patched release. |
+| Desktop automation | WebdriverIO `9.32`, Tauri service/plugin `1.4` | Real adapter checks pass; Windows desktop journeys remain a hosted gate. |
+| Mocha through WebdriverIO | Scoped `mocha@10` → `11.8.0` override | Removes the affected `braces` path through Chokidar 4; actual async hooks, retry, skip and success/failure reporting checks pass. |
+| Desktop runtime | Tauri/API/CLI `2.12.1`, Tao `0.37.1` | Upstream removes the global mutex path implicated in [issue #92](https://github.com/ZoOtMcNoOt/yap/issues/92); actual Windows testing remains open. |
+| Rust TLS | `rustls` `0.23.45` | Patched release for `RUSTSEC-2026-0285`. |
+| Rust event listeners | `event-listener` `5.4.2` | Patched release for warning-class `RUSTSEC-2026-0221`. |
 
-The Windows-scoped `cargo-audit` command still emits this lockfile advisory as
-an allowed `unsound` warning. CI passes because warning-class findings are not
-denied; the target distinction limits shipped exposure but is not what makes
-the command exit successfully. This does not dismiss or close the alert. Keep
-the GitHub alert open until the affected path is removed or upgraded. Enabling
-Linux support, or changing the Tauri/GTK dependency graph, requires
-reevaluating this alert before release and either removing the GTK path or
-upgrading it to a graph that uses `glib` 0.20.0 or later.
+The registry does not publish the proposed `braces` `3.0.4` fix. Mocha 12 was
+rejected after an actual WebdriverIO adapter import failed; removing the advisory
+path without a working adapter is not a solution. The scoped Mocha 11 change is
+verified against the actual locked adapter, not just its dependency graph.
 
-### July 20, 2026 target classification
+The authoritative frontend selections are in
+[`pnpm-workspace.yaml`](../../desktop/pnpm-workspace.yaml) and its lockfile;
+Rust selections are in [`Cargo.lock`](../../desktop/src-tauri/Cargo.lock).
+Issue #92 stays open until Windows RDP/session-lock reproduction and recovery
+checks establish the behavior on the intended client.
 
-Focused inspection of the current Phase 6 worktree produced the following
-public-safe evidence:
+The remaining frontend finding is low-severity `diff` through Mocha
+(`GHSA-73rr-hh4g-fpgx`), affecting `parsePatch`/`applyPatch`. The installed Mocha
+reporter uses diff creation/word comparison, not those patch-parsing functions.
+The published fix begins at `diff` 8, a major change for this consumer; retain
+the visible finding until a verified consumer update removes it. It is not an
+audit exception, and this does not qualify native desktop execution.
 
-- the exact locked `x86_64-pc-windows-msvc` graph contained 994 package lines
-  and no package line beginning with `glib v`;
-- the default host reverse-dependency query also found no reachable `glib`;
-- the target-all reverse graph reaches `glib` 0.18.5 only through the GTK 0.18,
-  WebKitGTK 2.0.2, Wry 0.55.1, and Tauri 2.11.5 desktop path; and
-- a normal locked Windows `cargo check` completed without a GLib or native
-  compiler warning, while the release-contract test continued to prove that CI
-  fails closed if any `glib` version becomes Windows-reachable.
+## GLib and the Windows boundary
 
-This evidence classifies the current alert as follows:
+`GHSA-wrw7-89jp-8q8g` / `RUSTSEC-2024-0429` remains open for `glib` `0.18.5` in the
+Linux GTK dependency graph. Affected versions are `0.15.0` through `0.19.x`;
+the fix begins at `0.20.0`.
 
-- **Supported Windows product defect:** no. The affected crate is not in the
-  resolved Windows feature/target graph.
-- **Upstream target-all warning:** yes. `glib` 0.18.5 remains in the locked
-  Linux GTK/Tauri path and remains covered by `RUSTSEC-2024-0429`.
-- **Missing platform gate:** Linux release support remains gated. Yap must not
-  advertise or enable Linux release support until the GTK path is removed or
-  upgraded and the Linux build/runtime matrix passes.
-- **Pin or patch action:** none on this evidence. Yap has no direct `glib`
-  dependency, and editing or pruning lockfile entries would not change the
-  active Tauri dependency graph. A package entry in `Cargo.lock` is not proof
-  that the package is reachable for a supported target and active feature set.
+The Windows guard enumerates the complete locked feature/target graph and
+rejects **every** reachable `glib` version. This prevents another affected
+version from becoming Windows-reachable. A lockfile entry alone does not show
+that a package ships for a particular target.
 
-The classification must be repeated if Tauri/Wry features change, Linux becomes
-a supported target, or the exact Windows graph guard reports a reachable
-`glib` package.
+`cargo audit` still reports this as an allowed `unsound` warning. Its warning
+classification explains the successful exit; target exclusion explains the
+Windows exposure boundary. Neither closes the advisory. Linux development
+builds do not qualify Linux releases: release support requires removing or
+upgrading the affected GTK path and passing the Linux build/runtime matrix.
+Repeat the classification whenever Tauri/Wry features change, Linux becomes a
+release target or the Windows guard finds GLib.
 
-## Ignored Rust Advisories
+The other current warning is unmaintained `proc-macro-error` `1.0.4`
+(`RUSTSEC-2024-0370`). The refreshed graph removes the old `unic-*` paths. Do not add `cargo audit -D warnings` until that
+upstream graph no longer reports the unshipped transitive warnings. Report the
+current audit output; old warning counts are not current evidence.
 
-The CI ignore list is empty. `RUSTSEC-2026-0194` and `RUSTSEC-2026-0195` were
-removed after `plist` 1.10.0 moved the transitive parser to `quick-xml` 0.41.0.
+## Provenance and notice review
 
-## Change Rules
+The [shipped dependency inventory](../../SHIPPED_DEPENDENCY_INVENTORY.json),
+[notice bundle](../../SHIPPED_DEPENDENCY_NOTICES.json) and
+[third-party provenance](../provenance/THIRD-PARTY.md) must match exact installed
+sources. Preserve attribution when updating packages.
 
-- New high- or critical-severity vulnerabilities must fail CI. Lower-severity
-  findings are reviewed and repaired when a compatible release exists.
-- The Windows graph guard must reject every reachable `glib` version until the
-  alert is removed or this policy is deliberately revised with new executable
-  evidence.
-- New ignores require a short justification and a removal condition in this
-  runbook and `.github/workflows/ci.yml`.
-- Dependency updates should prefer removing ignores over expanding the list.
-- Linux support and Tauri/GTK dependency changes require a target-all audit and
-  explicit reevaluation of every open target-specific alert.
+[Notice metadata exemptions](../../SHIPPED_DEPENDENCY_NOTICE_EXEMPTIONS.json)
+identify exact packages whose archives omit a standalone license file and bind
+reviewed source/metadata bytes instead. They **do not suppress vulnerabilities**,
+waive licenses or alter audit results. Stale or unnecessary notice exemptions
+must fail the inventory check.
+
+## Change rules
+
+- Repair high/critical findings; review lower-severity findings and apply
+  compatible fixes when available. Prefer removing an affected dependency path
+  over inventing an unpublished package or forcing an untested major upgrade.
+- Keep audit ignores empty. Any future Rust risk acceptance needs explicit CI
+  configuration, a short justification here and a concrete removal condition.
+- Keep the Windows GLib guard until the alert is removed or new executable
+  evidence supports a deliberate policy change.
+- Tauri/GTK feature changes and Linux release support require a target-all audit
+  and renewed review of every open target-specific alert.
+- Verify the actual consumer, renew provenance/notices and record the exact
+  checked revision before treating a dependency update as release-ready.
+
+## Earlier decisions
+
+The August 3, 2026 compatible `brace-expansion` backports (`1.1.18` / `2.1.4`)
+removed the old development-tool exception and its production-only reachability
+guard. They addressed `GHSA-mh99-v99m-4gvg` and `GHSA-rgw5-rvv9-x895`.
+PostCSS `8.5.23` addressed `GHSA-r28c-9q8g-f849` and `GHSA-fxqj-rqcc-2cmp`;
+Undici `6.28.0` / `7.29.0` addressed `GHSA-8xcm-r25x-g524` and
+`GHSA-4cwx-7wf7-3272`. The development-only Puppeteer proxy chain was patched
+with `ip-address` `10.3.1` for `GHSA-mwp4-54f8-5fhr`. None used an audit ignore.
+
+The July 20 Windows classification inspected 994 package lines with no GLib,
+passed a locked Windows check and found the affected target-all path through
+GTK `0.18`, WebKitGTK `2.0.2`, Wry `0.55.1` and Tauri `2.11.5`. The July 13 audit
+reported 17 warning-class findings. Those observations describe their dated
+heads; they are not receipts for the current refresh.
+
+Rust ignores `RUSTSEC-2026-0194` and `RUSTSEC-2026-0195` were removed after
+`plist` `1.10.0` adopted `quick-xml` `0.41.0`.

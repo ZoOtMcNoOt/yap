@@ -31,6 +31,8 @@ Current architecture-review evidence:
 
 Current product-completion evidence:
 
+- [Dependency refresh and Tao session-lock handoff](dependency-refresh/2026-10-03/verification.md)
+
 - [Original transcript export](transcript-export/2026-10-02-verification.md)
 - [Personal terminology](personal-terminology/2026-10-02-verification.md)
 - [Shared terminology](shared-terminology/2026-10-03-verification.md)

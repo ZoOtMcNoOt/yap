@@ -2,13 +2,13 @@
   "schemaVersion": 2,
   "target": "x86_64-pc-windows-msvc",
   "generatedFrom": {
-    "noticeExemptionsSha256": "776c6f501cb98b08029ec95e41284d224ec912c819a5f0a6155eedc2ed45b215"
+    "noticeExemptionsSha256": "293c5bb746fe73d56b81d8f97bf2c4f2371251b742a384891418bcbf2b524878"
   },
   "packages": {
     "javascript": [
       {
         "name": "@floating-ui/core",
-        "version": "1.7.5",
+        "version": "1.8.0",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -19,7 +19,7 @@
       },
       {
         "name": "@floating-ui/dom",
-        "version": "1.7.6",
+        "version": "1.8.0",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -30,7 +30,7 @@
       },
       {
         "name": "@floating-ui/react-dom",
-        "version": "2.1.8",
+        "version": "2.1.9",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -41,7 +41,7 @@
       },
       {
         "name": "@floating-ui/utils",
-        "version": "0.2.11",
+        "version": "0.2.12",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -723,22 +723,26 @@
       },
       {
         "name": "@tauri-apps/api",
-        "version": "2.11.1",
+        "version": "2.12.1",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
-            "sourceFile": "LICENSE_APACHE-2.0",
+            "sourceFile": "LICENSE-APACHE-2.0",
             "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594"
           },
           {
-            "sourceFile": "LICENSE_MIT",
+            "sourceFile": "LICENSE-MIT",
             "sha256": "9dd42ea92cff2ede5cd477cbfcce051b2d0115c0ac7f368ee88cb545055dff1d"
+          },
+          {
+            "sourceFile": "LICENSE.spdx",
+            "sha256": "5e834fe9788c524210deda859c46a550ffa5aa0cba9ea0572f0d81120e97c008"
           }
         ]
       },
       {
         "name": "@types/react",
-        "version": "19.2.17",
+        "version": "19.3.0",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -749,7 +753,7 @@
       },
       {
         "name": "@types/react-dom",
-        "version": "19.2.3",
+        "version": "19.3.0",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -849,7 +853,7 @@
       },
       {
         "name": "react",
-        "version": "19.2.8",
+        "version": "19.3.0",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -860,7 +864,7 @@
       },
       {
         "name": "react-dom",
-        "version": "19.2.8",
+        "version": "19.3.0",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -905,7 +909,7 @@
       },
       {
         "name": "scheduler",
-        "version": "0.27.0",
+        "version": "0.28.0",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -916,7 +920,7 @@
       },
       {
         "name": "sonner",
-        "version": "2.0.7",
+        "version": "2.0.8",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -927,7 +931,7 @@
       },
       {
         "name": "tailwind-merge",
-        "version": "3.6.0",
+        "version": "3.7.0",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -1018,7 +1022,7 @@
       },
       {
         "name": "alloc-no-stdlib",
-        "version": "2.0.4",
+        "version": "3.0.0",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -1029,13 +1033,13 @@
       },
       {
         "name": "alloc-stdlib",
-        "version": "0.2.4",
+        "version": "0.3.0",
         "noticeDisposition": "reviewed-installed-metadata-exemption",
         "reviewedExemptionReason": "The installed crate archive omits a standalone license file; its original crate metadata is the exact installed declaration available for review.",
         "noticeDocuments": [
           {
             "sourceFile": "Cargo.toml.orig",
-            "sha256": "77cff698112ee833c7c2e2b42c2b51677502ee04ca4a0c213155e3494a80fec3"
+            "sha256": "13c6e8d5ec2e75ae6b66542498e049e1100e71ef25e29ccb9cb083b40d6279ea"
           }
         ]
       },
@@ -1086,7 +1090,7 @@
       },
       {
         "name": "aws-lc-rs",
-        "version": "1.17.1",
+        "version": "1.18.1",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -1097,7 +1101,7 @@
       },
       {
         "name": "aws-lc-sys",
-        "version": "0.42.0",
+        "version": "0.45.0",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -1213,7 +1217,7 @@
       },
       {
         "name": "brotli",
-        "version": "8.0.4",
+        "version": "9.0.0",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -1228,7 +1232,7 @@
       },
       {
         "name": "brotli-decompressor",
-        "version": "5.0.3",
+        "version": "6.0.1",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -1325,7 +1329,7 @@
       },
       {
         "name": "cfb",
-        "version": "0.7.3",
+        "version": "0.14.0",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -1501,7 +1505,7 @@
       },
       {
         "name": "cssparser",
-        "version": "0.36.0",
+        "version": "0.37.0",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -1512,7 +1516,7 @@
       },
       {
         "name": "cssparser-macros",
-        "version": "0.6.1",
+        "version": "0.7.1",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -1523,22 +1527,7 @@
       },
       {
         "name": "ctor",
-        "version": "0.8.0",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE-APACHE",
-            "sha256": "a8ad31b1c3f40dca5a84119351b8fa8ddc868edd77fad8a8ebf6d8f2d16fa4ae"
-          },
-          {
-            "sourceFile": "LICENSE-MIT",
-            "sha256": "bccaa8b6c09f94e81f06696e179dbe058464bbdfbc823b6d49cada1d71e84ac3"
-          }
-        ]
-      },
-      {
-        "name": "ctor-proc-macro",
-        "version": "0.0.7",
+        "version": "1.0.13",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -1690,6 +1679,21 @@
         ]
       },
       {
+        "name": "dirs",
+        "version": "7.0.0",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE-APACHE",
+            "sha256": "d3174ad63e721d4c9dccb8ad4320848992d314369bc46319720b5802c9153fe9"
+          },
+          {
+            "sourceFile": "LICENSE-MIT",
+            "sha256": "6a2e0ade09a7d5f816f11566fee2b151b32235a7fad52b41d49cce96f833c1a9"
+          }
+        ]
+      },
+      {
         "name": "dirs-sys",
         "version": "0.5.0",
         "noticeDisposition": "exact-installed-notice-files",
@@ -1721,7 +1725,7 @@
       },
       {
         "name": "dom_query",
-        "version": "0.27.0",
+        "version": "0.28.0",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -2166,7 +2170,7 @@
       },
       {
         "name": "html5ever",
-        "version": "0.38.0",
+        "version": "0.39.0",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -2448,7 +2452,7 @@
       },
       {
         "name": "infer",
-        "version": "0.19.0",
+        "version": "0.22.0",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -2489,7 +2493,7 @@
       },
       {
         "name": "json-patch",
-        "version": "3.0.1",
+        "version": "4.2.0",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -2504,7 +2508,7 @@
       },
       {
         "name": "jsonptr",
-        "version": "0.6.3",
+        "version": "0.7.1",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -2520,6 +2524,21 @@
       {
         "name": "keyboard-types",
         "version": "0.7.0",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE-APACHE",
+            "sha256": "769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb"
+          },
+          {
+            "sourceFile": "LICENSE-MIT",
+            "sha256": "31dbbab009f1b2e59a1622d5955dfafc38ebe834000215b49d954c6f85fe927c"
+          }
+        ]
+      },
+      {
+        "name": "keyboard-types",
+        "version": "0.8.3",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -2616,7 +2635,7 @@
       },
       {
         "name": "markup5ever",
-        "version": "0.38.0",
+        "version": "0.39.0",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -2710,7 +2729,7 @@
       },
       {
         "name": "muda",
-        "version": "0.19.3",
+        "version": "0.20.0",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -2998,6 +3017,21 @@
       {
         "name": "png",
         "version": "0.17.16",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE-APACHE",
+            "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+          },
+          {
+            "sourceFile": "LICENSE-MIT",
+            "sha256": "eaf40297c75da471f7cda1f3458e8d91b4b2ec866e609527a13acfa93b638652"
+          }
+        ]
+      },
+      {
+        "name": "png",
+        "version": "0.18.1",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -3361,7 +3395,7 @@
       },
       {
         "name": "rustls",
-        "version": "0.23.41",
+        "version": "0.23.45",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -3410,7 +3444,7 @@
       },
       {
         "name": "rustls-webpki",
-        "version": "0.103.13",
+        "version": "0.103.15",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -3473,13 +3507,13 @@
       },
       {
         "name": "selectors",
-        "version": "0.36.1",
+        "version": "0.38.0",
         "noticeDisposition": "reviewed-installed-metadata-exemption",
         "reviewedExemptionReason": "The installed crate archive omits a standalone license file; its original crate metadata is the exact installed declaration available for review.",
         "noticeDocuments": [
           {
             "sourceFile": "Cargo.toml.orig",
-            "sha256": "be6ed6441d04b710178c3b50052672755e15e5cf3780060ca9fdd2c8aba1d392"
+            "sha256": "26a19ba53c3dfff3f572e04f72ed224dca7b03a76a8e0593fc48b458ec6ab535"
           }
         ]
       },
@@ -4084,7 +4118,7 @@
       },
       {
         "name": "tao",
-        "version": "0.35.3",
+        "version": "0.37.1",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -4099,45 +4133,45 @@
       },
       {
         "name": "tauri",
-        "version": "2.11.5",
+        "version": "2.12.1",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
-            "sourceFile": "LICENSE_APACHE-2.0",
+            "sourceFile": "LICENSE-APACHE-2.0",
             "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594"
           },
           {
-            "sourceFile": "LICENSE_MIT",
+            "sourceFile": "LICENSE-MIT",
             "sha256": "9dd42ea92cff2ede5cd477cbfcce051b2d0115c0ac7f368ee88cb545055dff1d"
           }
         ]
       },
       {
         "name": "tauri-codegen",
-        "version": "2.6.3",
+        "version": "2.7.1",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
-            "sourceFile": "LICENSE_APACHE-2.0",
+            "sourceFile": "LICENSE-APACHE-2.0",
             "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594"
           },
           {
-            "sourceFile": "LICENSE_MIT",
+            "sourceFile": "LICENSE-MIT",
             "sha256": "9dd42ea92cff2ede5cd477cbfcce051b2d0115c0ac7f368ee88cb545055dff1d"
           }
         ]
       },
       {
         "name": "tauri-macros",
-        "version": "2.6.3",
+        "version": "2.7.1",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
-            "sourceFile": "LICENSE_APACHE-2.0",
+            "sourceFile": "LICENSE-APACHE-2.0",
             "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594"
           },
           {
-            "sourceFile": "LICENSE_MIT",
+            "sourceFile": "LICENSE-MIT",
             "sha256": "9dd42ea92cff2ede5cd477cbfcce051b2d0115c0ac7f368ee88cb545055dff1d"
           }
         ]
@@ -4220,45 +4254,45 @@
       },
       {
         "name": "tauri-runtime",
-        "version": "2.11.3",
+        "version": "2.12.1",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
-            "sourceFile": "LICENSE_APACHE-2.0",
+            "sourceFile": "LICENSE-APACHE-2.0",
             "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594"
           },
           {
-            "sourceFile": "LICENSE_MIT",
+            "sourceFile": "LICENSE-MIT",
             "sha256": "9dd42ea92cff2ede5cd477cbfcce051b2d0115c0ac7f368ee88cb545055dff1d"
           }
         ]
       },
       {
         "name": "tauri-runtime-wry",
-        "version": "2.11.4",
+        "version": "2.12.1",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
-            "sourceFile": "LICENSE_APACHE-2.0",
+            "sourceFile": "LICENSE-APACHE-2.0",
             "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594"
           },
           {
-            "sourceFile": "LICENSE_MIT",
+            "sourceFile": "LICENSE-MIT",
             "sha256": "9dd42ea92cff2ede5cd477cbfcce051b2d0115c0ac7f368ee88cb545055dff1d"
           }
         ]
       },
       {
         "name": "tauri-utils",
-        "version": "2.9.3",
+        "version": "2.10.1",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
-            "sourceFile": "LICENSE_APACHE-2.0",
+            "sourceFile": "LICENSE-APACHE-2.0",
             "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594"
           },
           {
-            "sourceFile": "LICENSE_MIT",
+            "sourceFile": "LICENSE-MIT",
             "sha256": "9dd42ea92cff2ede5cd477cbfcce051b2d0115c0ac7f368ee88cb545055dff1d"
           }
         ]
@@ -4280,37 +4314,7 @@
       },
       {
         "name": "thiserror",
-        "version": "1.0.69",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE-APACHE",
-            "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
-          },
-          {
-            "sourceFile": "LICENSE-MIT",
-            "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
-          }
-        ]
-      },
-      {
-        "name": "thiserror",
         "version": "2.0.18",
-        "noticeDisposition": "exact-installed-notice-files",
-        "noticeDocuments": [
-          {
-            "sourceFile": "LICENSE-APACHE",
-            "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
-          },
-          {
-            "sourceFile": "LICENSE-MIT",
-            "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
-          }
-        ]
-      },
-      {
-        "name": "thiserror-impl",
-        "version": "1.0.69",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -4596,7 +4600,7 @@
       },
       {
         "name": "tray-icon",
-        "version": "0.24.1",
+        "version": "0.25.1",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -4674,66 +4678,6 @@
         ]
       },
       {
-        "name": "unic-char-property",
-        "version": "0.9.0",
-        "noticeDisposition": "reviewed-installed-metadata-exemption",
-        "reviewedExemptionReason": "The installed crate archive omits a standalone license file; its original crate metadata is the exact installed declaration available for review.",
-        "noticeDocuments": [
-          {
-            "sourceFile": "Cargo.toml.orig",
-            "sha256": "132a2ace33bbc5f54a2c4a4b522f96b7260c9e0fdb7756a753b4017e101e86d0"
-          }
-        ]
-      },
-      {
-        "name": "unic-char-range",
-        "version": "0.9.0",
-        "noticeDisposition": "reviewed-installed-metadata-exemption",
-        "reviewedExemptionReason": "The installed crate archive omits a standalone license file; its original crate metadata is the exact installed declaration available for review.",
-        "noticeDocuments": [
-          {
-            "sourceFile": "Cargo.toml.orig",
-            "sha256": "d176bfd5d70a75b4b8b27ee24e9a8bdd3138aaa3bf0903a7f58497b4e4490f59"
-          }
-        ]
-      },
-      {
-        "name": "unic-common",
-        "version": "0.9.0",
-        "noticeDisposition": "reviewed-installed-metadata-exemption",
-        "reviewedExemptionReason": "The installed crate archive omits a standalone license file; its original crate metadata is the exact installed declaration available for review.",
-        "noticeDocuments": [
-          {
-            "sourceFile": "Cargo.toml.orig",
-            "sha256": "5c74ebf8b8eede95170fbef14b6050735ce8993ce265978f41562386cb0c2bb9"
-          }
-        ]
-      },
-      {
-        "name": "unic-ucd-ident",
-        "version": "0.9.0",
-        "noticeDisposition": "reviewed-installed-metadata-exemption",
-        "reviewedExemptionReason": "The installed crate archive omits a standalone license file; its original crate metadata is the exact installed declaration available for review.",
-        "noticeDocuments": [
-          {
-            "sourceFile": "Cargo.toml.orig",
-            "sha256": "9c1c7cfc028e70f52a6a5bdc126c9348837783e5e3e059429c05fadb9af8ec8d"
-          }
-        ]
-      },
-      {
-        "name": "unic-ucd-version",
-        "version": "0.9.0",
-        "noticeDisposition": "reviewed-installed-metadata-exemption",
-        "reviewedExemptionReason": "The installed crate archive omits a standalone license file; its original crate metadata is the exact installed declaration available for review.",
-        "noticeDocuments": [
-          {
-            "sourceFile": "Cargo.toml.orig",
-            "sha256": "6411d1d10e5bf720a19366db6ab5f4c84cf1156c7033fafbd941f64729bd027c"
-          }
-        ]
-      },
-      {
         "name": "unicode-ident",
         "version": "1.0.24",
         "noticeDisposition": "exact-installed-notice-files",
@@ -4799,7 +4743,7 @@
       },
       {
         "name": "urlpattern",
-        "version": "0.3.0",
+        "version": "0.6.0",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -4884,6 +4828,21 @@
         ]
       },
       {
+        "name": "web-time",
+        "version": "1.1.0",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "LICENSE-APACHE",
+            "sha256": "54a744942eb3fa63a74d8d359989ed6962c04f3f10ff20cfa08ff8aa7efbe4e6"
+          },
+          {
+            "sourceFile": "LICENSE-MIT",
+            "sha256": "f428305bbf2e70fbd807af0f3c7ac1b7acfb95311640f451e9d2e48db6d7e96b"
+          }
+        ]
+      },
+      {
         "name": "web_atoms",
         "version": "0.2.5",
         "noticeDisposition": "exact-installed-notice-files",
@@ -4900,13 +4859,13 @@
       },
       {
         "name": "webview2-com",
-        "version": "0.38.2",
+        "version": "0.39.1",
         "noticeDisposition": "reviewed-installed-metadata-exemption",
-        "reviewedExemptionReason": "The installed crate archive omits a standalone license file; its original crate metadata is the exact installed declaration available for review.",
+        "reviewedExemptionReason": "The 0.39.1 crate archive omits a standalone license file; its exact normalized registry metadata declares MIT and the original workspace metadata/source attribution was reviewed.",
         "noticeDocuments": [
           {
-            "sourceFile": "Cargo.toml.orig",
-            "sha256": "104bce84b453f732f4bd571e7c604d271380b02890d70f1c753af9d58063c7a4"
+            "sourceFile": "Cargo.toml",
+            "sha256": "4ba1c8935a5f535d18115242abbef3c73e9b2dd329a52b87f6f37b7adeae2421"
           }
         ]
       },
@@ -4924,13 +4883,13 @@
       },
       {
         "name": "webview2-com-sys",
-        "version": "0.38.2",
+        "version": "0.39.1",
         "noticeDisposition": "reviewed-installed-metadata-exemption",
-        "reviewedExemptionReason": "The installed crate archive omits a standalone license file; its original crate metadata is the exact installed declaration available for review.",
+        "reviewedExemptionReason": "The 0.39.1 crate archive omits a standalone license file; its exact normalized registry metadata declares MIT and the original workspace metadata/source attribution was reviewed.",
         "noticeDocuments": [
           {
-            "sourceFile": "Cargo.toml.orig",
-            "sha256": "00229c125c597e4f0ddb9e598738ee5b38a9086fd59eea6d2577cdda5f8e5875"
+            "sourceFile": "Cargo.toml",
+            "sha256": "1a3e5684710cb1d2e7e7afdd32af011a4a8038c259f6592ade3f871ca31cad7d"
           }
         ]
       },
@@ -4951,7 +4910,7 @@
       },
       {
         "name": "window-vibrancy",
-        "version": "0.6.0",
+        "version": "0.8.1",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -4999,8 +4958,38 @@
         ]
       },
       {
+        "name": "windows",
+        "version": "0.62.2",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "license-apache-2.0",
+            "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+          },
+          {
+            "sourceFile": "license-mit",
+            "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+          }
+        ]
+      },
+      {
         "name": "windows-collections",
         "version": "0.2.0",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "license-apache-2.0",
+            "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+          },
+          {
+            "sourceFile": "license-mit",
+            "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+          }
+        ]
+      },
+      {
+        "name": "windows-collections",
+        "version": "0.3.2",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -5044,8 +5033,38 @@
         ]
       },
       {
+        "name": "windows-core",
+        "version": "0.62.2",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "license-apache-2.0",
+            "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+          },
+          {
+            "sourceFile": "license-mit",
+            "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+          }
+        ]
+      },
+      {
         "name": "windows-future",
         "version": "0.2.1",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "license-apache-2.0",
+            "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+          },
+          {
+            "sourceFile": "license-mit",
+            "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+          }
+        ]
+      },
+      {
+        "name": "windows-future",
+        "version": "0.3.2",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -5121,6 +5140,21 @@
       {
         "name": "windows-numerics",
         "version": "0.2.0",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "license-apache-2.0",
+            "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+          },
+          {
+            "sourceFile": "license-mit",
+            "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+          }
+        ]
+      },
+      {
+        "name": "windows-numerics",
+        "version": "0.3.1",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -5314,6 +5348,21 @@
         ]
       },
       {
+        "name": "windows-threading",
+        "version": "0.2.1",
+        "noticeDisposition": "exact-installed-notice-files",
+        "noticeDocuments": [
+          {
+            "sourceFile": "license-apache-2.0",
+            "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+          },
+          {
+            "sourceFile": "license-mit",
+            "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+          }
+        ]
+      },
+      {
         "name": "windows-version",
         "version": "0.1.7",
         "noticeDisposition": "exact-installed-notice-files",
@@ -5382,7 +5431,7 @@
       },
       {
         "name": "wry",
-        "version": "0.55.1",
+        "version": "0.57.0",
         "noticeDisposition": "exact-installed-notice-files",
         "noticeDocuments": [
           {
@@ -5525,10 +5574,6 @@
   },
   "documents": [
     {
-      "sha256": "00229c125c597e4f0ddb9e598738ee5b38a9086fd59eea6d2577cdda5f8e5875",
-      "content": "[package]\nname = \"webview2-com-sys\"\ndescription = \"Bindings generated with the windows crate for the WebView2 COM APIs\"\n\nedition.workspace = true\nrust-version.workspace = true\nrepository.workspace = true\nlicense.workspace = true\nkeywords.workspace = true\ncategories.workspace = true\nversion.workspace = true\n\n[package.metadata.docs.rs]\ndefault-target = \"x86_64-pc-windows-msvc\"\ntargets = [\n    \"i686-pc-windows-msvc\",\n    \"aarch64-pc-windows-msvc\",\n    \"x86_64-pc-windows-gnu\",\n    \"i686-pc-windows-gnu\",\n]\n\n[dependencies]\nwindows-core.workspace = true\nwindows.workspace = true\n\n[build-dependencies]\nthiserror.workspace = true\n"
-    },
-    {
       "sha256": "01c266bced4a434da0051174d6bee16a4c82cf634e2679b6155d40d75012390f",
       "content": "This project is dual-licensed under the Unlicense and MIT licenses.\n\nYou may use this code under the terms of either license.\n"
     },
@@ -5613,10 +5658,6 @@
       "content": "The MIT License (MIT)\n\nCopyright (c) 2015 Andrew Gallant\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE.\n"
     },
     {
-      "sha256": "104bce84b453f732f4bd571e7c604d271380b02890d70f1c753af9d58063c7a4",
-      "content": "[package]\nname = \"webview2-com\"\ndescription = \"Rust bindings for the WebView2 COM APIs\"\n\nedition.workspace = true\nrust-version.workspace = true\nrepository.workspace = true\nlicense.workspace = true\nkeywords.workspace = true\ncategories.workspace = true\nversion.workspace = true\n\n[package.metadata.docs.rs]\ndefault-target = \"x86_64-pc-windows-msvc\"\ntargets = [\n    \"i686-pc-windows-msvc\",\n    \"aarch64-pc-windows-msvc\",\n    \"x86_64-pc-windows-gnu\",\n    \"i686-pc-windows-gnu\",\n]\n\n[dependencies]\nwebview2-com-sys.workspace = true\nwebview2-com-macros.workspace = true\n\nwindows.workspace = true\nwindows-core.workspace = true\nwindows-implement.workspace = true\nwindows-interface.workspace = true\n\n[dev-dependencies]\nregex.workspace = true\nserde.workspace = true\nserde_json.workspace = true\n\n[dev-dependencies.windows]\nworkspace = true\nfeatures = [\n    \"Win32_Graphics_Gdi\",\n    \"Win32_System_LibraryLoader\",\n    \"Win32_System_Threading\",\n    \"Win32_UI_HiDpi\",\n    \"Win32_UI_Input_KeyboardAndMouse\",\n]\n"
-    },
-    {
       "sha256": "11d55bd4541c75ee7879547ac49089c489163dae49551389713c3d026cab383e",
       "content": "Copyright (c) 2017-2018 Fredrik Nicol\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
     },
@@ -5625,8 +5666,8 @@
       "content": "Copyright (c) The Rust Project Developers\n\nPermission is hereby granted, free of charge, to any\nperson obtaining a copy of this software and associated\ndocumentation files (the \"Software\"), to deal in the\nSoftware without restriction, including without\nlimitation the rights to use, copy, modify, merge,\npublish, distribute, sublicense, and/or sell copies of\nthe Software, and to permit persons to whom the Software\nis furnished to do so, subject to the following\nconditions:\n\nThe above copyright notice and this permission notice\nshall be included in all copies or substantial portions\nof the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF\nANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED\nTO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A\nPARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT\nSHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY\nCLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\nOF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR\nIN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER\nDEALINGS IN THE SOFTWARE.\n"
     },
     {
-      "sha256": "132a2ace33bbc5f54a2c4a4b522f96b7260c9e0fdb7756a753b4017e101e86d0",
-      "content": "[package]\nname = \"unic-char-property\"\nversion = \"0.9.0\"\nedition = \"2018\"\nauthors = [\"The UNIC Project Developers\"]\nrepository = \"https://github.com/open-i18n/rust-unic/\"\nlicense = \"MIT/Apache-2.0\"\ndescription = \"UNIC — Unicode Character Tools — Character Property taxonomy, contracts and build macros\"\nkeywords = [\"text\", \"unicode\", \"character-property\"]\ncategories = [\"internationalization\", \"text-processing\", \"parsing\"]\n\n# No tests/benches that depends on /data/\nexclude = []\n\n[dependencies]\nunic-char-range = { path = \"../range/\", version = \"0.9.0\" }\n\n[badges]\nmaintenance = { status = \"actively-developed\" }\nis-it-maintained-issue-resolution = { repository = \"open-i18n/rust-unic\" }\nis-it-maintained-open-issues = { repository = \"open-i18n/rust-unic\" }\nappveyor = { repository = \"open-i18n/rust-unic\", branch = \"master\", service = \"github\" }\ntravis-ci = { repository = \"open-i18n/rust-unic\", branch = \"master\" }\n"
+      "sha256": "13c6e8d5ec2e75ae6b66542498e049e1100e71ef25e29ccb9cb083b40d6279ea",
+      "content": "[package]\nname = \"alloc-stdlib\"\ndescription = \"A dynamic allocator example that may be used with the stdlib\"\nversion = \"0.3.0\"\nauthors = [\"Daniel Reiter Horn <danielrh@dropbox.com>\"]\ndocumentation = \"https://raw.githubusercontent.com/dropbox/rust-alloc-no-stdlib/master/alloc-stdlib/tests/lib.rs\"\nhomepage = \"https://github.com/dropbox/rust-alloc-no-stdlib\"\nreadme = \"README.md\"\nkeywords = [\"custom\", \"allocator\", \"calloc\", \"safe\", \"nostd\"]\nlicense = \"BSD-3-Clause\"\nrepository = \"https://github.com/dropbox/rust-alloc-no-stdlib\"\nautobins = false\n\n[[bin]]\nname = \"example\"\n\n[dependencies]\n\"alloc-no-stdlib\" = { version=\">=3.0.0, <4.0.0\", path=\"../\"}\n\n[features]\nunsafe = [\"alloc-no-stdlib/unsafe\"]\n"
     },
     {
       "sha256": "155420c6403d4e0fca34105e3c03fdd6939b64c393c7ec6f95f5b72c5474eab0",
@@ -5639,6 +5680,10 @@
     {
       "sha256": "1a2f5c12ddc934d58956aa5dbdd3255fe55fd957633ab7d0d39e4f0daa73f7df",
       "content": "Copyright 2023 The Fuchsia Authors\n\nPermission is hereby granted, free of charge, to any\nperson obtaining a copy of this software and associated\ndocumentation files (the \"Software\"), to deal in the\nSoftware without restriction, including without\nlimitation the rights to use, copy, modify, merge,\npublish, distribute, sublicense, and/or sell copies of\nthe Software, and to permit persons to whom the Software\nis furnished to do so, subject to the following\nconditions:\n\nThe above copyright notice and this permission notice\nshall be included in all copies or substantial portions\nof the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF\nANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED\nTO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A\nPARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT\nSHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY\nCLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\nOF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR\nIN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER\nDEALINGS IN THE SOFTWARE.\n\n"
+    },
+    {
+      "sha256": "1a3e5684710cb1d2e7e7afdd32af011a4a8038c259f6592ade3f871ca31cad7d",
+      "content": "# THIS FILE IS AUTOMATICALLY GENERATED BY CARGO\n#\n# When uploading crates to the registry Cargo will automatically\n# \"normalize\" Cargo.toml files for maximal compatibility\n# with all versions of Cargo and also rewrite `path` dependencies\n# to registry (e.g., crates.io) dependencies.\n#\n# If you are reading this file be aware that the original Cargo.toml\n# will likely look very different (and much more reasonable).\n# See Cargo.toml.orig for the original contents.\n\n[package]\nedition = \"2021\"\nrust-version = \"1.82\"\nname = \"webview2-com-sys\"\nversion = \"0.39.1\"\nbuild = \"build.rs\"\nautolib = false\nautobins = false\nautoexamples = false\nautotests = false\nautobenches = false\ndescription = \"Bindings generated with the windows crate for the WebView2 COM APIs\"\nreadme = \"README.md\"\nkeywords = [\n    \"win32\",\n    \"webview2\",\n]\ncategories = [\"os::windows-apis\"]\nlicense = \"MIT\"\nrepository = \"https://github.com/wravery/webview2-rs\"\n\n[package.metadata.docs.rs]\ndefault-target = \"x86_64-pc-windows-msvc\"\ntargets = [\n    \"i686-pc-windows-msvc\",\n    \"aarch64-pc-windows-msvc\",\n    \"x86_64-pc-windows-gnu\",\n    \"i686-pc-windows-gnu\",\n]\n\n[lib]\nname = \"webview2_com_sys\"\npath = \"src/lib.rs\"\n\n[dependencies.windows]\nversion = \"0.62\"\nfeatures = [\n    \"Win32_Foundation\",\n    \"Win32_Globalization\",\n    \"Win32_System_Com\",\n    \"Win32_System_Ole\",\n    \"Win32_System_Variant\",\n    \"Win32_System_WinRT\",\n    \"Win32_UI_WindowsAndMessaging\",\n]\n\n[dependencies.windows-core]\nversion = \"0.62\"\n\n[build-dependencies.thiserror]\nversion = \"2\"\n"
     },
     {
       "sha256": "1c7cf76689c837a68ed8d704994e52a0f2940c087958f860d17f3186afbdcc0c",
@@ -5695,6 +5740,10 @@
     {
       "sha256": "26235c41e314fb0da35b33b2bb5bcbc4dd523839f8eeca52efcd43586f441fb5",
       "content": "SPDXVersion: SPDX-2.1\nDataLicense: CC0-1.0\nPackageName: wry\nDataFormat: SPDXRef-1\nPackageSupplier: Organization: The Tauri Programme in the Commons Conservancy\nPackageHomePage: https://tauri.app\nPackageLicenseDeclared: Apache-2.0\nPackageLicenseDeclared: MIT\nPackageCopyrightText: 2020-2023, The Tauri Programme in the Commons Conservancy\nPackageSummary: <text>Wry is the official, rust-based webview\nwindowing service for Tauri.\n                </text>\nPackageComment: <text>The package includes the following libraries; see\nRelationship information.\n                </text>\nCreated: 2020-05-20T09:00:00Z\nPackageDownloadLocation: git://github.com/tauri-apps/wry\nPackageDownloadLocation: git+https://github.com/tauri-apps/wry.git\nPackageDownloadLocation: git+ssh://github.com/tauri-apps/wry.git\nCreator: Person: Daniel Thompson-Yvetot"
+    },
+    {
+      "sha256": "26a19ba53c3dfff3f572e04f72ed224dca7b03a76a8e0593fc48b458ec6ab535",
+      "content": "[package]\nname = \"selectors\"\nversion = \"0.38.0\"\nauthors = [\"The Servo Project Developers\"]\ndocumentation = \"https://docs.rs/selectors/\"\ndescription = \"CSS Selectors matching for Rust\"\nrepository = \"https://github.com/servo/stylo\"\nreadme = \"README.md\"\nkeywords = [\"css\", \"selectors\"]\nlicense = \"MPL-2.0\"\nedition = \"2021\"\nbuild = \"build.rs\"\n\n[lib]\nname = \"selectors\"\npath = \"lib.rs\"\n\n[features]\nbench = []\nto_shmem = [\"dep:to_shmem\", \"dep:to_shmem_derive\"]\n\n[dependencies]\nbitflags = \"2\"\ncssparser = \"0.37\"\nderive_more = { version = \"2\", features = [\"add\", \"add_assign\"] }\nrustc-hash = \"2.1.1\"\nlog = \"0.4\"\nphf = \"0.13\"\nprecomputed-hash = \"0.1\"\nservo_arc = { workspace = true }\nsmallvec = \"1.0\"\nto_shmem = { workspace = true, optional = true }\nto_shmem_derive = { workspace = true, optional = true }\nnew_debug_unreachable = \"1\"\n\n[build-dependencies]\nphf_codegen = \"0.13\"\n"
     },
     {
       "sha256": "270b0d81891aa44c7e8726cf9432dade9556a01c848bacd2f3ef839c9c1a1859",
@@ -5805,6 +5854,10 @@
       "content": "Copyright 2017 Juniper Networks, Inc.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n"
     },
     {
+      "sha256": "4ba1c8935a5f535d18115242abbef3c73e9b2dd329a52b87f6f37b7adeae2421",
+      "content": "# THIS FILE IS AUTOMATICALLY GENERATED BY CARGO\n#\n# When uploading crates to the registry Cargo will automatically\n# \"normalize\" Cargo.toml files for maximal compatibility\n# with all versions of Cargo and also rewrite `path` dependencies\n# to registry (e.g., crates.io) dependencies.\n#\n# If you are reading this file be aware that the original Cargo.toml\n# will likely look very different (and much more reasonable).\n# See Cargo.toml.orig for the original contents.\n\n[package]\nedition = \"2021\"\nrust-version = \"1.82\"\nname = \"webview2-com\"\nversion = \"0.39.1\"\nbuild = false\nautolib = false\nautobins = false\nautoexamples = false\nautotests = false\nautobenches = false\ndescription = \"Rust bindings for the WebView2 COM APIs\"\nreadme = \"README.md\"\nkeywords = [\n    \"win32\",\n    \"webview2\",\n]\ncategories = [\"os::windows-apis\"]\nlicense = \"MIT\"\nrepository = \"https://github.com/wravery/webview2-rs\"\n\n[package.metadata.docs.rs]\ndefault-target = \"x86_64-pc-windows-msvc\"\ntargets = [\n    \"i686-pc-windows-msvc\",\n    \"aarch64-pc-windows-msvc\",\n    \"x86_64-pc-windows-gnu\",\n    \"i686-pc-windows-gnu\",\n]\n\n[lib]\nname = \"webview2_com\"\npath = \"src/lib.rs\"\n\n[[example]]\nname = \"sample\"\npath = \"examples/sample.rs\"\n\n[dependencies.webview2-com-macros]\nversion = \"0.8.1\"\n\n[dependencies.webview2-com-sys]\nversion = \"0.39.1\"\n\n[dependencies.windows]\nversion = \"0.62\"\nfeatures = [\n    \"Win32_Foundation\",\n    \"Win32_Globalization\",\n    \"Win32_System_Com\",\n    \"Win32_System_Ole\",\n    \"Win32_System_Variant\",\n    \"Win32_System_WinRT\",\n    \"Win32_UI_WindowsAndMessaging\",\n]\n\n[dependencies.windows-core]\nversion = \"0.62\"\n\n[dev-dependencies.regex]\nversion = \"1\"\n\n[dev-dependencies.serde]\nversion = \"1.0\"\nfeatures = [\"derive\"]\n\n[dev-dependencies.serde_json]\nversion = \"1\"\n\n[dev-dependencies.windows]\nversion = \"0.62\"\nfeatures = [\n    \"Win32_Foundation\",\n    \"Win32_Globalization\",\n    \"Win32_System_Com\",\n    \"Win32_System_Ole\",\n    \"Win32_System_Variant\",\n    \"Win32_System_WinRT\",\n    \"Win32_UI_WindowsAndMessaging\",\n    \"Win32_Graphics_Gdi\",\n    \"Win32_System_LibraryLoader\",\n    \"Win32_System_Threading\",\n    \"Win32_UI_HiDpi\",\n    \"Win32_UI_Input_KeyboardAndMouse\",\n]\n"
+    },
+    {
       "sha256": "4cada0bd02ea3692eee6f16400d86c6508bbd3bafb2b65fed0419f36d4f83e8f",
       "content": "Copyright (c) 2019 The CryptoCorrosion Contributors\n\nPermission is hereby granted, free of charge, to any\nperson obtaining a copy of this software and associated\ndocumentation files (the \"Software\"), to deal in the\nSoftware without restriction, including without\nlimitation the rights to use, copy, modify, merge,\npublish, distribute, sublicense, and/or sell copies of\nthe Software, and to permit persons to whom the Software\nis furnished to do so, subject to the following\nconditions:\n\nThe above copyright notice and this permission notice\nshall be included in all copies or substantial portions\nof the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF\nANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED\nTO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A\nPARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT\nSHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY\nCLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\nOF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR\nIN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER\nDEALINGS IN THE SOFTWARE.\n"
     },
@@ -5829,6 +5882,10 @@
       "content": "Copyright (c) 2018-2026 The rust-random Project Developers\nCopyright (c) 2014 The Rust Project Developers\n\nPermission is hereby granted, free of charge, to any\nperson obtaining a copy of this software and associated\ndocumentation files (the \"Software\"), to deal in the\nSoftware without restriction, including without\nlimitation the rights to use, copy, modify, merge,\npublish, distribute, sublicense, and/or sell copies of\nthe Software, and to permit persons to whom the Software\nis furnished to do so, subject to the following\nconditions:\n\nThe above copyright notice and this permission notice\nshall be included in all copies or substantial portions\nof the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF\nANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED\nTO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A\nPARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT\nSHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY\nCLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\nOF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR\nIN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER\nDEALINGS IN THE SOFTWARE.\n"
     },
     {
+      "sha256": "54a744942eb3fa63a74d8d359989ed6962c04f3f10ff20cfa08ff8aa7efbe4e6",
+      "content": "                                 Apache License\n                           Version 2.0, January 2004\n                        http://www.apache.org/licenses/\n\n   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION\n\n   1. Definitions.\n\n      \"License\" shall mean the terms and conditions for use, reproduction,\n      and distribution as defined by Sections 1 through 9 of this document.\n\n      \"Licensor\" shall mean the copyright owner or entity authorized by\n      the copyright owner that is granting the License.\n\n      \"Legal Entity\" shall mean the union of the acting entity and all\n      other entities that control, are controlled by, or are under common\n      control with that entity. For the purposes of this definition,\n      \"control\" means (i) the power, direct or indirect, to cause the\n      direction or management of such entity, whether by contract or\n      otherwise, or (ii) ownership of fifty percent (50%) or more of the\n      outstanding shares, or (iii) beneficial ownership of such entity.\n\n      \"You\" (or \"Your\") shall mean an individual or Legal Entity\n      exercising permissions granted by this License.\n\n      \"Source\" form shall mean the preferred form for making modifications,\n      including but not limited to software source code, documentation\n      source, and configuration files.\n\n      \"Object\" form shall mean any form resulting from mechanical\n      transformation or translation of a Source form, including but\n      not limited to compiled object code, generated documentation,\n      and conversions to other media types.\n\n      \"Work\" shall mean the work of authorship, whether in Source or\n      Object form, made available under the License, as indicated by a\n      copyright notice that is included in or attached to the work\n      (an example is provided in the Appendix below).\n\n      \"Derivative Works\" shall mean any work, whether in Source or Object\n      form, that is based on (or derived from) the Work and for which the\n      editorial revisions, annotations, elaborations, or other modifications\n      represent, as a whole, an original work of authorship. For the purposes\n      of this License, Derivative Works shall not include works that remain\n      separable from, or merely link (or bind by name) to the interfaces of,\n      the Work and Derivative Works thereof.\n\n      \"Contribution\" shall mean any work of authorship, including\n      the original version of the Work and any modifications or additions\n      to that Work or Derivative Works thereof, that is intentionally\n      submitted to Licensor for inclusion in the Work by the copyright owner\n      or by an individual or Legal Entity authorized to submit on behalf of\n      the copyright owner. For the purposes of this definition, \"submitted\"\n      means any form of electronic, verbal, or written communication sent\n      to the Licensor or its representatives, including but not limited to\n      communication on electronic mailing lists, source code control systems,\n      and issue tracking systems that are managed by, or on behalf of, the\n      Licensor for the purpose of discussing and improving the Work, but\n      excluding communication that is conspicuously marked or otherwise\n      designated in writing by the copyright owner as \"Not a Contribution.\"\n\n      \"Contributor\" shall mean Licensor and any individual or Legal Entity\n      on behalf of whom a Contribution has been received by Licensor and\n      subsequently incorporated within the Work.\n\n   2. Grant of Copyright License. Subject to the terms and conditions of\n      this License, each Contributor hereby grants to You a perpetual,\n      worldwide, non-exclusive, no-charge, royalty-free, irrevocable\n      copyright license to reproduce, prepare Derivative Works of,\n      publicly display, publicly perform, sublicense, and distribute the\n      Work and such Derivative Works in Source or Object form.\n\n   3. Grant of Patent License. Subject to the terms and conditions of\n      this License, each Contributor hereby grants to You a perpetual,\n      worldwide, non-exclusive, no-charge, royalty-free, irrevocable\n      (except as stated in this section) patent license to make, have made,\n      use, offer to sell, sell, import, and otherwise transfer the Work,\n      where such license applies only to those patent claims licensable\n      by such Contributor that are necessarily infringed by their\n      Contribution(s) alone or by combination of their Contribution(s)\n      with the Work to which such Contribution(s) was submitted. If You\n      institute patent litigation against any entity (including a\n      cross-claim or counterclaim in a lawsuit) alleging that the Work\n      or a Contribution incorporated within the Work constitutes direct\n      or contributory patent infringement, then any patent licenses\n      granted to You under this License for that Work shall terminate\n      as of the date such litigation is filed.\n\n   4. Redistribution. You may reproduce and distribute copies of the\n      Work or Derivative Works thereof in any medium, with or without\n      modifications, and in Source or Object form, provided that You\n      meet the following conditions:\n\n      (a) You must give any other recipients of the Work or\n          Derivative Works a copy of this License; and\n\n      (b) You must cause any modified files to carry prominent notices\n          stating that You changed the files; and\n\n      (c) You must retain, in the Source form of any Derivative Works\n          that You distribute, all copyright, patent, trademark, and\n          attribution notices from the Source form of the Work,\n          excluding those notices that do not pertain to any part of\n          the Derivative Works; and\n\n      (d) If the Work includes a \"NOTICE\" text file as part of its\n          distribution, then any Derivative Works that You distribute must\n          include a readable copy of the attribution notices contained\n          within such NOTICE file, excluding those notices that do not\n          pertain to any part of the Derivative Works, in at least one\n          of the following places: within a NOTICE text file distributed\n          as part of the Derivative Works; within the Source form or\n          documentation, if provided along with the Derivative Works; or,\n          within a display generated by the Derivative Works, if and\n          wherever such third-party notices normally appear. The contents\n          of the NOTICE file are for informational purposes only and\n          do not modify the License. You may add Your own attribution\n          notices within Derivative Works that You distribute, alongside\n          or as an addendum to the NOTICE text from the Work, provided\n          that such additional attribution notices cannot be construed\n          as modifying the License.\n\n      You may add Your own copyright statement to Your modifications and\n      may provide additional or different license terms and conditions\n      for use, reproduction, or distribution of Your modifications, or\n      for any such Derivative Works as a whole, provided Your use,\n      reproduction, and distribution of the Work otherwise complies with\n      the conditions stated in this License.\n\n   5. Submission of Contributions. Unless You explicitly state otherwise,\n      any Contribution intentionally submitted for inclusion in the Work\n      by You to the Licensor shall be under the terms and conditions of\n      this License, without any additional terms or conditions.\n      Notwithstanding the above, nothing herein shall supersede or modify\n      the terms of any separate license agreement you may have executed\n      with Licensor regarding such Contributions.\n\n   6. Trademarks. This License does not grant permission to use the trade\n      names, trademarks, service marks, or product names of the Licensor,\n      except as required for reasonable and customary use in describing the\n      origin of the Work and reproducing the content of the NOTICE file.\n\n   7. Disclaimer of Warranty. Unless required by applicable law or\n      agreed to in writing, Licensor provides the Work (and each\n      Contributor provides its Contributions) on an \"AS IS\" BASIS,\n      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or\n      implied, including, without limitation, any warranties or conditions\n      of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A\n      PARTICULAR PURPOSE. You are solely responsible for determining the\n      appropriateness of using or redistributing the Work and assume any\n      risks associated with Your exercise of permissions under this License.\n\n   8. Limitation of Liability. In no event and under no legal theory,\n      whether in tort (including negligence), contract, or otherwise,\n      unless required by applicable law (such as deliberate and grossly\n      negligent acts) or agreed to in writing, shall any Contributor be\n      liable to You for damages, including any direct, indirect, special,\n      incidental, or consequential damages of any character arising as a\n      result of this License or out of the use or inability to use the\n      Work (including but not limited to damages for loss of goodwill,\n      work stoppage, computer failure or malfunction, or any and all\n      other commercial damages or losses), even if such Contributor\n      has been advised of the possibility of such damages.\n\n   9. Accepting Warranty or Additional Liability. While redistributing\n      the Work or Derivative Works thereof, You may choose to offer,\n      and charge a fee for, acceptance of support, warranty, indemnity,\n      or other liability obligations and/or rights consistent with this\n      License. However, in accepting such obligations, You may act only\n      on Your own behalf and on Your sole responsibility, not on behalf\n      of any other Contributor, and only if You agree to indemnify,\n      defend, and hold each Contributor harmless for any liability\n      incurred by, or claims asserted against, such Contributor by reason\n      of your accepting any such warranty or additional liability.\n\n   END OF TERMS AND CONDITIONS\n\n   APPENDIX: How to apply the Apache License to your work.\n\n      To apply the Apache License to your work, attach the following\n      boilerplate notice, with the fields enclosed by brackets \"[]\"\n      replaced with your own identifying information. (Don't include\n      the brackets!)  The text should be enclosed in the appropriate\n      comment syntax for the file format. We also recommend that a\n      file or class name and description of purpose be included on the\n      same \"printed page\" as the copyright notice for easier\n      identification within third-party archives.\n\n   Copyright 2023 dAxpeDDa\n\n   Licensed under the Apache License, Version 2.0 (the \"License\");\n   you may not use this file except in compliance with the License.\n   You may obtain a copy of the License at\n\n       http://www.apache.org/licenses/LICENSE-2.0\n\n   Unless required by applicable law or agreed to in writing, software\n   distributed under the License is distributed on an \"AS IS\" BASIS,\n   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n   See the License for the specific language governing permissions and\n   limitations under the License.\n"
+    },
+    {
       "sha256": "54b32293ea560d22cd9b62af9b2cda1a030d910a48c6601d227c5ff2338d95f8",
       "content": "MIT License\n\nCopyright (c) 2017 Ilya Kantor\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
     },
@@ -5849,10 +5906,6 @@
       "content": "Except as otherwise noted, this project is licensed under the following\n(ISC-style) terms:\n\nCopyright 2015 Brian Smith.\n\nPermission to use, copy, modify, and/or distribute this software for any\npurpose with or without fee is hereby granted, provided that the above\ncopyright notice and this permission notice appear in all copies.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHORS DISCLAIM ALL WARRANTIES\nWITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF\nMERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR\nANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES\nWHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN\nACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF\nOR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.\n\nThe files under third-party/chromium are licensed as described in\nthird-party/chromium/LICENSE.\n"
     },
     {
-      "sha256": "5c74ebf8b8eede95170fbef14b6050735ce8993ce265978f41562386cb0c2bb9",
-      "content": "[package]\nname = \"unic-common\"\nversion = \"0.9.0\"\nedition = \"2018\"\nauthors = [\"The UNIC Project Developers\"]\nrepository = \"https://github.com/open-i18n/rust-unic/\"\nlicense = \"MIT/Apache-2.0\"\ndescription = \"UNIC — Common Utilities\"\nkeywords = [\"unicode\", \"version\"]\ncategories = [\"internationalization\", \"text-processing\"]\n\n# No tests/benches that depends on /data/\nexclude = []\n\n[features]\ndefault = []\nunstable = []  # Rust nightly features\n\n[badges]\nmaintenance = { status = \"actively-developed\" }\nis-it-maintained-issue-resolution = { repository = \"open-i18n/rust-unic\" }\nis-it-maintained-open-issues = { repository = \"open-i18n/rust-unic\" }\nappveyor = { repository = \"open-i18n/rust-unic\", branch = \"master\", service = \"github\" }\ntravis-ci = { repository = \"open-i18n/rust-unic\", branch = \"master\" }\n"
-    },
-    {
       "sha256": "5cc390ab5e5e6507f467368cbab1297552d64bfd863f4b496c7928508bcfefd8",
       "content": "MIT License\n\nCopyright (c) 2021 1Password\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
     },
@@ -5863,6 +5916,10 @@
     {
       "sha256": "5e05b024f653a5ce199e77cbbbd42fb5553562ec714b819421ed0c3e552a75d7",
       "content": "Copyright (c) 2017 Robert Grosse\n\nPermission is hereby granted, free of charge, to any\nperson obtaining a copy of this software and associated\ndocumentation files (the \"Software\"), to deal in the\nSoftware without restriction, including without\nlimitation the rights to use, copy, modify, merge,\npublish, distribute, sublicense, and/or sell copies of\nthe Software, and to permit persons to whom the Software\nis furnished to do so, subject to the following\nconditions:\n\nThe above copyright notice and this permission notice\nshall be included in all copies or substantial portions\nof the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF\nANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED\nTO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A\nPARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT\nSHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY\nCLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\nOF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR\nIN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER\nDEALINGS IN THE SOFTWARE."
+    },
+    {
+      "sha256": "5e834fe9788c524210deda859c46a550ffa5aa0cba9ea0572f0d81120e97c008",
+      "content": "SPDXVersion: SPDX-2.1\nDataLicense: CC0-1.0\nPackageName: tauri\nDataFormat: SPDXRef-1\nPackageSupplier: Organization: The Tauri Programme in the Commons Conservancy\nPackageHomePage: https://tauri.app\nPackageLicenseDeclared: Apache-2.0\nPackageLicenseDeclared: MIT\nPackageCopyrightText: 2019-2025, The Tauri Programme in the Commons Conservancy\nPackageSummary: <text>Tauri is a rust project that enables developers to make secure\nand small desktop applications using a web frontend.\n                </text>\nPackageComment: <text>The package includes the following libraries; see\nRelationship information.\n                </text>\nCreated: 2019-05-20T09:00:00Z\nPackageDownloadLocation: git://github.com/tauri-apps/tauri\nPackageDownloadLocation: git+https://github.com/tauri-apps/tauri.git\nPackageDownloadLocation: git+ssh://github.com/tauri-apps/tauri.git\nCreator: Person: Daniel Thompson-Yvetot\n"
     },
     {
       "sha256": "60a7062291b01ba068f300612cdbdc20382ac1d4934f07bcdd7167c15299f309",
@@ -5887,10 +5944,6 @@
     {
       "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
       "content": "                              Apache License\n                        Version 2.0, January 2004\n                     http://www.apache.org/licenses/\n\nTERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION\n\n1. Definitions.\n\n   \"License\" shall mean the terms and conditions for use, reproduction,\n   and distribution as defined by Sections 1 through 9 of this document.\n\n   \"Licensor\" shall mean the copyright owner or entity authorized by\n   the copyright owner that is granting the License.\n\n   \"Legal Entity\" shall mean the union of the acting entity and all\n   other entities that control, are controlled by, or are under common\n   control with that entity. For the purposes of this definition,\n   \"control\" means (i) the power, direct or indirect, to cause the\n   direction or management of such entity, whether by contract or\n   otherwise, or (ii) ownership of fifty percent (50%) or more of the\n   outstanding shares, or (iii) beneficial ownership of such entity.\n\n   \"You\" (or \"Your\") shall mean an individual or Legal Entity\n   exercising permissions granted by this License.\n\n   \"Source\" form shall mean the preferred form for making modifications,\n   including but not limited to software source code, documentation\n   source, and configuration files.\n\n   \"Object\" form shall mean any form resulting from mechanical\n   transformation or translation of a Source form, including but\n   not limited to compiled object code, generated documentation,\n   and conversions to other media types.\n\n   \"Work\" shall mean the work of authorship, whether in Source or\n   Object form, made available under the License, as indicated by a\n   copyright notice that is included in or attached to the work\n   (an example is provided in the Appendix below).\n\n   \"Derivative Works\" shall mean any work, whether in Source or Object\n   form, that is based on (or derived from) the Work and for which the\n   editorial revisions, annotations, elaborations, or other modifications\n   represent, as a whole, an original work of authorship. For the purposes\n   of this License, Derivative Works shall not include works that remain\n   separable from, or merely link (or bind by name) to the interfaces of,\n   the Work and Derivative Works thereof.\n\n   \"Contribution\" shall mean any work of authorship, including\n   the original version of the Work and any modifications or additions\n   to that Work or Derivative Works thereof, that is intentionally\n   submitted to Licensor for inclusion in the Work by the copyright owner\n   or by an individual or Legal Entity authorized to submit on behalf of\n   the copyright owner. For the purposes of this definition, \"submitted\"\n   means any form of electronic, verbal, or written communication sent\n   to the Licensor or its representatives, including but not limited to\n   communication on electronic mailing lists, source code control systems,\n   and issue tracking systems that are managed by, or on behalf of, the\n   Licensor for the purpose of discussing and improving the Work, but\n   excluding communication that is conspicuously marked or otherwise\n   designated in writing by the copyright owner as \"Not a Contribution.\"\n\n   \"Contributor\" shall mean Licensor and any individual or Legal Entity\n   on behalf of whom a Contribution has been received by Licensor and\n   subsequently incorporated within the Work.\n\n2. Grant of Copyright License. Subject to the terms and conditions of\n   this License, each Contributor hereby grants to You a perpetual,\n   worldwide, non-exclusive, no-charge, royalty-free, irrevocable\n   copyright license to reproduce, prepare Derivative Works of,\n   publicly display, publicly perform, sublicense, and distribute the\n   Work and such Derivative Works in Source or Object form.\n\n3. Grant of Patent License. Subject to the terms and conditions of\n   this License, each Contributor hereby grants to You a perpetual,\n   worldwide, non-exclusive, no-charge, royalty-free, irrevocable\n   (except as stated in this section) patent license to make, have made,\n   use, offer to sell, sell, import, and otherwise transfer the Work,\n   where such license applies only to those patent claims licensable\n   by such Contributor that are necessarily infringed by their\n   Contribution(s) alone or by combination of their Contribution(s)\n   with the Work to which such Contribution(s) was submitted. If You\n   institute patent litigation against any entity (including a\n   cross-claim or counterclaim in a lawsuit) alleging that the Work\n   or a Contribution incorporated within the Work constitutes direct\n   or contributory patent infringement, then any patent licenses\n   granted to You under this License for that Work shall terminate\n   as of the date such litigation is filed.\n\n4. Redistribution. You may reproduce and distribute copies of the\n   Work or Derivative Works thereof in any medium, with or without\n   modifications, and in Source or Object form, provided that You\n   meet the following conditions:\n\n   (a) You must give any other recipients of the Work or\n       Derivative Works a copy of this License; and\n\n   (b) You must cause any modified files to carry prominent notices\n       stating that You changed the files; and\n\n   (c) You must retain, in the Source form of any Derivative Works\n       that You distribute, all copyright, patent, trademark, and\n       attribution notices from the Source form of the Work,\n       excluding those notices that do not pertain to any part of\n       the Derivative Works; and\n\n   (d) If the Work includes a \"NOTICE\" text file as part of its\n       distribution, then any Derivative Works that You distribute must\n       include a readable copy of the attribution notices contained\n       within such NOTICE file, excluding those notices that do not\n       pertain to any part of the Derivative Works, in at least one\n       of the following places: within a NOTICE text file distributed\n       as part of the Derivative Works; within the Source form or\n       documentation, if provided along with the Derivative Works; or,\n       within a display generated by the Derivative Works, if and\n       wherever such third-party notices normally appear. The contents\n       of the NOTICE file are for informational purposes only and\n       do not modify the License. You may add Your own attribution\n       notices within Derivative Works that You distribute, alongside\n       or as an addendum to the NOTICE text from the Work, provided\n       that such additional attribution notices cannot be construed\n       as modifying the License.\n\n   You may add Your own copyright statement to Your modifications and\n   may provide additional or different license terms and conditions\n   for use, reproduction, or distribution of Your modifications, or\n   for any such Derivative Works as a whole, provided Your use,\n   reproduction, and distribution of the Work otherwise complies with\n   the conditions stated in this License.\n\n5. Submission of Contributions. Unless You explicitly state otherwise,\n   any Contribution intentionally submitted for inclusion in the Work\n   by You to the Licensor shall be under the terms and conditions of\n   this License, without any additional terms or conditions.\n   Notwithstanding the above, nothing herein shall supersede or modify\n   the terms of any separate license agreement you may have executed\n   with Licensor regarding such Contributions.\n\n6. Trademarks. This License does not grant permission to use the trade\n   names, trademarks, service marks, or product names of the Licensor,\n   except as required for reasonable and customary use in describing the\n   origin of the Work and reproducing the content of the NOTICE file.\n\n7. Disclaimer of Warranty. Unless required by applicable law or\n   agreed to in writing, Licensor provides the Work (and each\n   Contributor provides its Contributions) on an \"AS IS\" BASIS,\n   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or\n   implied, including, without limitation, any warranties or conditions\n   of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A\n   PARTICULAR PURPOSE. You are solely responsible for determining the\n   appropriateness of using or redistributing the Work and assume any\n   risks associated with Your exercise of permissions under this License.\n\n8. Limitation of Liability. In no event and under no legal theory,\n   whether in tort (including negligence), contract, or otherwise,\n   unless required by applicable law (such as deliberate and grossly\n   negligent acts) or agreed to in writing, shall any Contributor be\n   liable to You for damages, including any direct, indirect, special,\n   incidental, or consequential damages of any character arising as a\n   result of this License or out of the use or inability to use the\n   Work (including but not limited to damages for loss of goodwill,\n   work stoppage, computer failure or malfunction, or any and all\n   other commercial damages or losses), even if such Contributor\n   has been advised of the possibility of such damages.\n\n9. Accepting Warranty or Additional Liability. While redistributing\n   the Work or Derivative Works thereof, You may choose to offer,\n   and charge a fee for, acceptance of support, warranty, indemnity,\n   or other liability obligations and/or rights consistent with this\n   License. However, in accepting such obligations, You may act only\n   on Your own behalf and on Your sole responsibility, not on behalf\n   of any other Contributor, and only if You agree to indemnify,\n   defend, and hold each Contributor harmless for any liability\n   incurred by, or claims asserted against, such Contributor by reason\n   of your accepting any such warranty or additional liability.\n\nEND OF TERMS AND CONDITIONS\n"
-    },
-    {
-      "sha256": "6411d1d10e5bf720a19366db6ab5f4c84cf1156c7033fafbd941f64729bd027c",
-      "content": "[package]\nname = \"unic-ucd-version\"\nversion = \"0.9.0\"\nedition = \"2018\"\nauthors = [\"The UNIC Project Developers\"]\nrepository = \"https://github.com/open-i18n/rust-unic/\"\nlicense = \"MIT/Apache-2.0\"\ndescription = \"UNIC — Unicode Character Database — Version\"\nkeywords = [\"text\", \"unicode\", \"version\"]\ncategories = [\"internationalization\", \"text-processing\", \"parsing\", \"rendering\"]\n\n# No tests/benches that depends on /data/\nexclude = []\n\n[dependencies]\nunic-common = { path = \"../../common/\", version = \"0.9.0\" }\n\n[badges]\nmaintenance = { status = \"actively-developed\" }\nis-it-maintained-issue-resolution = { repository = \"open-i18n/rust-unic\" }\nis-it-maintained-open-issues = { repository = \"open-i18n/rust-unic\" }\nappveyor = { repository = \"open-i18n/rust-unic\", branch = \"master\", service = \"github\" }\ntravis-ci = { repository = \"open-i18n/rust-unic\", branch = \"master\" }\n"
     },
     {
       "sha256": "6485b8ed310d3f0340bf1ad1f47645069ce4069dcc6bb46c7d5c6faf41de1fdb",
@@ -5983,10 +6036,6 @@
     {
       "sha256": "769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb",
       "content": "                              Apache License\n                        Version 2.0, January 2004\n                     http://www.apache.org/licenses/\n\nTERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION\n\n1. Definitions.\n\n   \"License\" shall mean the terms and conditions for use, reproduction,\n   and distribution as defined by Sections 1 through 9 of this document.\n\n   \"Licensor\" shall mean the copyright owner or entity authorized by\n   the copyright owner that is granting the License.\n\n   \"Legal Entity\" shall mean the union of the acting entity and all\n   other entities that control, are controlled by, or are under common\n   control with that entity. For the purposes of this definition,\n   \"control\" means (i) the power, direct or indirect, to cause the\n   direction or management of such entity, whether by contract or\n   otherwise, or (ii) ownership of fifty percent (50%) or more of the\n   outstanding shares, or (iii) beneficial ownership of such entity.\n\n   \"You\" (or \"Your\") shall mean an individual or Legal Entity\n   exercising permissions granted by this License.\n\n   \"Source\" form shall mean the preferred form for making modifications,\n   including but not limited to software source code, documentation\n   source, and configuration files.\n\n   \"Object\" form shall mean any form resulting from mechanical\n   transformation or translation of a Source form, including but\n   not limited to compiled object code, generated documentation,\n   and conversions to other media types.\n\n   \"Work\" shall mean the work of authorship, whether in Source or\n   Object form, made available under the License, as indicated by a\n   copyright notice that is included in or attached to the work\n   (an example is provided in the Appendix below).\n\n   \"Derivative Works\" shall mean any work, whether in Source or Object\n   form, that is based on (or derived from) the Work and for which the\n   editorial revisions, annotations, elaborations, or other modifications\n   represent, as a whole, an original work of authorship. For the purposes\n   of this License, Derivative Works shall not include works that remain\n   separable from, or merely link (or bind by name) to the interfaces of,\n   the Work and Derivative Works thereof.\n\n   \"Contribution\" shall mean any work of authorship, including\n   the original version of the Work and any modifications or additions\n   to that Work or Derivative Works thereof, that is intentionally\n   submitted to Licensor for inclusion in the Work by the copyright owner\n   or by an individual or Legal Entity authorized to submit on behalf of\n   the copyright owner. For the purposes of this definition, \"submitted\"\n   means any form of electronic, verbal, or written communication sent\n   to the Licensor or its representatives, including but not limited to\n   communication on electronic mailing lists, source code control systems,\n   and issue tracking systems that are managed by, or on behalf of, the\n   Licensor for the purpose of discussing and improving the Work, but\n   excluding communication that is conspicuously marked or otherwise\n   designated in writing by the copyright owner as \"Not a Contribution.\"\n\n   \"Contributor\" shall mean Licensor and any individual or Legal Entity\n   on behalf of whom a Contribution has been received by Licensor and\n   subsequently incorporated within the Work.\n\n2. Grant of Copyright License. Subject to the terms and conditions of\n   this License, each Contributor hereby grants to You a perpetual,\n   worldwide, non-exclusive, no-charge, royalty-free, irrevocable\n   copyright license to reproduce, prepare Derivative Works of,\n   publicly display, publicly perform, sublicense, and distribute the\n   Work and such Derivative Works in Source or Object form.\n\n3. Grant of Patent License. Subject to the terms and conditions of\n   this License, each Contributor hereby grants to You a perpetual,\n   worldwide, non-exclusive, no-charge, royalty-free, irrevocable\n   (except as stated in this section) patent license to make, have made,\n   use, offer to sell, sell, import, and otherwise transfer the Work,\n   where such license applies only to those patent claims licensable\n   by such Contributor that are necessarily infringed by their\n   Contribution(s) alone or by combination of their Contribution(s)\n   with the Work to which such Contribution(s) was submitted. If You\n   institute patent litigation against any entity (including a\n   cross-claim or counterclaim in a lawsuit) alleging that the Work\n   or a Contribution incorporated within the Work constitutes direct\n   or contributory patent infringement, then any patent licenses\n   granted to You under this License for that Work shall terminate\n   as of the date such litigation is filed.\n\n4. Redistribution. You may reproduce and distribute copies of the\n   Work or Derivative Works thereof in any medium, with or without\n   modifications, and in Source or Object form, provided that You\n   meet the following conditions:\n\n   (a) You must give any other recipients of the Work or\n       Derivative Works a copy of this License; and\n\n   (b) You must cause any modified files to carry prominent notices\n       stating that You changed the files; and\n\n   (c) You must retain, in the Source form of any Derivative Works\n       that You distribute, all copyright, patent, trademark, and\n       attribution notices from the Source form of the Work,\n       excluding those notices that do not pertain to any part of\n       the Derivative Works; and\n\n   (d) If the Work includes a \"NOTICE\" text file as part of its\n       distribution, then any Derivative Works that You distribute must\n       include a readable copy of the attribution notices contained\n       within such NOTICE file, excluding those notices that do not\n       pertain to any part of the Derivative Works, in at least one\n       of the following places: within a NOTICE text file distributed\n       as part of the Derivative Works; within the Source form or\n       documentation, if provided along with the Derivative Works; or,\n       within a display generated by the Derivative Works, if and\n       wherever such third-party notices normally appear. The contents\n       of the NOTICE file are for informational purposes only and\n       do not modify the License. You may add Your own attribution\n       notices within Derivative Works that You distribute, alongside\n       or as an addendum to the NOTICE text from the Work, provided\n       that such additional attribution notices cannot be construed\n       as modifying the License.\n\n   You may add Your own copyright statement to Your modifications and\n   may provide additional or different license terms and conditions\n   for use, reproduction, or distribution of Your modifications, or\n   for any such Derivative Works as a whole, provided Your use,\n   reproduction, and distribution of the Work otherwise complies with\n   the conditions stated in this License.\n\n5. Submission of Contributions. Unless You explicitly state otherwise,\n   any Contribution intentionally submitted for inclusion in the Work\n   by You to the Licensor shall be under the terms and conditions of\n   this License, without any additional terms or conditions.\n   Notwithstanding the above, nothing herein shall supersede or modify\n   the terms of any separate license agreement you may have executed\n   with Licensor regarding such Contributions.\n\n6. Trademarks. This License does not grant permission to use the trade\n   names, trademarks, service marks, or product names of the Licensor,\n   except as required for reasonable and customary use in describing the\n   origin of the Work and reproducing the content of the NOTICE file.\n\n7. Disclaimer of Warranty. Unless required by applicable law or\n   agreed to in writing, Licensor provides the Work (and each\n   Contributor provides its Contributions) on an \"AS IS\" BASIS,\n   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or\n   implied, including, without limitation, any warranties or conditions\n   of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A\n   PARTICULAR PURPOSE. You are solely responsible for determining the\n   appropriateness of using or redistributing the Work and assume any\n   risks associated with Your exercise of permissions under this License.\n\n8. Limitation of Liability. In no event and under no legal theory,\n   whether in tort (including negligence), contract, or otherwise,\n   unless required by applicable law (such as deliberate and grossly\n   negligent acts) or agreed to in writing, shall any Contributor be\n   liable to You for damages, including any direct, indirect, special,\n   incidental, or consequential damages of any character arising as a\n   result of this License or out of the use or inability to use the\n   Work (including but not limited to damages for loss of goodwill,\n   work stoppage, computer failure or malfunction, or any and all\n   other commercial damages or losses), even if such Contributor\n   has been advised of the possibility of such damages.\n\n9. Accepting Warranty or Additional Liability. While redistributing\n   the Work or Derivative Works thereof, You may choose to offer,\n   and charge a fee for, acceptance of support, warranty, indemnity,\n   or other liability obligations and/or rights consistent with this\n   License. However, in accepting such obligations, You may act only\n   on Your own behalf and on Your sole responsibility, not on behalf\n   of any other Contributor, and only if You agree to indemnify,\n   defend, and hold each Contributor harmless for any liability\n   incurred by, or claims asserted against, such Contributor by reason\n   of your accepting any such warranty or additional liability.\n\nEND OF TERMS AND CONDITIONS\n\nAPPENDIX: How to apply the Apache License to your work.\n\n   To apply the Apache License to your work, attach the following\n   boilerplate notice, with the fields enclosed by brackets \"[]\"\n   replaced with your own identifying information. (Don't include\n   the brackets!)  The text should be enclosed in the appropriate\n   comment syntax for the file format. We also recommend that a\n   file or class name and description of purpose be included on the\n   same \"printed page\" as the copyright notice for easier\n   identification within third-party archives.\n\nCopyright [yyyy] [name of copyright owner]\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n\thttp://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an \"AS IS\" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License."
-    },
-    {
-      "sha256": "77cff698112ee833c7c2e2b42c2b51677502ee04ca4a0c213155e3494a80fec3",
-      "content": "[package]\nname = \"alloc-stdlib\"\ndescription = \"A dynamic allocator example that may be used with the stdlib\"\nversion = \"0.2.4\"\nauthors = [\"Daniel Reiter Horn <danielrh@dropbox.com>\"]\ndocumentation = \"https://raw.githubusercontent.com/dropbox/rust-alloc-no-stdlib/master/alloc-stdlib/tests/lib.rs\"\nhomepage = \"https://github.com/dropbox/rust-alloc-no-stdlib\"\nreadme = \"README.md\"\nkeywords = [\"custom\", \"allocator\", \"calloc\", \"safe\", \"nostd\"]\nlicense = \"BSD-3-Clause\"\nrepository = \"https://github.com/dropbox/rust-alloc-no-stdlib\"\nautobins = false\n\n[[bin]]\nname = \"example\"\n\n[dependencies]\n\"alloc-no-stdlib\" = { version=\">=2.0.4, <3.0.0\", path=\"../\"}\n\n[features]\nunsafe = [\"alloc-no-stdlib/unsafe\"]\n"
     },
     {
       "sha256": "792d075c7bad6dac258a44e799eb64cbf465e24d9932d27669be08c5ec957e27",
@@ -6121,10 +6170,6 @@
       "content": "MIT License\n\nCopyright (c) Luke Edwards <luke.edwards05@gmail.com> (lukeed.com)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n"
     },
     {
-      "sha256": "9c1c7cfc028e70f52a6a5bdc126c9348837783e5e3e059429c05fadb9af8ec8d",
-      "content": "[package]\nname = \"unic-ucd-ident\"\nversion = \"0.9.0\"\nedition = \"2018\"\nauthors = [\"The UNIC Project Developers\"]\nrepository = \"https://github.com/open-i18n/rust-unic/\"\nlicense = \"MIT/Apache-2.0\"\ndescription = \"UNIC — Unicode Character Database — Identifier Properties\"\nkeywords = [\"text\", \"unicode\", \"character-property\"]\ncategories = [\"text-processing\", \"parsing\"]\n\nexclude = [\n    \"tests/lexical_class_tests\",\n]\n\n[features]\ndefault = [ \"xid\" ]\npattern = []\nxid = []\nid = []\n\n[dependencies]\nunic-char-property = { path = \"../../char/property/\", version = \"0.9.0\" }\nunic-char-range = { path = \"../../char/range\", version = \"0.9.0\" }\nunic-ucd-version = { path = \"../version/\", version = \"0.9.0\" }\n\n[dev-dependencies]\nunic-ucd-category = { path = \"../category/\", version = \"0.9.0\" }\nregex = \"0.2\"\nmatches = \"0.1\"\n\n[badges]\nmaintenance = { status = \"actively-developed\" }\nis-it-maintained-issue-resolution = { repository = \"open-i18n/rust-unic\" }\nis-it-maintained-open-issues = { repository = \"open-i18n/rust-unic\" }\nappveyor = { repository = \"open-i18n/rust-unic\", branch = \"master\", service = \"github\" }\ntravis-ci = { repository = \"open-i18n/rust-unic\", branch = \"master\" }\n"
-    },
-    {
       "sha256": "9c5a80639a57c1c945570e7ebbca0706305849ce3c098021325cca9db2f7acc4",
       "content": "MIT License\n\nCopyright (c) 2019 Osspial\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
     },
@@ -6253,10 +6298,6 @@
       "content": "Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE."
     },
     {
-      "sha256": "be6ed6441d04b710178c3b50052672755e15e5cf3780060ca9fdd2c8aba1d392",
-      "content": "[package]\nname = \"selectors\"\nversion = \"0.36.1\"\nauthors = [\"The Servo Project Developers\"]\ndocumentation = \"https://docs.rs/selectors/\"\ndescription = \"CSS Selectors matching for Rust\"\nrepository = \"https://github.com/servo/stylo\"\nreadme = \"README.md\"\nkeywords = [\"css\", \"selectors\"]\nlicense = \"MPL-2.0\"\nedition = \"2021\"\nbuild = \"build.rs\"\n\n[lib]\nname = \"selectors\"\npath = \"lib.rs\"\n\n[features]\nbench = []\nto_shmem = [\"dep:to_shmem\", \"dep:to_shmem_derive\"]\n\n[dependencies]\nbitflags = \"2\"\ncssparser = \"0.36\"\nderive_more = { version = \"2\", features = [\"add\", \"add_assign\"] }\nrustc-hash = \"2.1.1\"\nlog = \"0.4\"\nphf = \"0.13\"\nprecomputed-hash = \"0.1\"\nservo_arc = { workspace = true }\nsmallvec = \"1.0\"\nto_shmem = { workspace = true, optional = true }\nto_shmem_derive = { workspace = true, optional = true }\nnew_debug_unreachable = \"1\"\n\n[build-dependencies]\nphf_codegen = \"0.13\"\n"
-    },
-    {
       "sha256": "c09aae9d3c77b531f56351a9947bc7446511d6b025b3255312d3e3442a9a7583",
       "content": "The MIT License (MIT)\r\n\r\nCopyright (c) 2015 Bartłomiej Kamiński\r\n\r\nPermission is hereby granted, free of charge, to any person obtaining a copy\r\nof this software and associated documentation files (the \"Software\"), to deal\r\nin the Software without restriction, including without limitation the rights\r\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\r\ncopies of the Software, and to permit persons to whom the Software is\r\nfurnished to do so, subject to the following conditions:\r\n\r\nThe above copyright notice and this permission notice shall be included in all\r\ncopies or substantial portions of the Software.\r\n\r\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\r\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\r\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\r\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\r\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\r\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\r\nSOFTWARE."
     },
@@ -6327,10 +6368,6 @@
     {
       "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
       "content": "\n                                 Apache License\n                           Version 2.0, January 2004\n                        http://www.apache.org/licenses/\n\n   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION\n\n   1. Definitions.\n\n      \"License\" shall mean the terms and conditions for use, reproduction,\n      and distribution as defined by Sections 1 through 9 of this document.\n\n      \"Licensor\" shall mean the copyright owner or entity authorized by\n      the copyright owner that is granting the License.\n\n      \"Legal Entity\" shall mean the union of the acting entity and all\n      other entities that control, are controlled by, or are under common\n      control with that entity. For the purposes of this definition,\n      \"control\" means (i) the power, direct or indirect, to cause the\n      direction or management of such entity, whether by contract or\n      otherwise, or (ii) ownership of fifty percent (50%) or more of the\n      outstanding shares, or (iii) beneficial ownership of such entity.\n\n      \"You\" (or \"Your\") shall mean an individual or Legal Entity\n      exercising permissions granted by this License.\n\n      \"Source\" form shall mean the preferred form for making modifications,\n      including but not limited to software source code, documentation\n      source, and configuration files.\n\n      \"Object\" form shall mean any form resulting from mechanical\n      transformation or translation of a Source form, including but\n      not limited to compiled object code, generated documentation,\n      and conversions to other media types.\n\n      \"Work\" shall mean the work of authorship, whether in Source or\n      Object form, made available under the License, as indicated by a\n      copyright notice that is included in or attached to the work\n      (an example is provided in the Appendix below).\n\n      \"Derivative Works\" shall mean any work, whether in Source or Object\n      form, that is based on (or derived from) the Work and for which the\n      editorial revisions, annotations, elaborations, or other modifications\n      represent, as a whole, an original work of authorship. For the purposes\n      of this License, Derivative Works shall not include works that remain\n      separable from, or merely link (or bind by name) to the interfaces of,\n      the Work and Derivative Works thereof.\n\n      \"Contribution\" shall mean any work of authorship, including\n      the original version of the Work and any modifications or additions\n      to that Work or Derivative Works thereof, that is intentionally\n      submitted to Licensor for inclusion in the Work by the copyright owner\n      or by an individual or Legal Entity authorized to submit on behalf of\n      the copyright owner. For the purposes of this definition, \"submitted\"\n      means any form of electronic, verbal, or written communication sent\n      to the Licensor or its representatives, including but not limited to\n      communication on electronic mailing lists, source code control systems,\n      and issue tracking systems that are managed by, or on behalf of, the\n      Licensor for the purpose of discussing and improving the Work, but\n      excluding communication that is conspicuously marked or otherwise\n      designated in writing by the copyright owner as \"Not a Contribution.\"\n\n      \"Contributor\" shall mean Licensor and any individual or Legal Entity\n      on behalf of whom a Contribution has been received by Licensor and\n      subsequently incorporated within the Work.\n\n   2. Grant of Copyright License. Subject to the terms and conditions of\n      this License, each Contributor hereby grants to You a perpetual,\n      worldwide, non-exclusive, no-charge, royalty-free, irrevocable\n      copyright license to reproduce, prepare Derivative Works of,\n      publicly display, publicly perform, sublicense, and distribute the\n      Work and such Derivative Works in Source or Object form.\n\n   3. Grant of Patent License. Subject to the terms and conditions of\n      this License, each Contributor hereby grants to You a perpetual,\n      worldwide, non-exclusive, no-charge, royalty-free, irrevocable\n      (except as stated in this section) patent license to make, have made,\n      use, offer to sell, sell, import, and otherwise transfer the Work,\n      where such license applies only to those patent claims licensable\n      by such Contributor that are necessarily infringed by their\n      Contribution(s) alone or by combination of their Contribution(s)\n      with the Work to which such Contribution(s) was submitted. If You\n      institute patent litigation against any entity (including a\n      cross-claim or counterclaim in a lawsuit) alleging that the Work\n      or a Contribution incorporated within the Work constitutes direct\n      or contributory patent infringement, then any patent licenses\n      granted to You under this License for that Work shall terminate\n      as of the date such litigation is filed.\n\n   4. Redistribution. You may reproduce and distribute copies of the\n      Work or Derivative Works thereof in any medium, with or without\n      modifications, and in Source or Object form, provided that You\n      meet the following conditions:\n\n      (a) You must give any other recipients of the Work or\n          Derivative Works a copy of this License; and\n\n      (b) You must cause any modified files to carry prominent notices\n          stating that You changed the files; and\n\n      (c) You must retain, in the Source form of any Derivative Works\n          that You distribute, all copyright, patent, trademark, and\n          attribution notices from the Source form of the Work,\n          excluding those notices that do not pertain to any part of\n          the Derivative Works; and\n\n      (d) If the Work includes a \"NOTICE\" text file as part of its\n          distribution, then any Derivative Works that You distribute must\n          include a readable copy of the attribution notices contained\n          within such NOTICE file, excluding those notices that do not\n          pertain to any part of the Derivative Works, in at least one\n          of the following places: within a NOTICE text file distributed\n          as part of the Derivative Works; within the Source form or\n          documentation, if provided along with the Derivative Works; or,\n          within a display generated by the Derivative Works, if and\n          wherever such third-party notices normally appear. The contents\n          of the NOTICE file are for informational purposes only and\n          do not modify the License. You may add Your own attribution\n          notices within Derivative Works that You distribute, alongside\n          or as an addendum to the NOTICE text from the Work, provided\n          that such additional attribution notices cannot be construed\n          as modifying the License.\n\n      You may add Your own copyright statement to Your modifications and\n      may provide additional or different license terms and conditions\n      for use, reproduction, or distribution of Your modifications, or\n      for any such Derivative Works as a whole, provided Your use,\n      reproduction, and distribution of the Work otherwise complies with\n      the conditions stated in this License.\n\n   5. Submission of Contributions. Unless You explicitly state otherwise,\n      any Contribution intentionally submitted for inclusion in the Work\n      by You to the Licensor shall be under the terms and conditions of\n      this License, without any additional terms or conditions.\n      Notwithstanding the above, nothing herein shall supersede or modify\n      the terms of any separate license agreement you may have executed\n      with Licensor regarding such Contributions.\n\n   6. Trademarks. This License does not grant permission to use the trade\n      names, trademarks, service marks, or product names of the Licensor,\n      except as required for reasonable and customary use in describing the\n      origin of the Work and reproducing the content of the NOTICE file.\n\n   7. Disclaimer of Warranty. Unless required by applicable law or\n      agreed to in writing, Licensor provides the Work (and each\n      Contributor provides its Contributions) on an \"AS IS\" BASIS,\n      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or\n      implied, including, without limitation, any warranties or conditions\n      of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A\n      PARTICULAR PURPOSE. You are solely responsible for determining the\n      appropriateness of using or redistributing the Work and assume any\n      risks associated with Your exercise of permissions under this License.\n\n   8. Limitation of Liability. In no event and under no legal theory,\n      whether in tort (including negligence), contract, or otherwise,\n      unless required by applicable law (such as deliberate and grossly\n      negligent acts) or agreed to in writing, shall any Contributor be\n      liable to You for damages, including any direct, indirect, special,\n      incidental, or consequential damages of any character arising as a\n      result of this License or out of the use or inability to use the\n      Work (including but not limited to damages for loss of goodwill,\n      work stoppage, computer failure or malfunction, or any and all\n      other commercial damages or losses), even if such Contributor\n      has been advised of the possibility of such damages.\n\n   9. Accepting Warranty or Additional Liability. While redistributing\n      the Work or Derivative Works thereof, You may choose to offer,\n      and charge a fee for, acceptance of support, warranty, indemnity,\n      or other liability obligations and/or rights consistent with this\n      License. However, in accepting such obligations, You may act only\n      on Your own behalf and on Your sole responsibility, not on behalf\n      of any other Contributor, and only if You agree to indemnify,\n      defend, and hold each Contributor harmless for any liability\n      incurred by, or claims asserted against, such Contributor by reason\n      of your accepting any such warranty or additional liability.\n\n   END OF TERMS AND CONDITIONS\n\n   APPENDIX: How to apply the Apache License to your work.\n\n      To apply the Apache License to your work, attach the following\n      boilerplate notice, with the fields enclosed by brackets \"[]\"\n      replaced with your own identifying information. (Don't include\n      the brackets!)  The text should be enclosed in the appropriate\n      comment syntax for the file format. We also recommend that a\n      file or class name and description of purpose be included on the\n      same \"printed page\" as the copyright notice for easier\n      identification within third-party archives.\n\n   Copyright [yyyy] [name of copyright owner]\n\n   Licensed under the Apache License, Version 2.0 (the \"License\");\n   you may not use this file except in compliance with the License.\n   You may obtain a copy of the License at\n\n       http://www.apache.org/licenses/LICENSE-2.0\n\n   Unless required by applicable law or agreed to in writing, software\n   distributed under the License is distributed on an \"AS IS\" BASIS,\n   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n   See the License for the specific language governing permissions and\n   limitations under the License.\n"
-    },
-    {
-      "sha256": "d176bfd5d70a75b4b8b27ee24e9a8bdd3138aaa3bf0903a7f58497b4e4490f59",
-      "content": "[package]\nname = \"unic-char-range\"\nversion = \"0.9.0\"\nedition = \"2018\"\nauthors = [\"The UNIC Project Developers\"]\nrepository = \"https://github.com/open-i18n/rust-unic/\"\nlicense = \"MIT/Apache-2.0\"\ndescription = \"UNIC — Unicode Character Tools — Character Range and Iteration\"\nkeywords = [\"text\", \"unicode\", \"utilities\", \"iteration\"]\ncategories = [\"internationalization\", \"text-processing\"]\n\n# No tests/benches that depends on /data/\nexclude = []\n\n[dependencies]\nrayon = { version = \"1.0\", optional = true }\n\n[features]\ndefault = []\nstd = []\n\n# Unstable features\nunstable = [\"exact-size-is-empty\", \"fused\", \"trusted-len\"]\nexact-size-is-empty = []\nfused = []\ntrusted-len = []\n\n[badges]\nmaintenance = { status = \"actively-developed\" }\nis-it-maintained-issue-resolution = { repository = \"open-i18n/rust-unic\" }\nis-it-maintained-open-issues = { repository = \"open-i18n/rust-unic\" }\nappveyor = { repository = \"open-i18n/rust-unic\", branch = \"master\", service = \"github\" }\ntravis-ci = { repository = \"open-i18n/rust-unic\", branch = \"master\" }\n"
     },
     {
       "sha256": "d1ef714acc9b5f3e04a69aa46ff1c160d67f579063001aca9c43b7f572799f7b",
@@ -6439,6 +6476,10 @@
     {
       "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
       "content": "UNICODE LICENSE V3\n\nCOPYRIGHT AND PERMISSION NOTICE\n\nCopyright © 2020-2024 Unicode, Inc.\n\nNOTICE TO USER: Carefully read the following legal agreement. BY\nDOWNLOADING, INSTALLING, COPYING OR OTHERWISE USING DATA FILES, AND/OR\nSOFTWARE, YOU UNEQUIVOCALLY ACCEPT, AND AGREE TO BE BOUND BY, ALL OF THE\nTERMS AND CONDITIONS OF THIS AGREEMENT. IF YOU DO NOT AGREE, DO NOT\nDOWNLOAD, INSTALL, COPY, DISTRIBUTE OR USE THE DATA FILES OR SOFTWARE.\n\nPermission is hereby granted, free of charge, to any person obtaining a\ncopy of data files and any associated documentation (the \"Data Files\") or\nsoftware and any associated documentation (the \"Software\") to deal in the\nData Files or Software without restriction, including without limitation\nthe rights to use, copy, modify, merge, publish, distribute, and/or sell\ncopies of the Data Files or Software, and to permit persons to whom the\nData Files or Software are furnished to do so, provided that either (a)\nthis copyright and permission notice appear with all copies of the Data\nFiles or Software, or (b) this copyright and permission notice appear in\nassociated Documentation.\n\nTHE DATA FILES AND SOFTWARE ARE PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY\nKIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF\nTHIRD PARTY RIGHTS.\n\nIN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN THIS NOTICE\nBE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT OR CONSEQUENTIAL DAMAGES,\nOR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,\nWHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,\nARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THE DATA\nFILES OR SOFTWARE.\n\nExcept as contained in this notice, the name of a copyright holder shall\nnot be used in advertising or otherwise to promote the sale, use or other\ndealings in these Data Files or Software without prior written\nauthorization of the copyright holder.\n\nSPDX-License-Identifier: Unicode-3.0\n\n—\n\nPortions of ICU4X may have been adapted from ICU4C and/or ICU4J.\nICU 1.8.1 to ICU 57.1 © 1995-2016 International Business Machines Corporation and others.\n"
+    },
+    {
+      "sha256": "f428305bbf2e70fbd807af0f3c7ac1b7acfb95311640f451e9d2e48db6d7e96b",
+      "content": "MIT License\n\nCopyright (c) 2023 dAxpeDDa\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
     },
     {
       "sha256": "f51ac2c59a222f7476ce507ca879960e2b64ea64bb2786eefdbeb7b0b538d1b7",
