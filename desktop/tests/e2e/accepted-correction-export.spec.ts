@@ -29,6 +29,7 @@ async function installExportBridge(page: Page, preaccepted = true) {
         return fixture.advanced && result.acceptedRevision
           ? {
               ...result,
+              revisionCount: 2,
               acceptedRevision: {
                 ...result.acceptedRevision,
                 revision: 2,

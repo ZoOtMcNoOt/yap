@@ -1,4 +1,4 @@
-//! Export only an already accepted, current source-bound correction.
+//! Export an explicitly selected accepted, current source-bound correction.
 
 use std::path::Path;
 
@@ -40,7 +40,7 @@ pub(crate) async fn export_accepted_transcript_correction(
         let _permit = permit;
         let source = Path::new(&output_path);
         let accepted = require_displayed_revision(
-            recover_accepted_transcript_correction(source)?,
+            recover_accepted_transcript_correction(source, Some(revision))?,
             revision,
             &corrected_sha256,
         )?;
@@ -62,7 +62,7 @@ pub(crate) async fn export_accepted_transcript_correction(
             &accepted,
             &selected,
             &crate::paths::app_data_dir(),
-            || recover_accepted_transcript_correction(source),
+            || recover_accepted_transcript_correction(source, Some(revision)),
         )
     })
     .await

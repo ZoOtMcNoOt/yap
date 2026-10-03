@@ -56,6 +56,8 @@ Current product-completion evidence:
 - [Connection review source check](connection-review-source-check/2026-10-03/verification.md): complete-bundle matching and a read-only operator command.
 - [Published-vector rollback integrity](knowledge-rollback-integrity/2026-10-03/verification.md): retained projections and concurrent-write refusal.
 
+- [Earlier accepted correction selection](accepted-correction-selection/2026-10-03/verification.md): offline reading/copy/export, history ownership and responsive screens.
+
 Do not commit private scans, scan identifiers, sensitive audio/transcripts, raw
 host snapshots, credentials, or enterprise configuration. Public evidence may
 record hashes, versions, counts, redacted outcomes, and explicit limitations.

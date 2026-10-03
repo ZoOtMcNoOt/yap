@@ -37,6 +37,8 @@ the goal orders the work. Earlier plans and evidence remain available through th
   [implementation status](ADR-IMPLEMENTATION-STATUS.md) tracks what is wired up.
 - [Specifications](specs/) and [OpenAPI](../server/openapi/README.md) describe
   interfaces. Each server feature still needs its explicitly configured runtime.
+- [Accepted correction history](specs/accepted-correction-history.md) explains
+  offline selection, reading, copying and export of saved revisions.
 - [Knowledge connections](specs/knowledge-connections.md) explains source-cited
   relationships, proposals and human publication boundaries.
 - [Connection review packages](specs/connection-review-package.md) explains exporting

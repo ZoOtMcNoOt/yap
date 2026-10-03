@@ -71,12 +71,21 @@ Earlier dependency/consolidation results remain in the [desktop evidence](eviden
 
 ## Current increment
 
-The [execution queue](plans/active/2026-10-02-yap-project-hill-climb.md#current-increment-export-a-connection-review-package)
-now targets **exporting a source-bound connection review package**. Inspection and
-discard are verified; the implemented export carries the exact proposal and citations
-into human Git review. [Five local software outcomes pass](evidence/connection-review-export/2026-10-03/verification.md);
+The [execution queue](plans/active/2026-10-02-yap-project-hill-climb.md#current-local-increment-read-and-export-earlier-accepted-corrections)
+now targets **reading and exporting earlier accepted corrections** offline.
+The selector preserves original transcripts, latest acceptance and saved history;
+late reads and repeated selection retain their owner. Native checks pass with
+1,375 units and 27 integrations (11 declared model/hardware ignores); frontend
+units pass 404 cases with two Windows-only skips, and the production build passes.
+All 27 related browser cases and the complete 231-case Linux browser regression
+pass, with one declared Windows-only island skip (232 total).
+[Evidence and screens](evidence/accepted-correction-selection/2026-10-03/verification.md)
+retain the checks and limits. GitHub authentication is disconnected, so pushing
+and reviewed exact-head integration remain pending for all retained iterations.
+
+[Connection review export](evidence/connection-review-export/2026-10-03/verification.md)
+carries the exact proposal and citations into human Git review. Five local software outcomes pass;
 the complete Linux browser suite passes with 221 cases and one declared Windows-only skip.
-GitHub authentication is disconnected, so pushing and reviewed exact-head integration remain pending.
 Canonical publication and generation rebuilding remain separate open outcomes.
 
 While access is unavailable, [local source checking](evidence/connection-review-source-check/2026-10-03/verification.md)
@@ -153,15 +162,16 @@ regression passes 102 cases. Human publication and rebuild recovery remain open.
 [Accepted correction recovery](evidence/accepted-correction-recovery/2026-10-03/verification.md)
 and [UTF-8 export](evidence/accepted-correction-export/2026-10-03/verification.md)
 retain six verified outcomes each for trusted offline reopening, source/history
-revalidation, exact new-file publication and preserved originals/history. Older
-revision selection, timed/speaker exports and explicit damaged-history repair
-remain open.
+revalidation, exact new-file publication and preserved originals/history.
+[Earlier-revision selection](specs/accepted-correction-history.md) is locally
+implemented with hosted integration pending. Timed/speaker exports and explicit
+damaged-history repair remain open.
 
 The [shared design](evidence/design-refresh/2026-10-03/review.md) retains seven
 verified outcomes and the island. [Connections](evidence/knowledge-connections/2026-10-03/verification.md)
 remains six of seven overall outcomes; [Curator](evidence/curator-connections/2026-10-03/verification.md)
 verifies its six proposal outcomes. Actual reasoning, authorized human canonical
-publication and rebuilding remain open. Further formats, older correction revisions and supervised ASR/live work remain in the active queue.
+publication and rebuilding remain open. Further formats, correction-history repair and supervised ASR/live work remain in the active queue.
 
 [Connection-owned Knowledge views](evidence/connection-owned-knowledge/2026-10-03-verification.md)
 verify five outcomes for native revision binding, private-state clearing and

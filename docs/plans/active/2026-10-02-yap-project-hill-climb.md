@@ -43,7 +43,7 @@ The rows below cover the full roadmap. Their order is the initial priority; revi
 
 | Workstream | Baseline and next complete outcome | Qualification boundary |
 | --- | --- | --- |
-| Transcript review and dedicated export | Original and latest accepted-revision UTF-8 exports are software verified alongside reading/search/copy/open/reveal and offline accepted-correction recovery. Preserve the [original](../../evidence/transcript-export/2026-10-02-verification.md) and [accepted export](../../evidence/accepted-correction-export/2026-10-03/verification.md) contracts; older revision selection and timed/speaker exports remain open. | Native dialog/platform filesystem behavior needs target checks; export correctness is model independent. |
+| Transcript review and dedicated export | Original and latest accepted-revision UTF-8 exports are software verified alongside reading/search/copy/open/reveal and offline accepted-correction recovery. Preserve the [original](../../evidence/transcript-export/2026-10-02-verification.md) and [accepted export](../../evidence/accepted-correction-export/2026-10-03/verification.md) contracts. Earlier revision selection is locally implemented with integration pending; timed/speaker exports remain open. | Native dialog/platform filesystem behavior needs target checks; export correctness is model independent. |
 | Terminology and personalization | Personal and explicitly configured shared CRUD connect trusted scope/connection authority, the canonical ledger, frozen snapshots and Settings controls; [shared evidence](../../evidence/shared-terminology/2026-10-03-verification.md) covers nine outcomes. Continue directory administration and provider projections using [ADR 0028](../../adr/0028-model-independent-terminology-authority.md). | Directory/admin policy and provider-specific effectiveness need IT and models. |
 | Imported recordings and more formats | WAV/MP3/FLAC/Ogg Vorbis/single-track AAC-LC M4A/MP4 normalization, durable jobs, cancellation/retry and native result access exist. Audit full source-to-result recovery; add remaining approved WebM and broader Ogg codecs incrementally with decoder/license, resource and malformed-input checks. | Actual ASR quality, speaker/alignment quality and advertised maximum duration require representative inference. |
 | Local dictation, setup and model lifecycle | Supported setup/recovery UI is verified under fixtures. Audit capture/session/restart, explicit install/import, corruption, atomic replacement, rollback and offline behavior; close portable gaps and prepare target checks. | Physical microphones, hotkeys, cross-app delivery, tray hit testing and Windows model guards require Windows. |
@@ -78,9 +78,9 @@ The linked records retain each increment's acceptance conditions, before/after b
 | Knowledge connections | 6/7 | Model-free permission-filtered browsing, source-cited incoming/outgoing links, native lease/cancellation, accessible graph/list and recovery; [evidence](../../evidence/knowledge-connections/2026-10-03/verification.md). Curator connection proposals are separately verified below; human publication and rebuild recovery remain open. |
 | Connection-owned Knowledge | 5/5 | Shared native authority revision, owner-bound submission/rendering, same-owner offline/task drafts and contained delayed cancellation; [acceptance/evidence](../../evidence/connection-owned-knowledge/2026-10-03-verification.md). |
 | Curator connection proposals | 6/6 | Exact identified source pair, binary review, atomic noncanonical persistence, native owned-query binding and responsive recovery; [evidence/screens](../../evidence/curator-connections/2026-10-03/verification.md). Actual reasoning and human canonical publication/rebuilding remain open. |
-| Accepted correction recovery | 6/6 | Trusted bounded source/chain reopening, preserved damaged history, source-bound offline reading/copying and responsive saved-versus-suggested review; [evidence/screens](../../evidence/accepted-correction-recovery/2026-10-03/verification.md). Older-revision selection and explicit repair remain open; accepted UTF-8 export is verified below. |
+| Accepted correction recovery | 6/6 | Trusted bounded source/chain reopening, preserved damaged history, source-bound offline reading/copying and responsive saved-versus-suggested review; [evidence/screens](../../evidence/accepted-correction-recovery/2026-10-03/verification.md). Earlier-revision selection is locally implemented with integration pending; explicit repair remains open. Accepted UTF-8 export is verified below. |
 | Saved connection inspection | 6/6 | Owned persisted references, current-generation endpoint permissions, exact citations and contained native/UI reads; [acceptance/screens/checks](../../evidence/connection-proposal-inspection/2026-10-03/verification.md). Human publication and rebuilding remain open. |
-| Accepted correction export | 6/6 | Displayed saved-revision preconditions, native source/history revalidation, exact UTF-8 new-file publication and shared original/accepted export ownership; [evidence/screens](../../evidence/accepted-correction-export/2026-10-03/verification.md). Older revision selection, timed/speaker export and Windows picker checks remain open. |
+| Accepted correction export | 6/6 | Displayed saved-revision preconditions, native source/history revalidation, exact UTF-8 new-file publication and shared original/accepted export ownership; [evidence/screens](../../evidence/accepted-correction-export/2026-10-03/verification.md). Earlier-revision selection is locally implemented with integration pending; timed/speaker export and Windows picker checks remain open. |
 | AAC in M4A/MP4 | 6/6 | Real single-track AAC-LC container timing/content, retained source/durable preparation, bounded refusal/cancellation and responsive Recording/History; [evidence/screens](../../evidence/aac-import/2026-10-03/verification.md). Distribution patent clearance, inference and Windows playback remain open. |
 | Owned connection discard | 6/6 | Explicit confirmation, retained provenance, atomic audit, capacity release and uncertain-delivery recovery; [acceptance/screens/integration](../../evidence/connection-proposal-discard/2026-10-03/verification.md). Human publication/rebuilding remain open. |
 | Owned connection discovery | 6/6 | Dated owner-only list, strict native receipts, permission-checked selection and confirmed-only cleanup; [acceptance/screens/integration](../../evidence/saved-connection-proposals/2026-10-03/verification.md). Canonical publication/rebuilding remains open. |
@@ -111,9 +111,9 @@ outcome stays open until its complete journey passes.
 The table above and linked evidence retain the acceptance conditions for
 connection-owned views, Curator proposals and accepted-correction recovery/export.
 Their completed checklists are consolidated here; the full feature inventory,
-open questions and execution record remain. Older correction-history selection,
-timed/speaker exports, explicit damaged-history repair and target qualification
-remain open.
+open questions and execution record remain. Earlier correction-history selection
+is locally implemented with integration pending. Timed/speaker exports, explicit
+damaged-history repair and target qualification remain open.
 
 Canonical publication still requires a trusted `knowledge.curator` reviewer,
 reviewed repository/source-admission provenance and complete relational/vector
@@ -224,6 +224,28 @@ remains usable; no model or publication authority is added.
 [Rollback evidence](../../evidence/knowledge-rollback-integrity/2026-10-03/verification.md)
 records both original-code failures, eight real ledger passes, all 119
 skip-free disposable database cases and all 185 governed portable passes.
+
+## Current local increment: read and export earlier accepted corrections
+
+**Status:** 6/7 software outcomes checked locally; reviewed hosted integration pending.
+Owners can now select, read, copy and export an earlier accepted revision offline.
+The existing native history/read/export owners validate the complete chain and
+return only the selected text plus a bounded revision count. Original transcripts,
+latest acceptance and all saved revisions remain unchanged. New acceptance resets
+selection to Latest; a repeated selection keeps its pending read alive.
+
+- [x] Read an explicitly selected revision from the complete validated chain, bound to the current original source. Reject invalid/missing selection and damaged, linked or inconsistent history without repair or deletion.
+- [x] Export that displayed revision through the shared new-file owner, rechecking source, selected text/hash and complete history before publication; preserve original files, all revisions and existing destinations.
+- [x] Offer a compact keyboard-accessible revision selector when history has multiple revisions. Latest remains the initial choice; reading, copying and export work offline without running a model or accepting edits.
+- [x] Keep source/selection changes and late reads isolated, retain explicit retry and original access on failure, and prevent revision changes while a native export is active.
+- [x] Refresh the latest accepted history after every new acceptance, including identical corrected text under a new revision. Use publication identity rather than its text hash alone.
+- [x] Verify native files and exact Unicode text, malformed receipt/selection refusal, browser recovery/focus and narrow/wide screens; run applicable units/build/contracts and the complete browser regression.
+- [ ] Record the result and commit the verified iteration. Push/integrate through the required exact-head checks when GitHub access returns; timed/speaker export, history repair and target qualification remain open.
+
+[Selection evidence and screens](../../evidence/accepted-correction-selection/2026-10-03/verification.md)
+record 1,375 native units + 27 integrations, 404 frontend units and all 231
+Linux browser passes (one declared Windows-only skip), plus the reproduced
+same-text acceptance and repeated pending-selection failures and their fixes.
 
 ## Execution record
 

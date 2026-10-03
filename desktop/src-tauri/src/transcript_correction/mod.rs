@@ -304,13 +304,14 @@ impl Default for TranscriptCorrectionOwner {
 pub(crate) async fn read_accepted_transcript_correction(
     window: tauri::WebviewWindow,
     output_path: String,
+    revision: Option<u64>,
 ) -> Result<RecoveredTranscriptCorrection, String> {
     crate::authorization::ensure_main(&window)?;
     run_recovery_read(
         PathBuf::from(output_path),
         RECOVERY_READ.clone(),
         SOURCE_READ_TIMEOUT,
-        |path| revision::read_accepted_transcript_correction(&path),
+        move |path| revision::read_accepted_transcript_correction(&path, revision),
     )
     .await
 }

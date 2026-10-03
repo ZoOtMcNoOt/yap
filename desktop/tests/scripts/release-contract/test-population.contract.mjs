@@ -34,6 +34,7 @@ function specFiles() {
 const MINIMUM_TESTS_PER_SPEC = Object.freeze({
   "accepted-correction-export.spec.ts": 7,
   "accepted-correction-recovery.spec.ts": 8,
+  "accepted-correction-selection.spec.ts": 7,
   "app-history.spec.ts": 2,
   "app-language-accessibility.spec.ts": 3,
   "app-queue.spec.ts": 1,

@@ -71,6 +71,7 @@ export type RecoveredTranscriptCorrection = Readonly<{
   outputPath: string;
   sourceRevisionSha256: string;
   sourceSha256: string;
+  revisionCount: number;
   acceptedRevision: PublishedTranscriptCorrection | null;
 }>;
 
@@ -105,10 +106,21 @@ export async function exportAcceptedTranscriptCorrection(
   return result;
 }
 
-export async function readAcceptedTranscriptCorrection(outputPath: string) {
+export async function readAcceptedTranscriptCorrection(
+  outputPath: string,
+  selectedRevision: number | null = null,
+) {
+  if (
+    selectedRevision !== null &&
+    (!Number.isSafeInteger(selectedRevision) ||
+      selectedRevision < 1 ||
+      selectedRevision > 64)
+  ) {
+    throw new Error("Choose a saved revision from its history.");
+  }
   const result = await invoke<RecoveredTranscriptCorrection>(
     "read_accepted_transcript_correction",
-    { outputPath },
+    { outputPath, revision: selectedRevision },
   );
   const sha = (value: unknown): value is string =>
     typeof value === "string" && /^[0-9a-f]{64}$/.test(value);
@@ -118,6 +130,11 @@ export async function readAcceptedTranscriptCorrection(outputPath: string) {
     result.outputPath !== outputPath ||
     !sha(result.sourceSha256) ||
     !sha(result.sourceRevisionSha256) ||
+    !Number.isSafeInteger(result.revisionCount) ||
+    result.revisionCount < 0 ||
+    result.revisionCount > 64 ||
+    (result.acceptedRevision === null) !== (result.revisionCount === 0) ||
+    (selectedRevision !== null && result.acceptedRevision === null) ||
     result.acceptedRevision === undefined
   ) {
     throw new Error(
@@ -138,6 +155,8 @@ export async function readAcceptedTranscriptCorrection(outputPath: string) {
     (!Number.isSafeInteger(revision.revision) ||
       revision.revision < 1 ||
       revision.revision > 64 ||
+      revision.revision !== (selectedRevision ?? result.revisionCount) ||
+      revision.revision > result.revisionCount ||
       revision.sourceSha256 !== result.sourceSha256 ||
       revision.sourceRevisionSha256 !== result.sourceRevisionSha256 ||
       !sha(revision.terminologySnapshotSha256) ||

@@ -51,7 +51,7 @@ export function TranscriptCorrectionPanel({
   const saved = useAcceptedTranscriptCorrection({
     outputPath: item?.outputPath ?? "",
     ready: correction.ready,
-    publication: correction.published?.correctedSha256,
+    publication: correction.published?.revisionPath,
   });
   const exportError =
     exportFailure?.path === item?.outputPath &&
@@ -201,6 +201,35 @@ export function TranscriptCorrectionPanel({
                 </div>
               ) : null}
             </div>
+            {saved.revisionCount > 1 ? (
+              <div className="grid min-w-0 gap-2">
+                <label className="grid gap-2 text-sm font-medium">
+                  Accepted revision
+                  <select
+                    className="h-10 w-full min-w-0 rounded-lg border border-input bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+                    disabled={exportBusy}
+                    value={saved.selectedRevision}
+                    onChange={(event) =>
+                      saved.selectRevision(Number(event.target.value))
+                    }
+                  >
+                    {Array.from({ length: saved.revisionCount }, (_, index) => {
+                      const number = saved.revisionCount - index;
+                      return (
+                        <option key={number} value={number}>
+                          Revision {number}
+                          {number === saved.revisionCount ? " · Latest" : ""}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </label>
+                <p className="text-sm leading-6 text-muted-foreground">
+                  Reading an earlier revision leaves your latest acceptance
+                  unchanged.
+                </p>
+              </div>
+            ) : null}
             {exportError ? (
               <Alert variant="destructive">
                 <AlertDescription>{exportError}</AlertDescription>

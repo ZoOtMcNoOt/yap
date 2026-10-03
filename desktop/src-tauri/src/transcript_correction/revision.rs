@@ -63,20 +63,24 @@ pub(crate) struct RecoveredTranscriptCorrection {
     pub(crate) output_path: String,
     pub(crate) source_revision_sha256: String,
     pub(crate) source_sha256: String,
+    pub(crate) revision_count: u64,
     pub(crate) accepted_revision: Option<PublishedTranscriptCorrection>,
 }
 
 pub(crate) fn read_accepted_transcript_correction(
     output_path: &Path,
+    selected_revision: Option<u64>,
 ) -> Result<RecoveredTranscriptCorrection, String> {
     read_accepted_transcript_correction_with_reader(
         output_path,
+        selected_revision,
         read_trusted_transcript_correction_source,
     )
 }
 
 fn read_accepted_transcript_correction_with_reader(
     output_path: &Path,
+    selected_revision: Option<u64>,
     mut read_source: impl FnMut(&Path) -> Result<TrustedTranscriptCorrectionSource, String>,
 ) -> Result<RecoveredTranscriptCorrection, String> {
     let _publication = CORRECTION_PUBLICATION
@@ -88,14 +92,18 @@ fn read_accepted_transcript_correction_with_reader(
         Some(owner) => load_revision_chain(&source, &owner)?,
         None => Vec::new(),
     };
-    if let Some(latest) = revisions.last() {
-        validate_revision(
-            &latest.revision,
-            revisions.len() as u64,
-            revisions.iter().rev().nth(1),
-            Some(&source),
-        )?;
-    }
+    let selected = match selected_revision {
+        None => revisions.last(),
+        Some(revision) => Some(
+            revisions
+                .iter()
+                .find(|entry| entry.revision.revision == revision)
+                .ok_or_else(|| {
+                    "That accepted revision is unavailable. Refresh its history and retry."
+                        .to_string()
+                })?,
+        ),
+    };
     if read_source(output_path)? != source {
         return Err("The original transcript changed while reading its saved corrections.".into());
     }
@@ -104,7 +112,8 @@ fn read_accepted_transcript_correction_with_reader(
         output_path: source.output_path.display().to_string(),
         source_revision_sha256: source.source_revision_sha256.clone(),
         source_sha256: sha256_text(&source.text),
-        accepted_revision: revisions.last().map(project),
+        revision_count: revisions.len() as u64,
+        accepted_revision: selected.map(project),
     })
 }
 
@@ -336,7 +345,7 @@ fn load_revision_chain(
         let (text, sha256) = admission.read_and_hash()?;
         let revision: TranscriptCorrectionRevision = serde_json::from_str(&text)
             .map_err(|_| "A transcript correction revision is incompatible.".to_string())?;
-        validate_revision(&revision, expected_revision, result.last(), None)?;
+        validate_revision(&revision, expected_revision, result.last(), Some(source))?;
         result.push(LoadedRevision {
             revision,
             sha256,
@@ -747,13 +756,29 @@ mod tests {
             accepted: &RecoveredTranscriptCorrection,
             target: &Path,
         ) -> Result<AcceptedCorrectionExport, String> {
-            export_selected_accepted_correction(accepted, target, &self.data, || self.recover())
+            export_selected_accepted_correction(accepted, target, &self.data, || {
+                self.recover_revision(
+                    accepted
+                        .accepted_revision
+                        .as_ref()
+                        .map(|entry| entry.revision),
+                )
+            })
         }
 
         fn recover(&self) -> Result<RecoveredTranscriptCorrection, String> {
-            read_accepted_transcript_correction_with_reader(&self.source.output_path, |path| {
-                super::super::source::read_live_source_from_dir(path, &self.data)
-            })
+            self.recover_revision(None)
+        }
+
+        fn recover_revision(
+            &self,
+            selected: Option<u64>,
+        ) -> Result<RecoveredTranscriptCorrection, String> {
+            read_accepted_transcript_correction_with_reader(
+                &self.source.output_path,
+                selected,
+                |path| super::super::source::read_live_source_from_dir(path, &self.data),
+            )
         }
     }
 
@@ -761,6 +786,90 @@ mod tests {
         fn drop(&mut self) {
             fs::remove_dir_all(&self.root).ok();
         }
+    }
+
+    #[test]
+    fn earlier_accepted_revision_reopens_and_exports_exact_unicode_without_changing_latest() {
+        let fixture = ExportFixture::new("earlier-accepted-export");
+        let first = accept(
+            &fixture.source,
+            "first",
+            "Reviewed café — 日本語\nDose: 25 mg.",
+        );
+        let last = accept(&fixture.source, "last", "Dose is 25 mg.");
+        let original = fs::read(&fixture.source.output_path).unwrap();
+        let first_bytes = fs::read(&first.revision_path).unwrap();
+        let last_bytes = fs::read(&last.revision_path).unwrap();
+        let selected = fixture.recover_revision(Some(1)).unwrap();
+        assert_eq!(selected.revision_count, 2);
+        assert_eq!(selected.accepted_revision.as_ref(), Some(&first));
+        let destination = fixture.destination.join("earlier.txt");
+        assert_eq!(
+            fixture.export(&selected, &destination).unwrap(),
+            AcceptedCorrectionExport::Saved {
+                path: destination.canonicalize().unwrap().display().to_string(),
+                revision: 1,
+                corrected_sha256: first.corrected_sha256,
+            }
+        );
+        assert_eq!(
+            fs::read(destination).unwrap(),
+            first.corrected_text.as_bytes()
+        );
+        assert_eq!(fs::read(&fixture.source.output_path).unwrap(), original);
+        assert_eq!(fs::read(&first.revision_path).unwrap(), first_bytes);
+        assert_eq!(fs::read(&last.revision_path).unwrap(), last_bytes);
+        assert_eq!(fixture.recover().unwrap().accepted_revision, Some(last));
+    }
+
+    #[test]
+    fn revision_selection_refuses_invalid_and_damaged_history_without_bypassing_later_entries() {
+        let fixture = ExportFixture::new("earlier-accepted-selection");
+        let original = fs::read(&fixture.source.output_path).unwrap();
+        assert_eq!(fixture.recover().unwrap().revision_count, 0);
+        assert!(fixture.recover_revision(Some(1)).is_err());
+        let first = accept(&fixture.source, "first", "Dose: 25 mg.");
+        let last = accept(&fixture.source, "last", "Dose is 25 mg.");
+        for selection in [0, 3, 65, u64::MAX] {
+            assert!(fixture
+                .recover_revision(Some(selection))
+                .unwrap_err()
+                .contains("unavailable"));
+        }
+        let first_bytes = fs::read(&first.revision_path).unwrap();
+        fs::write(&last.revision_path, "damaged but preserved").unwrap();
+        assert!(fixture.recover_revision(Some(1)).is_err());
+        assert_eq!(fs::read(&first.revision_path).unwrap(), first_bytes);
+        assert_eq!(
+            fs::read_to_string(&last.revision_path).unwrap(),
+            "damaged but preserved"
+        );
+        assert_eq!(fs::read(&fixture.source.output_path).unwrap(), original);
+    }
+
+    #[test]
+    fn every_accepted_revision_must_match_the_original_even_with_consistent_chain_hashes() {
+        let fixture = ExportFixture::new("earlier-accepted-proof");
+        let first = accept(&fixture.source, "first", "Dose: 25 mg.");
+        let last = accept(&fixture.source, "last", "Dose is 25 mg.");
+        let mut forged: serde_json::Value =
+            serde_json::from_slice(&fs::read(&first.revision_path).unwrap()).unwrap();
+        forged["sourceSha256"] = serde_json::Value::String("f".repeat(64));
+        let forged = serde_json::to_string(&forged).unwrap();
+        fs::write(&first.revision_path, &forged).unwrap();
+        let mut successor: serde_json::Value =
+            serde_json::from_slice(&fs::read(&last.revision_path).unwrap()).unwrap();
+        successor["previousCorrectionSha256"] = serde_json::Value::String(sha256_text(&forged));
+        let successor = serde_json::to_string(&successor).unwrap();
+        fs::write(&last.revision_path, &successor).unwrap();
+        for selection in [None, Some(1), Some(2)] {
+            assert!(fixture
+                .recover_revision(selection)
+                .unwrap_err()
+                .contains("source history"));
+        }
+        assert_eq!(fs::read_to_string(&first.revision_path).unwrap(), forged);
+        assert_eq!(fs::read_to_string(&last.revision_path).unwrap(), successor);
     }
 
     #[test]
@@ -965,7 +1074,9 @@ mod tests {
     fn recover(
         source: &TrustedTranscriptCorrectionSource,
     ) -> Result<RecoveredTranscriptCorrection, String> {
-        read_accepted_transcript_correction_with_reader(&source.output_path, |_| Ok(source.clone()))
+        read_accepted_transcript_correction_with_reader(&source.output_path, None, |_| {
+            Ok(source.clone())
+        })
     }
 
     fn accept(
@@ -1044,17 +1155,18 @@ mod tests {
         let source = source(&directory);
         accept(&source, "accepted-first", "Dose is 25 mg.");
         let mut reads = 0;
-        let result = read_accepted_transcript_correction_with_reader(&source.output_path, |_| {
-            reads += 1;
-            Ok(if reads == 1 {
-                source.clone()
-            } else {
-                TrustedTranscriptCorrectionSource {
-                    source_revision_sha256: "c".repeat(64),
-                    ..source.clone()
-                }
-            })
-        });
+        let result =
+            read_accepted_transcript_correction_with_reader(&source.output_path, None, |_| {
+                reads += 1;
+                Ok(if reads == 1 {
+                    source.clone()
+                } else {
+                    TrustedTranscriptCorrectionSource {
+                        source_revision_sha256: "c".repeat(64),
+                        ..source.clone()
+                    }
+                })
+            });
         assert!(result.unwrap_err().contains("changed while reading"));
         assert_eq!(fs::read_dir(&directory).unwrap().count(), 2);
         fs::remove_dir_all(directory).unwrap();
