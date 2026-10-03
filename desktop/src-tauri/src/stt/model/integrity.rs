@@ -1,4 +1,8 @@
-use std::{io::Read, path::Path};
+use std::{
+    fs::File,
+    io::{Read, Seek, SeekFrom},
+    path::Path,
+};
 
 use sha2::{Digest, Sha256};
 
@@ -24,11 +28,28 @@ pub fn verify_artifact(
     if is_cancelled() {
         return Err(SttError::ModelInstallCancelled);
     }
-    let (file, metadata) =
+    let (file, _) =
         crate::bounded_file::open_regular_file(path, expected_bytes).map_err(verification_error)?;
-    if metadata.len() != expected_bytes {
+    verify_open_artifact(&file, expected_bytes, expected_sha256, is_cancelled)
+}
+
+/// Installation verifies the retained staging object, without reopening its
+/// pathname or relaxing the Windows sharing boundary on admitted artifacts.
+pub(super) fn verify_open_artifact(
+    file: &File,
+    expected_bytes: u64,
+    expected_sha256: &str,
+    is_cancelled: impl Fn() -> bool,
+) -> Result<(), SttError> {
+    if is_cancelled() {
+        return Err(SttError::ModelInstallCancelled);
+    }
+    let metadata = file.metadata().map_err(verification_error)?;
+    if !metadata.is_file() || metadata.len() != expected_bytes {
         return Err(SttError::ModelCorrupt);
     }
+    let mut file = file.try_clone().map_err(verification_error)?;
+    file.seek(SeekFrom::Start(0)).map_err(verification_error)?;
     let actual = hash_reader(file, expected_bytes, &is_cancelled).map_err(|error| {
         if error.kind() == std::io::ErrorKind::Interrupted && is_cancelled() {
             SttError::ModelInstallCancelled

@@ -29,16 +29,25 @@ impl OperationTemp {
         })
     }
 
-    pub(super) fn path(&self) -> &Path {
-        &self.path
-    }
-
     pub(super) fn file_mut(&mut self) -> Result<&mut std::fs::File, SttError> {
         self.file.as_mut().ok_or(SttError::ModelMissing)
     }
 
     pub(super) fn sync(&mut self) -> Result<(), SttError> {
         self.file_mut()?.sync_all().map_err(io_error_to_stt)
+    }
+
+    pub(super) fn verify(
+        &self,
+        expected_bytes: u64,
+        expected_sha256: &str,
+    ) -> Result<(), SttError> {
+        super::integrity::verify_open_artifact(
+            self.file.as_ref().ok_or(SttError::ModelMissing)?,
+            expected_bytes,
+            expected_sha256,
+            || self.operation.is_cancelled(),
+        )
     }
 
     pub(super) fn publish_to(&mut self, destination: &Path) -> Result<(), SttError> {
@@ -162,6 +171,7 @@ fn reserve_operation_temp_file(
             "{file_name}.op-{generation}-{pid}-{nonce}-{attempt}.part"
         ));
         match std::fs::OpenOptions::new()
+            .read(true)
             .write(true)
             .create_new(true)
             .open(&path)

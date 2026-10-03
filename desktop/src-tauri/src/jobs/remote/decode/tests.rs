@@ -49,6 +49,31 @@ fn scratch(label: &str) -> std::path::PathBuf {
     directory
 }
 
+fn cancel_after_plaintext(
+    source: &Path,
+    root: &Path,
+    job_id: &str,
+) -> (Result<DecodedSource, String>, u64) {
+    let fingerprint = crate::media_protocol::inspect_media_source(source).unwrap();
+    let input = crate::media_protocol::open_unchanged_media_source(source, &fingerprint).unwrap();
+    let mut owned = DecodedFile::create(root, job_id).unwrap();
+    // Windows directory-entry lengths can remain stale while a writer is open.
+    // Observe the retained object, including its DELETE_ON_CLOSE ownership.
+    let observer = owned.file.try_clone().unwrap();
+    let mut observed_size = 0;
+    let result = super::decode_to_canonical_wav(source, &input, &mut owned.file, &mut || {
+        observed_size = observed_size.max(observer.metadata().unwrap().len());
+        if observed_size >= 8_192 {
+            Err("cancelled".into())
+        } else {
+            Ok(())
+        }
+    });
+    drop(observer);
+    drop(owned);
+    (result, observed_size)
+}
+
 fn decode(name: &str) -> (DecodedSource, Vec<u8>) {
     let directory = scratch(name);
     let destination = directory.join("decoded.wav");
@@ -775,20 +800,9 @@ fn cancellation_during_low_rate_expansion_is_checked_before_excessive_plaintext(
     let source = directory.join("source.flac");
     let original = std::fs::read(fixture("silence-1hz.flac")).unwrap();
     std::fs::write(&source, &original).unwrap();
-    let mut observed_size = 0;
-    let result = decode_import_if_compressed(&source, "low-rate", &directory, || {
-        for entry in std::fs::read_dir(&directory).unwrap().flatten() {
-            if entry.path() != source {
-                observed_size = observed_size.max(entry.metadata().unwrap().len());
-            }
-        }
-        if observed_size >= 8_192 {
-            Err("cancelled".into())
-        } else {
-            Ok(())
-        }
-    });
-    assert!(result.is_err());
+    let (result, observed_size) = cancel_after_plaintext(&source, &directory, "low-rate");
+    assert_eq!(result.unwrap_err(), "cancelled");
+    assert!(observed_size >= 8_192);
     assert!(
         observed_size <= 128 * 1024,
         "cancellation was delayed until {observed_size} plaintext bytes were written"
@@ -1115,20 +1129,9 @@ fn cancelling_vorbis_decode_keeps_source_and_removes_only_owned_plaintext() {
     let source = directory.join("recording.ogg");
     let original = std::fs::read(fixture("tone-44k-pages.ogg")).unwrap();
     std::fs::write(&source, &original).unwrap();
-    let mut decoded_audio_seen = false;
-    let result = decode_import_if_compressed(&source, "cancel-vorbis", &directory, || {
-        decoded_audio_seen |= std::fs::read_dir(&directory)
-            .unwrap()
-            .flatten()
-            .any(|entry| entry.path() != source && entry.metadata().unwrap().len() >= 8_192);
-        if decoded_audio_seen {
-            Err("cancelled".into())
-        } else {
-            Ok(())
-        }
-    });
-    assert!(decoded_audio_seen);
-    assert!(result.is_err());
+    let (result, observed_size) = cancel_after_plaintext(&source, &directory, "cancel-vorbis");
+    assert!(observed_size >= 8_192);
+    assert_eq!(result.unwrap_err(), "cancelled");
     assert_eq!(std::fs::read(&source).unwrap(), original);
     assert_eq!(std::fs::read_dir(&directory).unwrap().count(), 1);
     std::fs::remove_dir_all(directory).unwrap();

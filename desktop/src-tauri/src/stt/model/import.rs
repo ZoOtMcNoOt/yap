@@ -6,7 +6,6 @@ use std::{
 use crate::stt::error::SttError;
 
 use super::{
-    integrity::verify_artifact,
     io_error_to_stt,
     path_safety::create_model_directory,
     temp::{cleanup_stale_download_temps, OperationTemp},
@@ -80,12 +79,7 @@ fn import_verified_file_after_admission(
         return Err(SttError::ModelCorrupt);
     }
     temp.sync()?;
-    verify_artifact(
-        temp.path(),
-        request.expected_bytes,
-        &request.expected_sha256,
-        || operation.is_cancelled(),
-    )?;
+    temp.verify(request.expected_bytes, &request.expected_sha256)?;
     if operation.is_cancelled() {
         return Err(SttError::ModelInstallCancelled);
     }
