@@ -63,12 +63,49 @@ source-file bytes, including frontmatter. `charStart` and `charEnd` are zero-bas
 Unicode-character offsets into the parsed Markdown body, with an exclusive end.
 They are not file-byte offsets or JavaScript UTF-16 indexes.
 
+## Check the sources locally
+
+Use the prepared [server environment](../runbooks/cloud-development.md) to check
+an exported package against an explicitly selected **complete OKF bundle**,
+including its root document, concepts and permission files. Run from the Yap
+repository root, replacing these example paths and identifiers:
+
+```bash
+PYTHONPATH=server/src server/.venv/bin/python -m yap_server.knowledge.connection_review \
+  /review/connection-review.json \
+  --bundle-root /review/okf-bundle \
+  --tenant-id organization-tenant \
+  --source-revision reviewed-revision
+```
+
+Choose the tenant and source-revision label used to compile the exported
+proposal's generation. Supplying only the two cited files is insufficient: the
+checker recompiles the complete bundle and requires its generation hash to match.
+It also checks both endpoint identities, source metadata, complete-file hashes
+and exact Unicode-character spans against the quoted text.
+
+Success exits with `0` and prints a JSON receipt with `status: source-matched`,
+`sourceCount: 2`, the proposal/generation references and `packageSha256`. That hash
+binds the receipt to the exact package bytes you checked; editing the JSON,
+including its whitespace, changes it. The receipt contains no excerpts or
+rationale. Keep it alongside the package in your review.
+
+Malformed packages, mismatched sources or unsafe files produce a short refusal
+on stderr and exit `2`, without a success receipt or source text. Check the chosen
+bundle, tenant and revision; obtain fresh evidence for changed sources. The
+command reads local files and changes neither the package nor the source bundle.
+
+**Source matching is one review check.** The command does not fetch or verify a
+Git commit, authenticate the original proposal ID or rationale, or check current
+server permissions. The revision is an explicit input label. Review provenance,
+access, the rationale and approval through your organization's separate process.
+
 ## Review and later publication
 
-Review both `sourcePath` files at the cited `sourceRevision`: check their hashes,
-parse the Markdown bodies and compare the spans with `text`. Assess the proposed
-direction, relationship and rationale alongside those quotes. Changed revisions
-or hashes require fresh evidence.
+Use the source checker alongside a trusted checkout at the cited revision.
+Assess the proposed direction, relationship and rationale alongside both quotes.
+Changed revisions or hashes require fresh evidence; a source-match receipt supplies
+no reviewer authority or approval.
 
 Publication requires a separately reviewed Git/OKF source change. The authorized
 `knowledge.curator` admission owner, compiler, complete embedding projection and

@@ -79,6 +79,11 @@ the complete Linux browser suite passes with 221 cases and one declared Windows-
 GitHub authentication is disconnected, so pushing and reviewed exact-head integration remain pending.
 Canonical publication and generation rebuilding remain separate open outcomes.
 
+While access is unavailable, [local source checking](evidence/connection-review-source-check/2026-10-03/verification.md)
+verifies exported evidence against an explicitly selected complete OKF bundle.
+All 185 governed portable cases pass without skips. The receipt proves source
+matching; authorized review and activation remain separate.
+
 The [complete PostgreSQL gate](evidence/governed-postgres-ci/2026-10-03/verification.md)
 is merged and **5/5 software verified**. [PR #204](https://github.com/ZoOtMcNoOt/yap/pull/204)
 and [run 547](https://github.com/ZoOtMcNoOt/yap/actions/runs/37137161514) pass all six jobs,

@@ -84,6 +84,7 @@ _EXPECTED_PORTABLE_MODULES = (
     "tests.infra.test_agent_admission_service",
     "tests.knowledge.test_agent_reasoning_routes",
     "tests.knowledge.test_cancellable_database_operation",
+    "tests.knowledge.test_connection_review",
     "tests.knowledge.test_governed_answer_protocol",
     "tests.knowledge.test_governed_knowledge_mcp",
     "tests.knowledge.test_governed_rag_agent",
@@ -93,7 +94,7 @@ _EXPECTED_PORTABLE_MODULES = (
     "tests.knowledge.test_terminology_snapshot",
     "tests.knowledge.test_vllm_reasoning_client",
 )
-_EXPECTED_PORTABLE_TEST_COUNT = 177
+_EXPECTED_PORTABLE_TEST_COUNT = 185
 
 
 def evaluate_governed_knowledge_gate(

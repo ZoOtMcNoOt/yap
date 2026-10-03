@@ -52,6 +52,8 @@ Current product-completion evidence:
 - [Owned connection proposal discard](connection-proposal-discard/2026-10-03/verification.md): confirmation, retained history, atomic auditing and uncertain-delivery recovery.
 - [Repository consolidation and preserved branch history](repository-consolidation/2026-10-03/verification.md)
 - [Mobbin design references](ui-completion/2026-10-02-design-references.md)
+- [Connection review export](connection-review-export/2026-10-03/verification.md): native new-file export, recovery and responsive screens.
+- [Connection review source check](connection-review-source-check/2026-10-03/verification.md): complete-bundle matching and a read-only operator command.
 
 Do not commit private scans, scan identifiers, sensitive audio/transcripts, raw
 host snapshots, credentials, or enterprise configuration. Public evidence may

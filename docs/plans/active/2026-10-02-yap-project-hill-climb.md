@@ -188,6 +188,25 @@ Restore access before hosted checks/merging. Local development remains available
 `9cb8d310` retains the verified implementation and the evidence records the full
 221-pass Linux browser regression (one declared Windows-only skip).
 
+## Next local increment: verify a review package against its source bundle
+
+**Status:** 4/5 local software outcomes; integration waits for GitHub access.
+The read-only operator command checks exported citations using the existing
+bounded artifact reader and OKF compiler. It verifies the complete selected
+bundle/generation and both exact quotes. Source matching supplies no access
+or approval; the human reviewer still assesses provenance and rationale.
+
+- [x] Strictly read the bounded version-1 exported package, rejecting duplicate/extra fields, malformed identity, unsupported status and inconsistent endpoints/citations.
+- [x] Compile an explicitly selected local OKF bundle with an explicit tenant/revision; require the exact generation and compare both file-byte hashes, parsed-body Unicode spans, metadata and quote text.
+- [x] Return a content-free source-match receipt through a documented command. Preserve every file; open no credentials, server/SQL connections or embedding/model providers. Source matching cannot authorize review, admission or publication.
+- [x] Verify actual files, Unicode/frontmatter hashing, changed generations/quotes/revisions, malformed packages, linked/escaped/missing sources, CLI success/refusal and no file mutation without model hardware.
+- [ ] Record actual software results, commit the verified iteration and push/integrate when GitHub access returns. Canonical human review, complete projection and activation remain open.
+
+[Source-check evidence](../../evidence/connection-review-source-check/2026-10-03/verification.md)
+records 29 focused, all 185 governed portable and 1,648 isolated full-server
+passes (114 declared exclusions), including actual files and CLI execution.
+The checker is read-only; approval and activation remain open.
+
 ## Execution record
 
 The [dated execution history](../../archive/implementation-evidence/2026-10-02-project-hill-climb-history.md) retains every iteration, evidence link and next action recorded at the time. Those next actions are historical; the current increment above determines what to do now. Append new iteration receipts there and keep this queue current.
