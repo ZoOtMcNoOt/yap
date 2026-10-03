@@ -1950,7 +1950,7 @@ dependencies = [
  "js-sys",
  "log",
  "wasm-bindgen",
- "windows-core 0.62.2",
+ "windows-core 0.61.2",
 ]
 
 [[package]]
@@ -4609,7 +4609,7 @@ dependencies = [
  "tray-icon",
  "url",
  "webkit2gtk",
- "webview2-com 0.39.1",
+ "webview2-com",
  "window-vibrancy",
  "windows 0.62.2",
 ]
@@ -4773,9 +4773,9 @@ dependencies = [
 
 [[package]]
 name = "tauri-plugin-wdio"
-version = "1.2.0"
+version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8aa9b559f110924b9897793767a3bb4880c195db75838030eb224f94d21565d9"
+checksum = "31661003aae37f068d12c3a931cff3c1f0cbd6965651a68ed310c8e44636edb9"
 dependencies = [
  "log",
  "serde",
@@ -4790,9 +4790,8 @@ dependencies = [
 
 [[package]]
 name = "tauri-plugin-wdio-webdriver"
-version = "1.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "30c5bffe978c41b06ad44a5f4b5b543405918cf316b98756c678a6431061f2e9"
+version = "1.4.0"
+source = "git+https://github.com/webdriverio/desktop-mobile?rev=fb4a544bcc49605f6c6fb34f04b292abf428a72a#fb4a544bcc49605f6c6fb34f04b292abf428a72a"
 dependencies = [
  "async-trait",
  "axum",
@@ -4816,9 +4815,9 @@ dependencies = [
  "tracing",
  "uuid",
  "webkit2gtk",
- "webview2-com 0.38.2",
- "windows 0.61.3",
- "windows-core 0.61.2",
+ "webview2-com",
+ "windows 0.62.2",
+ "windows-core 0.62.2",
 ]
 
 [[package]]
@@ -4842,7 +4841,7 @@ dependencies = [
  "thiserror 2.0.18",
  "url",
  "webkit2gtk",
- "webview2-com 0.39.1",
+ "webview2-com",
  "windows 0.62.2",
 ]
 
@@ -4867,7 +4866,7 @@ dependencies = [
  "tauri-utils",
  "url",
  "webkit2gtk",
- "webview2-com 0.39.1",
+ "webview2-com",
  "windows 0.62.2",
  "wry",
 ]
@@ -5670,26 +5669,12 @@ dependencies = [
 
 [[package]]
 name = "webview2-com"
-version = "0.38.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7130243a7a5b33c54a444e54842e6a9e133de08b5ad7b5861cd8ed9a6a5bc96a"
-dependencies = [
- "webview2-com-macros",
- "webview2-com-sys 0.38.2",
- "windows 0.61.3",
- "windows-core 0.61.2",
- "windows-implement",
- "windows-interface",
-]
-
-[[package]]
-name = "webview2-com"
 version = "0.39.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3f89fca7a704cee10dcb3654c1dbb8941d1783132f1917358af75bec37a7d7e6"
 dependencies = [
  "webview2-com-macros",
- "webview2-com-sys 0.39.1",
+ "webview2-com-sys",
  "windows 0.62.2",
  "windows-core 0.62.2",
 ]
@@ -5703,17 +5688,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.118",
-]
-
-[[package]]
-name = "webview2-com-sys"
-version = "0.38.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "381336cfffd772377d291702245447a5251a2ffa5bad679c99e61bc48bacbf9c"
-dependencies = [
- "thiserror 2.0.18",
- "windows 0.61.3",
- "windows-core 0.61.2",
 ]
 
 [[package]]
@@ -6330,7 +6304,7 @@ dependencies = [
  "url",
  "webkit2gtk",
  "webkit2gtk-sys",
- "webview2-com 0.39.1",
+ "webview2-com",
  "windows 0.62.2",
  "windows-core 0.62.2",
  "windows-version",
@@ -6421,8 +6395,8 @@ dependencies = [
  "time",
  "tokio",
  "tungstenite",
- "windows 0.61.3",
- "windows-future 0.2.1",
+ "windows 0.62.2",
+ "windows-future 0.3.2",
  "zeroize",
 ]
 

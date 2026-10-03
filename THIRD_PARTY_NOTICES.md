@@ -24,6 +24,40 @@ This dependency inventory is separate from direct source-adaptation provenance
 in `THIRD_PARTY_PROVENANCE.json`. Package-manager metadata does not authorize
 copying source into Yap, and a new license term fails closed pending review.
 
+## WebdriverIO optional native test driver
+
+The optional WDIO WebDriver plugin uses the MIT-licensed upstream fix at
+`webdriverio/desktop-mobile` revision
+`fb4a544bcc49605f6c6fb34f04b292abf428a72a` ([upstream PR #687](https://github.com/webdriverio/desktop-mobile/pull/687)).
+Its Windows bindings match Tauri 2.12 / WebView2 0.39. The reviewed controller
+boundary transfers an owned COM reference; on the current graph its types match.
+This test-only dependency is excluded from the normal production graph and is
+not a production WebDriver service. Return to a compatible published registry
+release after the required native smoke checks pass on that release.
+Exact revision/license/source hashes are in `THIRD_PARTY_PROVENANCE.json`.
+
+MIT License
+
+Copyright (c) 2024 WebdriverIO Community
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
 ## Symphonia media decoders
 
 Native media decoding uses unmodified Symphonia 0.6.1: `symphonia`,

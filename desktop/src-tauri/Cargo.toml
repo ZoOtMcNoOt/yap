@@ -43,8 +43,10 @@ hound = "3.5"
 sherpa-onnx = "1.13.4"
 ort = { version = "=2.0.0-rc.12", default-features = false, features = ["std", "api-24", "alternative-backend"] }
 realfft = "=3.5.0"
-tauri-plugin-wdio = { version = "1", optional = true }
-tauri-plugin-wdio-webdriver = { version = "1", optional = true }
+tauri-plugin-wdio = { version = "1.4.0", optional = true }
+# Test-only upstream WebView2 fix; return to registry after a compatible release.
+# See docs/evidence/dependency-refresh/2026-10-03/verification.md.
+tauri-plugin-wdio-webdriver = { git = "https://github.com/webdriverio/desktop-mobile", rev = "fb4a544bcc49605f6c6fb34f04b292abf428a72a", optional = true }
 time = { version = "0.3.53", default-features = false, features = ["formatting", "parsing"] }
 rusqlite = { version = "0.40.1", default-features = false, features = ["bundled"] }
 dirs = "6"
@@ -55,5 +57,5 @@ zeroize = "1.9.0"
 libc = "0.2"
 
 [target.'cfg(windows)'.dependencies]
-windows = { version = "0.61.3", features = ["Win32_Foundation", "Win32_Graphics_Gdi", "Win32_Security_Authorization", "Win32_Storage_FileSystem", "Win32_System_DataExchange", "Win32_System_IO", "Win32_System_Memory", "Win32_System_ProcessStatus", "Win32_System_Threading", "Win32_UI_Input_KeyboardAndMouse", "Win32_UI_WindowsAndMessaging", "Foundation", "Security_Authentication_Web_Core", "Security_Credentials", "Win32_System_WinRT", "Win32_System_Com"] }
-windows-future = "0.2"
+windows = { version = "0.62.2", features = ["Win32_Foundation", "Win32_Graphics_Gdi", "Win32_Security_Authorization", "Win32_Storage_FileSystem", "Win32_System_DataExchange", "Win32_System_IO", "Win32_System_Memory", "Win32_System_ProcessStatus", "Win32_System_Threading", "Win32_UI_Input_KeyboardAndMouse", "Win32_UI_WindowsAndMessaging", "Foundation", "Security_Authentication_Web_Core", "Security_Credentials", "Win32_System_WinRT", "Win32_System_Com"] }
+windows-future = "0.3.2"

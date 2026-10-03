@@ -48,6 +48,18 @@ Hub identifier. Complete model training/adaptation lineage and redistribution
 approval remain open promotion requirements; technical access does not invent
 that approval.
 
+## Optional native test driver
+
+The WDIO embedded WebDriver dependency pins reviewed upstream revision
+`fb4a544bcc49605f6c6fb34f04b292abf428a72a` from the WebdriverIO repository.
+It fixes Tauri 2.12's Windows/WebView2 binding mismatch; the public 1.4.0 release
+still fails that build. The MIT notice is retained in the root notices, and the
+machine manifest binds the license, reviewed manifest/Windows source and local
+Cargo declarations. No driver source is copied into Yap, and the optional driver
+is excluded from the normal production graph. Return to a compatible registry
+release after its required native smoke checks pass. See the
+[dependency evidence](../evidence/dependency-refresh/2026-10-03/verification.md).
+
 ## Dependency and runtime provenance
 
 - Frontend packages are declared in `desktop/package.json` and frozen by
