@@ -146,7 +146,10 @@ test("a recording can be cancelled, re-added, retried after failure, and read/co
     })
     .click();
   await expect
-    .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+    // Windows clipboard transport exposes CRLF; preserve all other content.
+    .poll(() => page.evaluate(async () =>
+      (await navigator.clipboard.readText()).replace(/\r\n/g, "\n"),
+    ))
     .toBe(journeyTranscript);
   await review
     .getByRole("button", {
@@ -256,7 +259,9 @@ test("an unreadable saved transcript has a recoverable error instead of endless 
     })
     .click();
   await expect
-    .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+    .poll(() => page.evaluate(async () =>
+      (await navigator.clipboard.readText()).replace(/\r\n/g, "\n"),
+    ))
     .toBe(journeyTranscript);
   const commands = await page.evaluate(() =>
     (

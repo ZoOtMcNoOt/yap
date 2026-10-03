@@ -59,6 +59,12 @@ graph. This is an unreleased, immutable test dependency. Replace it with a
 compatible published version only after that version passes native WDIO checks.
 The actual hosted Windows compile/runtime renewal remains a required merge gate.
 
+Run 526 also passed 182 Windows browser cases and failed two recording-journey
+clipboard assertions solely on OS CRLF transport versus the fixture's LF.
+Those assertions now normalize only CRLF; they retain all other content and the
+existing byte-exact export checks. The affected eleven browser cases are renewed
+locally, and full Windows browser renewal remains a hosted gate.
+
 ## Issue #92
 
 Official Tauri 2.12.1 selects Tao 0.37.1 without vendoring or a git patch.
