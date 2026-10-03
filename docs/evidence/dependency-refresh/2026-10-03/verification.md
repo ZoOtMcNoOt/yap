@@ -152,9 +152,20 @@ smoke assertion follows the refreshed offline copy and still checks disabled
 search, accessible labeling and available local navigation.
 
 The follow-up renews all 1,363 Linux native unit tests (11 declared ignores),
-Clippy, formatting and eight documentation/license/provenance checks. Exact-head
-Windows native tests and WDIO must pass before merge. No RDP/session-lock or model
-quality result is inferred from these checks.
+Clippy, formatting and eight documentation/license/provenance checks.
+[Hosted run 530](https://github.com/ZoOtMcNoOt/yap/actions/runs/37117347492)
+at `8c00b0f3` passes 1,367 Windows native units plus 27 integration cases,
+strict Clippy, both actual server-connector runtimes, the Windows dependency
+boundary/audit and required native WDIO. Server, identity and orchestrator jobs
+also pass. No RDP/session-lock or model quality result is inferred.
+
+The frontend job reported 152 passing browser cases before its 15-minute job
+deadline cancelled the still-running 184-case suite. It reported no assertion
+failure. The job budget is now 25 minutes to accommodate dependency/browser
+setup and the expanded single-worker suite on hosted Windows. Per-test 20-second
+and assertion five-second timeouts, test population and final exact-head guard
+remain unchanged. The updated integration commit must pass every required job;
+the cancelled run is not a green frontend receipt.
 
 [Audit policy](../../../runbooks/dependency-audit-policy.md) records the remaining
 findings and removal conditions. The [single goal](../../../plans/active/2026-10-02-yap-project-hill-climb.md)

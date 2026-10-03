@@ -43,7 +43,11 @@ Hosted Windows run 529 additionally passed 392 frontend units, 184 browser
 workflows, 71 release contracts and strict desktop Clippy. Its native file-ownership
 and stale-copy smoke failures are addressed in the
 [dependency evidence](evidence/dependency-refresh/2026-10-03/verification.md#windows-file-ownership-renewal);
-new exact-head native checks remain required before merging PR #199.
+Run 530 passes all 1,367 Windows native units, 27 integration cases, native WDIO
+and both actual connector checks. Its browser suite reported 152 passing cases
+before the old job deadline cancelled it; the frontend budget is increased to
+25 minutes, retaining per-test timeouts. All checks on the updated commit remain
+required before merging PR #199.
 Nine new inspection database/HTTP
 cases join the prior 51 new-feature database exclusions, all verified against
 real local Postgres. The isolated suite retains 36 preexisting skips. The
