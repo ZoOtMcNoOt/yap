@@ -2,12 +2,15 @@ use std::collections::BTreeSet;
 use std::fs;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use yap_server_orchestrator::{
     read_private_snapshot, write_private_snapshot, LifecycleState, LifecycleTracker,
     NumericLoopbackEndpoint, ProviderService, RestartDecision,
 };
+
+static TEMP_NONCE: AtomicU64 = AtomicU64::new(0);
 
 #[test]
 fn numeric_loopback_endpoint_is_canonical_and_hostname_free() {
@@ -251,8 +254,9 @@ fn unique_temp_directory() -> PathBuf {
         .duration_since(UNIX_EPOCH)
         .unwrap()
         .as_nanos();
+    let sequence = TEMP_NONCE.fetch_add(1, Ordering::Relaxed);
     std::env::temp_dir().join(format!(
-        "yap-orchestrator-contract-{}-{nonce}",
+        "yap-orchestrator-contract-{}-{nonce}-{sequence}",
         std::process::id()
     ))
 }
