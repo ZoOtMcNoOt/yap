@@ -100,6 +100,43 @@
           "sha256": "93be1213e5ae8d9d5b1d81487e6aabd7f7ce231682116368b470226ce84fb94c"
         }
       ]
+    },
+    {
+      "id": "webdriverio-test-driver",
+      "repository": "https://github.com/webdriverio/desktop-mobile",
+      "revision": {
+        "status": "reviewed",
+        "value": "fb4a544bcc49605f6c6fb34f04b292abf428a72a",
+        "evidence": {
+          "commitUrl": "https://github.com/webdriverio/desktop-mobile/commit/fb4a544bcc49605f6c6fb34f04b292abf428a72a",
+          "licensePath": "LICENSE",
+          "licenseSha256": "20c84663dbfa685b230f362509fdbaea7819f5da166afea9857c4d96dcc7e0bc",
+          "reviewScope": "upstream revision and license attribution",
+          "localFileEvidence": "integrity-only",
+          "upstreamFiles": [
+            {
+              "path": "packages/tauri-plugin-webdriver/Cargo.toml",
+              "sha256": "0609713d3d0e04e2a1951e205df2676e49e9689736d68428f2e6cbc1ab80bcaa"
+            },
+            {
+              "path": "packages/tauri-plugin-webdriver/src/platform/windows.rs",
+              "sha256": "3e613f9ca310e9c66d872f6315dd1205cbb7f73a9d7565abf45476d38bff841e"
+            }
+          ]
+        }
+      },
+      "license": "MIT",
+      "notice": "THIRD_PARTY_NOTICES.md",
+      "files": [
+        {
+          "path": "desktop/src-tauri/Cargo.toml",
+          "sha256": "93f604e0e1e20e33588e34eca95e2a231d8276f22bd1f3d6854eec7cc71980cb"
+        },
+        {
+          "path": "desktop/src-tauri/Cargo.lock",
+          "sha256": "37ca001be10efc44e6f57fe4d540e64089c7cf424ed392a7a893e9a9f0293d8f"
+        }
+      ]
     }
   ]
 }

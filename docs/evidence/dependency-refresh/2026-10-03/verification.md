@@ -38,6 +38,27 @@ qualification remains open.
   replace the service's stale 9.29.1 peer path. `pnpm peers check` reports no
   peer dependency issues. Node 24 / pnpm 11.7 remain enforced.
 
+## Hosted Windows binding repair
+
+Hosted run [526](https://github.com/ZoOtMcNoOt/yap/actions/runs/37114232230)
+found a Windows-only mismatch: Tauri's HWND uses Windows 0.62 while the app
+still declared 0.61. The direct Windows and Windows-future dependencies now
+align at 0.62.2 / 0.3.2; clipboard, island regions/styles and WAM keep their
+existing native owners.
+
+The optional embedded WDIO driver also failed because even published 1.4.0
+still uses WebView2 0.38 / Windows 0.61. The exact upstream fix in
+[WebdriverIO PR #687](https://github.com/webdriverio/desktop-mobile/pull/687)
+is pinned at `fb4a544bcc49605f6c6fb34f04b292abf428a72a`. It declares
+StructuredStorage, aligns WebView2 0.39 / Windows 0.62, and rebinds the owned COM
+controller at five Tauri boundaries. The current matching types make that
+transfer a no-op; source review confirms the AddRef'd reference is moved once,
+not duplicated. The MIT license and exact reviewed Git/source hashes are retained.
+No driver code is copied into Yap; the optional driver is outside the production
+graph. This is an unreleased, immutable test dependency. Replace it with a
+compatible published version only after that version passes native WDIO checks.
+The actual hosted Windows compile/runtime renewal remains a required merge gate.
+
 ## Issue #92
 
 Official Tauri 2.12.1 selects Tao 0.37.1 without vendoring or a git patch.

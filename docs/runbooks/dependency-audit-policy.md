@@ -92,6 +92,15 @@ The other current warning is unmaintained `proc-macro-error` `1.0.4`
 upstream graph no longer reports the unshipped transitive warnings. Report the
 current audit output; old warning counts are not current evidence.
 
+The optional native WDIO driver temporarily pins the reviewed upstream fix
+`fb4a544bcc49605f6c6fb34f04b292abf428a72a` from
+[PR #687](https://github.com/webdriverio/desktop-mobile/pull/687), because published
+1.4.0 fails against Tauri 2.12's WebView2 bindings. Direct Windows bindings align
+at 0.62.2 / Windows-future 0.3.2. The Git pin is test-only, is outside the normal
+production graph, and has exact source/license evidence in the provenance
+manifest. Remove the pin when a compatible published release passes native WDIO
+checks. It is not an advisory ignore.
+
 ## Provenance and notice review
 
 The [shipped dependency inventory](../../SHIPPED_DEPENDENCY_INVENTORY.json),
