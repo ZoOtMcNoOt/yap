@@ -1,6 +1,6 @@
 # Discover saved connection proposals
 
-**Owner:** Grant McNatt. **Date:** 2026-10-03. **Status:** Five software outcomes verified locally; hosted integration pending.
+**Owner:** Grant McNatt. **Date:** 2026-10-03. **Status:** All six software outcomes verified; reviewed integration complete.
 
 Previously, Review opened a copied reference or an explicit Curator handoff. It could not discover the current owner's saved proposals. Review now offers an explicit Load/Refresh action, a dated list and keyboard selection. Exact source details remain behind current permission checks. The manual reference field stays available in a disclosure.
 
@@ -13,7 +13,7 @@ Previously, Review opened a copied reference or an explicit Curator handoff. It 
 | Strict native ownership | Existing main-window/current-lease command sends authenticated GET `/v1/knowledge/connection-proposals` without selectors. Native decoding rejects extra fields, wrong schema, duplicates, malformed references, invalid calendar/non-UTC timestamps and excessive rows. No new command, credentials or dependencies. |
 | Explicit accessible discovery | Load/Refresh and selection work at 360/720/1440 px with keyboard access. Empty, failed, corrupt and offline states keep source navigation and manual recovery. Selecting a stale/hidden owned reference does not grant source access. |
 | Confirmed cleanup and recovery | Only confirmed discard removes its row locally. Uncertain delivery retains the exact retry reference and disables list selection, refresh and manual editing. Offline/account changes hide metadata; late receipts cannot populate another owner's view. Reads expose Cancel even with the manual disclosure closed and retain the native slot until completion. |
-| Reviewed integration | Local and hosted receipts will be recorded below. Production/model/enterprise qualification remains separate; the project goal stays active. |
+| Reviewed integration | All six exact-head jobs pass and main has the identical tested tree; receipts below. Production/model/enterprise qualification remains separate; the project goal stays active. |
 
 [Inspected Mobbin references](../../ui-completion/2026-10-02-design-references.md#saved-proposal-discovery) informed dated rows and deliberate detail selection. Metadata has no safe source title, so rows show a shortened reference and creation time. Full references remain accessible to assistive technology and in the manual field.
 
@@ -25,7 +25,9 @@ Previously, Review opened a copied reference or an explicit Curator handoff. It 
 - Portable server: **1,640 passed, 114 declared exclusions** (1,754 total); the ten added PostgreSQL/API cases are exercised separately above. Linux native debug build passed with existing platform-specific unused-code warnings. Release contracts: **66 passed, five Windows-only skips** (71 total). Ruff and all seven documentation/population contracts passed.
 - Review found hidden inspection cancellation and editable uncertain-discard references. Both are corrected, with browser regression coverage. PR review also caught a helper overriding `unittest.TestCase.fail`; renaming it restores standard assertion reporting. A deliberate `assertIsNone` failure enters the pending helper on the old code and raises the correct `AssertionError` after the fix. All 20 PostgreSQL/API and seven documentation/population cases pass again.
 
-Hosted checks and exact integration head are pending. Browser fixtures verify interaction; actual SQL and native TCP tests verify persistence/transport without models. This does not qualify inference, physical Windows input, private identity or enterprise deployment. Issue [#92](https://github.com/ZoOtMcNoOt/yap/issues/92) remains open until an actual Windows RDP/session-lock responsiveness check passes.
+[PR #203](https://github.com/ZoOtMcNoOt/yap/pull/203) merged as `7011a73a618355d58828219db21ea12c5703b31b`. [Run 544](https://github.com/ZoOtMcNoOt/yap/actions/runs/37133293613) passes all six jobs on reviewed head `a6c380c6d13c675cdd7b3d3095030bdacd3659d8`: Windows frontend **398 units**, **205 browser cases**, **71 release contracts** and **two adapter cases**; strict Clippy and native **1,370 units + 27 integration cases** (11 declared model/hardware ignores); native WDIO, server, identity and service lifecycle. Hosted server ran 1,754 cases: 1,601 passed and 153 declared exclusions. Main's tree `3e16cffc3e14d3bf745902ae7eaeb16db5a1c53d` exactly matches the tested head. The original head remains in `refs/archive/pull-203-head`; the temporary branch is retired.
+
+The initial browser attempt passed 204 cases before an unchanged History case timed out during initial navigation (16 seconds of its 20-second deadline). That case passed five local repetitions; rerunning only the failed job on the same head passed all 205. No timeout or requirement was weakened. Browser fixtures verify interaction; actual SQL and native TCP tests verify persistence/transport without models. This does not qualify inference, physical Windows input, private identity or enterprise deployment. Issue [#92](https://github.com/ZoOtMcNoOt/yap/issues/92) remains open until an actual Windows RDP/session-lock responsiveness check passes.
 
 ## Repeatable checks
 
