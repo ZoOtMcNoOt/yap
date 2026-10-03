@@ -119,7 +119,7 @@ fn provider_for(
         &HSTRING::from(MICROSOFT_PROVIDER_ID),
         &HSTRING::from(authority_for(settings)),
     )
-    .and_then(|operation| operation.get())
+    .and_then(|operation| operation.join())
     // A missing provider means the broker is absent or the machine has no work
     // account plugin, which is an environment fact rather than a bad token.
     .map_err(|_| NativeAccessTokenProviderError::UNAVAILABLE)
@@ -146,7 +146,7 @@ fn acquire_silent_blocking(
     let request = request_for(settings, &provider)?;
 
     let result = WebAuthenticationCoreManager::GetTokenSilentlyAsync(&request)
-        .and_then(|operation| operation.get())
+        .and_then(|operation| operation.join())
         .map_err(|_| NativeAccessTokenProviderError::NETWORK)?;
 
     grant_from_result(&result)
@@ -232,7 +232,7 @@ fn sign_in_blocking(
             )
             .map_err(|_| NativeAccessTokenProviderError::UNAVAILABLE)?
     }
-    .get()
+    .join()
     .map_err(|_| NativeAccessTokenProviderError::NETWORK)?;
 
     grant_from_result(&result)
@@ -244,7 +244,7 @@ fn session_status_blocking(
     ensure_apartment();
     let provider = provider_for(settings)?;
     let accounts = WebAuthenticationCoreManager::FindAllAccountsAsync(&provider)
-        .and_then(|operation| operation.get())
+        .and_then(|operation| operation.join())
         .map_err(|_| NativeAccessTokenProviderError::UNAVAILABLE)?;
 
     let account_id = accounts

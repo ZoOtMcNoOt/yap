@@ -44,7 +44,9 @@ Hosted run [526](https://github.com/ZoOtMcNoOt/yap/actions/runs/37114232230)
 found a Windows-only mismatch: Tauri's HWND uses Windows 0.62 while the app
 still declared 0.61. The direct Windows and Windows-future dependencies now
 align at 0.62.2 / 0.3.2; clipboard, island regions/styles and WAM keep their
-existing native owners.
+existing native owners. Windows-future 0.3 renames blocking completion
+from `get()` to `join()`; all four WAM broker call sites use the current method.
+Installed source review confirms the same status/completion wait and result path.
 
 The optional embedded WDIO driver also failed because even published 1.4.0
 still uses WebView2 0.38 / Windows 0.61. The exact upstream fix in
