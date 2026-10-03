@@ -220,4 +220,6 @@ record the real SQL, native and browser checks and target limits.
 
 | 2026-10-03 | Owner-controlled discard completes the model-free server/native/UI path. Atomic tombstones/audits, retained provenance, 64-proposal capacity release, uncertain retries and account isolation pass actual PostgreSQL checks. Linux native 1,364 + 27, frontend 393, browser 189 + one Windows-only skip, build and contracts pass; confirmation/confirmed screens retained. | Push and integrate through all exact-head hosted checks, then retire the iteration branch and continue human publication/rebuilding and the full queue. |
 
+| 2026-10-03 | PR review exposed a new Curator handoff cancelling a pending discard and replacing its retry reference. Two browser cases fail on the original head and pass with retained writes and an explicit queued handoff; all 52 related browser journeys, both narrow handoff cases, frontend units/build and documentation contracts pass. | Renew all exact-head checks for the correction before merging PR #202; run 538 qualifies only the earlier head. |
+
 Attribute project work to Grant McNatt. Preserve third-party attribution/provenance; do not add AI branding or coauthor trailers.

@@ -74,6 +74,12 @@ export async function installProposalInspectionBridge(page: Page) {
           if (mode === "lostDiscardReceipt" && action === "discard") {
             discarded.add(args.request.proposalId);
             mode = "success";
+            if (delayed) {
+              delayed = false;
+              return new Promise((_, reject) => {
+                release = () => reject({ code: "unavailable" });
+              });
+            }
             throw { code: "unavailable" };
           }
           if (mode !== "success") throw { code: mode };

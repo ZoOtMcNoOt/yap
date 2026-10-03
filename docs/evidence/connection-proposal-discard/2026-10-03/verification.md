@@ -50,6 +50,19 @@ Browser/native projections are deterministic fixtures. PostgreSQL exercises real
 SQL in isolated synthetic tenants. These checks do not qualify inference, enterprise
 identity, production deployment or actual RDP/session-lock recovery (#92).
 
+## Review correction
+
+The first head `f8c0606e` passed all six jobs in
+[run 538](https://github.com/ZoOtMcNoOt/yap/actions/runs/37124911942), but PR review
+found a navigation overlap: a new Curator handoff could cancel a pending discard
+and replace its recovery reference. Two new browser cases reproduce the replaced
+reference on that head and pass with queued handoff handling. The write is retained;
+its reference remains available for uncertain-delivery retry. After confirmation,
+the owner explicitly opens the queued proposal. All 52 related review/Curator/Knowledge
+browser journeys pass; both handoff cases also pass at 360 pixels. Frontend units
+and production build renew. This correction requires fresh
+exact-head hosted checks; the earlier green run does not qualify changed code.
+
 ## Screens and flow
 
 The [browser journeys](../../../../desktop/tests/e2e/connection-proposal-inspection.spec.ts)
