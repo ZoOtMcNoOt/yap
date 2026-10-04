@@ -153,10 +153,50 @@ prior active state. Existing sources, proposals and vectors are retained.
 
 On `409 KNOWLEDGE_PUBLICATION_CHANGED`, inspect again and review the new active
 state before another explicit request. A retained target needs the existing
-explicit rollback procedure; this route does not roll it back. On unavailable or
+explicit rollback action below. The publication action does not roll it back. On unavailable or
 lost confirmation, inspect before retrying: an HTTP failure alone cannot prove
 whether a server transaction committed. Inspection does not repair damaged data.
 Unconfigured authenticated routes return `501`; unsupported methods return `405`.
 
 See [OpenAPI](../../server/openapi/openapi.json) and
 [verification](../evidence/knowledge-publication/2026-10-04/verification.md).
+
+
+## Restore a retained generation
+
+After inspecting the target through `GET /v1/knowledge/publications`, explicitly
+send `POST /v1/knowledge/rollbacks` with the same versioned target and
+expected-active references used for publication:
+
+```json
+{
+  "schemaVersion": 1,
+  "generationSha256": "<retained generation SHA-256>",
+  "expectedActiveGenerationSha256": "<currently active generation SHA-256>"
+}
+```
+
+Use the existing organization bearer authority and publication configuration.
+Only `knowledge.curator` reviewers can restore their own curated-repository
+admissions. The target must have durable publication history and retained,
+complete source/admission/count/vector truth; an unpublished staged generation
+cannot become published through rollback. A pruned generation needs a separate
+explicit source/projection restore procedure. Rollback never repairs stored data,
+regenerates embeddings or changes source files/proposals.
+
+The existing tenant lock compares expected-active state before changing the
+pointer. Activation history records `rollback`; its content-free success audit
+commits in the same transaction. The receipt uses `KnowledgePublicationReceipt`:
+`status` is `active`, `changed` identifies whether the pointer changed, and
+`previousActiveGenerationSha256` identifies the state observed under the lock.
+Replay of the current target revalidates complete truth without another activation.
+
+If a reply is lost or unavailable, inspect target/current state again. If the target
+is active and valid, explicit retry returns `changed: false`; otherwise inspect
+and decide whether to retry against the new active reference. Do not automatically
+replace a newer generation. Stale intent, invalid retained truth, audit failure
+and lock timeout retain the prior active state and every existing projection.
+The internal ledger remains the single activation owner; no new provider,
+model-quality, enterprise-identity or full product rebuilding qualification is
+claimed. [Rollback evidence](../evidence/knowledge-rollback-api/2026-10-04/verification.md)
+records actual HTTP/Postgres checks and their synthetic-vector boundary.

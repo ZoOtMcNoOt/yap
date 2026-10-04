@@ -489,3 +489,256 @@ class KnowledgePublicationApiTests(PublicationApiTestCase):
             )
             self.assertEqual(status, expected)
         self.assertNotIn("PrivateCallerClaim", "\n".join(self.logger.messages))
+
+
+class KnowledgeRollbackApiTests(PublicationApiTestCase):
+    def snapshot(self):
+        with psycopg.connect(DSN) as connection:
+            stored = tuple(
+                connection.execute(
+                    f"SELECT to_jsonb(record) FROM {table} AS record WHERE tenant_id = %s ORDER BY to_jsonb(record)::text",
+                    (self.tenant,),
+                ).fetchall()
+                for table in (
+                    "yap_knowledge_builds",
+                    "yap_knowledge_concepts",
+                    "yap_knowledge_permissions",
+                    "yap_knowledge_relationships",
+                    "yap_knowledge_source_admissions",
+                    "yap_knowledge_proposals",
+                )
+            )
+        return super().snapshot() + (stored,)
+
+    def rollback(self, *, generation=None, expected=None, actor="alice", payload=None):
+        headers = {"Content-Type": "application/json"}
+        if actor is not None:
+            headers["Authorization"] = f"Bearer {actor}"
+        data = (
+            payload
+            if payload is not None
+            else {
+                "schemaVersion": 1,
+                "generationSha256": generation or self.base.generation_sha256,
+                "expectedActiveGenerationSha256": expected
+                or self.target.generation_sha256,
+            }
+        )
+        status, headers, body = self._request(
+            "/v1/knowledge/rollbacks",
+            method="POST",
+            data=json.dumps(data).encode(),
+            headers=headers,
+            timeout=5,
+        )
+        return status, headers, json.loads(body)
+
+    def test_explicit_rollback_restores_retained_vectors_and_persists_across_restart(
+        self,
+    ):
+        self.assertEqual(self.request("POST")[0], 200)
+        before = self.snapshot()
+        status, headers, result = self.rollback()
+        self.assertEqual(status, 200)
+        self.assertEqual(headers["Cache-Control"], "no-store")
+        self.assertTrue(result["changed"])
+        self.assertEqual(result["activeGenerationSha256"], self.base.generation_sha256)
+        self.assertEqual(
+            result["previousActiveGenerationSha256"], self.target.generation_sha256
+        )
+        after = self.snapshot()
+        self.assertEqual(after[2:4], before[2:4])
+        self.assertEqual(
+            after[1][-1],
+            (self.base.generation_sha256, self.target.generation_sha256, "rollback"),
+        )
+        self.assertEqual(
+            after[4][-1], ("knowledge-publication", "rollback-generation", "succeeded")
+        )
+        restarted = build_knowledge_publication_service(
+            self.environ, authenticated_team_mode=True
+        )
+        self.assertEqual(
+            restarted.inspect(
+                principal=self.principal, generation_sha256=self.base.generation_sha256
+            )["status"],
+            "active",
+        )
+        replay_before = self.snapshot()
+        self.assertFalse(self.rollback()[2]["changed"])
+        self.assertEqual(self.snapshot()[:4], replay_before[:4])
+
+    def test_authority_and_unknown_targets_refuse_without_mutation(self):
+        self.assertEqual(self.request("POST")[0], 200)
+        before = self.snapshot()
+        for actor, expected_status in (
+            (None, 401),
+            ("reader", 403),
+            ("bob", 404),
+            ("foreign", 404),
+        ):
+            self.assertEqual(self.rollback(actor=actor)[0], expected_status)
+            if actor in {"bob", "foreign"}:
+                known = self.rollback(actor=actor)[2]
+                unknown = self.rollback(actor=actor, generation="0" * 64)[2]
+                self.assertEqual(
+                    (known["code"], known["message"]),
+                    (unknown["code"], unknown["message"]),
+                )
+        self.assertEqual(self.rollback(generation="0" * 64)[0], 404)
+        self.assertEqual(self.snapshot(), before)
+
+    def test_unpublished_and_pruned_targets_cannot_be_rolled_back(self):
+        before = self.snapshot()
+        status, _, error = self.rollback(
+            generation=self.target.generation_sha256,
+            expected=self.base.generation_sha256,
+        )
+        self.assertEqual(
+            (status, error["code"]), (409, "KNOWLEDGE_ROLLBACK_UNPUBLISHED")
+        )
+        self.assertEqual(self.snapshot(), before)
+        self.assertEqual(self.request("POST")[0], 200)
+        with psycopg.connect(DSN) as connection:
+            connection.execute(
+                "DELETE FROM yap_knowledge_builds WHERE tenant_id = %s AND generation_sha256 = %s",
+                (self.tenant, self.base.generation_sha256),
+            )
+        before = self.snapshot()
+        self.assertEqual(self.rollback()[0], 404)
+        self.assertEqual(self.snapshot(), before)
+
+    def test_changed_active_generation_refuses_stale_rollback(self):
+        successor = self.prepare("reviewed-newer")
+        self.assertEqual(self.request("POST")[0], 200)
+        self.assertEqual(
+            self.request(
+                "POST",
+                generation=successor.generation_sha256,
+                expected=self.target.generation_sha256,
+            )[0],
+            200,
+        )
+        before = self.snapshot()
+        self.assertEqual(self.rollback()[0], 409)
+        self.assertEqual(self.snapshot(), before)
+        self.assertEqual(self.rollback(expected=successor.generation_sha256)[0], 200)
+
+    def test_failed_audit_and_lock_timeout_have_no_late_rollback(self):
+        self.assertEqual(self.request("POST")[0], 200)
+        before = self.snapshot()
+        with patch(
+            "yap_server.knowledge.knowledge_publication_service.record_knowledge_tool_audit",
+            side_effect=psycopg.OperationalError("Private rollback audit failure"),
+        ):
+            status, _, error = self.rollback()
+        self.assertEqual(status, 503)
+        self.assertNotIn("Private rollback", json.dumps(error))
+        self.assertEqual(self.snapshot(), before)
+        with psycopg.connect(DSN) as connection:
+            with connection.transaction():
+                connection.execute(
+                    "SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))",
+                    (self.tenant,),
+                )
+                self.assertEqual(self.rollback()[0], 503)
+        self.assertEqual(self.snapshot(), before)
+        self.assertEqual(self.rollback()[0], 200)
+
+    def test_source_admission_and_vectors_are_revalidated_without_repairs(self):
+        for scenario in ("source", "admission", "vector", "count"):
+            with self.subTest(scenario=scenario):
+                retained = self.prepare("reviewed-retained-" + scenario)
+                self.assertEqual(
+                    self.request(
+                        "POST",
+                        generation=retained.generation_sha256,
+                        expected=self.snapshot()[0][0][0],
+                    )[0],
+                    200,
+                )
+                replacement = self.prepare("reviewed-replacement-" + scenario)
+                self.assertEqual(
+                    self.request(
+                        "POST",
+                        generation=replacement.generation_sha256,
+                        expected=retained.generation_sha256,
+                    )[0],
+                    200,
+                )
+                queries = {
+                    "source": "UPDATE yap_knowledge_concepts SET body = 'Private corrupted source' WHERE tenant_id = %s AND generation_sha256 = %s",
+                    "admission": "UPDATE yap_knowledge_source_admissions SET review_authority_sha256 = repeat('0', 64) WHERE tenant_id = %s AND generation_sha256 = %s",
+                    "vector": "UPDATE yap_knowledge_chunks SET embedding = NULL WHERE tenant_id = %s AND generation_sha256 = %s",
+                    "count": "UPDATE yap_knowledge_builds SET chunk_count = chunk_count + 1 WHERE tenant_id = %s AND generation_sha256 = %s",
+                }
+                with psycopg.connect(DSN) as connection:
+                    connection.execute(
+                        queries[scenario], (self.tenant, retained.generation_sha256)
+                    )
+                before = self.snapshot()
+                status, _, error = self.rollback(
+                    generation=retained.generation_sha256,
+                    expected=replacement.generation_sha256,
+                )
+                self.assertEqual(status, 409)
+                self.assertNotIn("Private corrupted source", json.dumps(error))
+                self.assertEqual(self.snapshot(), before)
+
+    def test_rollback_and_publication_race_has_one_expected_active_winner(self):
+        successor = self.prepare("reviewed-racing-publication")
+        self.assertEqual(self.request("POST")[0], 200)
+        before = self.snapshot()
+        barrier = threading.Barrier(2)
+
+        def rollback():
+            barrier.wait(2)
+            return self.rollback()[0]
+
+        def publish():
+            barrier.wait(2)
+            return self.request(
+                "POST",
+                generation=successor.generation_sha256,
+                expected=self.target.generation_sha256,
+            )[0]
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            futures = [pool.submit(rollback), pool.submit(publish)]
+            self.assertEqual(sorted(f.result(5) for f in futures), [200, 409])
+        after = self.snapshot()
+        self.assertEqual(len(after[1]), len(before[1]) + 1)
+        self.assertEqual(after[2:4], before[2:4])
+
+    def test_rollback_contract_bounds_disabled_runtime_and_content_free_logs(self):
+        before = self.snapshot()
+        for extra in ("tenantId", "subjectId", "approval", "sourcePath", "embeddings"):
+            self.assertEqual(
+                self.rollback(
+                    payload={
+                        "schemaVersion": 1,
+                        "generationSha256": self.base.generation_sha256,
+                        "expectedActiveGenerationSha256": self.target.generation_sha256,
+                        extra: "PrivateCallerClaim",
+                    }
+                )[0],
+                400,
+            )
+        for method in ("GET", "DELETE"):
+            self.assertEqual(
+                self._request("/v1/knowledge/rollbacks", method=method)[0], 405
+            )
+        status, _, _ = self._request(
+            "/v1/knowledge/rollbacks?tenantId=PrivateCallerClaim",
+            method="POST",
+            data=b"{}",
+            headers={
+                "Authorization": "Bearer alice",
+                "Content-Type": "application/json",
+            },
+        )
+        self.assertEqual(status, 400)
+        self.assertEqual(self.snapshot(), before)
+        self.assertNotIn("PrivateCallerClaim", "\n".join(self.logger.messages))
+        self.server.RequestHandlerClass.keywords["knowledge_publication_service"] = None
+        self.assertEqual(self.rollback()[0], 501)

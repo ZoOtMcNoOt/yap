@@ -70,3 +70,5 @@ Current product-completion evidence:
 Do not commit private scans, scan identifiers, sensitive audio/transcripts, raw
 host snapshots, credentials, or enterprise configuration. Public evidence may
 record hashes, versions, counts, redacted outcomes, and explicit limitations.
+
+- [Authenticated retained-generation rollback](knowledge-rollback-api/2026-10-04/verification.md): explicit operator recovery with reviewed ownership, atomic audit and real SQL/concurrency checks.

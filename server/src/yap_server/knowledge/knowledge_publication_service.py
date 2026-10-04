@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 import threading
 import time
-from typing import Mapping
+from typing import Literal, Mapping
 
 import psycopg
 
@@ -18,6 +18,7 @@ from yap_server.private_postgres_connection import (
 )
 from .generation_ledger import (
     activate_complete_generation,
+    rollback_to_generation,
     validate_complete_generation,
 )
 from .knowledge_source_admission import (
@@ -33,6 +34,7 @@ from .reviewed_source_snapshot import (
 
 
 PUBLICATION_PATH = "/v1/knowledge/publications"
+ROLLBACK_PATH = "/v1/knowledge/rollbacks"
 SOURCE_PREPARATION_PATH = "/v1/knowledge/source-preparations"
 
 
@@ -73,7 +75,7 @@ class KnowledgePublicationService:
     def inspect(
         self, *, principal: AuthenticatedPrincipal, generation_sha256: str
     ) -> dict[str, object]:
-        return self._execute(principal, generation_sha256, publish=False)
+        return self._execute(principal, generation_sha256, action="inspect")
 
     def inspect_source(self, *, principal: AuthenticatedPrincipal) -> dict[str, object]:
         return self._execute_source_preparation(principal, prepare=False)
@@ -263,6 +265,20 @@ class KnowledgePublicationService:
     def publish(
         self, *, principal: AuthenticatedPrincipal, request: Mapping[str, object]
     ) -> dict[str, object]:
+        return self._request_activation(principal, request, action="publish")
+
+    def rollback(
+        self, *, principal: AuthenticatedPrincipal, request: Mapping[str, object]
+    ) -> dict[str, object]:
+        return self._request_activation(principal, request, action="rollback")
+
+    def _request_activation(
+        self,
+        principal: AuthenticatedPrincipal,
+        request: Mapping[str, object],
+        *,
+        action: Literal["publish", "rollback"],
+    ) -> dict[str, object]:
         if (
             not isinstance(request, dict)
             or set(request)
@@ -279,7 +295,7 @@ class KnowledgePublicationService:
         return self._execute(
             principal,
             str(request["generationSha256"]),
-            publish=True,
+            action=action,
             expected_active=request["expectedActiveGenerationSha256"],
         )
 
@@ -288,9 +304,11 @@ class KnowledgePublicationService:
         principal: AuthenticatedPrincipal,
         generation_sha256: str,
         *,
-        publish: bool,
+        action: Literal["inspect", "publish", "rollback"],
         expected_active: object = None,
     ) -> dict[str, object]:
+        publish = action != "inspect"
+        rollback = action == "rollback"
         if "knowledge.curator" not in principal.roles:
             raise KnowledgePublicationError(
                 403,
@@ -353,6 +371,20 @@ class KnowledgePublicationService:
                     retained = status == "retained"
                     changed = False
                     if publish:
+                        if (
+                            rollback
+                            and connection.execute(
+                                """SELECT 1 FROM yap_knowledge_activation_history
+                               WHERE tenant_id = %s AND generation_sha256 = %s LIMIT 1""",
+                                (principal.tenant_id, generation_sha256),
+                            ).fetchone()
+                            is None
+                        ):
+                            raise KnowledgePublicationError(
+                                409,
+                                "KNOWLEDGE_ROLLBACK_UNPUBLISHED",
+                                "Only a previously published generation can be restored.",
+                            )
                         if active_hash == generation_sha256:
                             validate_complete_generation(
                                 connection,
@@ -366,13 +398,18 @@ class KnowledgePublicationService:
                                     "KNOWLEDGE_PUBLICATION_CHANGED",
                                     "Active knowledge changed. Inspect the generation before publishing again.",
                                 )
-                            if retained:
+                            if retained and not rollback:
                                 raise KnowledgePublicationError(
                                     409,
                                     "KNOWLEDGE_PUBLICATION_RETAINED",
                                     "This generation was already published. Use an explicit rollback.",
                                 )
-                            activate_complete_generation(
+                            activate = (
+                                rollback_to_generation
+                                if rollback
+                                else activate_complete_generation
+                            )
+                            activate(
                                 connection,
                                 tenant_id=principal.tenant_id,
                                 generation_sha256=generation_sha256,
@@ -400,7 +437,9 @@ class KnowledgePublicationService:
                         connection,
                         principal=principal.key,
                         agent_id="knowledge-publication",
-                        operation="publish-generation"
+                        operation="rollback-generation"
+                        if rollback
+                        else "publish-generation"
                         if publish
                         else "inspect-generation-publication",
                         outcome="succeeded",

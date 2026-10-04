@@ -362,7 +362,7 @@ the full software queue.
 - [x] Revalidate same-reviewer replay, preserve valid staged/active data, refuse other-owner or damaged state, and test source drift, failed audit, stale intent, request concurrency, timeout and restart recovery. Pruned published identities require explicit restore rather than a new mutable preparation area.
 - [x] Verify actual authenticated HTTP/Postgres with deterministic principals and synthetic vectors, portable configuration/manifest/CLI boundaries, OpenAPI/runtime contracts and relevant full regression. Record review/Git, model, enterprise and Windows limits accurately.
 - [ ] Record evidence, commit under Grant McNatt and integrate only reviewed six-job green heads. Continue product rebuild integration and the full software queue.
-## Current local increment: bind embedding preparation to stored reviewed source
+## Awaiting integration: bind embedding preparation to stored reviewed source
 
 **Status:** 5/6 outcomes verified locally; reviewed hosted integration pending.
 The existing embedding writer now checks current stored source, admission and
@@ -380,6 +380,24 @@ open; continue the entire software queue.
 - [x] Preserve valid first preparation and staged retries, published-vector immutability, active/history data and original source files. Prove refusal after an observed actual lock wait and changed stored source.
 - [x] Run real ledger/required PostgreSQL, governed portable/full server and applicable contract/lint checks; preserve earlier receipts and distinguish fixtures from model/Windows/enterprise qualification.
 - [ ] Record concise evidence, commit under Grant McNatt, and integrate only reviewed six-job green heads. Continue provider and product integration and every available software workstream.
+
+## Current local increment: restore a retained reviewed generation over HTTP
+
+**Status:** 5/6 outcomes locally verified; reviewed hosted integration pending.
+[Evidence](../../evidence/knowledge-rollback-api/2026-10-04/verification.md) retains
+the original 404, real HTTP/SQL checks and synthetic-vector boundary. Audit found an operator dead end: publication refuses a
+retained target and requests explicit rollback, but only an internal Python
+ledger call can perform it. Add a bounded authenticated operator action through
+the existing publication transport, tenant lock, complete-generation validator
+and atomic audit. Existing GET publication inspection supplies target/current
+state; this is recovery of published data, not source admission or inference.
+
+- [x] Require organization authentication, `knowledge.curator` and the authenticated reviewer's own curated-repository admission; accept only a versioned target and expected-active reference.
+- [x] Restore only a previously published, retained, complete generation. Refuse unpublished or pruned targets, stale expected-active state and invalid source/admission/vector truth without repairs.
+- [x] Revalidate successful replay without duplicate activation history; retain all sources, vectors, proposals and other reviewers' data. Record rollback reason and success audit atomically.
+- [x] Verify real HTTP/Postgres permission isolation, stale-state concurrency, lock timeout, failed audit and lost-response/restart recovery, using explicitly synthetic vectors.
+- [x] Document inspection, explicit rollback and uncertainty recovery; keep disabled/runtime/OpenAPI contracts and the skip-free database population accurate. Run applicable regression and review.
+- [ ] Commit/push under Grant McNatt, integrate through all six reviewed exact-head jobs and preserve the tested head before retiring the branch. Continue embedding generation, full rebuilding and the whole roadmap.
 
 ## Execution record
 
