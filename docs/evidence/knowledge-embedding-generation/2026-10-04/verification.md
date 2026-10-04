@@ -54,3 +54,7 @@ qualification and the entire remaining roadmap stay open.
 [Review corrections](review-verification.md) retain actual oversized-numeric
 provider/HTTP failures and the shared-serializer fix, renewed complete suites,
 and consistent integration-status descriptions. The test population is unchanged.
+
+[Browser verification](browser-verification.md) retains run 557's original
+notification-stack click timeout, the actual trace investigation and locally
+verified interaction correction. All six jobs must be renewed on its exact head.
