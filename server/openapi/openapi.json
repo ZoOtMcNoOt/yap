@@ -3200,6 +3200,73 @@
           }
         }
       }
+    },
+    "/v1/knowledge/embedding-preparations": {
+      "post": {
+        "tags": [
+          "knowledge"
+        ],
+        "operationId": "prepareReviewedKnowledgeEmbeddings",
+        "summary": "Generate a complete reviewed embedding projection",
+        "description": "Explicit authenticated admitting-curator operation. Deployment selects one already-running numeric-loopback embedding endpoint and model/revision; requests choose only a stored reviewed generation, never source text, identity, endpoints, models or vectors. Under the existing tenant lock, revalidate compiled source/admission/counts, generate bounded complete 768-dimensional vectors and commit them with a content-free success audit. Preserve source, proposals, active state and history. Previously published generations and conflicting/partial stored projections refuse. Replay revalidates a complete same-model staged projection without calling the provider or overwriting it. Lost confirmation requires explicit replay before publication. This does not fetch models, verify deployment artifacts or qualify model quality.",
+        "x-yap-runtime-status": "Implemented when explicit authenticated knowledge publication Postgres and loopback embedding configuration verify",
+        "x-yap-runtime-owner": "Reviewer-owned bounded embedding preparation",
+        "responses": {
+          "200": {
+            "description": "Reviewer-owned generation metadata; no source text.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeEmbeddingPreparationReceipt"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "411": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "415": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KnowledgeEmbeddingPreparationRequest"
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -9259,6 +9326,67 @@
             "pattern": "^[0-9a-f]{64}$",
             "minLength": 64,
             "maxLength": 64
+          }
+        }
+      },
+      "KnowledgeEmbeddingPreparationRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "generationSha256"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "generationSha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      },
+      "KnowledgeEmbeddingPreparationReceipt": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "generationSha256",
+          "status",
+          "chunkCount",
+          "embeddingModelId",
+          "embeddingModelRevision",
+          "changed"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "generationSha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "status": {
+            "type": "string",
+            "const": "prepared"
+          },
+          "chunkCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "embeddingModelId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "embeddingModelRevision": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "changed": {
+            "type": "boolean"
           }
         }
       }

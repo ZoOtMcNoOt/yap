@@ -58,9 +58,10 @@ _EXPECTED_DATABASE_MODULES = (
     "tests.api.test_knowledge_connections_api",
     "tests.api.test_knowledge_publication_api",
     "tests.api.test_knowledge_source_preparation_api",
+    "tests.api.test_knowledge_embedding_preparation_api",
     "tests.api.test_terminology_api",
 )
-_EXPECTED_DATABASE_TEST_COUNT = 152
+_EXPECTED_DATABASE_TEST_COUNT = 161
 
 _EXPECTED_PORTABLE_PACKAGES = frozenset(
     {"numpy", "psycopg", "psycopg-binary", "rapidfuzz", "regex"}
@@ -85,6 +86,7 @@ _EXPECTED_PORTABLE_MODULES = (
     "tests.evaluation.test_vllm_runtime_metrics",
     "tests.infra.test_agent_admission_service",
     "tests.knowledge.test_publication_configuration",
+    "tests.knowledge.test_embedding_provider",
     "tests.knowledge.test_agent_reasoning_routes",
     "tests.knowledge.test_cancellable_database_operation",
     "tests.knowledge.test_connection_review",
@@ -98,7 +100,7 @@ _EXPECTED_PORTABLE_MODULES = (
     "tests.knowledge.test_terminology_snapshot",
     "tests.knowledge.test_vllm_reasoning_client",
 )
-_EXPECTED_PORTABLE_TEST_COUNT = 201
+_EXPECTED_PORTABLE_TEST_COUNT = 209
 
 
 def evaluate_governed_knowledge_gate(

@@ -27,7 +27,9 @@ PATH = "/v1/knowledge/source-preparations"
 DSN = publication_fixtures.DSN
 
 
-class KnowledgeSourcePreparationApiTests(publication_fixtures.PublicationApiTestCase):
+class KnowledgeSourcePreparationApiTestCase(
+    publication_fixtures.PublicationApiTestCase
+):
     def snapshot(self):
         with psycopg.connect(DSN) as connection:
             stored = tuple(
@@ -124,6 +126,8 @@ class KnowledgeSourcePreparationApiTests(publication_fixtures.PublicationApiTest
                 generation_sha256=generation.generation_sha256,
             )
 
+
+class KnowledgeSourcePreparationApiTests(KnowledgeSourcePreparationApiTestCase):
     def test_explicit_inspection_preparation_replay_and_restart_without_embeddings(
         self,
     ):

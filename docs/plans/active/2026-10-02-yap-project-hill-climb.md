@@ -167,9 +167,9 @@ the identical tree tested at `7622a5a6`; all six jobs in
 The iteration branch and superseded Dependabot PR #200 are retired; the latter's
 exact tip remains under `archive/dependency-proposal-200-2026-10-03`.
 
-## Awaiting integration: export a connection review package
+## Completed increment: export a connection review package
 
-**Status:** 5/6 local software outcomes; exact-head integration pending. Owners can
+**Status:** 6/6 software outcomes verified and merged in PR #205. Owners can
 export an inspected candidate and its exact evidence into human Git review through
 the existing native connection and new-file owners. [Verification and screens](../../evidence/connection-review-export/2026-10-03/verification.md)
 retain the checks and limits. The
@@ -181,17 +181,20 @@ projection, publication and rebuilding remain separate open outcomes.
 - [x] Offer an explicit new-file destination. Revalidate after selection, preserve existing files and internal data, and refuse stale, revoked, changed-owner or discarded evidence before publication. Retain write ownership through completion; do not report cancellation while a write can continue.
 - [x] Connect a readable, keyboard-accessible export action to Review proposals. Success, cancelled picker, unavailable/expired connection, retained uncertainty, failed destination and account changes keep local controls and source navigation usable; inspect narrow and wide layouts.
 - [x] Verify actual native transport/file invariants and browser recovery with deterministic evidence, using existing dependencies and retained source provenance. Document how the package enters human Git review and its limits; it does not mutate the canonical graph.
-- [ ] Review/push and integrate through every exact-head job, retain the reviewed head and retire the branch. Continue actual canonical publication/rebuilding and the full software queue.
+- [x] Review/push and integrate through every exact-head job, retain the reviewed head and retire the branch. Continue actual canonical publication/rebuilding and the full software queue.
 
-GitHub access is restored. The complete retained backlog is pushed through
-`4ec7d6189a1e57120ef957bcf94c7700a036a62c`; review and all six exact-head hosted
-jobs are required before integration. A fresh app successor recovered the
-checkout and archived the idle predecessor after confirming readiness. Historical
-connection failures remain in dated evidence. Continue software work while CI runs.
+[PR #205](https://github.com/ZoOtMcNoOt/yap/pull/205) merged the retained backlog
+and reviewed corrections as `82ea8362ee53220218b78926b762ab707ebaf2a9`, with the
+identical tree tested at `6c1c5e1f`. [Run 551](https://github.com/ZoOtMcNoOt/yap/actions/runs/37222033380)
+passed all six jobs. The tested head is preserved as `reviewed/pr-205-6c1c5e1f`;
+the temporary branch is retired. [Integration evidence](../../evidence/connection-review-export/2026-10-04/integration.md)
+retains actual Windows/Linux counts and qualification limits. The fresh successor
+recovered the checkout and archived its idle predecessor after readiness.
+Continue software work across the full queue.
 
-## Awaiting integration: verify a review package against its source bundle
+## Completed increment: verify a review package against its source bundle
 
-**Status:** 4/5 local software outcomes; reviewed exact-head integration pending.
+**Status:** 5/5 software outcomes verified and merged in PR #205.
 The read-only operator command checks exported citations using the existing
 bounded artifact reader and OKF compiler. It verifies the complete selected
 bundle/generation and both exact quotes. Source matching supplies no access
@@ -201,16 +204,16 @@ or approval; the human reviewer still assesses provenance and rationale.
 - [x] Compile an explicitly selected local OKF bundle with an explicit tenant/revision; require the exact generation and compare both file-byte hashes, parsed-body Unicode spans, metadata and quote text.
 - [x] Return a content-free source-match receipt through a documented command. Preserve every file; open no credentials, server/SQL connections or embedding/model providers. Source matching cannot authorize review, admission or publication.
 - [x] Verify actual files, Unicode/frontmatter hashing, changed generations/quotes/revisions, malformed packages, linked/escaped/missing sources, CLI success/refusal and no file mutation without model hardware.
-- [ ] Record actual software results, commit the verified iteration and push/integrate after all six exact-head jobs pass. Canonical human review, complete projection and activation remain open.
+- [x] Record actual software results, commit the verified iteration and push/integrate after all six exact-head jobs pass. Canonical human review, complete projection and activation remain open.
 
 [Source-check evidence](../../evidence/connection-review-source-check/2026-10-03/verification.md)
 records 29 focused, all 185 governed portable and 1,648 isolated full-server
 passes (114 declared exclusions), including actual files and CLI execution.
 The checker is read-only; approval and activation remain open.
 
-## Awaiting integration: preserve published vectors through rollback
+## Completed increment: preserve published vectors through rollback
 
-**Status:** 4/5 local software outcomes; exact-head integration pending.
+**Status:** 5/5 software outcomes verified and merged in PR #205.
 The embedding writer now freezes every previously published projection using
 durable activation history and the existing tenant lock. Replacement no longer
 permits a vector overwrite of a retained rollback target. Staged preparation
@@ -220,15 +223,15 @@ remains usable; no model or publication authority is added.
 - [x] Keep initial staged embedding preparation usable; refusals preserve vectors, model identity, active state and activation history. Rollback restores the original projection.
 - [x] Verify a concurrent writer waits for tenant activation, then refuses after publication rather than overwriting the newly published generation.
 - [x] Run the complete skip-free disposable PostgreSQL gate with the expanded population and applicable portable/lint/documentation regressions; distinguish synthetic vectors from qualified inference.
-- [ ] Record the reviewed result and commit it locally; push/integrate through all six exact-head checks after all six exact-head jobs pass. Continue canonical review/rebuilding and the complete software queue.
+- [x] Record the reviewed result and commit it locally; push/integrate through all six exact-head checks after all six exact-head jobs pass. Continue canonical review/rebuilding and the complete software queue.
 
 [Rollback evidence](../../evidence/knowledge-rollback-integrity/2026-10-03/verification.md)
 records both original-code failures, eight real ledger passes, all 119
 skip-free disposable database cases and all 185 governed portable passes.
 
-## Awaiting integration: read and export earlier accepted corrections
+## Completed increment: read and export earlier accepted corrections
 
-**Status:** 6/7 software outcomes checked locally; reviewed hosted integration pending.
+**Status:** 7/7 software outcomes verified and merged in PR #205.
 Owners can now select, read, copy and export an earlier accepted revision offline.
 The existing native history/read/export owners validate the complete chain and
 return only the selected text plus a bounded revision count. Original transcripts,
@@ -241,16 +244,16 @@ selection to Latest; a repeated selection keeps its pending read alive.
 - [x] Keep source/selection changes and late reads isolated, retain explicit retry and original access on failure, and prevent revision changes while a native export is active.
 - [x] Refresh the latest accepted history after every new acceptance, including identical corrected text under a new revision. Use publication identity rather than its text hash alone.
 - [x] Verify native files and exact Unicode text, malformed receipt/selection refusal, browser recovery/focus and narrow/wide screens; run applicable units/build/contracts and the complete browser regression.
-- [ ] Record the result and commit the verified iteration. Push/integrate through the required exact-head checks after all six exact-head jobs pass; timed/speaker export, history repair and target qualification remain open.
+- [x] Record the result and commit the verified iteration. Push/integrate through the required exact-head checks after all six exact-head jobs pass; timed/speaker export, history repair and target qualification remain open.
 
 [Selection evidence and screens](../../evidence/accepted-correction-selection/2026-10-03/verification.md)
 record 1,375 native units + 27 integrations, 404 frontend units and all 231
 Linux browser passes (one declared Windows-only skip), plus the reproduced
 same-text acceptance and repeated pending-selection failures and their fixes.
 
-## Awaiting integration: truthful transcript export recovery
+## Completed increment: truthful transcript export recovery
 
-**Status:** 5/6 software outcomes checked locally; reviewed hosted integration pending.
+**Status:** 6/6 software outcomes verified and merged in PR #205.
 Original and accepted exports now explain unconfirmed write/join completion and
 ask the user to inspect the selected destination before retry. Original receipts
 must prove saved/cancelled status; malformed or misbound receipts cannot claim
@@ -262,7 +265,7 @@ leaving another chosen control's focus and scroll position alone.
 - [x] Retain source/revision text, copy and explicit retry beside an unconfirmed export. Never retry automatically or claim success/cancellation without its receipt.
 - [x] Verify actual post-commit errors retain exact destination bytes and existing-file protection; preserve shared worker admission and original/history data.
 - [x] Exercise malformed receipts and original/accepted export recovery, keyboard focus and responsive alerts; run applicable native/frontend/build/contracts and retain actual evidence.
-- [ ] Commit the verified iteration and push/integrate through all six reviewed exact-head checks after all six exact-head jobs pass. Physical Windows and the entire remaining queue stay open.
+- [x] Commit the verified iteration and push/integrate through all six reviewed exact-head checks after all six exact-head jobs pass. Physical Windows and the entire remaining queue stay open.
 
 [Recovery evidence and screens](../../evidence/transcript-export-recovery/2026-10-03/verification.md)
 record the real Linux post-commit error, malformed receipt and hidden-alert
@@ -271,22 +274,23 @@ related browser cases, production build and release checks pass. Complete
 canonical human publication/rebuilding and supervised ASR remain available
 software work; timed/speaker export, history repair and target checks stay queued.
 
-## Awaiting integration: retain the admitted export directory
+## Completed increment: retain the admitted export directory
 
-**Status:** 5/6 outcomes verified locally; reviewed exact-head integration pending.
+**Status:** 6/6 software outcomes verified and merged in PR #205.
 A real Linux regression reproduces an external export parent replaced by a link
 to internal Yap data. Native directory ownership now retains the admitted folder
 through creation, exclusive publication, sync and cleanup. Exact bytes,
 source/history checks, existing-file protection and uncertainty guidance remain
 intact. [Directory evidence](../../evidence/export-directory-ownership/2026-10-03/verification.md)
-records actual checks; Windows and hosted integration remain pending.
+records the dated Linux checks; current hosted software integration is recorded
+above. Physical Windows qualification remains open.
 
 - [x] Bind the canonical, external destination to native directory identity before the source recheck; refuse changed/linked/replaced directories without publishing into their substitutes.
 - [x] Keep creation, exclusive publication, directory sync and staging cleanup on that admitted directory. Windows directory leases retain ancestor identities; Unix operations use the owned directory descriptor.
 - [x] Preserve exact UTF-8 bytes, no-replace behavior, unrelated staging, source/history and explicit worker ownership. Unknown completion retains the existing inspection guidance.
 - [x] Reproduce and verify selected-parent/ancestor substitution and publication-time replacement with actual files; changed paths never create or clean files in their replacements.
 - [x] Run applicable native/transport/frontend/export/contracts and inspect changes; record Linux, hosted Windows and physical-target boundaries accurately.
-- [ ] Commit and push the verified iteration; integrate only reviewed six-job green exact heads. Continue the entire software queue.
+- [x] Commit and push the verified iteration; integrate only reviewed six-job green exact heads. Continue the entire software queue.
 
 Final Linux checks pass: 1,383 native units + 27 integrations, all 36 related
 browser export flows, 72 release contracts (67 passes/five Windows-only skips),
@@ -295,9 +299,9 @@ renderer/full-browser receipts stay dated baselines. No hosted Windows, physical
 picker/filesystem, model or enterprise behavior is qualified. The backlog is pushed; reviewed
 integration remains pending all six exact-head jobs; the entire software queue continues.
 
-## Awaiting integration: publish a reviewer-owned staged generation
+## Completed increment: publish a reviewer-owned staged generation
 
-**Status:** 5/6 outcomes verified locally; reviewed hosted integration pending.
+**Status:** 6/6 software outcomes verified and merged in PR #205.
 Authenticated curators can inspect and explicitly publish their own
 already-admitted, prepared repository generations. Expected-active comparison
 and complete relational/vector checks reuse the existing tenant lock and
@@ -312,7 +316,7 @@ canonical rebuilding and full product integration remain separate open work.
 - [x] Compare the expected active generation under the existing tenant lock before activation. Changed builds refuse without mutation; replay of the current target does not append another activation or overwrite vectors; retained published targets need explicit rollback.
 - [x] Reuse source-admission validation and the complete relational/vector activation gate. Failed or incomplete preparation, tampering and failed success audit leave the prior generation active and retain source/proposal/history data.
 - [x] Configure the route explicitly with owner-private database credentials; verify authenticated HTTP, real Postgres concurrency/recovery, disabled/unavailable/configuration boundaries and documented contracts without models.
-- [ ] Record evidence, commit under Grant McNatt, and push/integrate only reviewed six-job green exact heads. Continue source-admission/rebuild/product integration and the full roadmap; do not close the broader canonical-publication outcome prematurely.
+- [x] Record evidence, commit under Grant McNatt, and push/integrate only reviewed six-job green exact heads. Continue source-admission/rebuild/product integration and the full roadmap; do not close the broader canonical-publication outcome prematurely.
 
 The complete disposable PostgreSQL gate passes 129 cases across 24 modules
 without skips; governed portable passes 192 across 30 modules without skips.
@@ -326,9 +330,9 @@ route. Embedding preparation remains operator-owned; publication does not
 make a proposal or exported package authoritative. Continue that available
 software work while hosted reviewed exact-head integration pending.
 
-## Awaiting integration: refuse inconsistent rebuild staging receipts
+## Completed increment: refuse inconsistent rebuild staging receipts
 
-**Status:** 5/6 outcomes verified locally; reviewed hosted integration pending.
+**Status:** 6/6 software outcomes verified and merged in PR #205.
 Actual PostgreSQL rebuild retries now refuse inconsistent stored descriptors and
 all four counts through the existing staging owner. Valid staging remains usable
 before embeddings; valid active retries retain vectors/history. Refusal preserves
@@ -342,11 +346,11 @@ open; continue the whole software queue.
 - [x] Preserve valid staged retries without requiring embeddings; preserve valid published retries without rewriting vectors or activation history.
 - [x] Reject each inconsistent count on staged and active generations; leave source bytes, admissions, projections, metadata, current active state and history unchanged rather than silently repairing storage.
 - [x] Verify actual SQL, the full required database gate, portable/server regression and relevant documentation/contracts; record exact populations and platform/model limits.
-- [ ] Commit under Grant McNatt and push/integrate only reviewed six-job green heads. Continue source-admission/product rebuild workflows and the whole project queue.
+- [x] Commit under Grant McNatt and push/integrate only reviewed six-job green heads. Continue source-admission/product rebuild workflows and the whole project queue.
 
-## Awaiting integration: prepare the configured reviewed repository snapshot
+## Completed increment: prepare the configured reviewed repository snapshot
 
-**Status:** 5/6 outcomes verified locally; reviewed hosted integration pending.
+**Status:** 6/6 software outcomes verified and merged in PR #205.
 Curators can inspect and explicitly admit/stage the configured source. Its pinned
 manifest and compiled generation refuse client source selection and source drift;
 admission, staging and audit commit atomically. Replay preserves vectors and
@@ -361,10 +365,10 @@ the full software queue.
 - [x] Inspect configured source metadata before explicit admission/staging. Recompile and match the pinned generation before preparing it; source admission, staging and content-free success audit commit together. Preparation writes no embeddings and never changes the active pointer or activation history.
 - [x] Revalidate same-reviewer replay, preserve valid staged/active data, refuse other-owner or damaged state, and test source drift, failed audit, stale intent, request concurrency, timeout and restart recovery. Pruned published identities require explicit restore rather than a new mutable preparation area.
 - [x] Verify actual authenticated HTTP/Postgres with deterministic principals and synthetic vectors, portable configuration/manifest/CLI boundaries, OpenAPI/runtime contracts and relevant full regression. Record review/Git, model, enterprise and Windows limits accurately.
-- [ ] Record evidence, commit under Grant McNatt and integrate only reviewed six-job green heads. Continue product rebuild integration and the full software queue.
-## Awaiting integration: bind embedding preparation to stored reviewed source
+- [x] Record evidence, commit under Grant McNatt and integrate only reviewed six-job green heads. Continue product rebuild integration and the full software queue.
+## Completed increment: bind embedding preparation to stored reviewed source
 
-**Status:** 5/6 outcomes verified locally; reviewed hosted integration pending.
+**Status:** 6/6 software outcomes verified and merged in PR #205.
 The existing embedding writer now checks current stored source, admission and
 all four counts under the tenant lock before vector/model updates. Prepared keys
 must match validated chunks; failed integrity checks retain existing state.
@@ -379,11 +383,11 @@ open; continue the entire software queue.
 - [x] Compare complete prepared vector keys against the validated current chunks after the lock is acquired. Refuse changed source, permissions, relationships, descriptors or admissions without repairs or partial vector/model writes.
 - [x] Preserve valid first preparation and staged retries, published-vector immutability, active/history data and original source files. Prove refusal after an observed actual lock wait and changed stored source.
 - [x] Run real ledger/required PostgreSQL, governed portable/full server and applicable contract/lint checks; preserve earlier receipts and distinguish fixtures from model/Windows/enterprise qualification.
-- [ ] Record concise evidence, commit under Grant McNatt, and integrate only reviewed six-job green heads. Continue provider and product integration and every available software workstream.
+- [x] Record concise evidence, commit under Grant McNatt, and integrate only reviewed six-job green heads. Continue provider and product integration and every available software workstream.
 
-## Current local increment: restore a retained reviewed generation over HTTP
+## Awaiting integration: restore a retained reviewed generation over HTTP
 
-**Status:** 5/6 outcomes locally verified; reviewed hosted integration pending.
+**Status:** 5/6 local software outcomes verified; PR #206 exact-head integration pending.
 [Evidence](../../evidence/knowledge-rollback-api/2026-10-04/verification.md) retains
 the original 404, real HTTP/SQL checks and synthetic-vector boundary. Audit found an operator dead end: publication refuses a
 retained target and requests explicit rollback, but only an internal Python
@@ -398,6 +402,27 @@ state; this is recovery of published data, not source admission or inference.
 - [x] Verify real HTTP/Postgres permission isolation, stale-state concurrency, lock timeout, failed audit and lost-response/restart recovery, using explicitly synthetic vectors.
 - [x] Document inspection, explicit rollback and uncertainty recovery; keep disabled/runtime/OpenAPI contracts and the skip-free database population accurate. Run applicable regression and review.
 - [ ] Commit/push under Grant McNatt, integrate through all six reviewed exact-head jobs and preserve the tested head before retiring the branch. Continue embedding generation, full rebuilding and the whole roadmap.
+
+## Current increment: generate reviewed embeddings through the private operator route
+
+**Status:** 6/7 outcomes locally software verified; reviewed exact-head hosted integration pending. Acceptance conditions were recorded before code changes.
+
+The audited source-preparation journey stopped at a staged generation and
+instructed operators to prepare vectors without an authenticated generation
+action. This increment connects the bounded source-to-publication journey using the
+existing publication service, stored-source validator, vector writer and loopback
+vLLM transport. Deployment selects one already-running embedding model/revision;
+requests cannot choose endpoints, models, source text, vectors or identity. This
+adds orchestration, not model quality or runtime promotion.
+
+- [x] Require explicit organization-server configuration for one numeric-loopback embedding endpoint and deployment-pinned model/revision; disabled and incomplete configurations never acquire a model or silently route.
+- [x] Let only the admitting authenticated curator explicitly generate embeddings for their exact staged reviewed generation; revalidate compiled source/admission/counts before any provider dispatch, with tenant/owner isolation.
+- [x] Generate from exact stored chunk text using bounded requests; require matching model, complete unique indexed responses, 768 finite vector values and contained transport failures/timeouts.
+- [x] Persist complete vectors and success audit atomically under the existing tenant lock; preserve source/proposals/active/history and refuse previously published or conflicting model identities.
+- [x] Inspect/replay completed preparation without rewriting vectors or calling the provider again; refused, failed-provider/audit and concurrent operations leave no partial projection or late activation.
+- [x] Verify the full reviewed-source preparation → embedding generation → publication → retrieval/rollback operator journey with real HTTP/PostgreSQL and deterministic local providers; document limits and recovery in OpenAPI/operator guidance.
+- [ ] Commit/push as Grant McNatt, review and integrate only all-six-job green exact heads; continue full product rebuilding and the entire roadmap.
+
 
 ## Execution record
 

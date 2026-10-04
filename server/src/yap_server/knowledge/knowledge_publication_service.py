@@ -20,7 +20,12 @@ from .generation_ledger import (
     activate_complete_generation,
     rollback_to_generation,
     validate_complete_generation,
+    validate_stored_generation_source,
+    store_generation_embeddings,
 )
+from .embedding_provider import ReviewedEmbeddingProvider, configured_embedding_provider
+from .agent_reasoning_routes import ReasoningRetryableError
+from .vllm_reasoning_client import VllmRequestRejected, VllmTransportNotContained
 from .knowledge_source_admission import (
     admit_curated_knowledge_generation,
     require_knowledge_source_admission,
@@ -36,6 +41,7 @@ from .reviewed_source_snapshot import (
 PUBLICATION_PATH = "/v1/knowledge/publications"
 ROLLBACK_PATH = "/v1/knowledge/rollbacks"
 SOURCE_PREPARATION_PATH = "/v1/knowledge/source-preparations"
+EMBEDDING_PREPARATION_PATH = "/v1/knowledge/embedding-preparations"
 
 
 @dataclass(slots=True)
@@ -58,9 +64,11 @@ class KnowledgePublicationService:
         connection_factory: PrivatePostgresConnectionFactory,
         *,
         reviewed_source: ReviewedSourceSnapshot | None = None,
+        embedding_provider: ReviewedEmbeddingProvider | None = None,
     ) -> None:
         self._connection_factory = connection_factory
         self._reviewed_source = reviewed_source
+        self._embedding_provider = embedding_provider
         self._requests = threading.BoundedSemaphore(2)
         with self._connection_factory() as connection:
             for table in (
@@ -257,6 +265,156 @@ class KnowledgePublicationService:
                 503,
                 "KNOWLEDGE_SOURCE_PREPARATION_UNAVAILABLE",
                 "Source preparation could not be confirmed. Inspect it before retrying.",
+                True,
+            ) from None
+        finally:
+            self._requests.release()
+
+    def prepare_embeddings(
+        self, *, principal: AuthenticatedPrincipal, request: Mapping[str, object]
+    ) -> dict[str, object]:
+        if (
+            not isinstance(request, dict)
+            or set(request) != {"schemaVersion", "generationSha256"}
+            or type(request["schemaVersion"]) is not int
+            or request["schemaVersion"] != 1
+            or not valid_sha256(request["generationSha256"])
+        ):
+            raise ValueError("embedding preparation request differs from the contract")
+        if "knowledge.curator" not in principal.roles:
+            raise KnowledgePublicationError(
+                403,
+                "KNOWLEDGE_EMBEDDING_FORBIDDEN",
+                "A trusted curator role is required.",
+            )
+        provider = self._embedding_provider
+        if provider is None:
+            raise KnowledgePublicationError(
+                501,
+                "KNOWLEDGE_EMBEDDING_DISABLED",
+                "Reviewed embedding generation is not configured.",
+            )
+        if not self._requests.acquire(blocking=False):
+            raise KnowledgePublicationError(
+                429,
+                "KNOWLEDGE_PUBLICATION_BUSY",
+                "Finish an active publication request.",
+                True,
+            )
+        started = time.monotonic()
+        generation_hash = request["generationSha256"]
+        try:
+            with self._connection_factory() as connection:
+                with connection.transaction():
+                    connection.execute("SET LOCAL statement_timeout = 5000")
+                    connection.execute("SET LOCAL lock_timeout = 1000")
+                    connection.execute(
+                        "SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))",
+                        (principal.tenant_id,),
+                    )
+                    row = connection.execute(
+                        """SELECT b.source_admission_sha256, b.embedding_model_id, b.embedding_model_revision
+                           FROM yap_knowledge_builds b
+                           JOIN yap_knowledge_source_admissions a
+                             ON a.tenant_id = b.tenant_id AND a.admission_sha256 = b.source_admission_sha256
+                           WHERE b.tenant_id = %s AND b.generation_sha256 = %s
+                             AND a.reviewer_id = %s AND a.source_kind = 'curated-repository'""",
+                        (principal.tenant_id, generation_hash, principal.subject_id),
+                    ).fetchone()
+                    if row is None:
+                        raise _not_found()
+                    status, _active = _publication_state(
+                        connection, principal.tenant_id, generation_hash
+                    )
+                    if status != "staged":
+                        raise ValueError("published embedding projection is immutable")
+                    generation = validate_stored_generation_source(
+                        connection,
+                        tenant_id=principal.tenant_id,
+                        generation_sha256=generation_hash,
+                    )
+                    changed = row[1:] == (None, None)
+                    if not changed:
+                        if row[1:] != (provider.model_id, provider.model_revision):
+                            raise ValueError(
+                                "embedding model identity conflicts with stored projection"
+                            )
+                        validate_complete_generation(
+                            connection,
+                            tenant_id=principal.tenant_id,
+                            generation_sha256=generation_hash,
+                        )
+                    else:
+                        existing = connection.execute(
+                            """SELECT count(*) FROM yap_knowledge_chunks
+                               WHERE tenant_id = %s AND generation_sha256 = %s
+                                 AND (embedding IS NOT NULL OR embedding_model_id IS NOT NULL OR embedding_model_revision IS NOT NULL)""",
+                            (principal.tenant_id, generation_hash),
+                        ).fetchone()
+                        if existing != (0,):
+                            raise ValueError(
+                                "unbound stored embedding projection is inconsistent"
+                            )
+                        vectors = provider.generate(generation.chunks)
+                        store_generation_embeddings(
+                            connection,
+                            tenant_id=principal.tenant_id,
+                            generation_sha256=generation_hash,
+                            embedding_model_id=provider.model_id,
+                            embedding_model_revision=provider.model_revision,
+                            embeddings=vectors,
+                        )
+                        validate_complete_generation(
+                            connection,
+                            tenant_id=principal.tenant_id,
+                            generation_sha256=generation_hash,
+                        )
+                    admission = require_knowledge_source_admission(
+                        connection,
+                        tenant_id=principal.tenant_id,
+                        admission_sha256=row[0],
+                        generation_sha256=generation_hash,
+                        source_revision=generation.source_revision,
+                    )
+                    record_knowledge_tool_audit(
+                        connection,
+                        principal=principal.key,
+                        agent_id="knowledge-publication",
+                        operation="prepare-generation-embeddings",
+                        outcome="succeeded",
+                        result_count=len(generation.chunks),
+                        generation_sha256=generation_hash,
+                        permission_hash=None,
+                        authorization_hash=admission.review_authority_sha256,
+                        duration_milliseconds=max(
+                            0, int((time.monotonic() - started) * 1000)
+                        ),
+                    )
+                    return {
+                        "schemaVersion": 1,
+                        "generationSha256": generation_hash,
+                        "status": "prepared",
+                        "chunkCount": len(generation.chunks),
+                        "embeddingModelId": provider.model_id,
+                        "embeddingModelRevision": provider.model_revision,
+                        "changed": changed,
+                    }
+        except (TypeError, ValueError, LookupError, PermissionError):
+            raise KnowledgePublicationError(
+                409,
+                "KNOWLEDGE_EMBEDDING_INVALID",
+                "Reviewed generation or embedding response could not pass preparation checks.",
+            ) from None
+        except (
+            psycopg.Error,
+            ReasoningRetryableError,
+            VllmRequestRejected,
+            VllmTransportNotContained,
+        ):
+            raise KnowledgePublicationError(
+                503,
+                "KNOWLEDGE_EMBEDDING_UNAVAILABLE",
+                "Embedding preparation could not be confirmed. Inspect or repeat preparation before publishing.",
                 True,
             ) from None
         finally:
@@ -477,11 +635,13 @@ def build_knowledge_publication_service(
     path = environ.get("YAP_KNOWLEDGE_PUBLICATION_DSN_FILE")
     source_file = environ.get("YAP_KNOWLEDGE_REVIEWED_SOURCE_FILE")
     source_digest = environ.get("YAP_KNOWLEDGE_REVIEWED_SOURCE_SHA256")
+    provider = configured_embedding_provider(environ)
     if (
         (mode is None or mode == "disabled")
         and path is None
         and source_file is None
         and source_digest is None
+        and provider is None
     ):
         return None
     if mode != "postgres" or not authenticated_team_mode:
@@ -506,6 +666,7 @@ def build_knowledge_publication_service(
         return KnowledgePublicationService(
             private_postgres_connection_factory(Path(path)),
             reviewed_source=reviewed_source,
+            embedding_provider=provider,
         )
     except (ValueError, psycopg.Error):
         raise ValueError(

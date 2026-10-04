@@ -1,0 +1,4 @@
+Actual missing operator-route regression before implementation. Deterministic source and fixture identity; real PostgreSQL 17.11/pgvector 0.8.7.
+
+FAIL: test_reviewed_source_can_generate_vectors_before_explicit_publication (tests.api.test_knowledge_embedding_preparation_api.KnowledgeEmbeddingPreparationApiTests.test_reviewed_source_can_generate_vectors_before_explicit_publication)
+----------------------------------------------------------------------

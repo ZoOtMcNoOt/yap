@@ -522,6 +522,20 @@ def validate_complete_generation(
         return KnowledgeGenerationDescriptor(*row[:6])
 
 
+def validate_stored_generation_source(
+    connection: Connection[object], *, tenant_id: str, generation_sha256: str
+) -> CompiledKnowledgeGeneration:
+    """Return exact stored compiled source after admission and count validation."""
+    with connection.transaction():
+        connection.execute(
+            "SELECT pg_advisory_xact_lock_shared(hashtextextended(%s, 0))", (tenant_id,)
+        )
+        _row, generation = _validated_source_generation(
+            connection, tenant_id, generation_sha256
+        )
+        return generation
+
+
 def _complete_generation_row(
     connection: Connection[object], tenant_id: str, generation_sha256: str
 ) -> tuple[object, ...]:

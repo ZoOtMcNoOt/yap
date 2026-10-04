@@ -10,9 +10,18 @@ The completed UI milestone verified **30/30 supported UI acceptance areas**, wit
 
 ## Development environment
 
-The managed cloud workspace provides four CPU cores, 16 GiB RAM, and an initially available 30 GiB disk budget. It has no GPU, VPN, private-server credentials, or outbound cloud identity. Enforced networking permits package downloads; private-node access is not configured.
+The managed cloud workspace has four CPU cores and 16 GiB RAM. This session has
+no GPU, company VPN or private-server credentials. Package networking and GitHub
+fetch/push have been exercised; environment metadata alone does not establish
+enterprise network policy or private-node readiness.
 
-Installed and exercised: Node 24.19, pnpm 11.7.0, Python 3.12.14 with locked uv dependencies, Rust 1.96 with Clippy/rustfmt, PowerShell 7.6, GTK/WebKit/audio/tray build libraries, CMake, Chromium, Docker, Xvfb, and Tini. Native dependencies are installed into a user-owned prefix. See [cloud development](runbooks/cloud-development.md) for setup and commands.
+The fresh successor restored and exercised locked Python dependencies, Node
+24.19/pnpm 11.7.0, Rust 1.96 with rustfmt/Clippy, PowerShell 7.6 and Docker. The
+isolated Ubuntu server and digest-pinned PostgreSQL suites pass. Earlier receipts
+below retain the GTK/WebKit/Chromium/native setup observed in the predecessor;
+this fresh snapshot has not renewed that local desktop toolchain/build claim.
+Hosted Windows software checks are separately recorded below. See
+[cloud development](runbooks/cloud-development.md) for the reproducible setup.
 
 ## Earlier local verification baseline
 
@@ -71,36 +80,48 @@ Earlier dependency/consolidation results remain in the [desktop evidence](eviden
 
 ## Current increment
 
-Authenticated curators can now explicitly restore a retained, previously published
-generation through `POST /v1/knowledge/rollbacks`, after existing publication
-inspection. The existing tenant lock, complete-source/admission/vector validation,
-expected-active comparison and atomic rollback-history/success audit preserve
-all projections. Unpublished, pruned, foreign-owned, stale or damaged targets
-refuse without repairs; current-target replay revalidates without duplicate history.
-[Evidence](evidence/knowledge-rollback-api/2026-10-04/verification.md) records
-all 152 required real PostgreSQL cases and 201 portable cases without skips,
-plus 1,664 full-server passes/149 declared exclusions. Five of six bounded
-outcomes are locally verified; reviewed six-job hosted integration remains pending.
-Embedding-provider generation, full product rebuilding and every roadmap
-workstream remain open.
+Reviewed embedding generation now connects explicit source preparation to
+publication through `POST /v1/knowledge/embedding-preparations`. Deployment
+selects one already-running numeric-loopback provider/model/revision; the
+admitting curator supplies only a stored generation reference. Complete-source
+validation precedes provider dispatch. Complete 768-dimensional vectors and the
+success audit commit atomically, preserving source/proposals/active/history.
+Replay validates without another provider call. Published, conflicting, partial,
+foreign-owned and damaged projections refuse. Local checks pass: 161 required
+real PostgreSQL cases/26 modules and 209 portable cases without skips; isolated
+full server 1,672 passes/158 declared exclusions (1,830 total). The full source →
+embedding → publication → permission-filtered vector/read → rollback journey
+uses deterministic local HTTP vectors and real SQL. Actual model quality and
+enterprise identity are unqualified. Six of seven bounded outcomes are locally
+verified; reviewed exact-head hosted integration remains pending.
+[Evidence](evidence/knowledge-embedding-generation/2026-10-04/verification.md)
+retains limits and the original missing route. Desktop rebuild controls, larger
+rebuilds and every roadmap workstream remain open.
 
-GitHub access recovered on 2026-10-04: the feature branch was pushed through
-`4ec7d6189a1e57120ef957bcf94c7700a036a62c`. A fresh app chat recovered that
-exact branch into this cloud checkout and archived its idle predecessor after
-writing a readiness receipt. Reviewed hosted integration is now proceeding;
-[PR #205](https://github.com/ZoOtMcNoOt/yap/pull/205) runs all six jobs. Run 549
-passes server, identity/real PostgreSQL and Linux lifecycle; Windows Clippy rejects
-a needless return in the export-directory Windows path. The correction requires
-a fresh six-job exact-head run. PR review also reproduced whitespace-only
-export receipts reporting success and recursive OKF input escaping CLI refusal.
-Both corrections pass renewed units/portable checks and require renewed hosted
-checks; [review evidence](evidence/connection-review-export/2026-10-04/review-verification.md)
-retains failures and limits. No merge is claimed yet. The earlier disconnected-app,
-rejected-push and CLI model-stream failures remain historical observations in
-the handoff and dated evidence. The restored checkout retains dependency caches,
-but native toolchain availability and applicable checks must be reverified.
+Retained-generation rollback is locally verified in [PR #206](https://github.com/ZoOtMcNoOt/yap/pull/206),
+now targeting main; its six required exact-head jobs are pending. [Rollback evidence](evidence/knowledge-rollback-api/2026-10-04/verification.md)
+retains the original 404 and all 152 real SQL/201 portable checks. The existing
+publication/ledger owners preserve original vectors and atomically record the
+restore and audit. Five of six outcomes are verified locally.
 
-## Earlier increments awaiting integration
+The recovered backlog and review corrections merged through [PR #205](https://github.com/ZoOtMcNoOt/yap/pull/205)
+as `82ea8362ee53220218b78926b762ab707ebaf2a9`, with the identical tested tree
+at `6c1c5e1f`. [Run 551](https://github.com/ZoOtMcNoOt/yap/actions/runs/37222033380)
+passes all six jobs: Windows frontend 406 units/all 238 browser flows/72 release
+contracts; native 1,380 units + 27 integrations/11 declared hardware ignores;
+Windows server 1,625 passes/180 declared exclusions; Linux all 144 required
+real PostgreSQL cases without skips, identity and lifecycle; native WDIO smoke.
+[Integration evidence](evidence/connection-review-export/2026-10-04/integration.md)
+retains reviewed corrections, exact-tree comparison and the preserved tag.
+The completed feature branch is retired. These are hosted software checks,
+not physical Windows/model/enterprise qualification.
+
+GitHub fetch/push and the app connection are restored. This fresh app chat
+recovered the pushed checkout, wrote a readiness receipt and then archived its
+idle predecessor. Earlier disconnected-app/push/CLI stream observations remain
+historical in the preserved handoff. The whole project goal stays active.
+
+## Earlier increments integrated through PR #205
 
 Embedding preparation now validates current stored source, admission and all four
 counts under the tenant lock before vector/model writes. Prepared keys must
