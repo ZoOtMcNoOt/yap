@@ -7,6 +7,7 @@ from yap_server.jobs import JobServiceError
 from yap_server.knowledge.knowledge_publication_service import (
     KnowledgePublicationError,
     SOURCE_PREPARATION_PATH,
+    ROLLBACK_PATH,
 )
 
 
@@ -52,7 +53,12 @@ class KnowledgePublicationRequestMixin:
             else:
                 if query:
                     raise ValueError("publication takes no query")
-                result = self._knowledge_publication_service.publish(
+                activate = (
+                    self._knowledge_publication_service.rollback
+                    if urlsplit(self.path).path == ROLLBACK_PATH
+                    else self._knowledge_publication_service.publish
+                )
+                result = activate(
                     principal=self._principal, request=self._request_body.read_json()
                 )
             self._send_json(HTTPStatus.OK, result)

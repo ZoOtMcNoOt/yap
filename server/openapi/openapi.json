@@ -2677,7 +2677,7 @@
           "knowledge"
         ],
         "operationId": "readKnowledgeConnections",
-        "summary": "Read one topic’s reviewed connections",
+        "summary": "Read one topic\u2019s reviewed connections",
         "description": "Trusted organization identity selects the permission-filtered active knowledge generation. No model is invoked. Search is literal and bounded; connections contain incoming and outgoing canonical relationships with authority and source proof. Agent proposals are excluded. Responses are limited to 65536 bytes. Unknown and unavailable topics share a 404. Refresh topics on generation conflict.",
         "x-yap-runtime-status": "Implemented when explicit authenticated knowledge connections Postgres configuration verifies",
         "responses": {
@@ -3128,6 +3128,73 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/KnowledgeSourcePreparationRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/knowledge/rollbacks": {
+      "post": {
+        "tags": [
+          "knowledge"
+        ],
+        "operationId": "rollbackReviewedKnowledgeGeneration",
+        "summary": "Restore a previously published reviewed knowledge generation",
+        "description": "Requires organization authentication, knowledge.curator and the authenticated reviewer's own curated-repository admission. Inspect the target and current active state through GET /v1/knowledge/publications before explicitly requesting rollback. Only previously published complete retained generations can be restored; unpublished, pruned, stale or damaged targets refuse without repairs. Source/admission/counts and the complete model-bound vector projection are revalidated under the tenant lock. Expected-active comparison, rollback history and content-free success audit commit together. Current-target replay revalidates without duplicate activation history. Lost confirmation requires fresh inspection before explicit retry. Requests supply no identity, approval, source, policy or vectors; no source, embedding generation, model or production qualification is added.",
+        "x-yap-runtime-status": "Implemented when explicit authenticated knowledge publication Postgres configuration verifies",
+        "x-yap-runtime-owner": "Reviewer-owned complete-generation rollback",
+        "responses": {
+          "200": {
+            "description": "Reviewer-owned generation metadata; no source text.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgePublicationReceipt"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "411": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "415": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KnowledgePublicationRequest"
               }
             }
           }

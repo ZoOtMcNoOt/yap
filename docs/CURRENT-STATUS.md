@@ -71,15 +71,18 @@ Earlier dependency/consolidation results remain in the [desktop evidence](eviden
 
 ## Current increment
 
-Embedding preparation now validates current stored source, admission and all four
-counts under the tenant lock before vector/model writes. Prepared keys must
-match validated chunks; invalid storage refuses without repairs. Eleven actual
-ledger cases, all 144 required database and 201 governed portable cases pass;
-full isolated server passes 1,664 with 141 declared exclusions.
-[Evidence](evidence/knowledge-embedding-source-integrity/2026-10-04/verification.md)
-retains the reproduced successful write over changed source and observed lock-wait
-regression. This does not verify vector provenance or add an embedding provider;
-actual generation and complete product rebuild integration remain open.
+Authenticated curators can now explicitly restore a retained, previously published
+generation through `POST /v1/knowledge/rollbacks`, after existing publication
+inspection. The existing tenant lock, complete-source/admission/vector validation,
+expected-active comparison and atomic rollback-history/success audit preserve
+all projections. Unpublished, pruned, foreign-owned, stale or damaged targets
+refuse without repairs; current-target replay revalidates without duplicate history.
+[Evidence](evidence/knowledge-rollback-api/2026-10-04/verification.md) records
+all 152 required real PostgreSQL cases and 201 portable cases without skips,
+plus 1,664 full-server passes/149 declared exclusions. Five of six bounded
+outcomes are locally verified; reviewed six-job hosted integration remains pending.
+Embedding-provider generation, full product rebuilding and every roadmap
+workstream remain open.
 
 GitHub access recovered on 2026-10-04: the feature branch was pushed through
 `4ec7d6189a1e57120ef957bcf94c7700a036a62c`. A fresh app chat recovered that
@@ -98,6 +101,17 @@ the handoff and dated evidence. The restored checkout retains dependency caches,
 but native toolchain availability and applicable checks must be reverified.
 
 ## Earlier increments awaiting integration
+
+Embedding preparation now validates current stored source, admission and all four
+counts under the tenant lock before vector/model writes. Prepared keys must
+match validated chunks; invalid storage refuses without repairs. Eleven actual
+ledger cases, all 144 required database and 201 governed portable cases pass;
+full isolated server passes 1,664 with 141 declared exclusions.
+[Evidence](evidence/knowledge-embedding-source-integrity/2026-10-04/verification.md)
+retains the reproduced successful write over changed source and observed lock-wait
+regression. This does not verify vector provenance or add an embedding provider;
+actual generation and complete product rebuild integration remain open.
+
 
 Curators can inspect and explicitly admit/stage a deployment-selected reviewed
 source through authenticated HTTP. The bounded pinned manifest and compiled

@@ -1,0 +1,14 @@
+test_explicit_rollback_restores_retained_vectors_and_persists_across_restart (tests.api.test_knowledge_publication_api.KnowledgeRollbackApiTests.test_explicit_rollback_restores_retained_vectors_and_persists_across_restart) ... FAIL
+
+======================================================================
+FAIL: test_explicit_rollback_restores_retained_vectors_and_persists_across_restart (tests.api.test_knowledge_publication_api.KnowledgeRollbackApiTests.test_explicit_rollback_restores_retained_vectors_and_persists_across_restart)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/yap-knowledge-rollback/server/tests/api/test_knowledge_publication_api.py", line 514, in test_explicit_rollback_restores_retained_vectors_and_persists_across_restart
+    self.assertEqual(status, 200)
+AssertionError: 404 != 200
+
+----------------------------------------------------------------------
+Ran 1 test in 0.307s
+
+FAILED (failures=1)
