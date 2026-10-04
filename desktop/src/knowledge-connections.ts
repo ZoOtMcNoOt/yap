@@ -164,7 +164,7 @@ export async function exportConnectionReviewPackage(
     !receipt.result ||
     (receipt.result.status !== "cancelled" && receipt.result.status !== "saved") ||
     (receipt.result.status === "saved" && (typeof receipt.result.path !== "string" ||
-      !receipt.result.path || receipt.result.path.length > 32_768 || receipt.result.path.includes("\0"))))
+      !receipt.result.path.trim() || receipt.result.path.length > 32_768 || receipt.result.path.includes("\0"))))
     throw { code: "exportUnconfirmed" };
   return receipt.result;
 }

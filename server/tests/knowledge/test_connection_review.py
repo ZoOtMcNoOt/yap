@@ -323,6 +323,27 @@ class ConnectionReviewTests(unittest.TestCase):
         self.assertIn("could not be matched", result.stderr)
         self.assertNotIn(QUOTE, result.stderr)
 
+        self.write_package(self.package)
+        source = self.bundle / "projects/voiceos.md"
+        source.write_text(
+            "---\nmalformed: "
+            + "[" * 2_000
+            + "PrivateRecursivePayload"
+            + "]" * 2_000
+            + "\n---\n",
+            encoding="utf-8",
+        )
+        before = self.snapshot()
+        result = subprocess.run(
+            command, capture_output=True, text=True, timeout=20, check=False
+        )
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual(result.stdout, "")
+        self.assertIn("could not be matched", result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
+        self.assertNotIn("PrivateRecursivePayload", result.stderr)
+        self.assertEqual(self.snapshot(), before)
+
 
 if __name__ == "__main__":
     unittest.main()

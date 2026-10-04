@@ -88,7 +88,11 @@ writing a readiness receipt. Reviewed hosted integration is now proceeding;
 [PR #205](https://github.com/ZoOtMcNoOt/yap/pull/205) runs all six jobs. Run 549
 passes server, identity/real PostgreSQL and Linux lifecycle; Windows Clippy rejects
 a needless return in the export-directory Windows path. The correction requires
-a fresh six-job exact-head run; no merge is claimed yet. The earlier disconnected-app,
+a fresh six-job exact-head run. PR review also reproduced whitespace-only
+export receipts reporting success and recursive OKF input escaping CLI refusal.
+Both corrections pass renewed units/portable checks and require renewed hosted
+checks; [review evidence](evidence/connection-review-export/2026-10-04/review-verification.md)
+retains failures and limits. No merge is claimed yet. The earlier disconnected-app,
 rejected-push and CLI model-stream failures remain historical observations in
 the handoff and dated evidence. The restored checkout retains dependency caches,
 but native toolchain availability and applicable checks must be reverified.

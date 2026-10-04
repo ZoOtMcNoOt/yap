@@ -23,7 +23,7 @@ it("wrong proposal, generation and malformed saved results remain unconfirmed", 
   for (const change of [
     { proposalId: "f".repeat(64) }, { generationSha256: "b".repeat(64) },
     { result: null }, { result: {status:"published"} },
-    ...["", 42, "bad\0path", "x".repeat(32769)].map(path => ({result:{status:"saved",path}})),
+    ...["", "   ", "\t\n", 42, "bad\0path", "x".repeat(32769)].map(path => ({result:{status:"saved",path}})),
   ]) {
     invokeMock.mockResolvedValue({...receipt(), ...change});
     await expect(run()).rejects.toEqual({code:"exportUnconfirmed"});

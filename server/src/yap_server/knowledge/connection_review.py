@@ -175,7 +175,7 @@ def main(argv: list[str] | None = None) -> int:
             tenant_id=args.tenant_id,
             source_revision=args.source_revision,
         )
-    except (ValueError, OSError):
+    except (ValueError, OSError, RecursionError):
         # Validation exceptions can contain source text. Keep operator output
         # content-free, including failed Pydantic/OKF validation.
         print(
