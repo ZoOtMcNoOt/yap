@@ -24,6 +24,14 @@ without rewriting metadata. Valid staged retries need no embeddings yet; valid
 active retries retain vectors/history. Staging does not prove publication
 readiness or provide repair. See [rebuild verification](../evidence/knowledge-staging-descriptor/2026-10-04/verification.md).
 
+Embedding preparation also rechecks stored compiled source, admission and all
+four counts under the tenant lock before updating vectors. Prepared vector keys
+must cover exactly those validated chunks. Invalid source or admission refuses
+without repairs or partial vector/model writes. Only never-published generations
+can be prepared; published vectors remain immutable. This guards source integrity,
+not model output provenance or quality. Embedding generation and its operator
+interface remain separate work. See [embedding verification](../evidence/knowledge-embedding-source-integrity/2026-10-04/verification.md).
+
 Configure organization authentication and provision the existing knowledge and
 tool-audit schemas before startup. Then explicitly enable publication:
 

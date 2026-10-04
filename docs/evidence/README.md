@@ -65,6 +65,8 @@ Current product-completion evidence:
 
 - [Reviewed source preparation](knowledge-source-preparation/2026-10-04/verification.md): pinned deployment configuration, explicit admission/staging and recovery.
 
+- [Embedding preparation source integrity](knowledge-embedding-source-integrity/2026-10-04/verification.md): current source/admission validation before vector updates, including an observed lock wait.
+
 Do not commit private scans, scan identifiers, sensitive audio/transcripts, raw
 host snapshots, credentials, or enterprise configuration. Public evidence may
 record hashes, versions, counts, redacted outcomes, and explicit limitations.

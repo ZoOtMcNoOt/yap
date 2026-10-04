@@ -416,16 +416,6 @@ def store_generation_embeddings(
 
     model_id = identity(embedding_model_id, "embedding_model_id")
     model_revision = identity(embedding_model_revision, "embedding_model_revision")
-    expected = frozenset(
-        row[0]
-        for row in connection.execute(
-            """SELECT chunk_id FROM yap_knowledge_chunks
-               WHERE tenant_id = %s AND generation_sha256 = %s""",
-            (tenant_id, generation_sha256),
-        ).fetchall()
-    )
-    if frozenset(embeddings) != expected:
-        raise ValueError("embedding projection differs from staged chunks")
     prepared = {
         chunk_id: serialize_embedding_vector(vector)
         for chunk_id, vector in embeddings.items()
@@ -446,6 +436,13 @@ def store_generation_embeddings(
         ).fetchone()
         if published is not None:
             raise ValueError("published knowledge generation is immutable")
+        _row, generation = _validated_source_generation(
+            connection, tenant_id, generation_sha256
+        )
+        if frozenset(prepared) != frozenset(
+            chunk.chunk_id for chunk in generation.chunks
+        ):
+            raise ValueError("embedding projection differs from staged chunks")
         for chunk_id, vector in prepared.items():
             connection.execute(
                 """UPDATE yap_knowledge_chunks
@@ -528,6 +525,27 @@ def validate_complete_generation(
 def _complete_generation_row(
     connection: Connection[object], tenant_id: str, generation_sha256: str
 ) -> tuple[object, ...]:
+    row, _generation = _validated_source_generation(
+        connection, tenant_id, generation_sha256
+    )
+    if row[8] is None or row[9] is None:
+        raise ValueError("staged knowledge embedding projection is absent")
+    embedded = connection.execute(
+        """SELECT count(*) FROM yap_knowledge_chunks
+           WHERE tenant_id = %s AND generation_sha256 = %s
+             AND embedding IS NOT NULL
+             AND embedding_model_id = %s
+             AND embedding_model_revision = %s""",
+        (tenant_id, generation_sha256, row[8], row[9]),
+    ).fetchone()
+    if embedded != (row[6],):
+        raise ValueError("staged knowledge projections are incomplete")
+    return row
+
+
+def _validated_source_generation(
+    connection: Connection[object], tenant_id: str, generation_sha256: str
+) -> tuple[tuple[object, ...], CompiledKnowledgeGeneration]:
     row = connection.execute(
         """SELECT tenant_id, generation_sha256, source_revision,
                   okf_version, concept_count, permission_count,
@@ -540,41 +558,6 @@ def _complete_generation_row(
     ).fetchone()
     if row is None:
         raise LookupError("staged knowledge generation does not exist")
-    if row[8] is None or row[9] is None:
-        raise ValueError("staged knowledge embedding projection is absent")
-    actual = connection.execute(
-        """SELECT
-            (SELECT count(*) FROM yap_knowledge_concepts
-             WHERE tenant_id = %s AND generation_sha256 = %s),
-            (SELECT count(*) FROM yap_knowledge_permissions
-             WHERE tenant_id = %s AND generation_sha256 = %s),
-            (SELECT count(*) FROM yap_knowledge_chunks
-             WHERE tenant_id = %s AND generation_sha256 = %s),
-            (SELECT count(*) FROM yap_knowledge_relationships
-             WHERE tenant_id = %s AND generation_sha256 = %s),
-            (SELECT count(*) FROM yap_knowledge_chunks
-             WHERE tenant_id = %s AND generation_sha256 = %s
-               AND embedding IS NOT NULL
-               AND embedding_model_id = %s
-               AND embedding_model_revision = %s)""",
-        (
-            tenant_id,
-            generation_sha256,
-            tenant_id,
-            generation_sha256,
-            tenant_id,
-            generation_sha256,
-            tenant_id,
-            generation_sha256,
-            tenant_id,
-            generation_sha256,
-            row[8],
-            row[9],
-        ),
-    ).fetchone()
-    expected = (row[4], row[5], row[6], row[7], row[6])
-    if actual != expected:
-        raise ValueError("staged knowledge projections are incomplete")
     persisted = _load_persisted_generation(
         connection,
         tenant_id=tenant_id,
@@ -583,6 +566,13 @@ def _complete_generation_row(
         okf_version=str(row[3]),
     )
     validate_compiled_generation(persisted)
+    if (
+        len(persisted.concepts),
+        len(persisted.permissions),
+        len(persisted.chunks),
+        len(persisted.relationships),
+    ) != row[4:8]:
+        raise ValueError("staged knowledge projections are incomplete")
     require_knowledge_source_admission(
         connection,
         tenant_id=tenant_id,
@@ -590,7 +580,7 @@ def _complete_generation_row(
         generation_sha256=generation_sha256,
         source_revision=str(row[2]),
     )
-    return row
+    return row, persisted
 
 
 def _activate_complete_generation(

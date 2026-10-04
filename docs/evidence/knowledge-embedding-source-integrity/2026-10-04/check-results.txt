@@ -1,0 +1,29 @@
+Owner: Grant McNatt
+Date: 2026-10-04
+Revision: commit containing this receipt; hosted integration pending
+
+Original actual PostgreSQL source substitution: embedding writer returned success; vectors 0 -> 1.
+Original two new SQL regression cases: 14 failures (13 independent mutation outcomes + 1 observed lock wait).
+Focused actual development PostgreSQL ledger: 11 passed (1.695s).
+Required owned digest-pinned disposable PostgreSQL: 144 passed / 25 modules / 0 skips (19.502s).
+Runtime: PostgreSQL 17.11 / pgvector 0.8.7.
+Required governed portable: 201 passed / 31 modules / 0 skips / 0 expectedFailures / 0 unexpectedSuccesses (8.850s).
+Full isolated Ubuntu discovery: 1805 total / 1664 passed / 141 declared platform-fixture-database exclusions (72.730s).
+Server-wide Ruff: passed.
+Changed Python formatting: 3 files pass.
+Final documentation/license/provenance/population/workflow: 30 passed / 0 skips (3.738s).
+Changed-document local links: 180 resolve; diff whitespace passes.
+
+No inference/vector provenance/Git approval/Windows/Entra/enterprise qualification.
+No embedding-provider or operator interface is added by this source-integrity guard.
+Earlier desktop/native/release/screen results remain dated baselines; no renewed renderer/native checks claimed.
+GitHub app disconnected; cloud push authentication rejected; hosted checks/merge pending.
+
+Commands (project root, cloud environment loaded):
+server/.venv/bin/python verification/run-disposable-governed-postgres-suite.py
+(cd server && PYTHONPATH=src .venv/bin/python ../verification/run-governed-knowledge-portable-suite.py)
+bash verification/test-cloud-server.sh
+uv run --project server --no-sync ruff check server/src server/tests/knowledge/test_postgres_generation_ledger.py
+uv run --project server --no-sync ruff format --check server/src/yap_server/knowledge/generation_ledger.py server/src/yap_server/evaluation/governed_knowledge_gate.py server/tests/knowledge/test_postgres_generation_ledger.py
+(source .tools/postgres/env && cd server && PYTHONPATH=src .venv/bin/python -m unittest tests.knowledge.test_postgres_generation_ledger)
+node --test desktop/tests/scripts/release-contract/{documentation-truth,dependency-license,provenance,model-provenance,test-population,workflow}.contract.mjs

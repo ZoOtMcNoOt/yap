@@ -71,6 +71,24 @@ Earlier dependency/consolidation results remain in the [desktop evidence](eviden
 
 ## Current increment
 
+Embedding preparation now validates current stored source, admission and all four
+counts under the tenant lock before vector/model writes. Prepared keys must
+match validated chunks; invalid storage refuses without repairs. Eleven actual
+ledger cases, all 144 required database and 201 governed portable cases pass;
+full isolated server passes 1,664 with 141 declared exclusions.
+[Evidence](evidence/knowledge-embedding-source-integrity/2026-10-04/verification.md)
+retains the reproduced successful write over changed source and observed lock-wait
+regression. This does not verify vector provenance or add an embedding provider;
+actual generation and complete product rebuild integration remain open.
+
+GitHub diagnostics confirm no active app connection and a rejected cloud push
+token. The public repository is reachable; the cloud API proxy refuses CONNECT
+with `403`. The tools provide no revocation or expiry reason. Restore GitHub
+account access for pushing and reviewed hosted integration; local software work
+continues.
+
+## Earlier increments awaiting integration
+
 Curators can inspect and explicitly admit/stage a deployment-selected reviewed
 source through authenticated HTTP. The bounded pinned manifest and compiled
 identity prevent client source selection and source drift. Admission, staging and
@@ -81,13 +99,6 @@ full isolated server discovery passes 1,664 with 139 declared exclusions.
 retain configuration, recovery and the reproduced Linux source-read race.
 Embedding preparation and complete product rebuild integration remain open.
 
-GitHub diagnostics confirm no active app connection and a rejected cloud push
-token. The public repository is reachable; the cloud API proxy refuses CONNECT
-with `403`. The tools provide no revocation or expiry reason. Restore GitHub
-account access for pushing and reviewed hosted integration; local software work
-continues.
-
-## Earlier increments awaiting integration
 
 Rebuild staging retries now refuse inconsistent descriptors and all four
 stored generation counts. Valid staged retries work before embeddings; valid

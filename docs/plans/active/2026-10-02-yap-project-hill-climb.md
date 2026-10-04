@@ -343,7 +343,7 @@ open; continue the whole software queue.
 - [x] Verify actual SQL, the full required database gate, portable/server regression and relevant documentation/contracts; record exact populations and platform/model limits.
 - [ ] Commit under Grant McNatt and push/integrate only reviewed six-job green heads after GitHub access returns. Continue source-admission/product rebuild workflows and the whole project queue.
 
-## Current local increment: prepare the configured reviewed repository snapshot
+## Awaiting integration: prepare the configured reviewed repository snapshot
 
 **Status:** 5/6 outcomes verified locally; reviewed hosted integration pending.
 Curators can inspect and explicitly admit/stage the configured source. Its pinned
@@ -361,6 +361,25 @@ the full software queue.
 - [x] Revalidate same-reviewer replay, preserve valid staged/active data, refuse other-owner or damaged state, and test source drift, failed audit, stale intent, request concurrency, timeout and restart recovery. Pruned published identities require explicit restore rather than a new mutable preparation area.
 - [x] Verify actual authenticated HTTP/Postgres with deterministic principals and synthetic vectors, portable configuration/manifest/CLI boundaries, OpenAPI/runtime contracts and relevant full regression. Record review/Git, model, enterprise and Windows limits accurately.
 - [ ] Record evidence, commit under Grant McNatt and integrate only reviewed six-job green heads after GitHub access returns. Continue product rebuild integration and the full software queue.
+## Current local increment: bind embedding preparation to stored reviewed source
+
+**Status:** 5/6 outcomes verified locally; reviewed hosted integration pending.
+The existing embedding writer now checks current stored source, admission and
+all four counts under the tenant lock before vector/model updates. Prepared keys
+must match validated chunks; failed integrity checks retain existing state.
+Actual mutation and observed-lock-wait regressions verify safe refusal.
+[Evidence](../../evidence/knowledge-embedding-source-integrity/2026-10-04/verification.md)
+retains synthetic-vector and qualification limits. Provider selection, actual
+embedding generation, operator/product integration and full rebuilding remain
+open; continue the entire software queue.
+
+- [x] Preserve the actual failed preparation observation and synthetic-vector boundary; no changed source or user data is discarded.
+- [x] Reuse stored compiled-source/admission validation and all four descriptor counts before embedding updates, under the same tenant lock that governs publication and rebuilding.
+- [x] Compare complete prepared vector keys against the validated current chunks after the lock is acquired. Refuse changed source, permissions, relationships, descriptors or admissions without repairs or partial vector/model writes.
+- [x] Preserve valid first preparation and staged retries, published-vector immutability, active/history data and original source files. Prove refusal after an observed actual lock wait and changed stored source.
+- [x] Run real ledger/required PostgreSQL, governed portable/full server and applicable contract/lint checks; preserve earlier receipts and distinguish fixtures from model/Windows/enterprise qualification.
+- [ ] Record concise evidence, commit under Grant McNatt, and integrate only reviewed six-job green heads once GitHub access returns. Continue provider and product integration and every available software workstream.
+
 ## Execution record
 
 The [dated execution history](../../archive/implementation-evidence/2026-10-02-project-hill-climb-history.md) retains every iteration, evidence link and next action recorded at the time. Those next actions are historical; the current increment above determines what to do now. Append new iteration receipts there and keep this queue current.

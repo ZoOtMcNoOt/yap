@@ -1,0 +1,4 @@
+Actual PostgreSQL stored chunk bodies changed after reviewed staging.
+Original embedding preparation returned success: vector rows 0 -> 1.
+Original source files unchanged: True
+Synthetic vectors only; no model output or publication qualification.
