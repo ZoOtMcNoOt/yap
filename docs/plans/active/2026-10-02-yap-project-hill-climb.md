@@ -183,14 +183,15 @@ projection, publication and rebuilding remain separate open outcomes.
 - [x] Verify actual native transport/file invariants and browser recovery with deterministic evidence, using existing dependencies and retained source provenance. Document how the package enters human Git review and its limits; it does not mutate the canonical graph.
 - [ ] Review/push and integrate through every exact-head job, retain the reviewed head and retire the branch. Continue actual canonical publication/rebuilding and the full software queue.
 
-GitHub rejected the implementation push; its connector reports disconnected.
-Restore access before hosted checks/merging. Local development remains available;
-`9cb8d310` retains the verified implementation and the evidence records the full
-221-pass Linux browser regression (one declared Windows-only skip).
+GitHub access is restored. The complete retained backlog is pushed through
+`4ec7d6189a1e57120ef957bcf94c7700a036a62c`; review and all six exact-head hosted
+jobs are required before integration. A fresh app successor recovered the
+checkout and archived the idle predecessor after confirming readiness. Historical
+connection failures remain in dated evidence. Continue software work while CI runs.
 
 ## Awaiting integration: verify a review package against its source bundle
 
-**Status:** 4/5 local software outcomes; integration waits for GitHub access.
+**Status:** 4/5 local software outcomes; reviewed exact-head integration pending.
 The read-only operator command checks exported citations using the existing
 bounded artifact reader and OKF compiler. It verifies the complete selected
 bundle/generation and both exact quotes. Source matching supplies no access
@@ -200,7 +201,7 @@ or approval; the human reviewer still assesses provenance and rationale.
 - [x] Compile an explicitly selected local OKF bundle with an explicit tenant/revision; require the exact generation and compare both file-byte hashes, parsed-body Unicode spans, metadata and quote text.
 - [x] Return a content-free source-match receipt through a documented command. Preserve every file; open no credentials, server/SQL connections or embedding/model providers. Source matching cannot authorize review, admission or publication.
 - [x] Verify actual files, Unicode/frontmatter hashing, changed generations/quotes/revisions, malformed packages, linked/escaped/missing sources, CLI success/refusal and no file mutation without model hardware.
-- [ ] Record actual software results, commit the verified iteration and push/integrate when GitHub access returns. Canonical human review, complete projection and activation remain open.
+- [ ] Record actual software results, commit the verified iteration and push/integrate after all six exact-head jobs pass. Canonical human review, complete projection and activation remain open.
 
 [Source-check evidence](../../evidence/connection-review-source-check/2026-10-03/verification.md)
 records 29 focused, all 185 governed portable and 1,648 isolated full-server
@@ -219,7 +220,7 @@ remains usable; no model or publication authority is added.
 - [x] Keep initial staged embedding preparation usable; refusals preserve vectors, model identity, active state and activation history. Rollback restores the original projection.
 - [x] Verify a concurrent writer waits for tenant activation, then refuses after publication rather than overwriting the newly published generation.
 - [x] Run the complete skip-free disposable PostgreSQL gate with the expanded population and applicable portable/lint/documentation regressions; distinguish synthetic vectors from qualified inference.
-- [ ] Record the reviewed result and commit it locally; push/integrate through all six exact-head checks when GitHub access returns. Continue canonical review/rebuilding and the complete software queue.
+- [ ] Record the reviewed result and commit it locally; push/integrate through all six exact-head checks after all six exact-head jobs pass. Continue canonical review/rebuilding and the complete software queue.
 
 [Rollback evidence](../../evidence/knowledge-rollback-integrity/2026-10-03/verification.md)
 records both original-code failures, eight real ledger passes, all 119
@@ -240,7 +241,7 @@ selection to Latest; a repeated selection keeps its pending read alive.
 - [x] Keep source/selection changes and late reads isolated, retain explicit retry and original access on failure, and prevent revision changes while a native export is active.
 - [x] Refresh the latest accepted history after every new acceptance, including identical corrected text under a new revision. Use publication identity rather than its text hash alone.
 - [x] Verify native files and exact Unicode text, malformed receipt/selection refusal, browser recovery/focus and narrow/wide screens; run applicable units/build/contracts and the complete browser regression.
-- [ ] Record the result and commit the verified iteration. Push/integrate through the required exact-head checks when GitHub access returns; timed/speaker export, history repair and target qualification remain open.
+- [ ] Record the result and commit the verified iteration. Push/integrate through the required exact-head checks after all six exact-head jobs pass; timed/speaker export, history repair and target qualification remain open.
 
 [Selection evidence and screens](../../evidence/accepted-correction-selection/2026-10-03/verification.md)
 record 1,375 native units + 27 integrations, 404 frontend units and all 231
@@ -261,7 +262,7 @@ leaving another chosen control's focus and scroll position alone.
 - [x] Retain source/revision text, copy and explicit retry beside an unconfirmed export. Never retry automatically or claim success/cancellation without its receipt.
 - [x] Verify actual post-commit errors retain exact destination bytes and existing-file protection; preserve shared worker admission and original/history data.
 - [x] Exercise malformed receipts and original/accepted export recovery, keyboard focus and responsive alerts; run applicable native/frontend/build/contracts and retain actual evidence.
-- [ ] Commit the verified iteration and push/integrate through all six reviewed exact-head checks when GitHub access returns. Physical Windows and the entire remaining queue stay open.
+- [ ] Commit the verified iteration and push/integrate through all six reviewed exact-head checks after all six exact-head jobs pass. Physical Windows and the entire remaining queue stay open.
 
 [Recovery evidence and screens](../../evidence/transcript-export-recovery/2026-10-03/verification.md)
 record the real Linux post-commit error, malformed receipt and hidden-alert
@@ -285,14 +286,14 @@ records actual checks; Windows and hosted integration remain pending.
 - [x] Preserve exact UTF-8 bytes, no-replace behavior, unrelated staging, source/history and explicit worker ownership. Unknown completion retains the existing inspection guidance.
 - [x] Reproduce and verify selected-parent/ancestor substitution and publication-time replacement with actual files; changed paths never create or clean files in their replacements.
 - [x] Run applicable native/transport/frontend/export/contracts and inspect changes; record Linux, hosted Windows and physical-target boundaries accurately.
-- [ ] Commit and push the verified iteration; integrate only reviewed six-job green exact heads when GitHub access returns. Continue the entire software queue.
+- [ ] Commit and push the verified iteration; integrate only reviewed six-job green exact heads. Continue the entire software queue.
 
 Final Linux checks pass: 1,383 native units + 27 integrations, all 36 related
 browser export flows, 72 release contracts (67 passes/five Windows-only skips),
 Linux lint and 14 documentation/license/provenance/population checks. Existing
 renderer/full-browser receipts stay dated baselines. No hosted Windows, physical
-picker/filesystem, model or enterprise behavior is qualified. Push and reviewed
-integration remain pending access; the entire software queue continues.
+picker/filesystem, model or enterprise behavior is qualified. The backlog is pushed; reviewed
+integration remains pending all six exact-head jobs; the entire software queue continues.
 
 ## Awaiting integration: publish a reviewer-owned staged generation
 
@@ -311,7 +312,7 @@ canonical rebuilding and full product integration remain separate open work.
 - [x] Compare the expected active generation under the existing tenant lock before activation. Changed builds refuse without mutation; replay of the current target does not append another activation or overwrite vectors; retained published targets need explicit rollback.
 - [x] Reuse source-admission validation and the complete relational/vector activation gate. Failed or incomplete preparation, tampering and failed success audit leave the prior generation active and retain source/proposal/history data.
 - [x] Configure the route explicitly with owner-private database credentials; verify authenticated HTTP, real Postgres concurrency/recovery, disabled/unavailable/configuration boundaries and documented contracts without models.
-- [ ] Record evidence, commit under Grant McNatt, and push/integrate only reviewed six-job green exact heads when GitHub access returns. Continue source-admission/rebuild/product integration and the full roadmap; do not close the broader canonical-publication outcome prematurely.
+- [ ] Record evidence, commit under Grant McNatt, and push/integrate only reviewed six-job green exact heads. Continue source-admission/rebuild/product integration and the full roadmap; do not close the broader canonical-publication outcome prematurely.
 
 The complete disposable PostgreSQL gate passes 129 cases across 24 modules
 without skips; governed portable passes 192 across 30 modules without skips.
@@ -323,7 +324,7 @@ or Windows qualification is claimed.
 Next audit the reviewed-source admission and rebuild journey that feeds this
 route. Embedding preparation remains operator-owned; publication does not
 make a proposal or exported package authoritative. Continue that available
-software work while hosted integration waits for GitHub access.
+software work while hosted reviewed exact-head integration pending.
 
 ## Awaiting integration: refuse inconsistent rebuild staging receipts
 
@@ -341,7 +342,7 @@ open; continue the whole software queue.
 - [x] Preserve valid staged retries without requiring embeddings; preserve valid published retries without rewriting vectors or activation history.
 - [x] Reject each inconsistent count on staged and active generations; leave source bytes, admissions, projections, metadata, current active state and history unchanged rather than silently repairing storage.
 - [x] Verify actual SQL, the full required database gate, portable/server regression and relevant documentation/contracts; record exact populations and platform/model limits.
-- [ ] Commit under Grant McNatt and push/integrate only reviewed six-job green heads after GitHub access returns. Continue source-admission/product rebuild workflows and the whole project queue.
+- [ ] Commit under Grant McNatt and push/integrate only reviewed six-job green heads. Continue source-admission/product rebuild workflows and the whole project queue.
 
 ## Awaiting integration: prepare the configured reviewed repository snapshot
 
@@ -360,7 +361,7 @@ the full software queue.
 - [x] Inspect configured source metadata before explicit admission/staging. Recompile and match the pinned generation before preparing it; source admission, staging and content-free success audit commit together. Preparation writes no embeddings and never changes the active pointer or activation history.
 - [x] Revalidate same-reviewer replay, preserve valid staged/active data, refuse other-owner or damaged state, and test source drift, failed audit, stale intent, request concurrency, timeout and restart recovery. Pruned published identities require explicit restore rather than a new mutable preparation area.
 - [x] Verify actual authenticated HTTP/Postgres with deterministic principals and synthetic vectors, portable configuration/manifest/CLI boundaries, OpenAPI/runtime contracts and relevant full regression. Record review/Git, model, enterprise and Windows limits accurately.
-- [ ] Record evidence, commit under Grant McNatt and integrate only reviewed six-job green heads after GitHub access returns. Continue product rebuild integration and the full software queue.
+- [ ] Record evidence, commit under Grant McNatt and integrate only reviewed six-job green heads. Continue product rebuild integration and the full software queue.
 ## Current local increment: bind embedding preparation to stored reviewed source
 
 **Status:** 5/6 outcomes verified locally; reviewed hosted integration pending.
@@ -378,7 +379,7 @@ open; continue the entire software queue.
 - [x] Compare complete prepared vector keys against the validated current chunks after the lock is acquired. Refuse changed source, permissions, relationships, descriptors or admissions without repairs or partial vector/model writes.
 - [x] Preserve valid first preparation and staged retries, published-vector immutability, active/history data and original source files. Prove refusal after an observed actual lock wait and changed stored source.
 - [x] Run real ledger/required PostgreSQL, governed portable/full server and applicable contract/lint checks; preserve earlier receipts and distinguish fixtures from model/Windows/enterprise qualification.
-- [ ] Record concise evidence, commit under Grant McNatt, and integrate only reviewed six-job green heads once GitHub access returns. Continue provider and product integration and every available software workstream.
+- [ ] Record concise evidence, commit under Grant McNatt, and integrate only reviewed six-job green heads. Continue provider and product integration and every available software workstream.
 
 ## Execution record
 

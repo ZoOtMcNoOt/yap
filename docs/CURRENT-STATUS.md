@@ -81,11 +81,14 @@ retains the reproduced successful write over changed source and observed lock-wa
 regression. This does not verify vector provenance or add an embedding provider;
 actual generation and complete product rebuild integration remain open.
 
-GitHub diagnostics confirm no active app connection and a rejected cloud push
-token. The public repository is reachable; the cloud API proxy refuses CONNECT
-with `403`. The tools provide no revocation or expiry reason. Restore GitHub
-account access for pushing and reviewed hosted integration; local software work
-continues.
+GitHub access recovered on 2026-10-04: the feature branch was pushed through
+`4ec7d6189a1e57120ef957bcf94c7700a036a62c`. A fresh app chat recovered that
+exact branch into this cloud checkout and archived its idle predecessor after
+writing a readiness receipt. Reviewed hosted integration is now proceeding;
+no new hosted pass or merge is claimed yet. The earlier disconnected-app,
+rejected-push and CLI model-stream failures remain historical observations in
+the handoff and dated evidence. The restored checkout retains dependency caches,
+but native toolchain availability and applicable checks must be reverified.
 
 ## Earlier increments awaiting integration
 
@@ -142,15 +145,15 @@ units pass 404 cases with two Windows-only skips, and the production build passe
 All 27 related browser cases and the complete 231-case Linux browser regression
 pass, with one declared Windows-only island skip (232 total).
 [Evidence and screens](evidence/accepted-correction-selection/2026-10-03/verification.md)
-retain the checks and limits. GitHub authentication is disconnected, so pushing
-and reviewed exact-head integration remain pending for all retained iterations.
+retain the checks and limits. All retained iterations are now pushed; reviewed
+exact-head hosted integration remains pending.
 
 [Connection review export](evidence/connection-review-export/2026-10-03/verification.md)
 carries the exact proposal and citations into human Git review. Five local software outcomes pass;
 the complete Linux browser suite passes with 221 cases and one declared Windows-only skip.
 Canonical publication and generation rebuilding remain separate open outcomes.
 
-While access is unavailable, [local source checking](evidence/connection-review-source-check/2026-10-03/verification.md)
+[Local source checking](evidence/connection-review-source-check/2026-10-03/verification.md)
 verifies exported evidence against an explicitly selected complete OKF bundle.
 All 185 governed portable cases pass without skips. The receipt proves source
 matching; authorized review and activation remain separate.
@@ -158,7 +161,7 @@ matching; authorized review and activation remain separate.
 [Rollback integrity](evidence/knowledge-rollback-integrity/2026-10-03/verification.md)
 now protects published vectors after replacement. Eight real ledger checks,
 all 119 current database cases and all 185 governed portable cases pass locally
-without skips. Integration remains pending GitHub access.
+without skips. Reviewed exact-head integration remains pending.
 
 The [complete PostgreSQL gate](evidence/governed-postgres-ci/2026-10-03/verification.md)
 is merged and **5/5 software verified**. [PR #204](https://github.com/ZoOtMcNoOt/yap/pull/204)
