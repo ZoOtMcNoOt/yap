@@ -915,6 +915,7 @@ class ServerMainTests(unittest.TestCase):
             settings,
             request_authenticator=ANY,
             knowledge_connections_service=None,
+            knowledge_publication_service=None,
             terminology_service=None,
             job_service=runtime.service,
             lid_preflight_service=runtime.lid_preflight_service,

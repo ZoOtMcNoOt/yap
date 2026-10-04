@@ -1,6 +1,6 @@
 # Current status
 
-**Updated:** 2026-10-03. **Project owner:** Grant McNatt.
+**Updated:** 2026-10-04. **Project owner:** Grant McNatt.
 
 ## Current goal
 
@@ -71,7 +71,21 @@ Earlier dependency/consolidation results remain in the [desktop evidence](eviden
 
 ## Current increment
 
-The [current increment](plans/active/2026-10-02-yap-project-hill-climb.md#current-local-increment-retain-the-admitted-export-directory)
+[Reviewed publication](specs/knowledge-publication.md) now gives authenticated
+curators explicit HTTP inspection and activation of their own admitted,
+prepared repository generations. Expected-active comparison, complete
+validation/replay and atomic success audit are verified locally: all 129 required
+database and 192 governed portable cases pass without skips; the full isolated
+server suite passes 1,655 cases with 126 declared exclusions. Hosted integration
+is pending. Git review, source admission/staging, embedding preparation,
+canonical rebuilding and desktop product integration remain separate open work;
+the overall publication outcome stays open. [Evidence](evidence/knowledge-publication/2026-10-04/verification.md)
+records the scope and checks. The next audit follows source admission and rebuild
+ownership into this publication route.
+
+## Earlier increments awaiting integration
+
+The [export-directory increment](plans/active/2026-10-02-yap-project-hill-climb.md#awaiting-integration-retain-the-admitted-export-directory)
 retains the admitted folder for original, accepted-correction and connection-review
 exports. Actual Linux files reproduced a parent replacement redirecting an export
 into internal Yap data. Directory ownership fixes that redirection; 1,383 native
@@ -83,7 +97,7 @@ remain pending in the [directory evidence](evidence/export-directory-ownership/2
 The earlier [completion recovery](evidence/transcript-export-recovery/2026-10-03/verification.md)
 increment retains its passing 1,377 + 27 native, 404 frontend, production-build
 and 38 related-browser checks. Those dated checks remain separate from the new
-directory increment; no renderer changes are introduced here.
+directory increment; neither server publication nor directory ownership changes renderer code.
 
 **Earlier accepted corrections** now support offline reading, copying and export.
 The selector preserves original transcripts, latest acceptance and saved history;

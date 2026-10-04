@@ -270,7 +270,7 @@ related browser cases, production build and release checks pass. Complete
 canonical human publication/rebuilding and supervised ASR remain available
 software work; timed/speaker export, history repair and target checks stay queued.
 
-## Current local increment: retain the admitted export directory
+## Awaiting integration: retain the admitted export directory
 
 **Status:** 5/6 outcomes verified locally; reviewed exact-head integration pending.
 A real Linux regression reproduces an external export parent replaced by a link
@@ -293,6 +293,37 @@ Linux lint and 14 documentation/license/provenance/population checks. Existing
 renderer/full-browser receipts stay dated baselines. No hosted Windows, physical
 picker/filesystem, model or enterprise behavior is qualified. Push and reviewed
 integration remain pending access; the entire software queue continues.
+
+## Current local increment: publish a reviewer-owned staged generation
+
+**Status:** 5/6 outcomes verified locally; reviewed hosted integration pending.
+Authenticated curators can inspect and explicitly publish their own
+already-admitted, prepared repository generations. Expected-active comparison
+and complete relational/vector checks reuse the existing tenant lock and
+activation owner; success audit commits atomically. Replay revalidates stored
+truth, and retained generations need explicit rollback. [Operator guidance](../../specs/knowledge-publication.md)
+and [evidence](../../evidence/knowledge-publication/2026-10-04/verification.md)
+retain the verified scope and recovery steps. Source review/admission, embeddings,
+canonical rebuilding and full product integration remain separate open work.
+
+- [x] Require organization authentication and the existing `knowledge.curator` role; derive tenant/reviewer from the principal, and expose only that reviewer's curated-repository admissions.
+- [x] Let the reviewer inspect content-free staged/active/retained metadata and the current active generation before an explicit publication request. Reject caller-supplied identity, source, policy or vector authority.
+- [x] Compare the expected active generation under the existing tenant lock before activation. Changed builds refuse without mutation; replay of the current target does not append another activation or overwrite vectors; retained published targets need explicit rollback.
+- [x] Reuse source-admission validation and the complete relational/vector activation gate. Failed or incomplete preparation, tampering and failed success audit leave the prior generation active and retain source/proposal/history data.
+- [x] Configure the route explicitly with owner-private database credentials; verify authenticated HTTP, real Postgres concurrency/recovery, disabled/unavailable/configuration boundaries and documented contracts without models.
+- [ ] Record evidence, commit under Grant McNatt, and push/integrate only reviewed six-job green exact heads when GitHub access returns. Continue source-admission/rebuild/product integration and the full roadmap; do not close the broader canonical-publication outcome prematurely.
+
+The complete disposable PostgreSQL gate passes 129 cases across 24 modules
+without skips; governed portable passes 192 across 30 modules without skips.
+Full isolated server discovery passes 1,655 cases, with 126 declared exclusions.
+Release and lint/format checks pass; [recorded results](../../evidence/knowledge-publication/2026-10-04/check-results.txt)
+retain exact boundaries. No model, production identity, Git-review/deployment
+or Windows qualification is claimed.
+
+Next audit the reviewed-source admission and rebuild journey that feeds this
+route. Preparation is still programmatic/operator-owned; publication does not
+make a proposal or exported package authoritative. Continue that available
+software work while hosted integration waits for GitHub access.
 
 ## Execution record
 

@@ -7,11 +7,19 @@ LIVE_EVENTS_PATH = SERVER_ROOT / "openapi" / "live-events.schema.json"
 EXAMPLES_ROOT = SERVER_ROOT / "openapi" / "examples"
 
 HTTP_OPERATIONS = {
+    ("/v1/knowledge/publications", "get"): "inspectReviewedKnowledgePublication",
+    ("/v1/knowledge/publications", "post"): "publishReviewedKnowledgeGeneration",
     ("/v1/knowledge/concepts", "get"): "browseKnowledgeTopics",
     ("/v1/knowledge/connections", "get"): "readKnowledgeConnections",
     ("/v1/knowledge/connection-proposal", "get"): "inspectKnowledgeConnectionProposal",
-    ("/v1/knowledge/connection-proposal", "delete"): "discardKnowledgeConnectionProposal",
-    ("/v1/knowledge/connection-proposals", "get"): "listPendingKnowledgeConnectionProposals",
+    (
+        "/v1/knowledge/connection-proposal",
+        "delete",
+    ): "discardKnowledgeConnectionProposal",
+    (
+        "/v1/knowledge/connection-proposals",
+        "get",
+    ): "listPendingKnowledgeConnectionProposals",
     ("/v1/terminology/scopes", "get"): "discoverTerminologyScopes",
     ("/v1/terminology", "get"): "listTerminology",
     ("/v1/terminology", "post"): "createTerminology",
@@ -68,6 +76,14 @@ HTTP_OPERATIONS = {
 }
 
 OPERATION_RUNTIME = {
+    ("/v1/knowledge/publications", "get"): (
+        "Implemented when explicit authenticated knowledge publication Postgres configuration verifies",
+        "Reviewer-owned complete-generation publication",
+    ),
+    ("/v1/knowledge/publications", "post"): (
+        "Implemented when explicit authenticated knowledge publication Postgres configuration verifies",
+        "Reviewer-owned complete-generation publication",
+    ),
     ("/v1/knowledge/connection-proposals", "get"): (
         "Implemented when explicit authenticated knowledge connections Postgres configuration verifies",
         "Authenticated permission-safe knowledge connections",
@@ -266,6 +282,7 @@ OPERATION_RUNTIME = {
 CHUNK_PATH = "/v1/jobs/{jobId}/chunks/{trackId}/{sequenceStart}-{sequenceEnd}"
 
 RUNTIME_PATH_EXAMPLES = {
+    "/v1/knowledge/publications": "/v1/knowledge/publications",
     "/v1/knowledge/concepts": "/v1/knowledge/concepts",
     "/v1/knowledge/connections": "/v1/knowledge/connections",
     "/v1/knowledge/connection-proposal": "/v1/knowledge/connection-proposal",

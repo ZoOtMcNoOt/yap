@@ -507,6 +507,86 @@ def rollback_to_generation(
     )
 
 
+def validate_complete_generation(
+    connection: Connection[object], *, tenant_id: str, generation_sha256: str
+) -> KnowledgeGenerationDescriptor:
+    """Validate complete stored truth without changing activation or history."""
+    with connection.transaction():
+        connection.execute(
+            "SELECT pg_advisory_xact_lock_shared(hashtextextended(%s, 0))", (tenant_id,)
+        )
+        row = _complete_generation_row(connection, tenant_id, generation_sha256)
+        return KnowledgeGenerationDescriptor(*row[:6])
+
+
+def _complete_generation_row(
+    connection: Connection[object], tenant_id: str, generation_sha256: str
+) -> tuple[object, ...]:
+    row = connection.execute(
+        """SELECT tenant_id, generation_sha256, source_revision,
+                  okf_version, concept_count, permission_count,
+                  chunk_count, relationship_count,
+                  embedding_model_id, embedding_model_revision,
+                  source_admission_sha256
+           FROM yap_knowledge_builds
+           WHERE tenant_id = %s AND generation_sha256 = %s""",
+        (tenant_id, generation_sha256),
+    ).fetchone()
+    if row is None:
+        raise LookupError("staged knowledge generation does not exist")
+    if row[8] is None or row[9] is None:
+        raise ValueError("staged knowledge embedding projection is absent")
+    actual = connection.execute(
+        """SELECT
+            (SELECT count(*) FROM yap_knowledge_concepts
+             WHERE tenant_id = %s AND generation_sha256 = %s),
+            (SELECT count(*) FROM yap_knowledge_permissions
+             WHERE tenant_id = %s AND generation_sha256 = %s),
+            (SELECT count(*) FROM yap_knowledge_chunks
+             WHERE tenant_id = %s AND generation_sha256 = %s),
+            (SELECT count(*) FROM yap_knowledge_relationships
+             WHERE tenant_id = %s AND generation_sha256 = %s),
+            (SELECT count(*) FROM yap_knowledge_chunks
+             WHERE tenant_id = %s AND generation_sha256 = %s
+               AND embedding IS NOT NULL
+               AND embedding_model_id = %s
+               AND embedding_model_revision = %s)""",
+        (
+            tenant_id,
+            generation_sha256,
+            tenant_id,
+            generation_sha256,
+            tenant_id,
+            generation_sha256,
+            tenant_id,
+            generation_sha256,
+            tenant_id,
+            generation_sha256,
+            row[8],
+            row[9],
+        ),
+    ).fetchone()
+    expected = (row[4], row[5], row[6], row[7], row[6])
+    if actual != expected:
+        raise ValueError("staged knowledge projections are incomplete")
+    persisted = _load_persisted_generation(
+        connection,
+        tenant_id=tenant_id,
+        generation_sha256=generation_sha256,
+        source_revision=str(row[2]),
+        okf_version=str(row[3]),
+    )
+    validate_compiled_generation(persisted)
+    require_knowledge_source_admission(
+        connection,
+        tenant_id=tenant_id,
+        admission_sha256=str(row[10]),
+        generation_sha256=generation_sha256,
+        source_revision=str(row[2]),
+    )
+    return row
+
+
 def _activate_complete_generation(
     connection: Connection[object],
     *,
@@ -519,68 +599,7 @@ def _activate_complete_generation(
         connection.execute(
             "SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))", (tenant_id,)
         )
-        row = connection.execute(
-            """SELECT tenant_id, generation_sha256, source_revision,
-                      okf_version, concept_count, permission_count,
-                      chunk_count, relationship_count,
-                      embedding_model_id, embedding_model_revision,
-                      source_admission_sha256
-               FROM yap_knowledge_builds
-               WHERE tenant_id = %s AND generation_sha256 = %s""",
-            (tenant_id, generation_sha256),
-        ).fetchone()
-        if row is None:
-            raise LookupError("staged knowledge generation does not exist")
-        if row[8] is None or row[9] is None:
-            raise ValueError("staged knowledge embedding projection is absent")
-        actual = connection.execute(
-            """SELECT
-                (SELECT count(*) FROM yap_knowledge_concepts
-                 WHERE tenant_id = %s AND generation_sha256 = %s),
-                (SELECT count(*) FROM yap_knowledge_permissions
-                 WHERE tenant_id = %s AND generation_sha256 = %s),
-                (SELECT count(*) FROM yap_knowledge_chunks
-                 WHERE tenant_id = %s AND generation_sha256 = %s),
-                (SELECT count(*) FROM yap_knowledge_relationships
-                 WHERE tenant_id = %s AND generation_sha256 = %s),
-                (SELECT count(*) FROM yap_knowledge_chunks
-                 WHERE tenant_id = %s AND generation_sha256 = %s
-                   AND embedding IS NOT NULL
-                   AND embedding_model_id = %s
-                   AND embedding_model_revision = %s)""",
-            (
-                tenant_id,
-                generation_sha256,
-                tenant_id,
-                generation_sha256,
-                tenant_id,
-                generation_sha256,
-                tenant_id,
-                generation_sha256,
-                tenant_id,
-                generation_sha256,
-                row[8],
-                row[9],
-            ),
-        ).fetchone()
-        expected = (row[4], row[5], row[6], row[7], row[6])
-        if actual != expected:
-            raise ValueError("staged knowledge projections are incomplete")
-        persisted = _load_persisted_generation(
-            connection,
-            tenant_id=tenant_id,
-            generation_sha256=generation_sha256,
-            source_revision=str(row[2]),
-            okf_version=str(row[3]),
-        )
-        validate_compiled_generation(persisted)
-        require_knowledge_source_admission(
-            connection,
-            tenant_id=tenant_id,
-            admission_sha256=str(row[10]),
-            generation_sha256=generation_sha256,
-            source_revision=str(row[2]),
-        )
+        row = _complete_generation_row(connection, tenant_id, generation_sha256)
         previous = connection.execute(
             """SELECT generation_sha256 FROM yap_knowledge_active_builds
                WHERE tenant_id = %s""",
@@ -837,4 +856,5 @@ __all__ = [
     "serialize_embedding_vector",
     "stage_compiled_generation",
     "store_generation_embeddings",
+    "validate_complete_generation",
 ]

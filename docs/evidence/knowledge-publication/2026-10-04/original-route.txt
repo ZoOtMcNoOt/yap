@@ -1,0 +1,14 @@
+Observed before implementation at local commit ce79008f.
+A real HTTP server with deterministic organization authentication was started
+without a publication route. No production identity provider was qualified.
+
+POST /v1/knowledge/publications
+Payload: schemaVersion=1, generationSha256=64 lowercase a characters,
+expectedActiveGenerationSha256=null.
+
+Observed HTTP status: 404
+Observed JSON: {"code":"NOT_FOUND","message":"Route not found.","retryable":false,"requestId":"req-8a457bdc23b240a4be0ac3cde7083254"}
+
+This copies the actual earlier tool observation; it is not a rerun or an
+import-failure log. New authenticated publication cases exercise the implemented
+route on actual HTTP/PostgreSQL with prepared reviewed fixture admissions.

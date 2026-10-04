@@ -24,6 +24,11 @@ from yap_server.knowledge.knowledge_connections_service import (
     KnowledgeConnectionsService,
 )
 from .knowledge_connections_requests import KnowledgeConnectionsRequestMixin
+from yap_server.knowledge.knowledge_publication_service import (
+    KnowledgePublicationService,
+    PUBLICATION_PATH,
+)
+from .knowledge_publication_requests import KnowledgePublicationRequestMixin
 from .terminology_requests import TerminologyRequestMixin
 
 from .analyst_answer_requests import (
@@ -102,6 +107,7 @@ _REQUEST_LOGGER = logging.getLogger("yap_server.requests")
 
 
 class _HealthRequestHandler(
+    KnowledgePublicationRequestMixin,
     KnowledgeConnectionsRequestMixin,
     TerminologyRequestMixin,
     AuditorReportRequestMixin,
@@ -137,6 +143,7 @@ class _HealthRequestHandler(
         auditor_report_service: AuditorReportServiceProtocol | None,
         transcript_correction_service: TranscriptCorrectionServiceProtocol | None,
         knowledge_connections_service: KnowledgeConnectionsService | None,
+        knowledge_publication_service: KnowledgePublicationService | None,
         terminology_service: TerminologyService | None,
         asr_capabilities: Mapping[str, object] | None,
         **kwargs: Any,
@@ -155,6 +162,7 @@ class _HealthRequestHandler(
         self._auditor_report_service = auditor_report_service
         self._transcript_correction_service = transcript_correction_service
         self._knowledge_connections_service = knowledge_connections_service
+        self._knowledge_publication_service = knowledge_publication_service
         self._terminology_service = terminology_service
         self._asr_capabilities = asr_capabilities
         self._request_id = f"req-{uuid4().hex}"
@@ -263,6 +271,17 @@ class _HealthRequestHandler(
             return
 
         if not self._authenticate_request():
+            return
+
+        if path == PUBLICATION_PATH:
+            if self._knowledge_publication_service is None:
+                self._send_error(
+                    HTTPStatus.NOT_IMPLEMENTED,
+                    code="NOT_IMPLEMENTED",
+                    message="Knowledge publication is not configured.",
+                )
+                return
+            self._dispatch_knowledge_publication_request()
             return
 
         if path in {
@@ -489,6 +508,7 @@ def create_server(
     auditor_report_service: AuditorReportServiceProtocol | None = None,
     transcript_correction_service: TranscriptCorrectionServiceProtocol | None = None,
     knowledge_connections_service: KnowledgeConnectionsService | None = None,
+    knowledge_publication_service: KnowledgePublicationService | None = None,
     terminology_service: TerminologyService | None = None,
     asr_capabilities: Mapping[str, object] | None = None,
 ) -> HTTPServer:
@@ -498,6 +518,11 @@ def create_server(
         and not settings.authentication.required
     ):
         raise ValueError("knowledge connections require organization authentication")
+    if (
+        knowledge_publication_service is not None
+        and not settings.authentication.required
+    ):
+        raise ValueError("knowledge publication requires organization authentication")
     if terminology_service is not None and not settings.authentication.required:
         raise ValueError("personal terminology requires organization authentication")
     request_logger = logger or _REQUEST_LOGGER
@@ -540,6 +565,7 @@ def create_server(
         auditor_report_service=auditor_report_service,
         transcript_correction_service=transcript_correction_service,
         knowledge_connections_service=knowledge_connections_service,
+        knowledge_publication_service=knowledge_publication_service,
         terminology_service=terminology_service,
         asr_capabilities=asr_capabilities,
     )
@@ -557,6 +583,7 @@ def create_server(
             or auditor_report_service is not None
             or transcript_correction_service is not None
             or knowledge_connections_service is not None
+            or knowledge_publication_service is not None
             or terminology_service is not None
         ),
     )((settings.host, settings.port), handler)
@@ -581,6 +608,7 @@ def serve(
     auditor_report_service: AuditorReportServiceProtocol | None = None,
     transcript_correction_service: TranscriptCorrectionServiceProtocol | None = None,
     knowledge_connections_service: KnowledgeConnectionsService | None = None,
+    knowledge_publication_service: KnowledgePublicationService | None = None,
     terminology_service: TerminologyService | None = None,
     asr_capabilities: Mapping[str, object] | None = None,
 ) -> None:
@@ -598,6 +626,7 @@ def serve(
         auditor_report_service=auditor_report_service,
         transcript_correction_service=transcript_correction_service,
         knowledge_connections_service=knowledge_connections_service,
+        knowledge_publication_service=knowledge_publication_service,
         terminology_service=terminology_service,
         asr_capabilities=asr_capabilities,
     ) as server:
