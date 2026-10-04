@@ -81,6 +81,7 @@ class HealthServerTestCase(unittest.TestCase):
     lid_preflight_service: object | None = None
     transcript_correction_service: object | None = None
     knowledge_connections_service: object | None = None
+    knowledge_publication_service: object | None = None
     terminology_service: object | None = None
     request_authenticator: object | None = None
     server_settings = ServerSettings(
@@ -105,6 +106,7 @@ class HealthServerTestCase(unittest.TestCase):
             lid_preflight_service=self.lid_preflight_service,
             transcript_correction_service=self.transcript_correction_service,
             knowledge_connections_service=self.knowledge_connections_service,
+            knowledge_publication_service=self.knowledge_publication_service,
             terminology_service=self.terminology_service,
             request_authenticator=self.request_authenticator,
         )
@@ -120,6 +122,7 @@ class HealthServerTestCase(unittest.TestCase):
             and self.auditor_report_service is None
             and self.transcript_correction_service is None
             and self.knowledge_connections_service is None
+            and self.knowledge_publication_service is None
             and self.terminology_service is None
         ):
             self.assertNotIsInstance(self.server, ThreadingHTTPServer)

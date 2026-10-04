@@ -25,6 +25,9 @@ from yap_server.agents.auditor_product_runtime import (
     AuditorProductRuntime,
     build_auditor_product_runtime,
 )
+from yap_server.knowledge.knowledge_publication_service import (
+    build_knowledge_publication_service,
+)
 from yap_server.knowledge.knowledge_connections_service import (
     build_knowledge_connections_service,
 )
@@ -274,6 +277,10 @@ def main() -> None:
         terminology_policy = build_terminology_policy(
             os.environ, authenticated_team_mode=settings.authentication.required
         )
+        knowledge_publication_service = build_knowledge_publication_service(
+            os.environ,
+            authenticated_team_mode=settings.authentication.required,
+        )
         knowledge_connections_service = build_knowledge_connections_service(
             os.environ,
             authenticated_team_mode=settings.authentication.required,
@@ -379,6 +386,7 @@ def main() -> None:
             settings,
             request_authenticator=request_authenticator,
             knowledge_connections_service=knowledge_connections_service,
+            knowledge_publication_service=knowledge_publication_service,
             terminology_service=terminology_service,
             job_service=runtime.service if runtime is not None else None,
             lid_preflight_service=(

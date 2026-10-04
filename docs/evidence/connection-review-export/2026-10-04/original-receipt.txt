@@ -1,0 +1,37 @@
+
+ RUN  v4.1.11 /workspace/yap/desktop
+
+ ❯ tests/unit/connection-review-export.test.ts (4 tests | 1 failed) 21ms
+   × wrong proposal, generation and malformed saved results remain unconfirmed 12ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/unit/connection-review-export.test.ts > wrong proposal, generation and malformed saved results remain unconfirmed
+AssertionError: promise resolved "{ status: 'saved', path: '   ' }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "path": "   ",
++   "status": "saved",
+  }
+
+ ❯ tests/unit/connection-review-export.test.ts:29:24
+     27|   ]) {
+     28|     invokeMock.mockResolvedValue({...receipt(), ...change});
+     29|     await expect(run()).rejects.toEqual({code:"exportUnconfirmed"});
+       |                        ^
+     30|   }
+     31| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 passed (4)
+   Start at  17:47:47
+   Duration  312ms (transform 60ms, setup 0ms, import 86ms, tests 21ms, environment 0ms)
+

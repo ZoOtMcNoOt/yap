@@ -80,7 +80,7 @@ source verification/cloud-env.sh
 server/.venv/bin/python verification/run-disposable-governed-postgres-suite.py
 ```
 
-It requires all 117 knowledge/agent/API cases without skips, using digest-pinned
+It requires all 144 knowledge/agent/API cases across 25 modules without skips, using digest-pinned
 PostgreSQL 17.11/pgvector 0.8.7 on a random loopback port. Generated credentials,
 data and container belong to this run; cleanup removes only that container.
 Inherited Docker/database routes cannot redirect it. [Evidence and runtime
@@ -101,9 +101,12 @@ The script installs Debian Postgres 17.11 and pgvector 0.8.0 in a separate user-
 prefix, starts a loopback-only cluster with private data/credentials, and enables
 the vector extension. Repeated setup retains the database. Its test DSN stays in
 ignored `.tools/postgres/env`; do not commit or print it. The same complete runner
-requires all 117 cases, including permission-safe retrieval, durable reviewed
+requires all 144 cases across 25 modules, including permission-safe retrieval, durable reviewed
 sources, agent persistence and authenticated APIs. These development versions do
 not renew the separate ARM64 production database lock or enterprise qualification.
+
+For explicit activation of an already-reviewed prepared generation, see
+[publication setup and recovery](../specs/knowledge-publication.md).
 
 Personal/shared terminology HTTP tests use an owner-private credential file and the
 production configuration builder against this database. Authentication is a

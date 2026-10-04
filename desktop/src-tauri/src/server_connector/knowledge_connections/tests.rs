@@ -412,3 +412,30 @@ fn pending_discovery_refuses_corrupt_duplicate_excess_or_source_bearing_metadata
     full["proposals"].as_array_mut().unwrap().push(entry);
     assert!(decode(&request, &serde_json::to_vec(&full).unwrap()).is_err());
 }
+
+#[test]
+fn review_package_preserves_exact_evidence_without_session_or_approval_metadata() {
+    let mut wire = proposal_wire();
+    wire["sources"][0]["text"] = serde_json::json!("知識🦀");
+    wire["sources"][0]["citation"]["charEnd"] = serde_json::json!(15);
+    let ConnectionsResponse::Proposal(proposal) = decoded_proposal(&wire).unwrap() else {
+        panic!("expected strictly decoded proposal");
+    };
+    let package = proposal.review_package(&"a".repeat(64)).unwrap();
+    assert!(package.ends_with('\n'));
+    assert!(package.len() <= MAXIMUM_RESPONSE_BYTES);
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&package).unwrap(),
+        serde_json::json!({
+            "schemaVersion":1, "kind":"connection-review", "status":"proposed",
+            "proposalId":wire["proposalId"], "generationSha256":wire["generationSha256"],
+            "candidate":wire["candidate"], "sources":wire["sources"]
+        })
+    );
+    for generation in ["f".repeat(64), "invalid".into(), "A".repeat(64)] {
+        assert_eq!(
+            proposal.review_package(&generation).unwrap_err().code,
+            "knowledgeChanged"
+        );
+    }
+}

@@ -23,6 +23,9 @@ export type AcceptedCorrectionExportFailure = {
 
 type TranscriptTextLoader = (path: string) => Promise<string>;
 
+const exportUnconfirmed =
+  "Export could not be confirmed. Check the selected destination before trying again; the file may already have been saved.";
+
 export function useTranscriptFileActions(
   loadTranscriptText: TranscriptTextLoader,
 ) {
@@ -56,10 +59,16 @@ export function useTranscriptFileActions(
         const result = await invoke<
           { status: "cancelled" } | { status: "saved"; path: string }
         >("export_transcript", { path });
-        if (result.status === "saved") {
+        if (
+          result?.status === "saved" &&
+          typeof result.path === "string" &&
+          result.path.trim()
+        ) {
           toast.success("Transcript exported", { description: result.path });
-        } else {
+        } else if (result?.status === "cancelled") {
           toast.info("Export cancelled");
+        } else {
+          throw exportUnconfirmed;
         }
       } catch (error) {
         setExportFailure({
@@ -67,7 +76,7 @@ export function useTranscriptFileActions(
           message:
             typeof error === "string"
               ? error
-              : "Could not export this transcript. Check the destination and retry.",
+              : exportUnconfirmed,
         });
       }
     });
@@ -103,7 +112,7 @@ export function useTranscriptFileActions(
               ? cause
               : cause instanceof Error
                 ? cause.message
-                : "Could not export this saved correction. Check the destination and retry.",
+                : exportUnconfirmed,
         });
       }
     });

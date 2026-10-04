@@ -344,10 +344,11 @@ fn timed_out_recovery_retains_its_capacity_until_the_filesystem_worker_exits() {
 
 #[test]
 fn recovery_cannot_admit_a_relative_path_or_an_external_plaintext_file() {
-    assert!(
-        revision::read_accepted_transcript_correction(std::path::Path::new("transcript.txt"))
-            .is_err()
-    );
+    assert!(revision::read_accepted_transcript_correction(
+        std::path::Path::new("transcript.txt"),
+        None
+    )
+    .is_err());
     let directory = std::env::temp_dir().join(format!(
         "yap-unowned-correction-recovery-{}-{}",
         std::process::id(),
@@ -359,7 +360,7 @@ fn recovery_cannot_admit_a_relative_path_or_an_external_plaintext_file() {
     std::fs::create_dir(&directory).unwrap();
     let path = directory.join("transcript.txt");
     std::fs::write(&path, "An external file is not a committed Yap transcript.").unwrap();
-    assert!(revision::read_accepted_transcript_correction(&path).is_err());
+    assert!(revision::read_accepted_transcript_correction(&path, None).is_err());
     assert_eq!(
         std::fs::read_to_string(path).unwrap(),
         "An external file is not a committed Yap transcript."

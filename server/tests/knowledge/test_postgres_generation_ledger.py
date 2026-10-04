@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import threading
+import time
 import unittest
 from uuid import uuid4
 
@@ -39,6 +40,368 @@ POSTGRES_DSN = os.environ.get("YAP_TEST_POSTGRES_DSN")
 
 @unittest.skipUnless(POSTGRES_DSN, "YAP_TEST_POSTGRES_DSN is not configured")
 class PostgresGenerationLedgerTests(unittest.TestCase):
+    def test_embedding_preparation_refuses_changed_reviewed_projection_without_repair(
+        self,
+    ):
+        mutations = {
+            "chunk-body": "UPDATE yap_knowledge_chunks SET body = body || ' changed'",
+            "chunk-span": "UPDATE yap_knowledge_chunks SET char_end = char_end + 1",
+            "concept-body": "UPDATE yap_knowledge_concepts SET body = body || ' changed'",
+            "concept-metadata": "UPDATE yap_knowledge_concepts SET frontmatter = jsonb_set(frontmatter, '{title}', '\"Changed\"')",
+            "relationship": "UPDATE yap_knowledge_relationships SET relationship_type = 'changed'",
+            "permission": "UPDATE yap_knowledge_permissions SET policy = jsonb_set(policy, '{classification}', '\"restricted\"')",
+            "permission-audience": "UPDATE yap_knowledge_permission_audience SET subject_id = 'another-reviewer'",
+            "reviewer": "UPDATE yap_knowledge_source_admissions SET reviewer_id = 'another-reviewer'",
+            "revision": "UPDATE yap_knowledge_builds SET source_revision = 'changed-revision'",
+            **{
+                field: f"UPDATE yap_knowledge_builds SET {field} = {field} + 1"
+                for field in (
+                    "concept_count",
+                    "permission_count",
+                    "chunk_count",
+                    "relationship_count",
+                )
+            },
+        }
+        for name, statement in mutations.items():
+            with self.subTest(mutation=name):
+                tenant = f"test-{uuid4()}"
+                self.addCleanup(_remove_generation_test_tenant, tenant)
+                with TemporaryDirectory() as directory:
+                    root = _tamper_bundle(Path(directory), tenant)
+                    source_bytes = {
+                        path.relative_to(root): path.read_bytes()
+                        for path in root.rglob("*")
+                        if path.is_file()
+                    }
+                    generation = compile_okf_bundle(
+                        root, tenant_id=tenant, source_revision="reviewed-source"
+                    )
+                    with psycopg.connect(POSTGRES_DSN, autocommit=True) as connection:
+                        install_knowledge_schema(connection)
+                        _stage_reviewed_generation(connection, generation)
+                        arguments = dict(
+                            tenant_id=tenant,
+                            generation_sha256=generation.generation_sha256,
+                            embedding_model_id="synthetic-test",
+                            embedding_model_revision="revision-1",
+                            embeddings={
+                                item.chunk_id: (0.25,) * 768
+                                for item in generation.chunks
+                            },
+                        )
+                        # Valid first preparation and retry need no prior vectors.
+                        store_generation_embeddings(connection, **arguments)
+                        store_generation_embeddings(connection, **arguments)
+                        connection.execute(
+                            statement
+                            + " WHERE tenant_id = %s AND generation_sha256 = %s",
+                            (tenant, generation.generation_sha256),
+                        )
+                        before = _embedding_integrity_snapshot(connection, tenant)
+                        with self.assertRaises(ValueError):
+                            store_generation_embeddings(
+                                connection,
+                                **{
+                                    **arguments,
+                                    "embeddings": {
+                                        item.chunk_id: (0.75,) * 768
+                                        for item in generation.chunks
+                                    },
+                                },
+                            )
+                        self.assertEqual(
+                            _embedding_integrity_snapshot(connection, tenant), before
+                        )
+                    self.assertEqual(
+                        source_bytes,
+                        {
+                            path.relative_to(root): path.read_bytes()
+                            for path in root.rglob("*")
+                            if path.is_file()
+                        },
+                    )
+
+    def test_embedding_preparation_rechecks_source_after_actual_lock_wait(self):
+        tenant = f"test-{uuid4()}"
+        self.addCleanup(_remove_generation_test_tenant, tenant)
+        with TemporaryDirectory() as directory:
+            generation = compile_okf_bundle(
+                _tamper_bundle(Path(directory), tenant),
+                tenant_id=tenant,
+                source_revision="reviewed-source",
+            )
+        ready = threading.Event()
+        pids, outcomes = [], []
+
+        def write():
+            try:
+                with psycopg.connect(
+                    POSTGRES_DSN,
+                    autocommit=True,
+                    options="-c lock_timeout=10000 -c statement_timeout=15000",
+                ) as connection:
+                    pids.append(connection.info.backend_pid)
+                    ready.set()
+                    store_generation_embeddings(
+                        connection,
+                        tenant_id=tenant,
+                        generation_sha256=generation.generation_sha256,
+                        embedding_model_id="synthetic-test",
+                        embedding_model_revision="revision-1",
+                        embeddings={
+                            item.chunk_id: (0.25,) * 768 for item in generation.chunks
+                        },
+                    )
+                outcomes.append(None)
+            except Exception as error:
+                outcomes.append(error)
+                ready.set()
+
+        worker = threading.Thread(target=write)
+        with psycopg.connect(POSTGRES_DSN, autocommit=True) as connection:
+            install_knowledge_schema(connection)
+            _stage_reviewed_generation(connection, generation)
+            try:
+                with connection.transaction():
+                    connection.execute(
+                        "SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))",
+                        (tenant,),
+                    )
+                    worker.start()
+                    self.assertTrue(ready.wait(5), "writer did not connect")
+                    self.assertTrue(pids)
+                    deadline = time.monotonic() + 5
+                    while True:
+                        connection.execute("SELECT pg_stat_clear_snapshot()")
+                        if connection.execute(
+                            "SELECT wait_event_type, wait_event FROM pg_stat_activity WHERE pid = %s",
+                            (pids[0],),
+                        ).fetchone() == ("Lock", "advisory"):
+                            break
+                        self.assertLess(
+                            time.monotonic(), deadline, "writer did not wait"
+                        )
+                        time.sleep(0.01)
+                    connection.execute(
+                        "UPDATE yap_knowledge_chunks SET body = body || ' changed' WHERE tenant_id = %s",
+                        (tenant,),
+                    )
+                    before = _embedding_integrity_snapshot(connection, tenant)
+            finally:
+                if worker.ident is not None:
+                    worker.join(16)
+            self.assertFalse(worker.is_alive(), "writer did not finish")
+            self.assertEqual(len(outcomes), 1)
+            self.assertIsInstance(outcomes[0], ValueError)
+            self.assertEqual(_embedding_integrity_snapshot(connection, tenant), before)
+
+    def test_published_vectors_survive_replacement_and_rollback(self) -> None:
+        tenant_id = f"test-{uuid4()}"
+        self.addCleanup(_remove_generation_test_tenant, tenant_id)
+        with TemporaryDirectory() as directory:
+            root = _bundle(Path(directory), tenant_id)
+            first, second = (
+                compile_okf_bundle(root, tenant_id=tenant_id, source_revision=revision)
+                for revision in ("first", "second")
+            )
+        with psycopg.connect(POSTGRES_DSN, autocommit=True) as connection:
+            install_knowledge_schema(connection)
+            _stage_reviewed_generation(connection, first)
+            arguments = {
+                "tenant_id": tenant_id,
+                "generation_sha256": first.generation_sha256,
+                "embedding_model_id": "synthetic-test",
+                "embedding_model_revision": "revision-1",
+            }
+            # Preparation may retry before publication; the latest complete
+            # staged projection becomes the immutable rollback target.
+            for value in (0.0, 0.25):
+                store_generation_embeddings(
+                    connection,
+                    **arguments,
+                    embeddings={item.chunk_id: (value,) * 768 for item in first.chunks},
+                )
+            activate_complete_generation(
+                connection,
+                tenant_id=tenant_id,
+                generation_sha256=first.generation_sha256,
+            )
+            _stage_reviewed_generation(connection, second)
+            _embed_and_activate(connection, second)
+
+            def snapshot():
+                return (
+                    connection.execute(
+                        """SELECT chunk_id, embedding::text, embedding_model_id,
+                                  embedding_model_revision FROM yap_knowledge_chunks
+                           WHERE tenant_id = %s ORDER BY generation_sha256, chunk_id""",
+                        (tenant_id,),
+                    ).fetchall(),
+                    connection.execute(
+                        """SELECT generation_sha256, previous_generation_sha256, reason
+                           FROM yap_knowledge_activation_history
+                           WHERE tenant_id = %s ORDER BY activation_id""",
+                        (tenant_id,),
+                    ).fetchall(),
+                    read_active_generation(connection, tenant_id=tenant_id),
+                    connection.execute(
+                        """SELECT generation_sha256, embedding_model_id,
+                                  embedding_model_revision FROM yap_knowledge_builds
+                           WHERE tenant_id = %s ORDER BY generation_sha256""",
+                        (tenant_id,),
+                    ).fetchall(),
+                )
+
+            before = snapshot()
+            for target in (first, second):
+                with self.subTest(revision=target.source_revision):
+                    with self.assertRaisesRegex(ValueError, "immutable"):
+                        store_generation_embeddings(
+                            connection,
+                            **{
+                                **arguments,
+                                "generation_sha256": target.generation_sha256,
+                            },
+                            embeddings={
+                                item.chunk_id: (0.75,) * 768 for item in target.chunks
+                            },
+                        )
+                    self.assertEqual(snapshot(), before)
+            restored = rollback_to_generation(
+                connection,
+                tenant_id=tenant_id,
+                generation_sha256=first.generation_sha256,
+            )
+            self.assertEqual(restored.generation_sha256, first.generation_sha256)
+            self.assertEqual(snapshot()[0], before[0])
+            self.assertEqual(
+                snapshot()[1][-1],
+                (
+                    first.generation_sha256,
+                    second.generation_sha256,
+                    "rollback",
+                ),
+            )
+
+    def test_embedding_writer_rechecks_publication_and_replacement_after_waiting(
+        self,
+    ) -> None:
+        tenant_id = f"test-{uuid4()}"
+        self.addCleanup(_remove_generation_test_tenant, tenant_id)
+        with TemporaryDirectory() as directory:
+            root = _bundle(Path(directory), tenant_id)
+            generation, successor = (
+                compile_okf_bundle(root, tenant_id=tenant_id, source_revision=revision)
+                for revision in ("concurrent-publication", "concurrent-successor")
+            )
+        with psycopg.connect(POSTGRES_DSN, autocommit=True) as connection:
+            install_knowledge_schema(connection)
+            _stage_reviewed_generation(connection, generation)
+            arguments = {
+                "tenant_id": tenant_id,
+                "generation_sha256": generation.generation_sha256,
+                "embedding_model_id": "synthetic-test",
+                "embedding_model_revision": "revision-1",
+            }
+            store_generation_embeddings(
+                connection,
+                **arguments,
+                embeddings={item.chunk_id: (0.25,) * 768 for item in generation.chunks},
+            )
+            _stage_reviewed_generation(connection, successor)
+            store_generation_embeddings(
+                connection,
+                **{**arguments, "generation_sha256": successor.generation_sha256},
+                embeddings={item.chunk_id: (0.0,) * 768 for item in successor.chunks},
+            )
+            projection_query = """SELECT chunk_id, embedding::text, embedding_model_id,
+                                        embedding_model_revision
+                                  FROM yap_knowledge_chunks
+                                  WHERE tenant_id = %s AND generation_sha256 = %s
+                                  ORDER BY chunk_id"""
+            projection_args = (tenant_id, generation.generation_sha256)
+            before = connection.execute(projection_query, projection_args).fetchall()
+            ready = threading.Event()
+            worker_pid = []
+            outcomes = []
+
+            def write():
+                try:
+                    with psycopg.connect(
+                        POSTGRES_DSN,
+                        autocommit=True,
+                        options="-c lock_timeout=10000 -c statement_timeout=15000",
+                    ) as worker_connection:
+                        worker_pid.append(worker_connection.info.backend_pid)
+                        ready.set()
+                        store_generation_embeddings(
+                            worker_connection,
+                            **arguments,
+                            embeddings={
+                                item.chunk_id: (0.75,) * 768
+                                for item in generation.chunks
+                            },
+                        )
+                    outcomes.append(None)
+                except Exception as error:
+                    outcomes.append(error)
+                    ready.set()
+
+            worker = threading.Thread(target=write)
+            try:
+                with connection.transaction():
+                    connection.execute(
+                        "SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))",
+                        (tenant_id,),
+                    )
+                    worker.start()
+                    self.assertTrue(ready.wait(5), "writer did not connect")
+                    self.assertTrue(worker_pid, "writer connection failed")
+                    deadline = time.monotonic() + 5
+                    while True:
+                        waiting = connection.execute(
+                            """SELECT wait_event_type, wait_event FROM pg_stat_activity
+                               WHERE pid = %s""",
+                            (worker_pid[0],),
+                        ).fetchone()
+                        if waiting == ("Lock", "advisory"):
+                            break
+                        self.assertLess(
+                            time.monotonic(), deadline, "writer did not wait"
+                        )
+                        # Refresh the statistics snapshot within this transaction.
+                        connection.execute("SELECT pg_stat_clear_snapshot()")
+                        time.sleep(0.01)
+                    activate_complete_generation(
+                        connection,
+                        tenant_id=tenant_id,
+                        generation_sha256=generation.generation_sha256,
+                    )
+                    activate_complete_generation(
+                        connection,
+                        tenant_id=tenant_id,
+                        generation_sha256=successor.generation_sha256,
+                    )
+            finally:
+                if worker.ident is not None:
+                    worker.join(16)
+            self.assertFalse(worker.is_alive(), "writer failed to finish")
+            self.assertEqual(len(outcomes), 1)
+            self.assertIsInstance(outcomes[0], ValueError)
+            self.assertIn("immutable", str(outcomes[0]))
+            self.assertEqual(len(before), len(generation.chunks))
+            self.assertEqual(
+                connection.execute(projection_query, projection_args).fetchall(),
+                before,
+            )
+            self.assertEqual(
+                read_active_generation(
+                    connection, tenant_id=tenant_id
+                ).generation_sha256,
+                successor.generation_sha256,
+            )
+
     def test_activation_rehashes_every_persisted_projection(self) -> None:
         mutations = {
             "source-admission": """UPDATE yap_knowledge_source_admissions
@@ -305,6 +668,98 @@ class PostgresGenerationLedgerTests(unittest.TestCase):
                 (tenant_id,),
             )
             verification.commit()
+
+    def test_staging_retry_refuses_damaged_counts_without_repair(self) -> None:
+        tenant_id = f"test-{uuid4()}"
+        self.addCleanup(_remove_generation_test_tenant, tenant_id)
+        with TemporaryDirectory() as directory:
+            root = _tamper_bundle(Path(directory), tenant_id)
+            sources = {
+                path.relative_to(root): path.read_bytes()
+                for path in root.rglob("*")
+                if path.is_file()
+            }
+            generations = tuple(
+                compile_okf_bundle(root, tenant_id=tenant_id, source_revision=revision)
+                for revision in ("reviewed-active", "reviewed-staged")
+            )
+            with psycopg.connect(POSTGRES_DSN) as connection:
+                install_knowledge_schema(connection)
+                for generation in generations:
+                    _stage_reviewed_generation(connection, generation)
+                _embed_and_activate(connection, generations[0])
+                connection.commit()
+
+                def snapshot():
+                    return tuple(
+                        connection.execute(
+                            f"SELECT to_jsonb(record) FROM {table} AS record WHERE tenant_id = %s ORDER BY to_jsonb(record)::text",
+                            (tenant_id,),
+                        ).fetchall()
+                        for table in (
+                            "yap_knowledge_builds",
+                            "yap_knowledge_source_admissions",
+                            "yap_knowledge_concepts",
+                            "yap_knowledge_permissions",
+                            "yap_knowledge_permission_audience",
+                            "yap_knowledge_permission_denials",
+                            "yap_knowledge_permission_purposes",
+                            "yap_knowledge_chunks",
+                            "yap_knowledge_relationships",
+                            "yap_knowledge_active_builds",
+                            "yap_knowledge_activation_history",
+                            "yap_knowledge_proposals",
+                        )
+                    )
+
+                for generation in generations:
+                    admission = connection.execute(
+                        "SELECT source_admission_sha256 FROM yap_knowledge_builds WHERE tenant_id = %s AND generation_sha256 = %s",
+                        (tenant_id, generation.generation_sha256),
+                    ).fetchone()[0]
+                    before = snapshot()
+                    descriptor = stage_compiled_generation(
+                        connection, generation, source_admission_sha256=admission
+                    )
+                    self.assertEqual(descriptor.concept_count, len(generation.concepts))
+                    self.assertEqual(snapshot(), before)
+                    for column in (
+                        "concept_count",
+                        "permission_count",
+                        "chunk_count",
+                        "relationship_count",
+                    ):
+                        with self.subTest(
+                            revision=generation.source_revision, column=column
+                        ):
+                            connection.execute(
+                                f"UPDATE yap_knowledge_builds SET {column} = {column} + 1 WHERE tenant_id = %s AND generation_sha256 = %s",
+                                (tenant_id, generation.generation_sha256),
+                            )
+                            connection.commit()
+                            damaged = snapshot()
+                            with self.assertRaisesRegex(ValueError, "descriptor"):
+                                stage_compiled_generation(
+                                    connection,
+                                    generation,
+                                    source_admission_sha256=admission,
+                                )
+                            self.assertEqual(snapshot(), damaged)
+                            # Restore only this synthetic fixture for the next case.
+                            connection.execute(
+                                f"UPDATE yap_knowledge_builds SET {column} = {column} - 1 WHERE tenant_id = %s AND generation_sha256 = %s",
+                                (tenant_id, generation.generation_sha256),
+                            )
+                            connection.commit()
+                    self.assertEqual(snapshot(), before)
+                self.assertEqual(
+                    {
+                        path.relative_to(root): path.read_bytes()
+                        for path in root.rglob("*")
+                        if path.is_file()
+                    },
+                    sources,
+                )
 
     def test_staging_requires_exact_durable_source_admission(self) -> None:
         tenant_id = f"test-{uuid4()}"
@@ -755,6 +1210,42 @@ denials: {{users: []}}
             encoding="utf-8",
         )
     return root
+
+
+def _remove_generation_test_tenant(tenant_id: str) -> None:
+    with psycopg.connect(POSTGRES_DSN) as connection:
+        for table in (
+            "yap_knowledge_active_builds",
+            "yap_knowledge_activation_history",
+            "yap_knowledge_builds",
+            "yap_knowledge_source_admissions",
+        ):
+            connection.execute(
+                f"DELETE FROM {table} WHERE tenant_id = %s", (tenant_id,)
+            )
+
+
+def _embedding_integrity_snapshot(connection, tenant):
+    return tuple(
+        connection.execute(
+            f"SELECT to_jsonb(record) FROM {table} AS record WHERE tenant_id = %s ORDER BY to_jsonb(record)::text",
+            (tenant,),
+        ).fetchall()
+        for table in (
+            "yap_knowledge_builds",
+            "yap_knowledge_source_admissions",
+            "yap_knowledge_concepts",
+            "yap_knowledge_permissions",
+            "yap_knowledge_permission_audience",
+            "yap_knowledge_permission_denials",
+            "yap_knowledge_permission_purposes",
+            "yap_knowledge_chunks",
+            "yap_knowledge_relationships",
+            "yap_knowledge_active_builds",
+            "yap_knowledge_activation_history",
+            "yap_knowledge_proposals",
+        )
+    )
 
 
 def _embed_and_activate(connection, generation) -> None:

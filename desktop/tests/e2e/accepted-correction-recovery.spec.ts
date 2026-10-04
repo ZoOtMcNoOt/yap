@@ -7,6 +7,23 @@ import {
 
 const planningPath = "C:\\Yap\\remote-jobs\\planning\\transcript.txt";
 
+test("accepting the same corrected text again refreshes the saved revision", async ({ page }) => {
+  await installCorrectionJourneyBridge(page, { preaccepted: true, sameCorrectionHash: true });
+  await page.goto("/");
+  await openPlanning(page);
+  await expect(page.getByText("Saved accepted revision 1", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Correct transcript", exact: true }).click();
+  await fixture(page, "setStatus", "complete");
+  await page.getByRole("button", { name: "Save revision", exact: true }).click();
+  await expect(page.getByText("Saved accepted revision 2", { exact: true })).toBeVisible();
+  await page.getByRole("combobox", { name: "Accepted revision", exact: true }).selectOption("1");
+  await expect(page.getByText("Saved accepted revision 1", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Run again", exact: true }).click();
+  await fixture(page, "setStatus", "complete");
+  await page.getByRole("button", { name: "Save revision", exact: true }).click();
+  await expect(page.getByText("Saved accepted revision 3", { exact: true })).toBeVisible();
+});
+
 async function fixture(page: Page, method: string, value: string | boolean) {
   await page.evaluate(
     ({ method, value }) =>
@@ -341,6 +358,7 @@ test("a mounted source switch hides and abandons the previous accepted-revision 
             schemaVersion: 1,
             outputPath: args.outputPath,
             ...proof,
+            revisionCount: one ? 1 : 0,
             acceptedRevision: one
               ? {
                   ...proof,

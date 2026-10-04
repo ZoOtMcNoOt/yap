@@ -52,6 +52,20 @@ Current product-completion evidence:
 - [Owned connection proposal discard](connection-proposal-discard/2026-10-03/verification.md): confirmation, retained history, atomic auditing and uncertain-delivery recovery.
 - [Repository consolidation and preserved branch history](repository-consolidation/2026-10-03/verification.md)
 - [Mobbin design references](ui-completion/2026-10-02-design-references.md)
+- [Connection review export](connection-review-export/2026-10-03/verification.md): native new-file export, recovery and responsive screens.
+- [Connection review source check](connection-review-source-check/2026-10-03/verification.md): complete-bundle matching and a read-only operator command.
+- [Published-vector rollback integrity](knowledge-rollback-integrity/2026-10-03/verification.md): retained projections and concurrent-write refusal.
+
+- [Earlier accepted correction selection](accepted-correction-selection/2026-10-03/verification.md): offline reading/copy/export, history ownership and responsive screens.
+- [Transcript export completion and recovery](transcript-export-recovery/2026-10-03/verification.md): post-commit uncertainty, strict receipts and destination-inspection guidance.
+
+- [Reviewed generation publication](knowledge-publication/2026-10-04/verification.md): authenticated inspection, guarded activation and recovery.
+
+- [Rebuild staging descriptor consistency](knowledge-staging-descriptor/2026-10-04/verification.md): valid retries and refusal without repair.
+
+- [Reviewed source preparation](knowledge-source-preparation/2026-10-04/verification.md): pinned deployment configuration, explicit admission/staging and recovery.
+
+- [Embedding preparation source integrity](knowledge-embedding-source-integrity/2026-10-04/verification.md): current source/admission validation before vector updates, including an observed lock wait.
 
 Do not commit private scans, scan identifiers, sensitive audio/transcripts, raw
 host snapshots, credentials, or enterprise configuration. Public evidence may

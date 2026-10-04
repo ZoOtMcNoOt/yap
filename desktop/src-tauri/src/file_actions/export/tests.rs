@@ -1,5 +1,6 @@
 use super::*;
 use crate::audio::{recording::StreamingRecording, session::SessionId};
+use std::path::PathBuf;
 
 struct Fixture {
     root: PathBuf,
@@ -209,6 +210,28 @@ fn export_write_failure_preserves_the_destination_and_cleans_staging() {
     fixture.assert_no_temporary_files();
 }
 
+#[cfg(unix)]
+#[test]
+fn changed_destination_reports_unconfirmed_without_losing_source_or_replacement() {
+    let fixture = Fixture::new();
+    let original = fixture.read().unwrap();
+    let target = fixture.output.join("meeting.txt");
+    let error = export_selected_transcript(&original, &target, &fixture.data, || {
+        std::fs::remove_dir(&fixture.output).unwrap();
+        std::fs::write(&fixture.output, "retained replacement").unwrap();
+        Ok(original.clone())
+    })
+    .unwrap_err();
+    assert!(error.contains("could not be confirmed"));
+    assert!(error.contains("file may already have been saved"));
+    assert_eq!(fixture.read().unwrap(), original);
+    assert_eq!(
+        std::fs::read_to_string(&fixture.output).unwrap(),
+        "retained replacement"
+    );
+    assert!(!target.exists());
+}
+
 #[test]
 fn export_byte_limit_rejects_oversized_text_before_publication() {
     let fixture = Fixture::new();
@@ -232,7 +255,8 @@ fn concurrent_exports_to_one_destination_never_replace_the_winner() {
             let barrier = barrier.clone();
             std::thread::spawn(move || {
                 barrier.wait();
-                crate::atomic_text::write_new(&target, text)
+                let destination = crate::atomic_text::NewFileDestination::open(&target)?;
+                crate::atomic_text::write_new(&destination, text)
             })
         })
         .collect();
@@ -267,6 +291,25 @@ fn export_rejects_destination_symlinks_and_internal_folder_aliases() {
 
 #[cfg(unix)]
 #[test]
+fn export_cannot_follow_a_substituted_destination_into_internal_data() {
+    let fixture = Fixture::new();
+    let original = fixture.read().unwrap();
+    let target = fixture.output.join("redirected.txt");
+    let result = export_selected_transcript(&original, &target, &fixture.data, || {
+        std::fs::rename(&fixture.output, fixture.root.join("retained-export-folder")).unwrap();
+        std::os::unix::fs::symlink(&fixture.data, &fixture.output).unwrap();
+        Ok(original.clone())
+    });
+    assert!(
+        !fixture.data.join("redirected.txt").exists(),
+        "destination substitution redirected publication into internal data: {result:?}"
+    );
+    assert!(result.is_err());
+    assert_eq!(fixture.read().unwrap(), original);
+}
+
+#[cfg(unix)]
+#[test]
 fn export_creates_private_files() {
     use std::os::unix::fs::PermissionsExt;
     let fixture = Fixture::new();
@@ -276,4 +319,50 @@ fn export_creates_private_files() {
         std::fs::metadata(target).unwrap().permissions().mode() & 0o777,
         0o600
     );
+}
+
+#[cfg(unix)]
+#[test]
+fn export_rejects_a_replaced_ancestor_without_writing_into_its_substitute() {
+    let fixture = Fixture::new();
+    let original = fixture.read().unwrap();
+    std::fs::create_dir(fixture.output.join("nested")).unwrap();
+    std::fs::create_dir(fixture.data.join("nested")).unwrap();
+    let target = fixture.output.join("nested/review.txt");
+    let result = export_selected_transcript(&original, &target, &fixture.data, || {
+        std::fs::rename(&fixture.output, fixture.root.join("retained")).unwrap();
+        std::os::unix::fs::symlink(&fixture.data, &fixture.output).unwrap();
+        Ok(original.clone())
+    });
+    assert!(result.unwrap_err().contains("could not be confirmed"));
+    assert!(!fixture.data.join("nested/review.txt").exists());
+    assert_eq!(
+        std::fs::read_dir(fixture.root.join("retained/nested"))
+            .unwrap()
+            .count(),
+        0
+    );
+    assert_eq!(fixture.read().unwrap(), original);
+}
+
+#[cfg(windows)]
+#[test]
+fn export_directory_leases_block_parent_and_ancestor_moves_but_allow_publication() {
+    let fixture = Fixture::new();
+    let original = fixture.read().unwrap();
+    let parent = fixture.output.join("nested");
+    std::fs::create_dir(&parent).unwrap();
+    let target = parent.join("review.txt");
+    let result = export_selected_transcript(&original, &target, &fixture.data, || {
+        assert!(std::fs::rename(&parent, fixture.output.join("moved-parent")).is_err());
+        assert!(std::fs::remove_dir(&parent).is_err());
+        assert!(std::fs::rename(&fixture.output, fixture.root.join("moved-ancestor")).is_err());
+        Ok(original.clone())
+    });
+    assert!(matches!(result, Ok(TranscriptExport::Saved { .. })));
+    assert_eq!(std::fs::read_to_string(&target).unwrap(), original);
+    assert_eq!(fixture.read().unwrap(), original);
+    fixture.assert_no_temporary_files();
+    // The blocking export released every lease before returning.
+    std::fs::rename(&parent, fixture.output.join("moved-parent")).unwrap();
 }

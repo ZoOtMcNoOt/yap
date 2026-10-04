@@ -16,7 +16,7 @@ The [completed UI milestone](../completed/2026-10-02-hardware-free-product-compl
 2. Select the smallest complete increment that removes the highest-impact blocker. Order by data integrity and authority, blocked core workflows, missing capabilities, recovery, usability, then measured maintenance cost. Respect dependencies; avoid a project-wide rewrite.
 3. Implement the interface, native/service ownership, persistence and recovery needed for that outcome. Use deterministic providers to exercise orchestration without pretending to qualify inference.
 4. Verify behavior at the appropriate layers, inspect relevant UI states, and review the diff. Keep raw transcripts, source identities, accepted revisions, credentials, provenance and user data intact.
-5. Record the before/after outcome, evidence, remaining limitations and next increment here. Update current status and the roadmap when capability claims change. Continue with the next available task.
+5. Record the before/after outcome and evidence in the [execution history](../../archive/implementation-evidence/2026-10-02-project-hill-climb-history.md). Keep remaining limitations and the next increment here. Update current status and the roadmap when capability claims change. Continue with the next available task.
 
 Use pnpm 11.7.0, Rust and locked Python dependencies through the [cloud environment](../../runbooks/cloud-development.md). Reuse existing dependencies and owners. Simplify code and documentation as part of each working increment; do not measure progress by deletions or test counts. Use [Mobbin screens, flows and website sections](../../evidence/ui-completion/2026-10-02-design-references.md) for relevant interaction decisions, inspect the references, and retain canonical links.
 
@@ -43,7 +43,7 @@ The rows below cover the full roadmap. Their order is the initial priority; revi
 
 | Workstream | Baseline and next complete outcome | Qualification boundary |
 | --- | --- | --- |
-| Transcript review and dedicated export | Original and latest accepted-revision UTF-8 exports are software verified alongside reading/search/copy/open/reveal and offline accepted-correction recovery. Preserve the [original](../../evidence/transcript-export/2026-10-02-verification.md) and [accepted export](../../evidence/accepted-correction-export/2026-10-03/verification.md) contracts; older revision selection and timed/speaker exports remain open. | Native dialog/platform filesystem behavior needs target checks; export correctness is model independent. |
+| Transcript review and dedicated export | Original and latest accepted-revision UTF-8 exports are software verified alongside reading/search/copy/open/reveal and offline accepted-correction recovery. Preserve the [original](../../evidence/transcript-export/2026-10-02-verification.md) and [accepted export](../../evidence/accepted-correction-export/2026-10-03/verification.md) contracts. Earlier revision selection is locally implemented with integration pending; timed/speaker exports remain open. | Native dialog/platform filesystem behavior needs target checks; export correctness is model independent. |
 | Terminology and personalization | Personal and explicitly configured shared CRUD connect trusted scope/connection authority, the canonical ledger, frozen snapshots and Settings controls; [shared evidence](../../evidence/shared-terminology/2026-10-03-verification.md) covers nine outcomes. Continue directory administration and provider projections using [ADR 0028](../../adr/0028-model-independent-terminology-authority.md). | Directory/admin policy and provider-specific effectiveness need IT and models. |
 | Imported recordings and more formats | WAV/MP3/FLAC/Ogg Vorbis/single-track AAC-LC M4A/MP4 normalization, durable jobs, cancellation/retry and native result access exist. Audit full source-to-result recovery; add remaining approved WebM and broader Ogg codecs incrementally with decoder/license, resource and malformed-input checks. | Actual ASR quality, speaker/alignment quality and advertised maximum duration require representative inference. |
 | Local dictation, setup and model lifecycle | Supported setup/recovery UI is verified under fixtures. Audit capture/session/restart, explicit install/import, corruption, atomic replacement, rollback and offline behavior; close portable gaps and prepare target checks. | Physical microphones, hotkeys, cross-app delivery, tray hit testing and Windows model guards require Windows. |
@@ -53,7 +53,7 @@ The rows below cover the full roadmap. Their order is the initial priority; revi
 | Scribe and governed knowledge | Supported eight-role UI journeys are fixture verified. Audit real service persistence and permission-safe integration, raw-preserving corrections, citations, proposal acceptance/publication, revocation and multi-principal isolation; close software gaps across every role. | Production corpus, real reasoning models, model-benefit evidence and organizational publication governance require actual inputs. |
 | Organization identity | Native token authority and owner isolation exist. Verify explicit sign-in/out, capability denial, session expiry, revocation and offline local independence; prepare actual provider/cache/policy checks. Never add Yap credentials or caller-selected identity. | WAM/Entra, tenant registration, audience and conditional-access policy require Windows and IT. |
 | UI, accessibility and documentation | Preserve the 30-area baseline; apply the same usability/recovery checks to every added feature. Keep one queue, readable product/setup guidance and source-linked decisions. Preserve historical goals/features and third-party attribution. | Physical focus/input/hit testing remains target-platform work. |
-| Release and operations | Audit existing observability, redaction, dependency/provenance, SBOM, packaging, backup/deletion, disaster recovery, deployment and rollback paths. Implement missing software and run disposable rehearsals; perform focused correctness/security review. The complete skip-free real PostgreSQL gate is locally verified; hosted integration remains pending. | Production retention, monitoring/SLO approval, target installer and deployment/drills need accountable environments. |
+| Release and operations | Audit existing observability, redaction, dependency/provenance, SBOM, packaging, backup/deletion, disaster recovery, deployment and rollback paths. Implement missing software and run disposable rehearsals; perform focused correctness/security review. The [complete skip-free PostgreSQL gate](../../evidence/governed-postgres-ci/2026-10-03/verification.md) is software verified and required in hosted Linux CI. | Production retention, monitoring/SLO approval, target installer and deployment/drills need accountable environments. |
 | Repository and storage boundaries | Preserve [ADR 0018](../../adr/0018-three-repo-topology.md) and [ADR 0022](../../adr/0022-google-okf-permission-safe-projections.md). Make deployment/access boundaries work before splitting repositories. Add Redis/object storage/Neo4j only for a measured gap. | Organization access and hosting decisions need their owners; diagrams alone do not justify dependencies. |
 
 ## Software-verified increments
@@ -78,13 +78,13 @@ The linked records retain each increment's acceptance conditions, before/after b
 | Knowledge connections | 6/7 | Model-free permission-filtered browsing, source-cited incoming/outgoing links, native lease/cancellation, accessible graph/list and recovery; [evidence](../../evidence/knowledge-connections/2026-10-03/verification.md). Curator connection proposals are separately verified below; human publication and rebuild recovery remain open. |
 | Connection-owned Knowledge | 5/5 | Shared native authority revision, owner-bound submission/rendering, same-owner offline/task drafts and contained delayed cancellation; [acceptance/evidence](../../evidence/connection-owned-knowledge/2026-10-03-verification.md). |
 | Curator connection proposals | 6/6 | Exact identified source pair, binary review, atomic noncanonical persistence, native owned-query binding and responsive recovery; [evidence/screens](../../evidence/curator-connections/2026-10-03/verification.md). Actual reasoning and human canonical publication/rebuilding remain open. |
-| Accepted correction recovery | 6/6 | Trusted bounded source/chain reopening, preserved damaged history, source-bound offline reading/copying and responsive saved-versus-suggested review; [evidence/screens](../../evidence/accepted-correction-recovery/2026-10-03/verification.md). Older-revision selection and explicit repair remain open; accepted UTF-8 export is verified below. |
+| Accepted correction recovery | 6/6 | Trusted bounded source/chain reopening, preserved damaged history, source-bound offline reading/copying and responsive saved-versus-suggested review; [evidence/screens](../../evidence/accepted-correction-recovery/2026-10-03/verification.md). Earlier-revision selection is locally implemented with integration pending; explicit repair remains open. Accepted UTF-8 export is verified below. |
 | Saved connection inspection | 6/6 | Owned persisted references, current-generation endpoint permissions, exact citations and contained native/UI reads; [acceptance/screens/checks](../../evidence/connection-proposal-inspection/2026-10-03/verification.md). Human publication and rebuilding remain open. |
-| Accepted correction export | 6/6 | Displayed saved-revision preconditions, native source/history revalidation, exact UTF-8 new-file publication and shared original/accepted export ownership; [evidence/screens](../../evidence/accepted-correction-export/2026-10-03/verification.md). Older revision selection, timed/speaker export and Windows picker checks remain open. |
+| Accepted correction export | 6/6 | Displayed saved-revision preconditions, native source/history revalidation, exact UTF-8 new-file publication and shared original/accepted export ownership; [evidence/screens](../../evidence/accepted-correction-export/2026-10-03/verification.md). Earlier-revision selection is locally implemented with integration pending; timed/speaker export and Windows picker checks remain open. |
 | AAC in M4A/MP4 | 6/6 | Real single-track AAC-LC container timing/content, retained source/durable preparation, bounded refusal/cancellation and responsive Recording/History; [evidence/screens](../../evidence/aac-import/2026-10-03/verification.md). Distribution patent clearance, inference and Windows playback remain open. |
 | Owned connection discard | 6/6 | Explicit confirmation, retained provenance, atomic audit, capacity release and uncertain-delivery recovery; [acceptance/screens/integration](../../evidence/connection-proposal-discard/2026-10-03/verification.md). Human publication/rebuilding remain open. |
-
 | Owned connection discovery | 6/6 | Dated owner-only list, strict native receipts, permission-checked selection and confirmed-only cleanup; [acceptance/screens/integration](../../evidence/saved-connection-proposals/2026-10-03/verification.md). Canonical publication/rebuilding remains open. |
+| Complete PostgreSQL CI gate | 5/5 | All 23 modules/117 cases, isolated digest-pinned runtime, self-contained fixtures, shared receipt contract and required hosted execution; [evidence/integration](../../evidence/governed-postgres-ci/2026-10-03/verification.md). Model and production-runtime qualification remain separate. |
 
 ## Connections: remaining publication outcome
 
@@ -111,9 +111,9 @@ outcome stays open until its complete journey passes.
 The table above and linked evidence retain the acceptance conditions for
 connection-owned views, Curator proposals and accepted-correction recovery/export.
 Their completed checklists are consolidated here; the full feature inventory,
-open questions and execution record remain. Older correction-history selection,
-timed/speaker exports, explicit damaged-history repair and target qualification
-remain open.
+open questions and execution record remain. Earlier correction-history selection
+is locally implemented with integration pending. Timed/speaker exports, explicit
+damaged-history repair and target qualification remain open.
 
 Canonical publication still requires a trusted `knowledge.curator` reviewer,
 reviewed repository/source-admission provenance and complete relational/vector
@@ -167,72 +167,222 @@ the identical tree tested at `7622a5a6`; all six jobs in
 The iteration branch and superseded Dependabot PR #200 are retired; the latter's
 exact tip remains under `archive/dependency-proposal-200-2026-10-03`.
 
-## Current increment: complete the PostgreSQL CI gate
+## Awaiting integration: export a connection review package
 
-**Status:** 4/5 software outcomes verified locally; hosted integration pending.
-The gate now requires all 23 modules/117 cases against an owned disposable runtime.
-[Evidence](../../evidence/governed-postgres-ci/2026-10-03/verification.md) records
-fresh-database execution, fixture corrections and isolation. Complete this gate before
-expanding canonical publication and rebuilding. Preserve every production
-permission, source-admission and generation requirement.
+**Status:** 5/6 local software outcomes; exact-head integration pending. Owners can
+export an inspected candidate and its exact evidence into human Git review through
+the existing native connection and new-file owners. [Verification and screens](../../evidence/connection-review-export/2026-10-03/verification.md)
+retain the checks and limits. The
+package remains a proposal; authenticated canonical review, complete embedding
+projection, publication and rebuilding remain separate open outcomes.
 
-- [x] Require every database-backed knowledge, agent and authenticated API module: all 23 modules/117 cases must execute successfully with no skips, expected failures or incomplete receipts.
-- [x] Own a digest-pinned disposable PostgreSQL/pgvector runtime with fresh credentials, loopback-only routing, bounded startup/tests and cleanup. Ignore inherited database/Docker routes and remove only this run's container.
-- [x] Make fixtures self-contained on a fresh database. Reproduce existing failures independently; correct synthetic evidence/schema setup without weakening production authority or model behavior.
-- [x] Add the same unconditional gate to existing Linux CI, using locked Python dependencies. Verify local execution, runtime provenance, documentation and the release contract that keeps it required.
-- [ ] Review/push and integrate only after all exact-head jobs pass; preserve the reviewed head and retire the temporary branch. Continue publication/rebuilding and every available workstream.
+- [x] Define a bounded, versioned review package containing the immutable proposal reference, generation, typed candidate and two exact source revision/hash/span citations. Keep proposed rationale distinct from quoted evidence; include no credentials or inferred approval.
+- [x] Build it from current authenticated inspection through the existing server route. Native code validates the receipt and displayed proposal/generation under the current main-window connection lease; renderer content cannot become source authority.
+- [x] Offer an explicit new-file destination. Revalidate after selection, preserve existing files and internal data, and refuse stale, revoked, changed-owner or discarded evidence before publication. Retain write ownership through completion; do not report cancellation while a write can continue.
+- [x] Connect a readable, keyboard-accessible export action to Review proposals. Success, cancelled picker, unavailable/expired connection, retained uncertainty, failed destination and account changes keep local controls and source navigation usable; inspect narrow and wide layouts.
+- [x] Verify actual native transport/file invariants and browser recovery with deterministic evidence, using existing dependencies and retained source provenance. Document how the package enters human Git review and its limits; it does not mutate the canonical graph.
+- [ ] Review/push and integrate through every exact-head job, retain the reviewed head and retire the branch. Continue actual canonical publication/rebuilding and the full software queue.
+
+GitHub access is restored. The complete retained backlog is pushed through
+`4ec7d6189a1e57120ef957bcf94c7700a036a62c`; review and all six exact-head hosted
+jobs are required before integration. A fresh app successor recovered the
+checkout and archived the idle predecessor after confirming readiness. Historical
+connection failures remain in dated evidence. Continue software work while CI runs.
+
+## Awaiting integration: verify a review package against its source bundle
+
+**Status:** 4/5 local software outcomes; reviewed exact-head integration pending.
+The read-only operator command checks exported citations using the existing
+bounded artifact reader and OKF compiler. It verifies the complete selected
+bundle/generation and both exact quotes. Source matching supplies no access
+or approval; the human reviewer still assesses provenance and rationale.
+
+- [x] Strictly read the bounded version-1 exported package, rejecting duplicate/extra fields, malformed identity, unsupported status and inconsistent endpoints/citations.
+- [x] Compile an explicitly selected local OKF bundle with an explicit tenant/revision; require the exact generation and compare both file-byte hashes, parsed-body Unicode spans, metadata and quote text.
+- [x] Return a content-free source-match receipt through a documented command. Preserve every file; open no credentials, server/SQL connections or embedding/model providers. Source matching cannot authorize review, admission or publication.
+- [x] Verify actual files, Unicode/frontmatter hashing, changed generations/quotes/revisions, malformed packages, linked/escaped/missing sources, CLI success/refusal and no file mutation without model hardware.
+- [ ] Record actual software results, commit the verified iteration and push/integrate after all six exact-head jobs pass. Canonical human review, complete projection and activation remain open.
+
+[Source-check evidence](../../evidence/connection-review-source-check/2026-10-03/verification.md)
+records 29 focused, all 185 governed portable and 1,648 isolated full-server
+passes (114 declared exclusions), including actual files and CLI execution.
+The checker is read-only; approval and activation remain open.
+
+## Awaiting integration: preserve published vectors through rollback
+
+**Status:** 4/5 local software outcomes; exact-head integration pending.
+The embedding writer now freezes every previously published projection using
+durable activation history and the existing tenant lock. Replacement no longer
+permits a vector overwrite of a retained rollback target. Staged preparation
+remains usable; no model or publication authority is added.
+
+- [x] Reproduce an overwritten retained projection against actual PostgreSQL, then freeze previously published vectors using durable activation history alongside the active pointer.
+- [x] Keep initial staged embedding preparation usable; refusals preserve vectors, model identity, active state and activation history. Rollback restores the original projection.
+- [x] Verify a concurrent writer waits for tenant activation, then refuses after publication rather than overwriting the newly published generation.
+- [x] Run the complete skip-free disposable PostgreSQL gate with the expanded population and applicable portable/lint/documentation regressions; distinguish synthetic vectors from qualified inference.
+- [ ] Record the reviewed result and commit it locally; push/integrate through all six exact-head checks after all six exact-head jobs pass. Continue canonical review/rebuilding and the complete software queue.
+
+[Rollback evidence](../../evidence/knowledge-rollback-integrity/2026-10-03/verification.md)
+records both original-code failures, eight real ledger passes, all 119
+skip-free disposable database cases and all 185 governed portable passes.
+
+## Awaiting integration: read and export earlier accepted corrections
+
+**Status:** 6/7 software outcomes checked locally; reviewed hosted integration pending.
+Owners can now select, read, copy and export an earlier accepted revision offline.
+The existing native history/read/export owners validate the complete chain and
+return only the selected text plus a bounded revision count. Original transcripts,
+latest acceptance and all saved revisions remain unchanged. New acceptance resets
+selection to Latest; a repeated selection keeps its pending read alive.
+
+- [x] Read an explicitly selected revision from the complete validated chain, bound to the current original source. Reject invalid/missing selection and damaged, linked or inconsistent history without repair or deletion.
+- [x] Export that displayed revision through the shared new-file owner, rechecking source, selected text/hash and complete history before publication; preserve original files, all revisions and existing destinations.
+- [x] Offer a compact keyboard-accessible revision selector when history has multiple revisions. Latest remains the initial choice; reading, copying and export work offline without running a model or accepting edits.
+- [x] Keep source/selection changes and late reads isolated, retain explicit retry and original access on failure, and prevent revision changes while a native export is active.
+- [x] Refresh the latest accepted history after every new acceptance, including identical corrected text under a new revision. Use publication identity rather than its text hash alone.
+- [x] Verify native files and exact Unicode text, malformed receipt/selection refusal, browser recovery/focus and narrow/wide screens; run applicable units/build/contracts and the complete browser regression.
+- [ ] Record the result and commit the verified iteration. Push/integrate through the required exact-head checks after all six exact-head jobs pass; timed/speaker export, history repair and target qualification remain open.
+
+[Selection evidence and screens](../../evidence/accepted-correction-selection/2026-10-03/verification.md)
+record 1,375 native units + 27 integrations, 404 frontend units and all 231
+Linux browser passes (one declared Windows-only skip), plus the reproduced
+same-text acceptance and repeated pending-selection failures and their fixes.
+
+## Awaiting integration: truthful transcript export recovery
+
+**Status:** 5/6 software outcomes checked locally; reviewed hosted integration pending.
+Original and accepted exports now explain unconfirmed write/join completion and
+ask the user to inspect the selected destination before retry. Original receipts
+must prove saved/cancelled status; malformed or misbound receipts cannot claim
+completion. Focus-owned error visibility keeps narrow feedback readable while
+leaving another chosen control's focus and scroll position alone.
+
+- [x] Keep definite precondition refusals and genuine picker cancellation precise; generic write/join errors explain unconfirmed completion and destination inspection before retry.
+- [x] Validate original success/cancellation receipts; accepted misbound receipts explain uncertainty without claiming that no file was saved.
+- [x] Retain source/revision text, copy and explicit retry beside an unconfirmed export. Never retry automatically or claim success/cancellation without its receipt.
+- [x] Verify actual post-commit errors retain exact destination bytes and existing-file protection; preserve shared worker admission and original/history data.
+- [x] Exercise malformed receipts and original/accepted export recovery, keyboard focus and responsive alerts; run applicable native/frontend/build/contracts and retain actual evidence.
+- [ ] Commit the verified iteration and push/integrate through all six reviewed exact-head checks after all six exact-head jobs pass. Physical Windows and the entire remaining queue stay open.
+
+[Recovery evidence and screens](../../evidence/transcript-export-recovery/2026-10-03/verification.md)
+record the real Linux post-commit error, malformed receipt and hidden-alert
+reproductions; 1,377 native units + 27 integrations, 404 frontend units, all 38
+related browser cases, production build and release checks pass. Complete
+canonical human publication/rebuilding and supervised ASR remain available
+software work; timed/speaker export, history repair and target checks stay queued.
+
+## Awaiting integration: retain the admitted export directory
+
+**Status:** 5/6 outcomes verified locally; reviewed exact-head integration pending.
+A real Linux regression reproduces an external export parent replaced by a link
+to internal Yap data. Native directory ownership now retains the admitted folder
+through creation, exclusive publication, sync and cleanup. Exact bytes,
+source/history checks, existing-file protection and uncertainty guidance remain
+intact. [Directory evidence](../../evidence/export-directory-ownership/2026-10-03/verification.md)
+records actual checks; Windows and hosted integration remain pending.
+
+- [x] Bind the canonical, external destination to native directory identity before the source recheck; refuse changed/linked/replaced directories without publishing into their substitutes.
+- [x] Keep creation, exclusive publication, directory sync and staging cleanup on that admitted directory. Windows directory leases retain ancestor identities; Unix operations use the owned directory descriptor.
+- [x] Preserve exact UTF-8 bytes, no-replace behavior, unrelated staging, source/history and explicit worker ownership. Unknown completion retains the existing inspection guidance.
+- [x] Reproduce and verify selected-parent/ancestor substitution and publication-time replacement with actual files; changed paths never create or clean files in their replacements.
+- [x] Run applicable native/transport/frontend/export/contracts and inspect changes; record Linux, hosted Windows and physical-target boundaries accurately.
+- [ ] Commit and push the verified iteration; integrate only reviewed six-job green exact heads. Continue the entire software queue.
+
+Final Linux checks pass: 1,383 native units + 27 integrations, all 36 related
+browser export flows, 72 release contracts (67 passes/five Windows-only skips),
+Linux lint and 14 documentation/license/provenance/population checks. Existing
+renderer/full-browser receipts stay dated baselines. No hosted Windows, physical
+picker/filesystem, model or enterprise behavior is qualified. The backlog is pushed; reviewed
+integration remains pending all six exact-head jobs; the entire software queue continues.
+
+## Awaiting integration: publish a reviewer-owned staged generation
+
+**Status:** 5/6 outcomes verified locally; reviewed hosted integration pending.
+Authenticated curators can inspect and explicitly publish their own
+already-admitted, prepared repository generations. Expected-active comparison
+and complete relational/vector checks reuse the existing tenant lock and
+activation owner; success audit commits atomically. Replay revalidates stored
+truth, and retained generations need explicit rollback. [Operator guidance](../../specs/knowledge-publication.md)
+and [evidence](../../evidence/knowledge-publication/2026-10-04/verification.md)
+retain the verified scope and recovery steps. Source review/admission, embeddings,
+canonical rebuilding and full product integration remain separate open work.
+
+- [x] Require organization authentication and the existing `knowledge.curator` role; derive tenant/reviewer from the principal, and expose only that reviewer's curated-repository admissions.
+- [x] Let the reviewer inspect content-free staged/active/retained metadata and the current active generation before an explicit publication request. Reject caller-supplied identity, source, policy or vector authority.
+- [x] Compare the expected active generation under the existing tenant lock before activation. Changed builds refuse without mutation; replay of the current target does not append another activation or overwrite vectors; retained published targets need explicit rollback.
+- [x] Reuse source-admission validation and the complete relational/vector activation gate. Failed or incomplete preparation, tampering and failed success audit leave the prior generation active and retain source/proposal/history data.
+- [x] Configure the route explicitly with owner-private database credentials; verify authenticated HTTP, real Postgres concurrency/recovery, disabled/unavailable/configuration boundaries and documented contracts without models.
+- [ ] Record evidence, commit under Grant McNatt, and push/integrate only reviewed six-job green exact heads. Continue source-admission/rebuild/product integration and the full roadmap; do not close the broader canonical-publication outcome prematurely.
+
+The complete disposable PostgreSQL gate passes 129 cases across 24 modules
+without skips; governed portable passes 192 across 30 modules without skips.
+Full isolated server discovery passes 1,655 cases, with 126 declared exclusions.
+Release and lint/format checks pass; [recorded results](../../evidence/knowledge-publication/2026-10-04/check-results.txt)
+retain exact boundaries. No model, production identity, Git-review/deployment
+or Windows qualification is claimed.
+
+Next audit the reviewed-source admission and rebuild journey that feeds this
+route. Embedding preparation remains operator-owned; publication does not
+make a proposal or exported package authoritative. Continue that available
+software work while hosted reviewed exact-head integration pending.
+
+## Awaiting integration: refuse inconsistent rebuild staging receipts
+
+**Status:** 5/6 outcomes verified locally; reviewed hosted integration pending.
+Actual PostgreSQL rebuild retries now refuse inconsistent stored descriptors and
+all four counts through the existing staging owner. Valid staging remains usable
+before embeddings; valid active retries retain vectors/history. Refusal preserves
+existing storage rather than repairing it. [Evidence](../../evidence/knowledge-staging-descriptor/2026-10-04/verification.md)
+records the original two-to-five receipt, regression and qualification limits.
+Source admission, product rebuilding and the overall publication outcome remain
+open; continue the whole software queue.
+
+- [x] Reproduce successful retry against actual damaged stored counts, preserving the observation and synthetic-source boundary.
+- [x] Validate all existing descriptor fields and concept/permission/chunk/relationship counts against the admitted compiled generation before returning a retry receipt.
+- [x] Preserve valid staged retries without requiring embeddings; preserve valid published retries without rewriting vectors or activation history.
+- [x] Reject each inconsistent count on staged and active generations; leave source bytes, admissions, projections, metadata, current active state and history unchanged rather than silently repairing storage.
+- [x] Verify actual SQL, the full required database gate, portable/server regression and relevant documentation/contracts; record exact populations and platform/model limits.
+- [ ] Commit under Grant McNatt and push/integrate only reviewed six-job green heads. Continue source-admission/product rebuild workflows and the whole project queue.
+
+## Awaiting integration: prepare the configured reviewed repository snapshot
+
+**Status:** 5/6 outcomes verified locally; reviewed hosted integration pending.
+Curators can inspect and explicitly admit/stage the configured source. Its pinned
+manifest and compiled generation refuse client source selection and source drift;
+admission, staging and audit commit atomically. Replay preserves vectors and
+active/history state. [Operator guidance](../../specs/knowledge-publication.md)
+and [evidence](../../evidence/knowledge-source-preparation/2026-10-04/verification.md)
+retain recovery and trust limits. Git/deployment review, complete embedding
+preparation and full product rebuilding remain separate requirements. Continue
+the full software queue.
+
+- [x] Explicitly configure one bounded deployment manifest pinned by its out-of-band SHA-256, with tenant, real server bundle root, repository revision/path and expected compiled generation. Use existing regular-file/compiler bounds; reject manifest/source drift without accepting client-selected files or source authority.
+- [x] Require organization authentication and `knowledge.curator`, bind the configured tenant and authenticated reviewer, and accept only a versioned expected-generation reference for preparation. Refuse caller identity, approval, source, policy, credential or vector fields.
+- [x] Inspect configured source metadata before explicit admission/staging. Recompile and match the pinned generation before preparing it; source admission, staging and content-free success audit commit together. Preparation writes no embeddings and never changes the active pointer or activation history.
+- [x] Revalidate same-reviewer replay, preserve valid staged/active data, refuse other-owner or damaged state, and test source drift, failed audit, stale intent, request concurrency, timeout and restart recovery. Pruned published identities require explicit restore rather than a new mutable preparation area.
+- [x] Verify actual authenticated HTTP/Postgres with deterministic principals and synthetic vectors, portable configuration/manifest/CLI boundaries, OpenAPI/runtime contracts and relevant full regression. Record review/Git, model, enterprise and Windows limits accurately.
+- [ ] Record evidence, commit under Grant McNatt and integrate only reviewed six-job green heads. Continue product rebuild integration and the full software queue.
+## Current local increment: bind embedding preparation to stored reviewed source
+
+**Status:** 5/6 outcomes verified locally; reviewed hosted integration pending.
+The existing embedding writer now checks current stored source, admission and
+all four counts under the tenant lock before vector/model updates. Prepared keys
+must match validated chunks; failed integrity checks retain existing state.
+Actual mutation and observed-lock-wait regressions verify safe refusal.
+[Evidence](../../evidence/knowledge-embedding-source-integrity/2026-10-04/verification.md)
+retains synthetic-vector and qualification limits. Provider selection, actual
+embedding generation, operator/product integration and full rebuilding remain
+open; continue the entire software queue.
+
+- [x] Preserve the actual failed preparation observation and synthetic-vector boundary; no changed source or user data is discarded.
+- [x] Reuse stored compiled-source/admission validation and all four descriptor counts before embedding updates, under the same tenant lock that governs publication and rebuilding.
+- [x] Compare complete prepared vector keys against the validated current chunks after the lock is acquired. Refuse changed source, permissions, relationships, descriptors or admissions without repairs or partial vector/model writes.
+- [x] Preserve valid first preparation and staged retries, published-vector immutability, active/history data and original source files. Prove refusal after an observed actual lock wait and changed stored source.
+- [x] Run real ledger/required PostgreSQL, governed portable/full server and applicable contract/lint checks; preserve earlier receipts and distinguish fixtures from model/Windows/enterprise qualification.
+- [ ] Record concise evidence, commit under Grant McNatt, and integrate only reviewed six-job green heads. Continue provider and product integration and every available software workstream.
 
 ## Execution record
 
-| Date | Change and evidence | Next action |
-| --- | --- | --- |
-| 2026-10-02 | Established the project-wide objective and queue. Preserved the completed UI milestone and all roadmap features/questions. Audited export ownership and confirmed personalization requires API/native integration, not only a screen. All four existing documentation contracts and diff whitespace checks passed. No new product capability or target qualification is claimed. | Implement the explicit native transcript export contract. |
-| 2026-10-02 | Original UTF-8 export completed within the recorded software scope: 6/6 development outcomes, 12 native export tests, full desktop Rust/unit/browser checks and build passed. Windows picker qualification remains open. | Continue personal terminology with explicit authority, authenticated APIs, native transport and usable controls. |
-| 2026-10-02 | Separated trusted team visibility/management and verified persisted ownership/tombstone/snapshot behavior. Added repeatable private loopback Postgres/pgvector. Focused authority 9, database 19, governed portable 175 and full portable server 1,611 passed; 36 existing full-suite skips. No API/UI capability or production database qualification claimed. | Define and implement bounded personal CRUD, then connect native transport and controls. |
-| 2026-10-02 | Implemented bounded, authenticated personal CRUD through the append-only ledger. Seven real database and four HTTP tests passed; Ruff passed. Creation replay is owner-bound; stale writes conflict and old snapshots remain unchanged. Production startup, capability advertisement and desktop controls remain open; this is partial progress, not end-to-end completion. | Connect explicit server configuration/capability, native credential-owned transport and Personalization; then verify the complete flow. |
-| 2026-10-02 | Finished the personal service/native/UI path; nine defined software outcomes verified with real Postgres and deterministic HTTP/native/browser boundaries. See the linked evidence for checks and qualification limits. Team/organization management and provider effectiveness remain open. | Reject silently skipped damaged audio before expanding imported formats. |
-| 2026-10-02 | Reproduced and fixed silent damaged-packet omission. Four integrity outcomes pass through native decode and actual durable job preparation; originals and neighboring jobs are retained. Full native suite passes. | Continue approved format and lifecycle work without requiring model hardware. |
-| 2026-10-02 | Completed FLAC through existing native authority/normalization/manifest owners and the recording UI. Five software outcomes, full native/browser suites, build and exact license inventory pass; two browser test assumptions were corrected without changing island behavior. | Close model-import opened-source authority, then continue lifecycle and remaining formats. |
-| 2026-10-02 | Bound offline model import to the opened regular source. Four software outcomes, 14 model primitive and six shared-file checks pass; full native 1,281 + 27 passes. No weights, dependency or UI authority was added. | Close installed-artifact hashing/readiness link refusal, then continue lifecycle and formats. |
-| 2026-10-02 | Reproduced and fixed linked fallback-artifact false readiness. Five software outcomes and full native 1,286 + 27 passes; hashing/installed/staged verification now share one bounded cancellable path. | Verify declared MP3 trim/duration and source-time integrity before expanding formats. |
-| 2026-10-02 | Verified five MP3 duration/integrity outcomes; reproduced partial duration acceptance and malformed trim panic, then fixed both. Full native 1,290 + 27 passes. Corrected the earlier fixture metadata assumption. | Reserve private decoded plaintext without truncating or deleting preexisting files; retain file ownership through preparation. |
-| 2026-10-02 | Verified five decoded-plaintext ownership outcomes; exclusive private reservation, retained preparation handles, scoped cleanup and crash recovery pass. Full native 1,298 + 27 passes; removed obsolete pathname reopening. | Bound low-rate resampling work and allocations before the output ceiling check. |
-| 2026-10-02 | Verified five bounded-resampling outcomes with a small real low-rate FLAC. Reproduced delayed cancellation and a missing final interval; fixed both using the existing resampler and file owners. Full native 1,304 + 27 passes. | Retain the fingerprint-admitted compressed source handle through decoding, then continue approved formats and broader workstreams. |
-| 2026-10-02 | Verified four compressed-source admission outcomes. Reproduced replacement audio selection; both native paths now retain the admitted handle/fingerprint and refuse changed sources. Full native 1,309 + 27 passes. Consolidated completed goal details into linked evidence without removing acceptance conditions or roadmap features. | Audit and implement Ogg Vorbis through existing source/normalization/UI owners, with precise codec and license scope. |
-| 2026-10-02 | Verified five Ogg Vorbis outcomes. Published Symphonia 0.6.1 fixes the reproduced single-page padding issue and removes obsolete two-pass MP3 probing; standalone notices replace old exemptions. Full native 1,317 + 27 and browser 102 pass; build, license, visuals and documentation pass. | Connect explicitly trusted shared terminology scopes through service/native/UI and frozen snapshots. Remaining formats and all roadmap workstreams stay open. |
-| 2026-10-03 | Verified nine shared-terminology software outcomes through real Postgres/HTTP, native connection/scope binding and Personalization. Full native 1,320 + 27, server 1,621 with 54 expected skips, frontend 388 and browser 109 pass; native/frontend builds, license/provenance/docs and visuals pass. Older personal data/IDs and snapshots remain unchanged. | Restore locally saved accepted corrections after reopening, then continue dedicated exports and the other open workstreams. |
-| 2026-10-03 | At Grant's request, refreshed the shared design system and original icon family while preserving the top-edge island. Seven software outcomes pass: frontend 388, browser 116, native/frontend builds and license/provenance/docs. Added a visibility-aware waveform clock; diagnostic observed no layouts or long tasks. Latest Wispr/Apple direct access and Windows compositor qualification remain open. | Connect stored, authorized knowledge relationships to a useful explorer; accepted correction recovery and every workstream remain queued. |
-| 2026-10-03 | Reused the canonical Postgres relationship owner for a bounded incoming/outgoing neighborhood. Eight actual database checks pass, including hidden counts, unknown/hidden roots, proposal exclusion and changed-generation refusal. The first fixture run correctly failed because embeddings were absent; synthetic embedding projection now satisfies the existing activation contract without weakening it. | Implement the authorized service/native/UI read path; do not claim a working graph from a storage helper alone. |
-| 2026-10-03 | Verified six of seven Connections software outcomes. Full native 1,327 + 27, server 1,625 with 70 declared skips, frontend 388 and browser 126 pass; real Postgres/API, builds, visuals and contract/license/docs checks pass. The model-free reader preserves proposal exclusion and exact source/connection authority. | Preserve authority in generic agent outputs, then finish typed proposals and human publication/rebuilds. Keep all other workstreams and accepted-correction recovery queued. |
-| 2026-10-03 | Preserved all three canonical relationship authorities through governed tools/MCP. Completed four candidate-boundary outcomes in the existing proposal journal, with 14 focused and 82 expanded real-database/agent/API regression cases passing. Full isolated server 1,635 with 80 declared skips and governed portable 176 pass. No canonical graph mutation, new agent role or inference qualification is claimed. Connections remains 6/7 overall. | Integrate typed candidates with Curator's product workflow and human review/publication, then verify rebuilding. The full queue and six accepted-correction outcomes remain open. |
-| 2026-10-03 | Verified six Curator connection outcomes with exact source-pair review, atomic noncanonical proposals and native/UI ownership; full browser 152, native 1,334 + 27, isolated server 1,639 and real-database/service regression 93 pass. Canonical human publication/rebuilding remains open. | Close local accepted-correction recovery using the existing immutable source/revision owners. |
-| 2026-10-03 | Verified six accepted-correction recovery outcomes: nine added persisted/native capacity cases, offline source-bound copying, preserved errors and responsive saved/suggested comparisons. Full browser 160, native 1,343 + 27 and frontend 388 pass; 12 final focused correction/layout cases and builds pass. Server remains unchanged. | Define and implement explicit UTF-8 export of the latest accepted correction, preserving originals/history and existing destinations; continue every available workstream. |
-| 2026-10-03 | Verified six accepted-correction export outcomes. Seven added native and eight browser cases pass; full native 1,350 + 27, frontend 388, browser 169 and builds pass. New-file exports preserve exact accepted UTF-8, original/history bytes and existing destinations. No new dependency or model/Windows qualification. | Connect persisted typed proposals to inspection/human review, then finish canonical publication/rebuild recovery; format expansion and every other workstream remain queued. |
-
-| 2026-10-03 | Verified six saved-connection inspection outcomes through persisted Curator records, strict camelCase API/native projection and source-bound responsive review. Full server 1,639, native 1,353 + 27, frontend 388, browser 179 and real Postgres regression 102 pass. Ten final inspection cases and final builds pass, including reproduced clipping and late-cancellation recovery. Consolidated completed checklists into linked evidence without removing requirements or historical plans. | Expand verified AAC audio in M4A/MP4 through existing import/preparation owners. Human publication/rebuilding and every other workstream remain queued. |
-
-| 2026-10-03 | AAC import verifies six software outcomes; actual AAC/video/fractional/no-edit fixtures, native 1,363 + 27, frontend 388, browser 183 and builds pass. Narrow queue clipping/empty space corrected. Readable documentation and branch consolidation authorized; all 27 old tips archived, nine stale dependency PRs closed and 26 old branches retired. | Commit/push development, repair audited dependencies, inspect Tao #92, and integrate through required checks. The full product goal remains active. |
-
-| 2026-10-03 | Readable documentation is pushed; all historical branches are archived and retired. Locked Tauri 2.12.1/Tao 0.37.1 removes #92's global mutex source path; npm high/critical/moderate findings clear (one low remains), Rust vulnerability findings clear (two reviewed warnings). Native 1,363 + 27, frontend 388, browser 183, builds and contracts pass. [Dependency evidence](../../evidence/dependency-refresh/2026-10-03/verification.md) retains target limits. | Integrate [PR #199](https://github.com/ZoOtMcNoOt/yap/pull/199) after required green exact-head checks, then remove its temporary branch. Windows RDP verification remains open; continue human publication/rebuild recovery and the full software queue. |
-| 2026-10-03 | Hosted Windows frontend, browser, release contracts, strict Clippy and native app build pass. Native tests exposed staging-file sharing during verified model installation; verification now retains the owned handle. Corrected canonical export paths, last-handle cleanup and cancellation-size observation in tests, and refreshed native Knowledge copy assertions. Linux native 1,363 units and eight documentation/license/provenance checks renew. | Renew exact-head Windows native tests and WDIO, then integrate PR #199. Keep #92 open for actual RDP/session-lock qualification. |
-| 2026-10-03 | Run 530 passes Windows native 1,367 + 27, strict Clippy, native WDIO and both connector runtimes; server, identity and orchestrator pass. The 184-case browser suite reports 152 passes before the old 15-minute job deadline cancels it. Raised the bounded frontend job budget to 25 minutes; per-test/assertion timeouts and population stay unchanged. | Renew all checks on the updated integration commit, then merge PR #199 and retire the temporary branch. |
-| 2026-10-03 | Run 531 exposed concurrent timestamp-only fixture directory collisions in the orchestrator. Added process-local atomic sequences using the existing supervised-service pattern, retaining exclusive private creation. All 46 default contracts and strict all-target/all-feature Clippy pass locally. | Renew exact-head hosted checks, integrate PR #199 and retire its temporary branch; retain the full product queue and physical qualification handoffs. |
-
-| 2026-10-03 | Owner-controlled discard completes the model-free server/native/UI path. Atomic tombstones/audits, retained provenance, 64-proposal capacity release, uncertain retries and account isolation pass actual PostgreSQL checks. Linux native 1,364 + 27, frontend 393, browser 189 + one Windows-only skip, build and contracts pass; confirmation/confirmed screens retained. | Push and integrate through all exact-head hosted checks, then retire the iteration branch and continue human publication/rebuilding and the full queue. |
-
-| 2026-10-03 | PR review exposed a new Curator handoff cancelling a pending discard and replacing its retry reference. Two browser cases fail on the original head and pass with retained writes and an explicit queued handoff; all 52 related browser journeys, both narrow handoff cases, frontend units/build and documentation contracts pass. | Renew all exact-head checks for the correction before merging PR #202; run 538 qualifies only the earlier head. |
-
-| 2026-10-03 | Final review reproduced a post-receipt handoff replacing an uncertain discard reference. Handoffs now wait until discard retry resolves uncertainty; proposal reads cannot reset it. All 53 related browser journeys, frontend units/build and seven documentation/population contracts pass. | Push the correction and renew all six checks on the final PR #202 head before integration. |
-
-| 2026-10-03 | PR #202 merges after run 541 passes all six jobs: Windows native 1,368 + 27, frontend 395 and all 193 browser workflows, native WDIO, server, identity and service lifecycle. Main has the identical tested tree; the original reviewed head is retained and the branch retired. Discard completes 6/6 software outcomes. | Discover owned pending proposals through the existing journal/native/UI owners, then continue canonical publication/rebuilding and the full queue. Issue #92 still needs actual RDP/session-lock qualification. |
-
-
-| 2026-10-03 | Owned proposal discovery verifies five local software outcomes: owner-only dated metadata, bounded read/audits, strict native receipts, keyboard inspection and confirmed-only cleanup. Actual SQL/API 20, Linux native 1,366 + 27, frontend 396 and 50 related browser cases pass; 31 inspection/discovery cases renew visible-detail focus. The portable server passes 1,640 with 114 declared exclusions. | Push the reviewed increment, renew all six exact-head jobs and integrate before retiring the branch; publication/rebuilding and real PostgreSQL CI remain open. |
-
-| 2026-10-03 | PR #203 merges after run 544 passes all six exact-head jobs: Windows native 1,370 + 27, frontend 398, all 205 browser cases, native WDIO, server, identity and service lifecycle. Main has the identical tested tree; the reviewed head is retained and branch retired. Discovery completes 6/6 software outcomes. | Finish the complete skip-free PostgreSQL CI gate, then continue canonical publication/rebuilding and the full queue. Issue #92 remains open for actual Windows RDP/session-lock qualification. |
-
-| 2026-10-03 | The complete PostgreSQL gate requires 23 modules/117 cases and passes against fresh owned runtimes, including refusal of inherited Docker/database routes. Corrected existing Auditor evidence and missing Curator cleanup schema fixtures. The Linux CI step is unconditional; 72 release contracts run (67 local passes/five Windows-only skips), with Ruff and docs checks passing. | Integrate after all exact-head hosted checks pass; retain the reviewed head, retire the branch and continue canonical publication/rebuilding and the full queue. |
-
-| 2026-10-03 | Run 546 passes all 117 database cases on hosted Linux. Review reproduces an old 19-case aggregate validator rejecting the new receipt; shared constants and contract regressions restore consistency. An existing OIDC fixture crosses its one-second skew margin; fixed clocks now verify both sides without changing authentication policy. All 23 focused aggregate/authentication cases pass. | Renew full portable and all exact-head hosted checks, then integrate the reviewed gate and continue the full queue. |
+The [dated execution history](../../archive/implementation-evidence/2026-10-02-project-hill-climb-history.md) retains every iteration, evidence link and next action recorded at the time. Those next actions are historical; the current increment above determines what to do now. Append new iteration receipts there and keep this queue current.
 
 Attribute project work to Grant McNatt. Preserve third-party attribution/provenance; do not add AI branding or coauthor trailers.

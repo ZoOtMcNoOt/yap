@@ -112,7 +112,8 @@ Detailed limits and provider qualification commands remain in the
 Terminology and connection reads need organization authentication and explicitly
 configured private Postgres credential files. Use their setup guides above.
 Postgres/pgvector is the current knowledge projection. Generation provisioning,
-reviewed source admission and activation are explicit operator/reviewer actions;
+reviewed source admission and activation are
+[explicit operator/reviewer actions](../docs/specs/knowledge-publication.md);
 starting a read service does not create or publish knowledge.
 
 The eight roles share bounded admission and source authorization. This table

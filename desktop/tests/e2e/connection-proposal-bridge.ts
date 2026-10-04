@@ -35,6 +35,8 @@ export async function installProposalInspectionBridge(page: Page) {
         );
       const calls: Array<{ command: string; args: any }> = [];
       let mode = "success";
+      let exportMode = "success";
+      let exportResult: any = { status: "saved", path: "/review/connection-review.json" };
       let saved = [
         { proposalId: reference, createdAtUtc: "2026-10-03T12:00:00.000000Z" },
         { proposalId: "f".repeat(64), createdAtUtc: "2026-10-02T09:30:00.000000Z" },
@@ -47,6 +49,8 @@ export async function installProposalInspectionBridge(page: Page) {
       Object.assign(globalThis, {
         __proposalInspection: {
           calls,
+          exportMode(value: string) { exportMode = value; },
+          exportResult(value: any) { exportResult = value; },
           saved(value: typeof saved) { saved = value; },
           mode(value: string) {
             mode = value;
@@ -71,6 +75,22 @@ export async function installProposalInspectionBridge(page: Page) {
         },
       });
       host.__TAURI_INTERNALS__.invoke = async (command, args) => {
+        if (command === "export_connection_review_package") {
+          calls.push({ command, args });
+          const receipt = { authorityRevision: revision, proposalId: args.proposalId,
+            generationSha256: args.generationSha256, result: exportResult };
+          const finish = () => {
+            if (exportMode !== "success") throw { code: exportMode };
+            return receipt;
+          };
+          if (delayed) {
+            delayed = false;
+            return new Promise((resolve, reject) => {
+              release = () => { try { resolve(finish()); } catch (error) { reject(error); } };
+            });
+          }
+          return finish();
+        }
         if (command === "knowledge_connections") {
           calls.push({ command, args });
           if (args.authorityRevision !== revision)

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useConnectionAuthority } from "@/hooks/use-connection-authority";
 import {
   cancelKnowledgeConnections,
+  exportConnectionReviewPackage,
   knowledgeConnections,
   type ConnectionProposal,
   type ConnectionProposalDisposition,
@@ -26,8 +27,9 @@ export function useConnectionProposal(
   const [error, setError] = useState("");
   const [saved, setSaved] = useState<PendingConnectionProposals>();
   const [listError, setListError] = useState("");
+  const [exportMessage, setExportMessage] = useState<{message: string; path?: string}>();
   const [pendingAction, setPendingAction] = useState<
-    "pending" | "proposal" | "discard" | null
+    "pending" | "proposal" | "discard" | "export" | null
   >(null);
   const pending = pendingAction !== null;
   const [disposition, setDisposition] = useState<ConnectionProposalDisposition>();
@@ -42,24 +44,26 @@ export function useConnectionProposal(
     setConfirming(false);
     setQueuedHandoff(undefined);
     setError("");
+    setExportMessage(undefined);
   }
   const epoch = useRef(0);
   const running = useRef<{
     id: string;
-    action: "pending" | "proposal" | "discard";
+    action: "pending" | "proposal" | "discard" | "export";
     cancelSent: boolean;
   } | null>(null);
   const consumed = useRef<ProposalHandoff | undefined>(undefined);
   const deferred = useRef<ProposalHandoff | undefined>(undefined);
   const stop = useCallback(() => {
     const request = running.current;
-    if (!request || request.cancelSent) return;
+    if (!request || request.cancelSent || request.action === "export") return;
     request.cancelSent = true;
     return cancelKnowledgeConnections(request.id);
   }, []);
   const invalidate = useCallback(
     (changed: boolean) => {
       const writing = running.current?.action === "discard";
+      const exporting = running.current?.action === "export";
       epoch.current += 1;
       void stop()?.catch(() => undefined);
       setView(undefined);
@@ -71,6 +75,10 @@ export function useConnectionProposal(
       setListError("");
       setError("");
       if (changed) updateReference("");
+      if (changed) setExportMessage(undefined);
+      else if (exporting) setExportMessage({
+        message: "The connection changed during export. It may have saved a file. Check the chosen destination before trying again.",
+      });
     },
     [stop],
   );
@@ -87,13 +95,14 @@ export function useConnectionProposal(
     [stop],
   );
   const run = useCallback(
-    async (value = reference, action: "pending" | "proposal" | "discard" = "proposal") => {
+    async (value = reference, action: "pending" | "proposal" | "discard" | "export" = "proposal") => {
       const proposalId = value.trim();
       if (
         !available ||
         !owned ||
         running.current ||
         (action !== "discard" && discardUnconfirmed) ||
+        (action === "export" && (!view || view.proposalId !== proposalId)) ||
         (action !== "pending" && !/^[0-9a-f]{64}$/.test(proposalId))
       )
         return;
@@ -103,6 +112,7 @@ export function useConnectionProposal(
       setPendingAction(action);
       setConfirming(false);
       if (action === "proposal") {
+        setExportMessage(undefined);
         setView(undefined);
         setDisposition(undefined);
         setDiscardUnconfirmed(false);
@@ -111,7 +121,18 @@ export function useConnectionProposal(
         setSaved(undefined);
         setListError("");
       } else setError("");
+      if (action === "export") setExportMessage(undefined);
       try {
+        if (action === "export") {
+          const result = await exportConnectionReviewPackage(
+            proposalId, view!.generationSha256, snapshot.authorityRevision,
+          );
+          if (started !== epoch.current) return;
+          setExportMessage(result.status === "saved"
+            ? {message: "Review package saved. Take it into your organization's Git review workflow.", path: result.path}
+            : {message: "Review export cancelled. Your proposal and sources stay saved."});
+          return;
+        }
         const receipt = await knowledgeConnections(
           id,
           action === "pending" ? { action } : { action, proposalId },
@@ -174,6 +195,30 @@ export function useConnectionProposal(
           );
           return;
         }
+        if (action === "export") {
+          if (["denied", "notFound", "identityChanged", "knowledgeChanged", "invalidResponse"].includes(String(code)))
+            setView(undefined);
+          if (code === "identityChanged") {
+            setSaved(undefined);
+            setQueuedHandoff(undefined);
+            updateReference("");
+            setExportMessage(undefined);
+          }
+          setError(
+            code === "knowledgeChanged"
+              ? "The proposal evidence changed. Reopen it before exporting for review."
+              : code === "identityChanged" || code === "denied" || code === "notFound"
+                ? "The proposal is no longer available for export. Check your connection and reopen it."
+                : code === "destinationExists"
+                  ? "That file already exists. Choose a new filename; existing files are preserved."
+                  : code === "destination"
+                    ? "Choose a new .json file outside Yap's internal data folder."
+                    : code === "busy"
+                      ? "Finish the current read or export, then try again."
+                      : "Export could not be confirmed. It may have saved a file. Check the chosen destination before trying again.",
+          );
+          return;
+        }
         setError(
           code === "knowledgeChanged"
             ? "Knowledge changed since this proposal was created. Search current sources and propose the connection again."
@@ -194,7 +239,7 @@ export function useConnectionProposal(
         }
       }
     },
-    [available, owned, reference, discardUnconfirmed, snapshot.authorityRevision],
+    [available, owned, reference, view, discardUnconfirmed, snapshot.authorityRevision],
   );
   useEffect(() => {
     if (
@@ -205,7 +250,7 @@ export function useConnectionProposal(
       !owned
     )
       return;
-    if (running.current?.action === "discard" || discardUnconfirmed) {
+    if (running.current?.action === "discard" || running.current?.action === "export" || discardUnconfirmed) {
       consumed.current = handoff;
       setQueuedHandoff(handoff);
       return;
@@ -243,7 +288,7 @@ export function useConnectionProposal(
     stop,
   ]);
   async function cancel() {
-    if (pendingAction === "discard") return;
+    if (pendingAction === "discard" || pendingAction === "export") return;
     const cancelled = ++epoch.current;
     const listing = pendingAction === "pending";
     const report = listing ? setListError : setError;
@@ -282,6 +327,11 @@ export function useConnectionProposal(
     },
     pending,
     discarding: pendingAction === "discard",
+    exporting: pendingAction === "export",
+    exportMessage: owned ? exportMessage : undefined,
+    canExport: available && owned && !pending && !discardUnconfirmed &&
+      view?.proposalId === reference.trim() && !disposition,
+    exportReview: () => run(reference, "export"),
     disposition:
       available && owned && disposition?.proposalId === reference.trim()
         ? disposition

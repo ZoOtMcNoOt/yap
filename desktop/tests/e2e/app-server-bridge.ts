@@ -353,6 +353,7 @@ export async function installQueuedServerBridge(
                 outputPath: (args as { outputPath: string }).outputPath,
                 sourceRevisionSha256: "a".repeat(64),
                 sourceSha256: "b".repeat(64),
+                revisionCount: 0,
                 acceptedRevision: null,
               };
             if (command === "read_text_file" || command === "read_text_preview")

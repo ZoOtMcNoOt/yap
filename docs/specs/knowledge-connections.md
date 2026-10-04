@@ -102,6 +102,13 @@ older read and wait for its completion. Same-owner offline drafts remain editabl
 with remote reading disabled. See [inspection evidence](../evidence/connection-proposal-inspection/2026-10-03/verification.md).
 
 
+## Export a proposal for Git review
+
+After inspection, choose **Export review package…** to save the proposed candidate
+and both exact source excerpts as a new JSON file. Native code rechecks current
+access, generation and evidence after the picker; existing files stay intact.
+Export preserves proposed status. See the [package contract and recovery guidance](connection-review-package.md).
+
 ## Discover saved proposals
 
 In **Review proposals**, choose **Load saved proposals** or **Refresh saved proposals**.

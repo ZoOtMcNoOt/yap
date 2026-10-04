@@ -1,0 +1,13 @@
+F
+======================================================================
+FAIL: test_actual_operator_command_reports_match_or_safe_refusal (tests.knowledge.test_connection_review.ConnectionReviewTests.test_actual_operator_command_reports_match_or_safe_refusal)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/yap/server/tests/knowledge/test_connection_review.py", line 336, in test_actual_operator_command_reports_match_or_safe_refusal
+    self.assertEqual(result.returncode, 2)
+AssertionError: 1 != 2
+
+----------------------------------------------------------------------
+Ran 1 test in 2.058s
+
+FAILED (failures=1)

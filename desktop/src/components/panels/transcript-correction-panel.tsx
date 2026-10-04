@@ -2,6 +2,7 @@ import { Copy } from "@phosphor-icons/react/Copy";
 import { DownloadSimple } from "@phosphor-icons/react/DownloadSimple";
 import { FloppyDisk as Save } from "@phosphor-icons/react/FloppyDisk";
 import { Sparkle as Sparkles } from "@phosphor-icons/react/Sparkle";
+import { useEffect, useRef } from "react";
 
 import { TranscriptCorrectionPreview } from "@/components/transcript-correction/transcript-correction-preview";
 import { useAcceptedTranscriptCorrection } from "@/components/transcript-correction/use-accepted-transcript-correction";
@@ -51,7 +52,7 @@ export function TranscriptCorrectionPanel({
   const saved = useAcceptedTranscriptCorrection({
     outputPath: item?.outputPath ?? "",
     ready: correction.ready,
-    publication: correction.published?.correctedSha256,
+    publication: correction.published?.revisionPath,
   });
   const exportError =
     exportFailure?.path === item?.outputPath &&
@@ -59,6 +60,16 @@ export function TranscriptCorrectionPanel({
     exportFailure?.correctedSha256 === saved.revision?.correctedSha256
       ? exportFailure?.message
       : undefined;
+  const exportButtonRef = useRef<HTMLButtonElement>(null);
+  const exportErrorRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (exportError && document.activeElement === exportButtonRef.current) {
+      exportErrorRef.current?.scrollIntoView({
+        block: "nearest",
+        behavior: "instant",
+      });
+    }
+  }, [exportError]);
   return (
     <Card className="surface-workspace-inset min-w-0 bg-card py-0">
       <CardHeader className="p-4 sm:p-5">
@@ -185,6 +196,7 @@ export function TranscriptCorrectionPanel({
                   </Button>
                   <Button
                     aria-label="Export saved correction"
+                    ref={exportButtonRef}
                     aria-disabled={exportBusy || undefined}
                     className="aria-disabled:pointer-events-none aria-disabled:opacity-50"
                     onClick={() => {
@@ -201,8 +213,37 @@ export function TranscriptCorrectionPanel({
                 </div>
               ) : null}
             </div>
+            {saved.revisionCount > 1 ? (
+              <div className="grid min-w-0 gap-2">
+                <label className="grid gap-2 text-sm font-medium">
+                  Accepted revision
+                  <select
+                    className="h-10 w-full min-w-0 rounded-lg border border-input bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+                    disabled={exportBusy}
+                    value={saved.selectedRevision}
+                    onChange={(event) =>
+                      saved.selectRevision(Number(event.target.value))
+                    }
+                  >
+                    {Array.from({ length: saved.revisionCount }, (_, index) => {
+                      const number = saved.revisionCount - index;
+                      return (
+                        <option key={number} value={number}>
+                          Revision {number}
+                          {number === saved.revisionCount ? " · Latest" : ""}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </label>
+                <p className="text-sm leading-6 text-muted-foreground">
+                  Reading an earlier revision leaves your latest acceptance
+                  unchanged.
+                </p>
+              </div>
+            ) : null}
             {exportError ? (
-              <Alert variant="destructive">
+              <Alert ref={exportErrorRef} variant="destructive">
                 <AlertDescription>{exportError}</AlertDescription>
               </Alert>
             ) : null}

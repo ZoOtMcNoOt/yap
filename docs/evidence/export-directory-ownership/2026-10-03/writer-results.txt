@@ -1,0 +1,7 @@
+control:
+outcome=saved; file_exists=true; exact_utf8=true; staging_files=0
+retry=AlreadyExists; original_export_preserved=true
+
+directory-sync-error:
+outcome=Uncategorized; file_exists=true; exact_utf8=true; staging_files=0
+retry=AlreadyExists; original_export_preserved=true

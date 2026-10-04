@@ -139,8 +139,15 @@ export function ConnectionProposalPanel({
           </form>
         </details>
         <div className="flex flex-wrap gap-2">
-          {proposal.pending && !proposal.discarding && !proposal.loading ? (
+          {proposal.pending && !proposal.discarding && !proposal.exporting && !proposal.loading ? (
             <RequestCancelButton onCancel={proposal.cancel} requestId={proposal.requestId} />
+          ) : null}
+          {view ? (
+            <Button type="button" variant="outline" className="max-w-full whitespace-normal aria-disabled:opacity-50"
+              disabled={!proposal.canExport && !proposal.exporting} aria-disabled={!proposal.canExport}
+              onClick={() => void proposal.exportReview()}>
+              Export review package…
+            </Button>
           ) : null}
           {!proposal.disposition ? (
             <AlertDialogTrigger asChild>
@@ -160,10 +167,29 @@ export function ConnectionProposalPanel({
             role="status"
           >
             <Spinner />
-            {proposal.discarding
+            {proposal.exporting
+              ? "Exporting review package… Use the file picker to finish or cancel."
+              : proposal.discarding
               ? "Discarding saved proposal…"
               : proposal.loading ? "Loading saved proposals…" : "Reading saved proposal…"}
           </p>
+        ) : null}
+        {proposal.exportMessage ? (
+          <Alert role="status">
+            <AlertDescription className="grid min-w-0 gap-2 break-words">
+              <p>{proposal.exportMessage.message}</p>
+              {proposal.exportMessage.path ? (
+                <details className="min-w-0">
+                  <summary className="cursor-pointer rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+                    Saved file location
+                  </summary>
+                  <p className="mt-2 max-h-32 overflow-y-auto break-all font-mono text-xs leading-5">
+                    {proposal.exportMessage.path}
+                  </p>
+                </details>
+              ) : null}
+            </AlertDescription>
+          </Alert>
         ) : null}
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -201,7 +227,9 @@ export function ConnectionProposalPanel({
           <Alert>
             <AlertDescription className="grid gap-2">
               <p>
-                {proposal.pending || proposal.discardUnconfirmed
+                {proposal.exporting
+                  ? "Another saved connection is ready. Finish or cancel the file picker before opening it."
+                  : proposal.pending || proposal.discardUnconfirmed
                   ? "Another saved connection is ready. Confirm this discard before opening it."
                   : "Another saved connection is ready to inspect."}
               </p>
@@ -230,6 +258,10 @@ export function ConnectionProposalPanel({
             >
               Proposed · Requires human review
             </Badge>
+            <p className="text-sm leading-6 text-muted-foreground">
+              Export this suggestion and its cited excerpts for your organization's Git review.
+              Publication requires an authorized reviewer and a completed knowledge rebuild.
+            </p>
             <div className="min-w-0">
               <h4 className="break-words text-lg font-semibold">
                 {source.node.title} → {target.node.title}

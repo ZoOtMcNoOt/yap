@@ -45,6 +45,7 @@ def read_bounded_regular_file(
 
     flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOINHERIT", 0)
     flags |= getattr(os, "O_NOFOLLOW", 0)
+    flags |= getattr(os, "O_NONBLOCK", 0)
     try:
         descriptor = os.open(resolved, flags)
     except OSError as error:
@@ -59,9 +60,9 @@ def read_bounded_regular_file(
         raise
     with source:
         opened = os.fstat(source.fileno())
-        if (
-            not stat.S_ISREG(opened.st_mode)
-            or (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino)
+        if not stat.S_ISREG(opened.st_mode) or (opened.st_dev, opened.st_ino) != (
+            before.st_dev,
+            before.st_ino,
         ):
             raise ValueError(f"{field} changed before it was opened")
         opened_path = _opened_file_path(source.fileno())

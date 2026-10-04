@@ -1,6 +1,6 @@
 # Current status
 
-**Updated:** 2026-10-03. **Project owner:** Grant McNatt.
+**Updated:** 2026-10-04. **Project owner:** Grant McNatt.
 
 ## Current goal
 
@@ -14,9 +14,12 @@ The managed cloud workspace provides four CPU cores, 16 GiB RAM, and an initiall
 
 Installed and exercised: Node 24.19, pnpm 11.7.0, Python 3.12.14 with locked uv dependencies, Rust 1.96 with Clippy/rustfmt, PowerShell 7.6, GTK/WebKit/audio/tray build libraries, CMake, Chromium, Docker, Xvfb, and Tini. Native dependencies are installed into a user-owned prefix. See [cloud development](runbooks/cloud-development.md) for setup and commands.
 
-## Verification
+## Earlier local verification baseline
 
-| Check | Current result |
+These recorded local checks precede the current increment. Later merged receipts
+and current export checks are linked below.
+
+| Check | Recorded result |
 | --- | --- |
 | Desktop frontend unit tests | 393 passed, 2 declared Windows-only skips |
 | TypeScript/Vite production build | Passed |
@@ -68,13 +71,110 @@ Earlier dependency/consolidation results remain in the [desktop evidence](eviden
 
 ## Current increment
 
-The [execution queue](plans/active/2026-10-02-yap-project-hill-climb.md#current-increment-complete-the-postgresql-ci-gate)
-now targets a **complete, skip-free PostgreSQL CI gate**. Hosted portable checks
-exclude real database cases. The new required gate runs all 23 knowledge/agent/API
-modules: **117 cases pass without skips** against a fresh owned PostgreSQL 17.11/
-pgvector 0.8.7 runtime. Four of five software outcomes are verified locally;
-[hosted integration is pending](evidence/governed-postgres-ci/2026-10-03/verification.md).
-It preserves production authority and qualification limits.
+Embedding preparation now validates current stored source, admission and all four
+counts under the tenant lock before vector/model writes. Prepared keys must
+match validated chunks; invalid storage refuses without repairs. Eleven actual
+ledger cases, all 144 required database and 201 governed portable cases pass;
+full isolated server passes 1,664 with 141 declared exclusions.
+[Evidence](evidence/knowledge-embedding-source-integrity/2026-10-04/verification.md)
+retains the reproduced successful write over changed source and observed lock-wait
+regression. This does not verify vector provenance or add an embedding provider;
+actual generation and complete product rebuild integration remain open.
+
+GitHub access recovered on 2026-10-04: the feature branch was pushed through
+`4ec7d6189a1e57120ef957bcf94c7700a036a62c`. A fresh app chat recovered that
+exact branch into this cloud checkout and archived its idle predecessor after
+writing a readiness receipt. Reviewed hosted integration is now proceeding;
+[PR #205](https://github.com/ZoOtMcNoOt/yap/pull/205) runs all six jobs. Run 549
+passes server, identity/real PostgreSQL and Linux lifecycle; Windows Clippy rejects
+a needless return in the export-directory Windows path. The correction requires
+a fresh six-job exact-head run. PR review also reproduced whitespace-only
+export receipts reporting success and recursive OKF input escaping CLI refusal.
+Both corrections pass renewed units/portable checks and require renewed hosted
+checks; [review evidence](evidence/connection-review-export/2026-10-04/review-verification.md)
+retains failures and limits. No merge is claimed yet. The earlier disconnected-app,
+rejected-push and CLI model-stream failures remain historical observations in
+the handoff and dated evidence. The restored checkout retains dependency caches,
+but native toolchain availability and applicable checks must be reverified.
+
+## Earlier increments awaiting integration
+
+Curators can inspect and explicitly admit/stage a deployment-selected reviewed
+source through authenticated HTTP. The bounded pinned manifest and compiled
+identity prevent client source selection and source drift. Admission, staging and
+audit commit together; replay preserves existing vectors and active/history.
+All 142 required database and 201 governed portable cases pass without skips;
+full isolated server discovery passes 1,664 with 139 declared exclusions.
+[Evidence and operator guidance](evidence/knowledge-source-preparation/2026-10-04/verification.md)
+retain configuration, recovery and the reproduced Linux source-read race.
+Embedding preparation and complete product rebuild integration remain open.
+
+
+Rebuild staging retries now refuse inconsistent descriptors and all four
+stored generation counts. Valid staged retries work before embeddings; valid
+active retries preserve vectors/history. Nine actual SQL ledger cases, all 130
+required database and 192 governed portable cases pass; full isolated server
+passes 1,655 with 127 declared exclusions. [Evidence](evidence/knowledge-staging-descriptor/2026-10-04/verification.md)
+retains the failure and limits. Source preparation now has its own verified operator flow; complete product
+rebuilding remains open.
+
+
+[Reviewed publication](specs/knowledge-publication.md) now gives authenticated
+curators explicit HTTP inspection and activation of their own admitted,
+prepared repository generations. Expected-active comparison, complete
+validation/replay and atomic success audit are verified locally: all 129 required
+database and 192 governed portable cases pass without skips; the full isolated
+server suite passes 1,655 cases with 126 declared exclusions. Hosted integration
+is pending. Git review, embedding preparation,
+canonical rebuilding and desktop product integration remain separate open work;
+the overall publication outcome stays open. [Evidence](evidence/knowledge-publication/2026-10-04/verification.md)
+records the scope and checks. End-to-end rebuilding remains in the active queue.
+
+The [export-directory increment](plans/active/2026-10-02-yap-project-hill-climb.md#awaiting-integration-retain-the-admitted-export-directory)
+retains the admitted folder for original, accepted-correction and connection-review
+exports. Actual Linux files reproduced a parent replacement redirecting an export
+into internal Yap data. Directory ownership fixes that redirection; 1,383 native
+units and 27 integrations pass, with 11 declared model/hardware ignores. All 36
+related browser export cases, Linux lint and release/documentation checks pass.
+Five of six outcomes are locally verified; Windows and reviewed hosted integration
+remain pending in the [directory evidence](evidence/export-directory-ownership/2026-10-03/verification.md).
+
+The earlier [completion recovery](evidence/transcript-export-recovery/2026-10-03/verification.md)
+increment retains its passing 1,377 + 27 native, 404 frontend, production-build
+and 38 related-browser checks. Those dated checks remain separate from the new
+directory increment; neither server publication nor directory ownership changes renderer code.
+
+**Earlier accepted corrections** now support offline reading, copying and export.
+The selector preserves original transcripts, latest acceptance and saved history;
+late reads and repeated selection retain their owner. That increment's checks pass with
+1,375 units and 27 integrations (11 declared model/hardware ignores); frontend
+units pass 404 cases with two Windows-only skips, and the production build passes.
+All 27 related browser cases and the complete 231-case Linux browser regression
+pass, with one declared Windows-only island skip (232 total).
+[Evidence and screens](evidence/accepted-correction-selection/2026-10-03/verification.md)
+retain the checks and limits. All retained iterations are now pushed; reviewed
+exact-head hosted integration remains pending.
+
+[Connection review export](evidence/connection-review-export/2026-10-03/verification.md)
+carries the exact proposal and citations into human Git review. Five local software outcomes pass;
+the complete Linux browser suite passes with 221 cases and one declared Windows-only skip.
+Canonical publication and generation rebuilding remain separate open outcomes.
+
+[Local source checking](evidence/connection-review-source-check/2026-10-03/verification.md)
+verifies exported evidence against an explicitly selected complete OKF bundle.
+All 185 governed portable cases pass without skips. The receipt proves source
+matching; authorized review and activation remain separate.
+
+[Rollback integrity](evidence/knowledge-rollback-integrity/2026-10-03/verification.md)
+now protects published vectors after replacement. Eight real ledger checks,
+all 119 current database cases and all 185 governed portable cases pass locally
+without skips. Reviewed exact-head integration remains pending.
+
+The [complete PostgreSQL gate](evidence/governed-postgres-ci/2026-10-03/verification.md)
+is merged and **5/5 software verified**. [PR #204](https://github.com/ZoOtMcNoOt/yap/pull/204)
+and [run 547](https://github.com/ZoOtMcNoOt/yap/actions/runs/37137161514) pass all six jobs,
+including every one of the 117 real database cases without skips. Main has the
+identical tested tree, the reviewed head is retained and its branch retired.
 
 Owned connection discovery is merged and **6/6 software verified**. [PR #203](https://github.com/ZoOtMcNoOt/yap/pull/203)
 and [run 544](https://github.com/ZoOtMcNoOt/yap/actions/runs/37133293613) pass all six jobs:
@@ -134,15 +234,16 @@ regression passes 102 cases. Human publication and rebuild recovery remain open.
 [Accepted correction recovery](evidence/accepted-correction-recovery/2026-10-03/verification.md)
 and [UTF-8 export](evidence/accepted-correction-export/2026-10-03/verification.md)
 retain six verified outcomes each for trusted offline reopening, source/history
-revalidation, exact new-file publication and preserved originals/history. Older
-revision selection, timed/speaker exports and explicit damaged-history repair
-remain open.
+revalidation, exact new-file publication and preserved originals/history.
+[Earlier-revision selection](specs/accepted-correction-history.md) is locally
+implemented with hosted integration pending. Timed/speaker exports and explicit
+damaged-history repair remain open.
 
 The [shared design](evidence/design-refresh/2026-10-03/review.md) retains seven
 verified outcomes and the island. [Connections](evidence/knowledge-connections/2026-10-03/verification.md)
 remains six of seven overall outcomes; [Curator](evidence/curator-connections/2026-10-03/verification.md)
 verifies its six proposal outcomes. Actual reasoning, authorized human canonical
-publication and rebuilding remain open. Further formats, older correction revisions and supervised ASR/live work remain in the active queue.
+publication and rebuilding remain open. Further formats, correction-history repair and supervised ASR/live work remain in the active queue.
 
 [Connection-owned Knowledge views](evidence/connection-owned-knowledge/2026-10-03-verification.md)
 verify five outcomes for native revision binding, private-state clearing and

@@ -26,7 +26,8 @@ test("correction stays native-owned, publishes immutably, and cancels on source 
               outputPath: (args as { outputPath: string }).outputPath,
               sourceRevisionSha256: "a".repeat(64),
               sourceSha256: "b".repeat(64),
-              acceptedRevision: null,
+              revisionCount: 0,
+                acceptedRevision: null,
             };
           if (command === "start_transcript_correction") {
             requestSequence += 1;

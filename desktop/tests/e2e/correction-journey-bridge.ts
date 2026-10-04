@@ -13,6 +13,7 @@ export async function installCorrectionJourneyBridge(
     available?: boolean;
     recoveryFailure?: boolean;
     misboundRecovery?: boolean;
+    sameCorrectionHash?: boolean;
   } = {},
 ) {
   await installRecordingJourneyBridge(page);
@@ -26,7 +27,7 @@ export async function installCorrectionJourneyBridge(
       const baseInvoke = host.__TAURI_INTERNALS__.invoke;
       const mutations: Array<{ command: string; args: unknown }> = [];
       const planningPath = "C:\\Yap\\remote-jobs\\planning\\transcript.txt";
-      const revisions = new Map<string, Record<string, unknown>>();
+      const revisions = new Map<string, Record<string, unknown>[]>();
       const delayReads = new Set<string>();
       const releaseReads = new Map<string, () => void>();
       let recoveryFailure = options.recoveryFailure ?? false;
@@ -34,7 +35,7 @@ export async function installCorrectionJourneyBridge(
       let requestedPath = planningPath;
       let suggested = corrected;
       if (options.preaccepted)
-        revisions.set(planningPath, {
+        revisions.set(planningPath, [{
           requestId: "accepted-earlier",
           revision: 1,
           sourceRevisionSha256: "a".repeat(64),
@@ -44,7 +45,7 @@ export async function installCorrectionJourneyBridge(
           correctedText: corrected,
           revisionPath:
             "C:\\Yap\\remote-jobs\\planning\\transcript-corrections\\correction-00000000000000000001.json",
-        });
+        }]);
       let sequence = 0;
       let publicationFails = false;
       let view = {
@@ -133,7 +134,7 @@ export async function installCorrectionJourneyBridge(
         }
         if (command === "read_accepted_transcript_correction") {
           mutations.push({ command, args });
-          const path = (args as { outputPath: string }).outputPath;
+          const { outputPath: path, revision: selectedRevision } = args as { outputPath: string; revision: number | null };
           if (recoveryFailure)
             throw new Error(
               "A transcript correction revision conflicts with its source history.",
@@ -143,7 +144,10 @@ export async function installCorrectionJourneyBridge(
             outputPath: misboundRecovery ? `${path}.different` : path,
             sourceRevisionSha256: "a".repeat(64),
             sourceSha256: "b".repeat(64),
-            acceptedRevision: revisions.get(path) ?? null,
+            revisionCount: revisions.get(path)?.length ?? 0,
+            acceptedRevision: (selectedRevision === null
+              ? revisions.get(path)?.at(-1)
+              : revisions.get(path)?.find(entry => entry.revision === selectedRevision)) ?? null,
           };
           if (delayReads.delete(path))
             await new Promise<void>((resolve) =>
@@ -181,13 +185,13 @@ export async function installCorrectionJourneyBridge(
             throw new Error("The revision could not be saved. Try again.");
           }
           const revision =
-            Number(revisions.get(requestedPath)?.revision ?? 0) + 1;
+            Number(revisions.get(requestedPath)?.at(-1)?.revision ?? 0) + 1;
           const accepted = {
             requestId: view.requestId,
             sourceRevisionSha256: view.sourceRevisionSha256,
             sourceSha256: view.sourceSha256,
             terminologySnapshotSha256: view.terminologySnapshotSha256,
-            correctedSha256: revision % 2 ? "d".repeat(64) : "e".repeat(64),
+            correctedSha256: options.sameCorrectionHash || revision % 2 ? "d".repeat(64) : "e".repeat(64),
             correctedText: suggested,
             revision,
             revisionPath: requestedPath.replace(
@@ -195,7 +199,7 @@ export async function installCorrectionJourneyBridge(
               `transcript-corrections/correction-${String(revision).padStart(20, "0")}.json`,
             ),
           };
-          revisions.set(requestedPath, accepted);
+          revisions.set(requestedPath, [...(revisions.get(requestedPath) ?? []), accepted]);
           return accepted;
         }
         return baseInvoke(command, args);

@@ -1,0 +1,3 @@
+outcome=saved; file_exists=true; exact_utf8=true; staging_files=0
+outcome=Uncategorized; file_exists=true; exact_utf8=true; staging_files=0
+outcome=AlreadyExists; file_exists=true; exact_utf8=true; staging_files=0

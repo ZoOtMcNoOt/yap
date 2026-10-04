@@ -1,7 +1,7 @@
-//! Explicit native-owned export of validated original and accepted transcripts.
+//! Shared file ownership and destination rules for explicit native exports.
 
 use std::{
-    path::{Path, PathBuf},
+    path::Path,
     sync::{Arc, OnceLock},
 };
 
@@ -11,7 +11,9 @@ use tokio::sync::{OwnedSemaphorePermit, Semaphore};
 
 pub(crate) mod accepted_correction;
 
-fn export_permit() -> Result<OwnedSemaphorePermit, String> {
+const EXPORT_UNCONFIRMED: &str = "Export could not be confirmed. Check the selected destination before trying again; the file may already have been saved.";
+
+pub(crate) fn export_permit() -> Result<OwnedSemaphorePermit, String> {
     static LIMITER: OnceLock<Arc<Semaphore>> = OnceLock::new();
     Arc::clone(LIMITER.get_or_init(|| Arc::new(Semaphore::new(1))))
         .try_acquire_owned()
@@ -60,7 +62,7 @@ pub(crate) async fn export_transcript(
         })
     })
     .await
-    .map_err(|_| "Transcript export could not finish. Please retry.".to_string())?
+    .map_err(|_| EXPORT_UNCONFIRMED.to_string())?
 }
 
 fn export_selected_transcript(
@@ -70,7 +72,7 @@ fn export_selected_transcript(
     read_current: impl FnOnce() -> Result<String, String>,
 ) -> Result<TranscriptExport, String> {
     validate_text(original)?;
-    let destination = export_destination(selected, app_data)?;
+    let destination = export_destination(selected, app_data, ExportKind::Transcript)?;
     let current = read_current()?;
     if current != original {
         return Err(
@@ -82,12 +84,12 @@ fn export_selected_transcript(
             "That file already exists. Choose a new filename; existing files are preserved."
                 .to_string()
         } else {
-            "Could not save the export. Check the destination and permissions, then retry."
-                .to_string()
+            // Directory sync can fail after the new file was committed.
+            EXPORT_UNCONFIRMED.to_string()
         }
     })?;
     Ok(TranscriptExport::Saved {
-        path: destination.to_string_lossy().into_owned(),
+        path: destination.path().to_string_lossy().into_owned(),
     })
 }
 
@@ -100,23 +102,40 @@ fn validate_text(text: &str) -> Result<(), String> {
     Ok(())
 }
 
-fn export_destination(selected: &Path, app_data: &Path) -> Result<PathBuf, String> {
+pub(crate) enum ExportKind {
+    Transcript,
+    ConnectionReview,
+}
+
+pub(crate) fn export_destination(
+    selected: &Path,
+    app_data: &Path,
+    kind: ExportKind,
+) -> Result<crate::atomic_text::NewFileDestination, String> {
+    let (extension, description) = match kind {
+        ExportKind::Transcript => ("txt", "transcript"),
+        ExportKind::ConnectionReview => ("json", "review package"),
+    };
     if !selected.is_absolute() {
-        return Err("Choose an absolute local destination for the transcript.".into());
+        return Err(format!(
+            "Choose an absolute local destination for the {description}."
+        ));
     }
     let mut selected = selected.to_path_buf();
     if selected.extension().is_none() {
-        selected.set_extension("txt");
+        selected.set_extension(extension);
     }
     if !selected
         .extension()
-        .is_some_and(|ext| ext.eq_ignore_ascii_case("txt"))
+        .is_some_and(|ext| ext.eq_ignore_ascii_case(extension))
     {
-        return Err("Export uses UTF-8 text. Choose a .txt filename.".into());
+        return Err(format!(
+            "Export uses UTF-8 text. Choose a .{extension} filename."
+        ));
     }
     let name = selected
         .file_name()
-        .ok_or_else(|| "Choose a filename for the transcript.".to_string())?;
+        .ok_or_else(|| format!("Choose a filename for the {description}."))?;
     let parent = selected
         .parent()
         .and_then(|path| path.canonicalize().ok())
@@ -130,7 +149,9 @@ fn export_destination(selected: &Path, app_data: &Path) -> Result<PathBuf, Strin
     if parent.starts_with(protected) {
         return Err("Choose a destination outside Yap's internal data folder.".into());
     }
-    Ok(parent.join(name))
+    crate::atomic_text::NewFileDestination::open(&parent.join(name)).map_err(|_| {
+        "The export folder could not be retained. Choose another destination.".to_string()
+    })
 }
 
 #[cfg(test)]

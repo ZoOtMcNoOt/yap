@@ -1,0 +1,2 @@
+Original staging retry: accepted damaged stored descriptor
+{"actualConceptCount": 2, "actualPermissionCount": 2, "reportedConceptCount": 5, "reportedPermissionCount": 5}

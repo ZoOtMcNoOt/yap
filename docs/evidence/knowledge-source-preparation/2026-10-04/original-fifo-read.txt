@@ -1,0 +1,2 @@
+Actual regular source replaced by FIFO before open
+Original bounded source read still blocked after 2 seconds; owned child terminated.
