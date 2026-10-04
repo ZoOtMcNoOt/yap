@@ -71,13 +71,15 @@ Earlier dependency/consolidation results remain in the [desktop evidence](eviden
 
 ## Current increment
 
-Rebuild staging retries now refuse inconsistent descriptors and all four
-stored generation counts. Valid staged retries work before embeddings; valid
-active retries preserve vectors/history. Nine actual SQL ledger cases, all 130
-required database and 192 governed portable cases pass; full isolated server
-passes 1,655 with 127 declared exclusions. [Evidence](evidence/knowledge-staging-descriptor/2026-10-04/verification.md)
-retains the failure and limits. Source admission and the complete product rebuild
-journey remain open.
+Curators can inspect and explicitly admit/stage a deployment-selected reviewed
+source through authenticated HTTP. The bounded pinned manifest and compiled
+identity prevent client source selection and source drift. Admission, staging and
+audit commit together; replay preserves existing vectors and active/history.
+All 142 required database and 201 governed portable cases pass without skips;
+full isolated server discovery passes 1,664 with 139 declared exclusions.
+[Evidence and operator guidance](evidence/knowledge-source-preparation/2026-10-04/verification.md)
+retain configuration, recovery and the reproduced Linux source-read race.
+Embedding preparation and complete product rebuild integration remain open.
 
 GitHub diagnostics confirm no active app connection and a rejected cloud push
 token. The public repository is reachable; the cloud API proxy refuses CONNECT
@@ -87,16 +89,25 @@ continues.
 
 ## Earlier increments awaiting integration
 
+Rebuild staging retries now refuse inconsistent descriptors and all four
+stored generation counts. Valid staged retries work before embeddings; valid
+active retries preserve vectors/history. Nine actual SQL ledger cases, all 130
+required database and 192 governed portable cases pass; full isolated server
+passes 1,655 with 127 declared exclusions. [Evidence](evidence/knowledge-staging-descriptor/2026-10-04/verification.md)
+retains the failure and limits. Source preparation now has its own verified operator flow; complete product
+rebuilding remains open.
+
+
 [Reviewed publication](specs/knowledge-publication.md) now gives authenticated
 curators explicit HTTP inspection and activation of their own admitted,
 prepared repository generations. Expected-active comparison, complete
 validation/replay and atomic success audit are verified locally: all 129 required
 database and 192 governed portable cases pass without skips; the full isolated
 server suite passes 1,655 cases with 126 declared exclusions. Hosted integration
-is pending. Git review, source admission/staging, embedding preparation,
+is pending. Git review, embedding preparation,
 canonical rebuilding and desktop product integration remain separate open work;
 the overall publication outcome stays open. [Evidence](evidence/knowledge-publication/2026-10-04/verification.md)
-records the scope and checks. Source admission and end-to-end rebuilding remain in the active queue.
+records the scope and checks. End-to-end rebuilding remains in the active queue.
 
 The [export-directory increment](plans/active/2026-10-02-yap-project-hill-climb.md#awaiting-integration-retain-the-admitted-export-directory)
 retains the admitted folder for original, accepted-correction and connection-review

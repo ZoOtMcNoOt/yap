@@ -106,7 +106,9 @@ def admit_reviewed_capture_generation(
         or provenance.get("owner") != expected_owner
     ):
         raise ValueError("reviewed capture content differs from the generation")
-    permission = effective_permission(PurePosixPath(expected_path), generation.permissions)
+    permission = effective_permission(
+        PurePosixPath(expected_path), generation.permissions
+    )
     if (
         len(generation.permissions) != 1
         or permission.path_prefix != "meetings/"
@@ -141,7 +143,7 @@ def admit_curated_knowledge_generation(
     if _CURATED_KNOWLEDGE_REVIEWER_ROLE not in principal.roles:
         raise PermissionError("principal cannot review curated knowledge")
     revision = identifier(repository_revision, 512, "curated source revision")
-    reviewed_path = _relative_source_path(source_path)
+    reviewed_path = validate_curated_source_path(source_path)
     validate_compiled_generation(generation)
     if (
         generation.tenant_id != principal.tenant_id
@@ -343,18 +345,15 @@ def _insert_admission(
             raise ValueError("knowledge source admission conflicts with stored truth")
 
 
-
-
-def _relative_source_path(value: object) -> str:
-    if (
-        not isinstance(value, str)
-        or not value
-        or len(value) > 512
-        or "\\" in value
-    ):
+def validate_curated_source_path(value: object) -> str:
+    if not isinstance(value, str) or not value or len(value) > 512 or "\\" in value:
         raise ValueError("curated source path is invalid")
     path = PurePosixPath(value)
-    if path.is_absolute() or any(part in {"", ".", ".."} for part in path.parts):
+    if (
+        not path.parts
+        or path.is_absolute()
+        or any(part in {"", ".", ".."} for part in path.parts)
+    ):
         raise ValueError("curated source path is invalid")
     normalized = path.as_posix()
     if normalized != value:
@@ -374,4 +373,5 @@ __all__ = [
     "admit_reviewed_capture_generation",
     "install_knowledge_source_admission_schema",
     "require_knowledge_source_admission",
+    "validate_curated_source_path",
 ]

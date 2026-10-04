@@ -2677,7 +2677,7 @@
           "knowledge"
         ],
         "operationId": "readKnowledgeConnections",
-        "summary": "Read one topic\u2019s reviewed connections",
+        "summary": "Read one topic’s reviewed connections",
         "description": "Trusted organization identity selects the permission-filtered active knowledge generation. No model is invoked. Search is literal and bounded; connections contain incoming and outgoing canonical relationships with authority and source proof. Agent proposals are excluded. Responses are limited to 65536 bytes. Unknown and unavailable topics share a 404. Refresh topics on generation conflict.",
         "x-yap-runtime-status": "Implemented when explicit authenticated knowledge connections Postgres configuration verifies",
         "responses": {
@@ -3015,6 +3015,119 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/KnowledgePublicationRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/knowledge/source-preparations": {
+      "get": {
+        "tags": [
+          "knowledge"
+        ],
+        "operationId": "inspectReviewedKnowledgeSource",
+        "summary": "Inspect the configured reviewed repository snapshot",
+        "description": "Requires organization authentication and knowledge.curator. A deployment-selected manifest is bound to an out-of-band hash, one tenant, real server bundle, repository revision/path and compiled generation hash. Requests cannot select files, upload sources or supply identity, policy, approval, credentials or vectors. Inspection compiles and checks the configured snapshot; it does not admit or stage it. Explicit preparation recompiles that snapshot and atomically admits, stages and records its success audit. Replay revalidates the existing admission and staged source/descriptor without rewriting projections, embeddings or activation history. Preparation never activates knowledge or executes models. Pruned published identities need explicit restore. Git/deployment review is an operator prerequisite; this route does not fetch or verify Git approval. Inspection metadata does not certify projection completeness. Inspect after lost confirmation before retrying.",
+        "x-yap-runtime-status": "Implemented when explicit authenticated knowledge publication Postgres and pinned reviewed-source configuration verify",
+        "x-yap-runtime-owner": "Reviewer-owned configured source admission and staging",
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "200": {
+            "description": "Configured source metadata; preparation is not publication readiness.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeSourcePreparationView"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "knowledge"
+        ],
+        "operationId": "prepareReviewedKnowledgeSource",
+        "summary": "Admit and stage the configured reviewed repository snapshot",
+        "description": "Requires organization authentication and knowledge.curator. A deployment-selected manifest is bound to an out-of-band hash, one tenant, real server bundle, repository revision/path and compiled generation hash. Requests cannot select files, upload sources or supply identity, policy, approval, credentials or vectors. Inspection compiles and checks the configured snapshot; it does not admit or stage it. Explicit preparation recompiles that snapshot and atomically admits, stages and records its success audit. Replay revalidates the existing admission and staged source/descriptor without rewriting projections, embeddings or activation history. Preparation never activates knowledge or executes models. Pruned published identities need explicit restore. Git/deployment review is an operator prerequisite; this route does not fetch or verify Git approval. Inspection metadata does not certify projection completeness. Inspect after lost confirmation before retrying.",
+        "x-yap-runtime-status": "Implemented when explicit authenticated knowledge publication Postgres and pinned reviewed-source configuration verify",
+        "x-yap-runtime-owner": "Reviewer-owned configured source admission and staging",
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "503": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationRequiredResponse"
+          },
+          "403": {
+            "$ref": "#/components/responses/AccessDeniedResponse"
+          },
+          "501": {
+            "$ref": "#/components/responses/NotImplementedResponse"
+          },
+          "200": {
+            "description": "Configured source metadata; preparation is not publication readiness.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeSourcePreparationReceipt"
+                }
+              }
+            }
+          },
+          "411": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          },
+          "415": {
+            "$ref": "#/components/responses/ApiErrorResponse"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KnowledgeSourcePreparationRequest"
               }
             }
           }
@@ -8899,6 +9012,186 @@
                 "type": "null"
               }
             ]
+          }
+        }
+      },
+      "KnowledgeSourcePreparationView": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "generationSha256",
+          "sourceRevision",
+          "status",
+          "activeGenerationSha256",
+          "conceptCount",
+          "chunkCount",
+          "relationshipCount",
+          "permissionCount",
+          "sourcePath"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "generationSha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "minLength": 64,
+            "maxLength": 64
+          },
+          "sourceRevision": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "unadmitted",
+              "staged",
+              "active",
+              "retained"
+            ]
+          },
+          "activeGenerationSha256": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$",
+                "minLength": 64,
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "conceptCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "chunkCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "relationshipCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "permissionCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sourcePath": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512,
+            "description": "Deployment-configured relative repository path; not a client-selected filesystem path."
+          }
+        },
+        "description": "The configured source identity and counts; status reflects admission/build metadata, not complete embeddings or activation readiness."
+      },
+      "KnowledgeSourcePreparationReceipt": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "generationSha256",
+          "sourceRevision",
+          "status",
+          "activeGenerationSha256",
+          "conceptCount",
+          "chunkCount",
+          "relationshipCount",
+          "permissionCount",
+          "sourcePath",
+          "changed"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "generationSha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "minLength": 64,
+            "maxLength": 64
+          },
+          "sourceRevision": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "staged",
+              "active",
+              "retained"
+            ]
+          },
+          "activeGenerationSha256": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$",
+                "minLength": 64,
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "conceptCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "chunkCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "relationshipCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "permissionCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sourcePath": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512,
+            "description": "Deployment-configured relative repository path; not a client-selected filesystem path."
+          },
+          "changed": {
+            "type": "boolean",
+            "description": "True only when this request creates the staged build. No activation is performed."
+          }
+        },
+        "description": "The configured source identity and counts; status reflects admission/build metadata, not complete embeddings or activation readiness."
+      },
+      "KnowledgeSourcePreparationRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "expectedGenerationSha256"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "expectedGenerationSha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "minLength": 64,
+            "maxLength": 64
           }
         }
       }

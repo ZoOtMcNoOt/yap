@@ -71,7 +71,7 @@ class _Authentication:
 
 
 @unittest.skipUnless(DSN, "YAP_TEST_POSTGRES_DSN is not configured")
-class KnowledgePublicationApiTests(HealthServerTestCase):
+class PublicationApiTestCase(HealthServerTestCase):
     server_settings = terminology_fixtures.TerminologyApiTests.server_settings
 
     def setUp(self):
@@ -100,9 +100,7 @@ class KnowledgePublicationApiTests(HealthServerTestCase):
                 tenant_id=self.tenant,
                 generation_sha256=self.base.generation_sha256,
             )
-        self.knowledge_publication_service = build_knowledge_publication_service(
-            self.environ, authenticated_team_mode=True
-        )
+        self.knowledge_publication_service = self._build_publication_service()
         self.knowledge_connections_service = build_knowledge_connections_service(
             {
                 "YAP_KNOWLEDGE_CONNECTIONS_RUNTIME": "postgres",
@@ -111,6 +109,11 @@ class KnowledgePublicationApiTests(HealthServerTestCase):
             authenticated_team_mode=True,
         )
         super().setUp()
+
+    def _build_publication_service(self):
+        return build_knowledge_publication_service(
+            self.environ, authenticated_team_mode=True
+        )
 
     def _clean_tenant(self):
         with psycopg.connect(DSN) as connection:
@@ -212,6 +215,8 @@ class KnowledgePublicationApiTests(HealthServerTestCase):
                 )
             )
 
+
+class KnowledgePublicationApiTests(PublicationApiTestCase):
     def test_inspection_explicit_publication_replay_and_restart_preserve_reviewed_sources(
         self,
     ):

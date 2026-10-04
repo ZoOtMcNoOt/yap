@@ -321,11 +321,11 @@ retain exact boundaries. No model, production identity, Git-review/deployment
 or Windows qualification is claimed.
 
 Next audit the reviewed-source admission and rebuild journey that feeds this
-route. Preparation is still programmatic/operator-owned; publication does not
+route. Embedding preparation remains operator-owned; publication does not
 make a proposal or exported package authoritative. Continue that available
 software work while hosted integration waits for GitHub access.
 
-## Current local increment: refuse inconsistent rebuild staging receipts
+## Awaiting integration: refuse inconsistent rebuild staging receipts
 
 **Status:** 5/6 outcomes verified locally; reviewed hosted integration pending.
 Actual PostgreSQL rebuild retries now refuse inconsistent stored descriptors and
@@ -343,6 +343,24 @@ open; continue the whole software queue.
 - [x] Verify actual SQL, the full required database gate, portable/server regression and relevant documentation/contracts; record exact populations and platform/model limits.
 - [ ] Commit under Grant McNatt and push/integrate only reviewed six-job green heads after GitHub access returns. Continue source-admission/product rebuild workflows and the whole project queue.
 
+## Current local increment: prepare the configured reviewed repository snapshot
+
+**Status:** 5/6 outcomes verified locally; reviewed hosted integration pending.
+Curators can inspect and explicitly admit/stage the configured source. Its pinned
+manifest and compiled generation refuse client source selection and source drift;
+admission, staging and audit commit atomically. Replay preserves vectors and
+active/history state. [Operator guidance](../../specs/knowledge-publication.md)
+and [evidence](../../evidence/knowledge-source-preparation/2026-10-04/verification.md)
+retain recovery and trust limits. Git/deployment review, complete embedding
+preparation and full product rebuilding remain separate requirements. Continue
+the full software queue.
+
+- [x] Explicitly configure one bounded deployment manifest pinned by its out-of-band SHA-256, with tenant, real server bundle root, repository revision/path and expected compiled generation. Use existing regular-file/compiler bounds; reject manifest/source drift without accepting client-selected files or source authority.
+- [x] Require organization authentication and `knowledge.curator`, bind the configured tenant and authenticated reviewer, and accept only a versioned expected-generation reference for preparation. Refuse caller identity, approval, source, policy, credential or vector fields.
+- [x] Inspect configured source metadata before explicit admission/staging. Recompile and match the pinned generation before preparing it; source admission, staging and content-free success audit commit together. Preparation writes no embeddings and never changes the active pointer or activation history.
+- [x] Revalidate same-reviewer replay, preserve valid staged/active data, refuse other-owner or damaged state, and test source drift, failed audit, stale intent, request concurrency, timeout and restart recovery. Pruned published identities require explicit restore rather than a new mutable preparation area.
+- [x] Verify actual authenticated HTTP/Postgres with deterministic principals and synthetic vectors, portable configuration/manifest/CLI boundaries, OpenAPI/runtime contracts and relevant full regression. Record review/Git, model, enterprise and Windows limits accurately.
+- [ ] Record evidence, commit under Grant McNatt and integrate only reviewed six-job green heads after GitHub access returns. Continue product rebuild integration and the full software queue.
 ## Execution record
 
 The [dated execution history](../../archive/implementation-evidence/2026-10-02-project-hill-climb-history.md) retains every iteration, evidence link and next action recorded at the time. Those next actions are historical; the current increment above determines what to do now. Append new iteration receipts there and keep this queue current.

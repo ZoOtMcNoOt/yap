@@ -7,6 +7,8 @@ LIVE_EVENTS_PATH = SERVER_ROOT / "openapi" / "live-events.schema.json"
 EXAMPLES_ROOT = SERVER_ROOT / "openapi" / "examples"
 
 HTTP_OPERATIONS = {
+    ("/v1/knowledge/source-preparations", "get"): "inspectReviewedKnowledgeSource",
+    ("/v1/knowledge/source-preparations", "post"): "prepareReviewedKnowledgeSource",
     ("/v1/knowledge/publications", "get"): "inspectReviewedKnowledgePublication",
     ("/v1/knowledge/publications", "post"): "publishReviewedKnowledgeGeneration",
     ("/v1/knowledge/concepts", "get"): "browseKnowledgeTopics",
@@ -76,6 +78,14 @@ HTTP_OPERATIONS = {
 }
 
 OPERATION_RUNTIME = {
+    ("/v1/knowledge/source-preparations", "get"): (
+        "Implemented when explicit authenticated knowledge publication Postgres and pinned reviewed-source configuration verify",
+        "Reviewer-owned configured source admission and staging",
+    ),
+    ("/v1/knowledge/source-preparations", "post"): (
+        "Implemented when explicit authenticated knowledge publication Postgres and pinned reviewed-source configuration verify",
+        "Reviewer-owned configured source admission and staging",
+    ),
     ("/v1/knowledge/publications", "get"): (
         "Implemented when explicit authenticated knowledge publication Postgres configuration verifies",
         "Reviewer-owned complete-generation publication",
@@ -282,6 +292,7 @@ OPERATION_RUNTIME = {
 CHUNK_PATH = "/v1/jobs/{jobId}/chunks/{trackId}/{sequenceStart}-{sequenceEnd}"
 
 RUNTIME_PATH_EXAMPLES = {
+    "/v1/knowledge/source-preparations": "/v1/knowledge/source-preparations",
     "/v1/knowledge/publications": "/v1/knowledge/publications",
     "/v1/knowledge/concepts": "/v1/knowledge/concepts",
     "/v1/knowledge/connections": "/v1/knowledge/connections",

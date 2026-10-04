@@ -1,0 +1,32 @@
+Owner: Grant McNatt
+Date: 2026-10-04
+Revision: commit containing this receipt; reviewed hosted integration pending
+
+Original actual authenticated-org server source-preparation route: HTTP404.
+Original real Linux stat/open FIFO substitution: owned subprocess blocked at 2 seconds and was terminated.
+New actual FIFO substitution regression: controlled refusal; passes in renewed portable and full discovery.
+
+Focused actual PostgreSQL/API/ledger: 31 passed (earlier scoped run 6.760s).
+Focused portable/config/OpenAPI: 21 passed (0.662s).
+Required disposable PostgreSQL: 142 passed/25 modules/0 skips (19.671s).
+Runtime:PostgreSQL 17.11/pgvector 0.8.7; owned digest-pinned disposable database.
+Required governed portable: 201 passed/31 modules/0 skips/0 expectedFailures/0 unexpectedSuccesses (9.015s).
+Full isolated Ubuntu discovery: 1803 total/1664 passed/139 declared platform-fixture-database exclusions (72.095s).
+Server-wide Ruff:passed.
+Changed Python formatting:12 files pass.
+Documentation/license/provenance/population/workflow:30 passed/0 skips.
+Release contracts:72 total/67 passed/5 declared Windows-only skips.
+Changed-document local links:176 resolve; diff whitespace passes.
+
+No model weights/GPU/Git approval/Entra deployment/enterprise policy/Windows qualification.
+No native/renderer changes; earlier native/browser/screens remain dated baselines.
+GitHub app disconnected; cloud push credential rejected; API CONNECT denied403.
+Cause not available from these diagnostics; no hosted check or merge claimed.
+
+Commands (from project root, cloud environment loaded):
+server/.venv/bin/python verification/run-disposable-governed-postgres-suite.py
+(cd server && PYTHONPATH=src .venv/bin/python ../verification/run-governed-knowledge-portable-suite.py)
+bash verification/test-cloud-server.sh
+(cd server && PYTHONPATH=src .venv/bin/python -m unittest tests.knowledge.test_reviewed_source_snapshot tests.knowledge.test_publication_configuration tests.contract.test_contract)
+pnpm --dir desktop test:release-contract
+node --test desktop/tests/scripts/release-contract/{documentation-truth,dependency-license,provenance,model-provenance,test-population,workflow}.contract.mjs
