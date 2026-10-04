@@ -85,7 +85,10 @@ GitHub access recovered on 2026-10-04: the feature branch was pushed through
 `4ec7d6189a1e57120ef957bcf94c7700a036a62c`. A fresh app chat recovered that
 exact branch into this cloud checkout and archived its idle predecessor after
 writing a readiness receipt. Reviewed hosted integration is now proceeding;
-no new hosted pass or merge is claimed yet. The earlier disconnected-app,
+[PR #205](https://github.com/ZoOtMcNoOt/yap/pull/205) runs all six jobs. Run 549
+passes server, identity/real PostgreSQL and Linux lifecycle; Windows Clippy rejects
+a needless return in the export-directory Windows path. The correction requires
+a fresh six-job exact-head run; no merge is claimed yet. The earlier disconnected-app,
 rejected-push and CLI model-stream failures remain historical observations in
 the handoff and dated evidence. The restored checkout retains dependency caches,
 but native toolchain availability and applicable checks must be reverified.

@@ -350,10 +350,10 @@ impl NewFileDestination {
         #[cfg(windows)]
         {
             use std::os::windows::fs::OpenOptionsExt;
-            return OpenOptions::new()
+            OpenOptions::new()
                 .read(true)
                 .custom_flags(0x0020_0000)
-                .open(self.staging_path(name));
+                .open(self.staging_path(name))
         }
         #[cfg(not(windows))]
         File::open(self.staging_path(name))
