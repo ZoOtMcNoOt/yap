@@ -61,6 +61,8 @@ Current product-completion evidence:
 
 - [Reviewed generation publication](knowledge-publication/2026-10-04/verification.md): authenticated inspection, guarded activation and recovery.
 
+- [Rebuild staging descriptor consistency](knowledge-staging-descriptor/2026-10-04/verification.md): valid retries and refusal without repair.
+
 Do not commit private scans, scan identifiers, sensitive audio/transcripts, raw
 host snapshots, credentials, or enterprise configuration. Public evidence may
 record hashes, versions, counts, redacted outcomes, and explicit limitations.

@@ -294,7 +294,7 @@ renderer/full-browser receipts stay dated baselines. No hosted Windows, physical
 picker/filesystem, model or enterprise behavior is qualified. Push and reviewed
 integration remain pending access; the entire software queue continues.
 
-## Current local increment: publish a reviewer-owned staged generation
+## Awaiting integration: publish a reviewer-owned staged generation
 
 **Status:** 5/6 outcomes verified locally; reviewed hosted integration pending.
 Authenticated curators can inspect and explicitly publish their own
@@ -324,6 +324,24 @@ Next audit the reviewed-source admission and rebuild journey that feeds this
 route. Preparation is still programmatic/operator-owned; publication does not
 make a proposal or exported package authoritative. Continue that available
 software work while hosted integration waits for GitHub access.
+
+## Current local increment: refuse inconsistent rebuild staging receipts
+
+**Status:** 5/6 outcomes verified locally; reviewed hosted integration pending.
+Actual PostgreSQL rebuild retries now refuse inconsistent stored descriptors and
+all four counts through the existing staging owner. Valid staging remains usable
+before embeddings; valid active retries retain vectors/history. Refusal preserves
+existing storage rather than repairing it. [Evidence](../../evidence/knowledge-staging-descriptor/2026-10-04/verification.md)
+records the original two-to-five receipt, regression and qualification limits.
+Source admission, product rebuilding and the overall publication outcome remain
+open; continue the whole software queue.
+
+- [x] Reproduce successful retry against actual damaged stored counts, preserving the observation and synthetic-source boundary.
+- [x] Validate all existing descriptor fields and concept/permission/chunk/relationship counts against the admitted compiled generation before returning a retry receipt.
+- [x] Preserve valid staged retries without requiring embeddings; preserve valid published retries without rewriting vectors or activation history.
+- [x] Reject each inconsistent count on staged and active generations; leave source bytes, admissions, projections, metadata, current active state and history unchanged rather than silently repairing storage.
+- [x] Verify actual SQL, the full required database gate, portable/server regression and relevant documentation/contracts; record exact populations and platform/model limits.
+- [ ] Commit under Grant McNatt and push/integrate only reviewed six-job green heads after GitHub access returns. Continue source-admission/product rebuild workflows and the whole project queue.
 
 ## Execution record
 

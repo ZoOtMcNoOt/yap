@@ -71,6 +71,22 @@ Earlier dependency/consolidation results remain in the [desktop evidence](eviden
 
 ## Current increment
 
+Rebuild staging retries now refuse inconsistent descriptors and all four
+stored generation counts. Valid staged retries work before embeddings; valid
+active retries preserve vectors/history. Nine actual SQL ledger cases, all 130
+required database and 192 governed portable cases pass; full isolated server
+passes 1,655 with 127 declared exclusions. [Evidence](evidence/knowledge-staging-descriptor/2026-10-04/verification.md)
+retains the failure and limits. Source admission and the complete product rebuild
+journey remain open.
+
+GitHub diagnostics confirm no active app connection and a rejected cloud push
+token. The public repository is reachable; the cloud API proxy refuses CONNECT
+with `403`. The tools provide no revocation or expiry reason. Restore GitHub
+account access for pushing and reviewed hosted integration; local software work
+continues.
+
+## Earlier increments awaiting integration
+
 [Reviewed publication](specs/knowledge-publication.md) now gives authenticated
 curators explicit HTTP inspection and activation of their own admitted,
 prepared repository generations. Expected-active comparison, complete
@@ -80,10 +96,7 @@ server suite passes 1,655 cases with 126 declared exclusions. Hosted integration
 is pending. Git review, source admission/staging, embedding preparation,
 canonical rebuilding and desktop product integration remain separate open work;
 the overall publication outcome stays open. [Evidence](evidence/knowledge-publication/2026-10-04/verification.md)
-records the scope and checks. The next audit follows source admission and rebuild
-ownership into this publication route.
-
-## Earlier increments awaiting integration
+records the scope and checks. Source admission and end-to-end rebuilding remain in the active queue.
 
 The [export-directory increment](plans/active/2026-10-02-yap-project-hill-climb.md#awaiting-integration-retain-the-admitted-export-directory)
 retains the admitted folder for original, accepted-correction and connection-review

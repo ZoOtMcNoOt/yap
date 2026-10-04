@@ -16,6 +16,12 @@ complete compiled generation and prepare its embedding projection through the
 existing owners. The HTTP route does not fetch or verify a Git commit, admit
 sources, generate vectors or turn proposal references into approval.
 
+A rebuild retry must match its admitted compiled generation and stored
+concept, permission, chunk and relationship counts. Inconsistent storage refuses
+without rewriting metadata. Valid staged retries need no embeddings yet; valid
+active retries retain vectors/history. Staging does not prove publication
+readiness or provide repair. See [rebuild verification](../evidence/knowledge-staging-descriptor/2026-10-04/verification.md).
+
 Configure organization authentication and provision the existing knowledge and
 tool-audit schemas before startup. Then explicitly enable publication:
 

@@ -59,7 +59,7 @@ _EXPECTED_DATABASE_MODULES = (
     "tests.api.test_knowledge_publication_api",
     "tests.api.test_terminology_api",
 )
-_EXPECTED_DATABASE_TEST_COUNT = 129
+_EXPECTED_DATABASE_TEST_COUNT = 130
 
 _EXPECTED_PORTABLE_PACKAGES = frozenset(
     {"numpy", "psycopg", "psycopg-binary", "rapidfuzz", "regex"}

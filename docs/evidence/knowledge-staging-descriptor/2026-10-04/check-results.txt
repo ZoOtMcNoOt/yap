@@ -1,0 +1,37 @@
+Rebuild staging descriptor checks observed on 2026-10-04.
+Synthetic source admissions/vectors; no production identity, models or Windows runtime.
+
+Real PostgreSQL ledger
+Ran 9 tests in 0.901s
+OK
+
+Owned disposable PostgreSQL
+Ran 130 tests in 14.993s
+OK
+{"lockSha256": "2f27949eb42cb930107225169b028832028e235225b8c18d16ec7cc7621d5e4c", "packages": {"numpy": "2.4.6", "psycopg": "3.3.4", "psycopg-binary": "3.3.4", "rapidfuzz": "3.14.5", "regex": "2026.7.10"}, "python": "3.12.14"}
+{"modules":["tests.knowledge.test_agent_relationship_authority","tests.knowledge.test_connection_proposal_discard","tests.knowledge.test_connection_proposal_inspection","tests.knowledge.test_pending_connection_proposals","tests.knowledge.test_postgres_connection_proposals","tests.knowledge.test_postgres_generation_ledger","tests.knowledge.test_postgres_knowledge_connections","tests.knowledge.test_postgres_permission_safe_retrieval","tests.knowledge.test_reviewed_meeting_postgres_route","tests.knowledge.test_terminology_ledger","tests.knowledge.test_terminology_service","tests.agents.test_analyst_postgres","tests.agents.test_archivist_postgres","tests.agents.test_auditor_postgres","tests.agents.test_coordinator_postgres","tests.agents.test_curator_connections_postgres","tests.agents.test_curator_postgres","tests.agents.test_librarian_postgres","tests.agents.test_student_postgres","tests.api.test_connection_proposal_inspection_api","tests.api.test_curator_connections_api","tests.api.test_knowledge_connections_api","tests.api.test_knowledge_publication_api","tests.api.test_terminology_api"],"pgvectorVersion":"0.8.7","postgresVersion":"17.11 (Debian 17.11-1.pgdg12+2)","schemaVersion":1,"skipped":0,"testsRun":130}
+{"image": "pgvector/pgvector@sha256:ac08538c6f8b9904c33c8224c5e5706dbe760aca29db1d096972b4052c22a75d", "pgvectorVersion": "0.8.7", "postgresVersion": "17.11 (Debian 17.11-1.pgdg12+2)"}
+
+Governed portable
+Ran 192 tests in 8.035s
+OK
+{"expectedFailures":0,"modules":["tests.agents.test_agent_admission_client","tests.evaluation.test_agent_model_acceptance","tests.evaluation.test_agent_model_final_response_retry","tests.evaluation.test_agent_model_fixture_runner","tests.evaluation.test_agent_model_qualification","tests.evaluation.test_agent_model_scoring","tests.evaluation.test_agent_route_qualification_evidence","tests.evaluation.test_agent_runtime_pressure","tests.evaluation.test_agent_service_lifecycle_runtime","tests.evaluation.test_agent_vllm_metrics","tests.evaluation.test_agent_vllm_runtime","tests.evaluation.test_checked_candidate","tests.evaluation.test_governed_knowledge_gate","tests.evaluation.test_owned_postgres_knowledge_runtime","tests.evaluation.test_private_json_evidence","tests.evaluation.test_provider_runtime_observations","tests.evaluation.test_vllm_runtime_metrics","tests.infra.test_agent_admission_service","tests.knowledge.test_publication_configuration","tests.knowledge.test_agent_reasoning_routes","tests.knowledge.test_cancellable_database_operation","tests.knowledge.test_connection_review","tests.knowledge.test_governed_answer_protocol","tests.knowledge.test_governed_knowledge_mcp","tests.knowledge.test_governed_rag_agent","tests.knowledge.test_okf_compiler","tests.knowledge.test_reviewed_meeting_knowledge","tests.knowledge.test_terminology_authorization","tests.knowledge.test_terminology_snapshot","tests.knowledge.test_vllm_reasoning_client"],"schemaVersion":1,"skipped":0,"testsRun":192,"unexpectedSuccesses":0}
+
+Full isolated Ubuntu server
+Ran 1782 tests in 70.493s
+OK (skipped=127)
+{"lockSha256": "2f27949eb42cb930107225169b028832028e235225b8c18d16ec7cc7621d5e4c", "packages": {"numpy": "2.4.6", "psycopg": "3.3.4", "psycopg-binary": "3.3.4", "rapidfuzz": "3.14.5", "regex": "2026.7.10"}, "python": "3.12.14"}
+
+Ruff lint
+All checks passed!
+
+Changed Python formatting
+3 files already formatted
+
+Documentation/license/provenance/population and workflow contracts
+ℹ tests 30
+ℹ pass 30
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0

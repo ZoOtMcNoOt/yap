@@ -217,7 +217,7 @@ def stage_compiled_generation(
         existing = connection.execute(
             """SELECT tenant_id, generation_sha256, source_revision,
                       okf_version, concept_count, permission_count,
-                      source_admission_sha256
+                      source_admission_sha256, chunk_count, relationship_count
                FROM yap_knowledge_builds
                WHERE tenant_id = %s AND generation_sha256 = %s""",
             (generation.tenant_id, generation.generation_sha256),
@@ -237,7 +237,13 @@ def stage_compiled_generation(
                 raise ValueError(
                     "staged knowledge generation differs from stored truth"
                 )
-            return KnowledgeGenerationDescriptor(*existing[:6])
+            descriptor = KnowledgeGenerationDescriptor(*existing[:6])
+            if descriptor != _descriptor(generation) or existing[7:] != (
+                len(generation.chunks),
+                len(generation.relationships),
+            ):
+                raise ValueError("staged knowledge generation descriptor differs")
+            return descriptor
         connection.execute(
             """INSERT INTO yap_knowledge_builds (
                 tenant_id, generation_sha256, source_admission_sha256,

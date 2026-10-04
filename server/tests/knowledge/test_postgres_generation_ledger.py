@@ -513,6 +513,98 @@ class PostgresGenerationLedgerTests(unittest.TestCase):
             )
             verification.commit()
 
+    def test_staging_retry_refuses_damaged_counts_without_repair(self) -> None:
+        tenant_id = f"test-{uuid4()}"
+        self.addCleanup(_remove_generation_test_tenant, tenant_id)
+        with TemporaryDirectory() as directory:
+            root = _tamper_bundle(Path(directory), tenant_id)
+            sources = {
+                path.relative_to(root): path.read_bytes()
+                for path in root.rglob("*")
+                if path.is_file()
+            }
+            generations = tuple(
+                compile_okf_bundle(root, tenant_id=tenant_id, source_revision=revision)
+                for revision in ("reviewed-active", "reviewed-staged")
+            )
+            with psycopg.connect(POSTGRES_DSN) as connection:
+                install_knowledge_schema(connection)
+                for generation in generations:
+                    _stage_reviewed_generation(connection, generation)
+                _embed_and_activate(connection, generations[0])
+                connection.commit()
+
+                def snapshot():
+                    return tuple(
+                        connection.execute(
+                            f"SELECT to_jsonb(record) FROM {table} AS record WHERE tenant_id = %s ORDER BY to_jsonb(record)::text",
+                            (tenant_id,),
+                        ).fetchall()
+                        for table in (
+                            "yap_knowledge_builds",
+                            "yap_knowledge_source_admissions",
+                            "yap_knowledge_concepts",
+                            "yap_knowledge_permissions",
+                            "yap_knowledge_permission_audience",
+                            "yap_knowledge_permission_denials",
+                            "yap_knowledge_permission_purposes",
+                            "yap_knowledge_chunks",
+                            "yap_knowledge_relationships",
+                            "yap_knowledge_active_builds",
+                            "yap_knowledge_activation_history",
+                            "yap_knowledge_proposals",
+                        )
+                    )
+
+                for generation in generations:
+                    admission = connection.execute(
+                        "SELECT source_admission_sha256 FROM yap_knowledge_builds WHERE tenant_id = %s AND generation_sha256 = %s",
+                        (tenant_id, generation.generation_sha256),
+                    ).fetchone()[0]
+                    before = snapshot()
+                    descriptor = stage_compiled_generation(
+                        connection, generation, source_admission_sha256=admission
+                    )
+                    self.assertEqual(descriptor.concept_count, len(generation.concepts))
+                    self.assertEqual(snapshot(), before)
+                    for column in (
+                        "concept_count",
+                        "permission_count",
+                        "chunk_count",
+                        "relationship_count",
+                    ):
+                        with self.subTest(
+                            revision=generation.source_revision, column=column
+                        ):
+                            connection.execute(
+                                f"UPDATE yap_knowledge_builds SET {column} = {column} + 1 WHERE tenant_id = %s AND generation_sha256 = %s",
+                                (tenant_id, generation.generation_sha256),
+                            )
+                            connection.commit()
+                            damaged = snapshot()
+                            with self.assertRaisesRegex(ValueError, "descriptor"):
+                                stage_compiled_generation(
+                                    connection,
+                                    generation,
+                                    source_admission_sha256=admission,
+                                )
+                            self.assertEqual(snapshot(), damaged)
+                            # Restore only this synthetic fixture for the next case.
+                            connection.execute(
+                                f"UPDATE yap_knowledge_builds SET {column} = {column} - 1 WHERE tenant_id = %s AND generation_sha256 = %s",
+                                (tenant_id, generation.generation_sha256),
+                            )
+                            connection.commit()
+                    self.assertEqual(snapshot(), before)
+                self.assertEqual(
+                    {
+                        path.relative_to(root): path.read_bytes()
+                        for path in root.rglob("*")
+                        if path.is_file()
+                    },
+                    sources,
+                )
+
     def test_staging_requires_exact_durable_source_admission(self) -> None:
         tenant_id = f"test-{uuid4()}"
         with TemporaryDirectory() as directory:
