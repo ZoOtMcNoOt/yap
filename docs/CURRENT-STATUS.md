@@ -98,11 +98,13 @@ verified; reviewed exact-head hosted integration remains pending.
 retains limits and the original missing route. Desktop rebuild controls, larger
 rebuilds and every roadmap workstream remain open.
 
-Retained-generation rollback is locally verified in [PR #206](https://github.com/ZoOtMcNoOt/yap/pull/206),
-now targeting main; its six required exact-head jobs are pending. [Rollback evidence](evidence/knowledge-rollback-api/2026-10-04/verification.md)
-retains the original 404 and all 152 real SQL/201 portable checks. The existing
-publication/ledger owners preserve original vectors and atomically record the
-restore and audit. Five of six outcomes are verified locally.
+Retained-generation rollback merged through [PR #206](https://github.com/ZoOtMcNoOt/yap/pull/206)
+as `d2d3685bdb5d45e6387257113ebe4c27c197c42c`, with the identical tree tested at
+`85ce2ada`. [Run 552](https://github.com/ZoOtMcNoOt/yap/actions/runs/37222318769)
+passes all six required jobs; review reports no findings. All six bounded rollback
+outcomes are software verified. The tested head is tagged, and the completed
+branch is retired. [Integration evidence](evidence/knowledge-rollback-api/2026-10-04/integration.md)
+retains model/enterprise/platform limits and the local real SQL receipt.
 
 The recovered backlog and review corrections merged through [PR #205](https://github.com/ZoOtMcNoOt/yap/pull/205)
 as `82ea8362ee53220218b78926b762ab707ebaf2a9`, with the identical tested tree

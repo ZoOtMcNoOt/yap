@@ -385,9 +385,9 @@ open; continue the entire software queue.
 - [x] Run real ledger/required PostgreSQL, governed portable/full server and applicable contract/lint checks; preserve earlier receipts and distinguish fixtures from model/Windows/enterprise qualification.
 - [x] Record concise evidence, commit under Grant McNatt, and integrate only reviewed six-job green heads. Continue provider and product integration and every available software workstream.
 
-## Awaiting integration: restore a retained reviewed generation over HTTP
+## Completed increment: restore a retained reviewed generation over HTTP
 
-**Status:** 5/6 local software outcomes verified; PR #206 exact-head integration pending.
+**Status:** 6/6 software outcomes verified and merged in PR #206.
 [Evidence](../../evidence/knowledge-rollback-api/2026-10-04/verification.md) retains
 the original 404, real HTTP/SQL checks and synthetic-vector boundary. Audit found an operator dead end: publication refuses a
 retained target and requests explicit rollback, but only an internal Python
@@ -401,7 +401,16 @@ state; this is recovery of published data, not source admission or inference.
 - [x] Revalidate successful replay without duplicate activation history; retain all sources, vectors, proposals and other reviewers' data. Record rollback reason and success audit atomically.
 - [x] Verify real HTTP/Postgres permission isolation, stale-state concurrency, lock timeout, failed audit and lost-response/restart recovery, using explicitly synthetic vectors.
 - [x] Document inspection, explicit rollback and uncertainty recovery; keep disabled/runtime/OpenAPI contracts and the skip-free database population accurate. Run applicable regression and review.
-- [ ] Commit/push under Grant McNatt, integrate through all six reviewed exact-head jobs and preserve the tested head before retiring the branch. Continue embedding generation, full rebuilding and the whole roadmap.
+- [x] Commit/push under Grant McNatt, integrate through all six reviewed exact-head jobs and preserve the tested head before retiring the branch. Continue embedding generation, full rebuilding and the whole roadmap.
+
+[PR #206](https://github.com/ZoOtMcNoOt/yap/pull/206) merged as
+`d2d3685bdb5d45e6387257113ebe4c27c197c42c`, with the identical tree tested at
+`85ce2ada`. [Run 552](https://github.com/ZoOtMcNoOt/yap/actions/runs/37222318769)
+passes all six jobs. Automated review reports no findings; final bounded review
+and review-thread inspection find no unresolved actionable defect. The tested
+head is retained as `reviewed/pr-206-85ce2ada`; the completed branch is retired.
+[Integration evidence](../../evidence/knowledge-rollback-api/2026-10-04/integration.md)
+retains the exact-head and qualification boundaries.
 
 ## Current increment: generate reviewed embeddings through the private operator route
 
