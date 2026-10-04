@@ -1,0 +1,18 @@
+Actual 401-digit valid-JSON vector refusal regression before the shared numeric fix. Deterministic local HTTP output and fixture identity/source.
+
+ERROR: test_malformed_projection_refuses_complete_response (tests.knowledge.test_embedding_provider.ReviewedEmbeddingProviderTests.test_malformed_projection_refuses_complete_response) (transform=<function ReviewedEmbeddingProviderTests.test_malformed_projection_refuses_complete_response.<locals>.<lambda> at 0x7fb4cd998040>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/yap-embedding-generation/server/tests/knowledge/test_embedding_provider.py", line 92, in test_malformed_projection_refuses_complete_response
+    self.provider.generate((chunk(0),))
+  File "/workspace/yap-embedding-generation/server/src/yap_server/knowledge/embedding_provider.py", line 67, in generate
+    serialize_embedding_vector(serialized)
+  File "/workspace/yap-embedding-generation/server/src/yap_server/knowledge/generation_ledger.py", line 852, in serialize_embedding_vector
+    number = float(item)
+             ^^^^^^^^^^^
+OverflowError: int too large to convert to float
+
+----------------------------------------------------------------------
+Ran 1 test in 0.634s
+
+FAILED (errors=1)

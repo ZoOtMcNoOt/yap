@@ -221,6 +221,13 @@ test("an unreadable saved transcript has a recoverable error instead of endless 
     fixture.setReadFails(true);
     fixture.setState("complete");
   });
+  // Preview failure can stack above the saved notification. Enter the stack
+  // to expose its actions before choosing the older completion notice.
+  const notifications = page.getByRole("region", {
+    name: "Notifications alt+T", exact: true,
+  });
+  await expect(notifications).toContainText("Preview unavailable");
+  await notifications.locator('[data-sonner-toast][data-front="true"]').hover();
   await page
     .getByRole("button", { name: "Review transcript", exact: true })
     .click();

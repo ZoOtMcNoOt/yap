@@ -13,8 +13,8 @@ keeps embedding preparation and complete product rebuilding/integration open.
 
 Complete your organization's Git or deployment-approved review first. Configure
 the reviewed source as described below, then have its trusted
-`knowledge.curator` reviewer explicitly admit and stage it. Prepare the complete
-embedding projection through the existing operator owner before publication.
+`knowledge.curator` reviewer explicitly admit and stage it. Generate the complete embedding projection through the explicit operator action
+below before publication.
 These routes do not fetch or verify Git review. Publication itself does not
 admit sources or generate vectors; proposal references cannot supply approval.
 
@@ -29,8 +29,9 @@ four counts under the tenant lock before updating vectors. Prepared vector keys
 must cover exactly those validated chunks. Invalid source or admission refuses
 without repairs or partial vector/model writes. Only never-published generations
 can be prepared; published vectors remain immutable. This guards source integrity,
-not model output provenance or quality. Embedding generation and its operator
-interface remain separate work. See [embedding verification](../evidence/knowledge-embedding-source-integrity/2026-10-04/verification.md).
+not model output provenance or quality. The explicit embedding action below now supplies bounded generation through a
+deployment-selected loopback provider; actual model quality and deployment
+qualification remain separate work. See [embedding verification](../evidence/knowledge-embedding-source-integrity/2026-10-04/verification.md).
 
 Configure organization authentication and provision the existing knowledge and
 tool-audit schemas before startup. Then explicitly enable publication:
@@ -104,8 +105,8 @@ but source preparation unconfigured (`501`); incomplete pairs fail startup.
 3. Successful first preparation returns `status: staged` and `changed: true`.
    Admission, staging and content-free success audit commit together under the
    existing tenant lock. Preparation creates no embeddings and changes neither
-   the active generation nor activation history. Complete embeddings separately,
-   then follow publication inspection and activation below.
+   the active generation nor activation history. Generate embeddings using the action below, then follow publication inspection
+   and activation.
 
 Same-reviewer replay rechecks source/admission/staging integrity and returns
 `changed: false`; existing active/retained status, vectors and history remain.
@@ -161,6 +162,74 @@ Unconfigured authenticated routes return `501`; unsupported methods return `405`
 See [OpenAPI](../../server/openapi/openapi.json) and
 [verification](../evidence/knowledge-publication/2026-10-04/verification.md).
 
+
+## Generate reviewed embeddings
+
+Deploy and independently verify one already-running local vLLM-compatible
+embedding service. It must return 768-dimensional float embeddings through
+`POST /v1/embeddings`, with its response `model` matching the configured served
+model identifier. The [official vLLM embedding protocol](https://github.com/vllm-project/vllm/blob/main/vllm/entrypoints/pooling/embed/protocol.py)
+defines the request and indexed response. This action does not start services,
+download models, authenticate to a remote provider or promote a runtime. The
+organization owns the prepared image, model artifacts, revision and qualification.
+
+Configure all three values before server startup:
+
+```bash
+export YAP_KNOWLEDGE_EMBEDDING_ENDPOINT=http://127.0.0.1:9001
+export YAP_KNOWLEDGE_EMBEDDING_MODEL_ID='<prepared served model identifier>'
+export YAP_KNOWLEDGE_EMBEDDING_MODEL_REVISION='<prepared artifact revision SHA-256>'
+```
+
+The endpoint must be numeric-loopback HTTP with an explicit port and no path,
+credentials, query or fragment. The model identifier is at most 128 printable
+ASCII characters with no whitespace; the revision is 64 lowercase hex digits.
+The revision is trusted deployment metadata, not an artifact attestation obtained
+from the response. Missing/inconsistent values fail startup without database or
+provider requests. With all three absent, the action is disabled (`501`). Enabling
+it also requires the authenticated publication runtime above. Configuration loads
+once; restart after changing it. No public/remote provider or fallback is selected.
+
+After explicit source preparation, its admitting curator sends
+`POST /v1/knowledge/embedding-preparations` with JSON content type, no query, and
+exactly:
+
+```json
+{"schemaVersion": 1, "generationSha256": "<prepared generation SHA-256>"}
+```
+
+The service validates the entire stored compiled source, admission and counts
+under the same tenant lock before dispatching exact stored chunk text. The request
+cannot provide source text, vectors, endpoint, model, approval, tenant or subject.
+One generation is bounded to 64 nonempty chunks and 262,144 UTF-8 input bytes;
+the provider exchange has a 10-second deadline and 2,000,000-byte response limit.
+The service refuses oversized inputs, incomplete/duplicate indexed responses,
+model mismatches, invalid dimensions and nonfinite values. It does not truncate
+source or retry another provider automatically. Larger rebuild orchestration
+remains open. A zero-chunk generation needs no provider call.
+
+A `200` receipt reports `status: prepared`, the generation/chunk count, configured
+model/revision and `changed`. Complete vectors, model metadata and the content-free
+success audit commit together; source, proposals, active state and activation
+history stay intact. This action never publishes. Inspect publication and
+explicitly activate separately. Previously published generations refuse; they
+retain their original vectors for rollback. Conflicting model identities and
+inconsistent partial projections refuse without repair.
+
+Same-model staged replay validates completeness and returns `changed: false`
+without provider dispatch or vector overwrite. After a lost reply or `503`, repeat
+this explicit preparation before publishing; an audit failure rolls back every
+vector and model write. Correct an unavailable or malformed provider through the
+trusted deployment, then explicitly retry. A published generation needs rollback,
+not regeneration. Changing models requires a separately reviewed generation; do
+not edit ledger rows to bypass immutable identity.
+
+The complete source-preparation → embedding → publication → permission-filtered
+read → rollback journey is checked using deterministic local HTTP output and real
+PostgreSQL. That verifies orchestration, not real embedding provenance/quality,
+production identity, model capacity or enterprise deployment. Qualify the selected
+prepared provider and representative corpus before promotion. Desktop rebuild
+controls and broader source/product integration remain open.
 
 ## Restore a retained generation
 

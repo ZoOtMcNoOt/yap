@@ -28,6 +28,7 @@ from yap_server.knowledge.knowledge_publication_service import (
     KnowledgePublicationService,
     PUBLICATION_PATH,
     ROLLBACK_PATH,
+    EMBEDDING_PREPARATION_PATH,
     SOURCE_PREPARATION_PATH,
 )
 from .knowledge_publication_requests import KnowledgePublicationRequestMixin
@@ -275,7 +276,12 @@ class _HealthRequestHandler(
         if not self._authenticate_request():
             return
 
-        if path in {PUBLICATION_PATH, SOURCE_PREPARATION_PATH, ROLLBACK_PATH}:
+        if path in {
+            PUBLICATION_PATH,
+            SOURCE_PREPARATION_PATH,
+            ROLLBACK_PATH,
+            EMBEDDING_PREPARATION_PATH,
+        }:
             if self._knowledge_publication_service is None:
                 self._send_error(
                     HTTPStatus.NOT_IMPLEMENTED,

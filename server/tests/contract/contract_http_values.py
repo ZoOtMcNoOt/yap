@@ -7,6 +7,10 @@ LIVE_EVENTS_PATH = SERVER_ROOT / "openapi" / "live-events.schema.json"
 EXAMPLES_ROOT = SERVER_ROOT / "openapi" / "examples"
 
 HTTP_OPERATIONS = {
+    (
+        "/v1/knowledge/embedding-preparations",
+        "post",
+    ): "prepareReviewedKnowledgeEmbeddings",
     ("/v1/knowledge/rollbacks", "post"): "rollbackReviewedKnowledgeGeneration",
     ("/v1/knowledge/source-preparations", "get"): "inspectReviewedKnowledgeSource",
     ("/v1/knowledge/source-preparations", "post"): "prepareReviewedKnowledgeSource",
@@ -79,6 +83,10 @@ HTTP_OPERATIONS = {
 }
 
 OPERATION_RUNTIME = {
+    ("/v1/knowledge/embedding-preparations", "post"): (
+        "Implemented when explicit authenticated knowledge publication Postgres and loopback embedding configuration verify",
+        "Reviewer-owned bounded embedding preparation",
+    ),
     ("/v1/knowledge/rollbacks", "post"): (
         "Implemented when explicit authenticated knowledge publication Postgres configuration verifies",
         "Reviewer-owned complete-generation rollback",
@@ -297,6 +305,7 @@ OPERATION_RUNTIME = {
 CHUNK_PATH = "/v1/jobs/{jobId}/chunks/{trackId}/{sequenceStart}-{sequenceEnd}"
 
 RUNTIME_PATH_EXAMPLES = {
+    "/v1/knowledge/embedding-preparations": "/v1/knowledge/embedding-preparations",
     "/v1/knowledge/rollbacks": "/v1/knowledge/rollbacks",
     "/v1/knowledge/source-preparations": "/v1/knowledge/source-preparations",
     "/v1/knowledge/publications": "/v1/knowledge/publications",

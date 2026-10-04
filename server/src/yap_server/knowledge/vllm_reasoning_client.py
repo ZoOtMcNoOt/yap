@@ -91,6 +91,16 @@ class BoundedVllmJsonClient:
             raise ValueError("vLLM rendered token response differs from the contract")
         return len(token_ids)
 
+    def embed(
+        self, payload: dict[str, object], cancellation: threading.Event
+    ) -> dict[str, object]:
+        return self._exchange(
+            path="/v1/embeddings",
+            payload=payload,
+            cancellation=cancellation,
+            dispatched=None,
+        )
+
     def _exchange(
         self,
         *,

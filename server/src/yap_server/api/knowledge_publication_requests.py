@@ -8,6 +8,7 @@ from yap_server.knowledge.knowledge_publication_service import (
     KnowledgePublicationError,
     SOURCE_PREPARATION_PATH,
     ROLLBACK_PATH,
+    EMBEDDING_PREPARATION_PATH,
 )
 
 
@@ -38,6 +39,12 @@ class KnowledgePublicationRequestMixin:
                         principal=self._principal,
                         request=self._request_body.read_json(),
                     )
+            elif urlsplit(self.path).path == EMBEDDING_PREPARATION_PATH:
+                if query:
+                    raise ValueError("embedding preparation takes no query")
+                result = self._knowledge_publication_service.prepare_embeddings(
+                    principal=self._principal, request=self._request_body.read_json()
+                )
             elif self.command == "GET":
                 if (
                     set(query) != {"generationSha256"}

@@ -69,7 +69,7 @@ TERMINOLOGY_RECORD_PATH = re.compile(
 
 
 def allowed_methods(path: str) -> frozenset[str] | None:
-    if path == "/v1/knowledge/rollbacks":
+    if path in {"/v1/knowledge/rollbacks", "/v1/knowledge/embedding-preparations"}:
         return frozenset({"POST"})
     if path in {
         "/v1/knowledge/concepts",

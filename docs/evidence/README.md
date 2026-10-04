@@ -1,5 +1,8 @@
 # Verification Evidence
 
+- [Reviewed embedding generation](knowledge-embedding-generation/2026-10-04/verification.md): bounded authenticated source-to-vector operator journey, actual PostgreSQL/HTTP checks and model limits.
+- [Reviewed backlog integration](connection-review-export/2026-10-04/integration.md): PR #205 exact-head six-green-job receipt, identical main tree and preserved head.
+
 Evidence records bind implementation/status claims to exact revisions,
 commands, environments, and observed boundaries. They must distinguish focused
 development checks from a one-time phase/checkpoint gate.

@@ -1,0 +1,13 @@
+Actual missing operator-route regression before implementation. Fixture identity/source; real PostgreSQL 17.11/pgvector 0.8.7.
+
+FAIL: test_reviewed_source_can_generate_vectors_before_explicit_publication (tests.api.test_knowledge_embedding_preparation_api.KnowledgeEmbeddingPreparationApiTests.test_reviewed_source_can_generate_vectors_before_explicit_publication)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/yap-embedding-generation/server/tests/api/test_knowledge_embedding_preparation_api.py", line 23, in test_reviewed_source_can_generate_vectors_before_explicit_publication
+    self.assertEqual(status, 200, body.decode())
+AssertionError: 404 != 200 : {"code":"NOT_FOUND","message":"Route not found.","retryable":false,"requestId":"req-8620b3c534e64c7d97d48b8fe3abb294"}
+
+----------------------------------------------------------------------
+Ran 1 test in 0.227s
+
+FAILED (failures=1)

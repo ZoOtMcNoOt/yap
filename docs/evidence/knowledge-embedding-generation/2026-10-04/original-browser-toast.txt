@@ -1,0 +1,69 @@
+2026-10-04T18:49:05.3317112Z   1) [chromium] › tests\e2e\recording-journey.spec.ts:198:1 › an unreadable saved transcript has a recoverable error instead of endless loading 
+2026-10-04T18:49:05.3318951Z 
+2026-10-04T18:49:05.3319413Z     Test timeout of 20000ms exceeded.
+2026-10-04T18:49:05.3319950Z 
+2026-10-04T18:49:05.3320437Z     Error: locator.click: Test timeout of 20000ms exceeded.
+2026-10-04T18:49:05.3324262Z     Call log:
+2026-10-04T18:49:05.3325530Z       - waiting for getByRole('button', { name: 'Review transcript', exact: true })
+2026-10-04T18:49:05.3327506Z         - locator resolved to <button class="" data-button="true" data-action="true">Review transcript</button>
+2026-10-04T18:49:05.3328701Z       - attempting click action
+2026-10-04T18:49:05.3329860Z         2 × waiting for element to be visible, enabled and stable
+2026-10-04T18:49:05.3330973Z           - element is not stable
+2026-10-04T18:49:05.3331741Z         - retrying click action
+2026-10-04T18:49:05.3332447Z         - waiting 20ms
+2026-10-04T18:49:05.3333383Z         2 × waiting for element to be visible, enabled and stable
+2026-10-04T18:49:05.3334606Z           - element is not stable
+2026-10-04T18:49:05.3336412Z         - retrying click action
+2026-10-04T18:49:05.3337122Z           - waiting 100ms
+2026-10-04T18:49:05.3337919Z         - waiting for element to be visible, enabled and stable
+2026-10-04T18:49:05.3338733Z         - element is not stable
+2026-10-04T18:49:05.3339565Z       6 × retrying click action
+2026-10-04T18:49:05.3340221Z           - waiting 500ms
+2026-10-04T18:49:05.3341021Z           - waiting for element to be visible, enabled and stable
+2026-10-04T18:49:05.3341898Z           - element is visible, enabled and stable
+2026-10-04T18:49:05.3343929Z           - scrolling into view if needed
+2026-10-04T18:49:05.3344735Z           - done scrolling
+2026-10-04T18:49:05.3357921Z           - <li class="" tabindex="0" data-index="0" data-front="true" data-type="error" data-styled="true" data-mounted="true" data-swiped="false" data-visible="true" data-sonner-toast="" data-promise="false" data-removed="false" data-swiping="false" data-expanded="false" data-swipe-out="false" data-x-position="right" data-dismissible="true" data-y-position="bottom">…</li> intercepts pointer events
+2026-10-04T18:49:05.3360984Z       - retrying click action
+2026-10-04T18:49:05.3361738Z         - waiting 500ms
+2026-10-04T18:49:05.3365645Z         - waiting for element to be visible, enabled and stable
+2026-10-04T18:49:05.3366681Z         - element is not stable
+2026-10-04T18:49:05.3367387Z       - retrying click action
+2026-10-04T18:49:05.3368061Z         - waiting 500ms
+2026-10-04T18:49:05.3368852Z         - waiting for element to be visible, enabled and stable
+2026-10-04T18:49:05.3369786Z         - element is visible, enabled and stable
+2026-10-04T18:49:05.3370564Z         - scrolling into view if needed
+2026-10-04T18:49:05.3371402Z       - element was detached from the DOM, retrying
+2026-10-04T18:49:05.3372010Z 
+2026-10-04T18:49:05.3372159Z 
+2026-10-04T18:49:05.3372491Z       224 |   await page
+2026-10-04T18:49:05.3373405Z       225 |     .getByRole("button", { name: "Review transcript", exact: true })
+2026-10-04T18:49:05.3374348Z     > 226 |     .click();
+2026-10-04T18:49:05.3374991Z           |      ^
+2026-10-04T18:49:05.3375724Z       227 |   const review = page.getByRole("dialog", {
+2026-10-04T18:49:05.3376563Z       228 |     name: "interview.mp3",
+2026-10-04T18:49:05.3377269Z       229 |     exact: true,
+2026-10-04T18:49:05.3378177Z         at D:\a\yap\yap\desktop\tests\e2e\recording-journey.spec.ts:226:6
+2026-10-04T18:49:05.3378947Z 
+2026-10-04T18:49:05.3379948Z     attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+2026-10-04T18:49:05.3381584Z     tests\results\playwright\recording-journey-an-unrea-e8ff4--instead-of-endless-loading-chromium\test-failed-1.png
+2026-10-04T18:49:05.3383290Z     ────────────────────────────────────────────────────────────────────────────────────────────────
+2026-10-04T18:49:05.3384021Z 
+2026-10-04T18:49:05.3384828Z     attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+2026-10-04T18:49:05.3387099Z     tests\results\playwright\recording-journey-an-unrea-e8ff4--instead-of-endless-loading-chromium\video.webm
+2026-10-04T18:49:05.3388787Z     ────────────────────────────────────────────────────────────────────────────────────────────────
+2026-10-04T18:49:05.3389466Z 
+2026-10-04T18:49:05.3390541Z     Error Context: tests\results\playwright\recording-journey-an-unrea-e8ff4--instead-of-endless-loading-chromium\error-context.md
+2026-10-04T18:49:05.3391705Z 
+2026-10-04T18:49:05.3392579Z     attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+2026-10-04T18:49:05.3394222Z     tests\results\playwright\recording-journey-an-unrea-e8ff4--instead-of-endless-loading-chromium\trace.zip
+2026-10-04T18:49:05.3398096Z     Usage:
+2026-10-04T18:49:05.3398573Z 
+2026-10-04T18:49:05.3399954Z         pnpm exec playwright show-trace tests\results\playwright\recording-journey-an-unrea-e8ff4--instead-of-endless-loading-chromium\trace.zip
+2026-10-04T18:49:05.3401176Z 
+2026-10-04T18:49:05.3403290Z     ────────────────────────────────────────────────────────────────────────────────────────────────
+2026-10-04T18:49:05.3404122Z 
+2026-10-04T18:49:05.3405286Z   1 failed
+2026-10-04T18:49:05.3406904Z     [chromium] › tests\e2e\recording-journey.spec.ts:198:1 › an unreadable saved transcript has a recoverable error instead of endless loading 
+2026-10-04T18:49:05.3408266Z   237 passed (20.9m)
+2026-10-04T18:49:05.4073398Z [ELIFECYCLE] Command failed with exit code 1.

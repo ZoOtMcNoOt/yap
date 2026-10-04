@@ -10,9 +10,20 @@ The completed UI milestone verified **30/30 supported UI acceptance areas**, wit
 
 ## Development environment
 
-The managed cloud workspace provides four CPU cores, 16 GiB RAM, and an initially available 30 GiB disk budget. It has no GPU, VPN, private-server credentials, or outbound cloud identity. Enforced networking permits package downloads; private-node access is not configured.
+The managed cloud workspace has four CPU cores and 16 GiB RAM. This session has
+no GPU, company VPN or private-server credentials. Package networking and GitHub
+fetch/push have been exercised; environment metadata alone does not establish
+enterprise network policy or private-node readiness.
 
-Installed and exercised: Node 24.19, pnpm 11.7.0, Python 3.12.14 with locked uv dependencies, Rust 1.96 with Clippy/rustfmt, PowerShell 7.6, GTK/WebKit/audio/tray build libraries, CMake, Chromium, Docker, Xvfb, and Tini. Native dependencies are installed into a user-owned prefix. See [cloud development](runbooks/cloud-development.md) for setup and commands.
+The fresh successor restored and exercised locked Python dependencies, Node
+24.19/pnpm 11.7.0, Rust 1.96 with rustfmt/Clippy, PowerShell 7.6 and Docker. The
+isolated Ubuntu server and digest-pinned PostgreSQL suites pass. Earlier receipts
+below retain the GTK/WebKit/Chromium/native setup observed in the predecessor;
+the fresh snapshot subsequently restored its native libraries and passed a
+focused Linux build/all 16 export-file cases; the earlier full-suite counts stay
+dated baselines. No renewed full native/physical-target result is claimed.
+Hosted Windows software checks are separately recorded below. See
+[cloud development](runbooks/cloud-development.md) for the reproducible setup.
 
 ## Earlier local verification baseline
 
@@ -71,36 +82,50 @@ Earlier dependency/consolidation results remain in the [desktop evidence](eviden
 
 ## Current increment
 
-Authenticated curators can now explicitly restore a retained, previously published
-generation through `POST /v1/knowledge/rollbacks`, after existing publication
-inspection. The existing tenant lock, complete-source/admission/vector validation,
-expected-active comparison and atomic rollback-history/success audit preserve
-all projections. Unpublished, pruned, foreign-owned, stale or damaged targets
-refuse without repairs; current-target replay revalidates without duplicate history.
-[Evidence](evidence/knowledge-rollback-api/2026-10-04/verification.md) records
-all 152 required real PostgreSQL cases and 201 portable cases without skips,
-plus 1,664 full-server passes/149 declared exclusions. Five of six bounded
-outcomes are locally verified; reviewed six-job hosted integration remains pending.
-Embedding-provider generation, full product rebuilding and every roadmap
-workstream remain open.
+Reviewed embedding generation now connects explicit source preparation to
+publication through `POST /v1/knowledge/embedding-preparations`. Deployment
+selects one already-running numeric-loopback provider/model/revision; the
+admitting curator supplies only a stored generation reference. Complete-source
+validation precedes provider dispatch. Complete 768-dimensional vectors and the
+success audit commit atomically, preserving source/proposals/active/history.
+Replay validates without another provider call. Published, conflicting, partial,
+foreign-owned and damaged projections refuse. Local checks pass: 161 required
+real PostgreSQL cases/26 modules and 209 portable cases without skips; isolated
+full server 1,672 passes/158 declared exclusions (1,830 total). The full source →
+embedding → publication → permission-filtered vector/read → rollback journey
+uses deterministic local HTTP vectors and real SQL. Actual model quality and
+enterprise identity are unqualified. Six of seven bounded outcomes are locally
+verified; reviewed exact-head hosted integration remains pending.
+[Evidence](evidence/knowledge-embedding-generation/2026-10-04/verification.md)
+retains limits and the original missing route. Desktop rebuild controls, larger
+rebuilds and every roadmap workstream remain open.
 
-GitHub access recovered on 2026-10-04: the feature branch was pushed through
-`4ec7d6189a1e57120ef957bcf94c7700a036a62c`. A fresh app chat recovered that
-exact branch into this cloud checkout and archived its idle predecessor after
-writing a readiness receipt. Reviewed hosted integration is now proceeding;
-[PR #205](https://github.com/ZoOtMcNoOt/yap/pull/205) runs all six jobs. Run 549
-passes server, identity/real PostgreSQL and Linux lifecycle; Windows Clippy rejects
-a needless return in the export-directory Windows path. The correction requires
-a fresh six-job exact-head run. PR review also reproduced whitespace-only
-export receipts reporting success and recursive OKF input escaping CLI refusal.
-Both corrections pass renewed units/portable checks and require renewed hosted
-checks; [review evidence](evidence/connection-review-export/2026-10-04/review-verification.md)
-retains failures and limits. No merge is claimed yet. The earlier disconnected-app,
-rejected-push and CLI model-stream failures remain historical observations in
-the handoff and dated evidence. The restored checkout retains dependency caches,
-but native toolchain availability and applicable checks must be reverified.
+Retained-generation rollback merged through [PR #206](https://github.com/ZoOtMcNoOt/yap/pull/206)
+as `d2d3685bdb5d45e6387257113ebe4c27c197c42c`, with the identical tree tested at
+`85ce2ada`. [Run 552](https://github.com/ZoOtMcNoOt/yap/actions/runs/37222318769)
+passes all six required jobs; review reports no findings. All six bounded rollback
+outcomes are software verified. The tested head is tagged, and the completed
+branch is retired. [Integration evidence](evidence/knowledge-rollback-api/2026-10-04/integration.md)
+retains model/enterprise/platform limits and the local real SQL receipt.
 
-## Earlier increments awaiting integration
+The recovered backlog and review corrections merged through [PR #205](https://github.com/ZoOtMcNoOt/yap/pull/205)
+as `82ea8362ee53220218b78926b762ab707ebaf2a9`, with the identical tested tree
+at `6c1c5e1f`. [Run 551](https://github.com/ZoOtMcNoOt/yap/actions/runs/37222033380)
+passes all six jobs: Windows frontend 406 units/all 238 browser flows/72 release
+contracts; native 1,380 units + 27 integrations/11 declared hardware ignores;
+Windows server 1,625 passes/180 declared exclusions; Linux all 144 required
+real PostgreSQL cases without skips, identity and lifecycle; native WDIO smoke.
+[Integration evidence](evidence/connection-review-export/2026-10-04/integration.md)
+retains reviewed corrections, exact-tree comparison and the preserved tag.
+The completed feature branch is retired. These are hosted software checks,
+not physical Windows/model/enterprise qualification.
+
+GitHub fetch/push and the app connection are restored. This fresh app chat
+recovered the pushed checkout, wrote a readiness receipt and then archived its
+idle predecessor. Earlier disconnected-app/push/CLI stream observations remain
+historical in the preserved handoff. The whole project goal stays active.
+
+## Earlier increments integrated through PR #205
 
 Embedding preparation now validates current stored source, admission and all four
 counts under the tenant lock before vector/model writes. Prepared keys must
@@ -138,20 +163,22 @@ curators explicit HTTP inspection and activation of their own admitted,
 prepared repository generations. Expected-active comparison, complete
 validation/replay and atomic success audit are verified locally: all 129 required
 database and 192 governed portable cases pass without skips; the full isolated
-server suite passes 1,655 cases with 126 declared exclusions. Hosted integration
-is pending. Git review, embedding preparation,
+server suite passes 1,655 cases with 126 declared exclusions. This increment
+merged through PR #205; later counts and hosted checks are recorded above. Git review,
 canonical rebuilding and desktop product integration remain separate open work;
 the overall publication outcome stays open. [Evidence](evidence/knowledge-publication/2026-10-04/verification.md)
 records the scope and checks. End-to-end rebuilding remains in the active queue.
 
-The [export-directory increment](plans/active/2026-10-02-yap-project-hill-climb.md#awaiting-integration-retain-the-admitted-export-directory)
+The [export-directory increment](plans/active/2026-10-02-yap-project-hill-climb.md#completed-increment-retain-the-admitted-export-directory)
 retains the admitted folder for original, accepted-correction and connection-review
 exports. Actual Linux files reproduced a parent replacement redirecting an export
 into internal Yap data. Directory ownership fixes that redirection; 1,383 native
 units and 27 integrations pass, with 11 declared model/hardware ignores. All 36
 related browser export cases, Linux lint and release/documentation checks pass.
-Five of six outcomes are locally verified; Windows and reviewed hosted integration
-remain pending in the [directory evidence](evidence/export-directory-ownership/2026-10-03/verification.md).
+All six outcomes are software verified and merged through PR #205. The dated
+[directory evidence](evidence/export-directory-ownership/2026-10-03/verification.md)
+retains Linux checks; run 551 renews hosted Windows software. Physical picker and
+filesystem qualification remains open.
 
 The earlier [completion recovery](evidence/transcript-export-recovery/2026-10-03/verification.md)
 increment retains its passing 1,377 + 27 native, 404 frontend, production-build
@@ -166,8 +193,8 @@ units pass 404 cases with two Windows-only skips, and the production build passe
 All 27 related browser cases and the complete 231-case Linux browser regression
 pass, with one declared Windows-only island skip (232 total).
 [Evidence and screens](evidence/accepted-correction-selection/2026-10-03/verification.md)
-retain the checks and limits. All retained iterations are now pushed; reviewed
-exact-head hosted integration remains pending.
+retain their dated checks and limits. This increment merged through the reviewed
+six-job green PR #205 head; current hosted counts are recorded above.
 
 [Connection review export](evidence/connection-review-export/2026-10-03/verification.md)
 carries the exact proposal and citations into human Git review. Five local software outcomes pass;
@@ -181,8 +208,9 @@ matching; authorized review and activation remain separate.
 
 [Rollback integrity](evidence/knowledge-rollback-integrity/2026-10-03/verification.md)
 now protects published vectors after replacement. Eight real ledger checks,
-all 119 current database cases and all 185 governed portable cases pass locally
-without skips. Reviewed exact-head integration remains pending.
+all 119 database cases and all 185 governed portable cases passed locally
+without skips in that dated receipt. PR #205 completed reviewed integration;
+later populations and hosted checks are recorded above.
 
 The [complete PostgreSQL gate](evidence/governed-postgres-ci/2026-10-03/verification.md)
 is merged and **5/5 software verified**. [PR #204](https://github.com/ZoOtMcNoOt/yap/pull/204)
@@ -249,8 +277,8 @@ regression passes 102 cases. Human publication and rebuild recovery remain open.
 and [UTF-8 export](evidence/accepted-correction-export/2026-10-03/verification.md)
 retain six verified outcomes each for trusted offline reopening, source/history
 revalidation, exact new-file publication and preserved originals/history.
-[Earlier-revision selection](specs/accepted-correction-history.md) is locally
-implemented with hosted integration pending. Timed/speaker exports and explicit
+[Earlier-revision selection](specs/accepted-correction-history.md) is software
+verified and merged through PR #205. Timed/speaker exports and explicit
 damaged-history repair remain open.
 
 The [shared design](evidence/design-refresh/2026-10-03/review.md) retains seven
