@@ -260,6 +260,12 @@ class KnowledgeEmbeddingPreparationApiTests(KnowledgeSourcePreparationApiTestCas
         self.provider_settings["transform"] = lambda value: {**value, "data": []}
         self.assertEqual(self.embeddings()[0], 409)
         self.assertEqual(self.snapshot(), before)
+        self.provider_settings["transform"] = lambda value: {
+            **value,
+            "data": [{**item, "embedding": [10**400] * 768} for item in value["data"]],
+        }
+        self.assertEqual(self.embeddings()[0], 409)
+        self.assertEqual(self.snapshot(), before)
         self.provider_settings["transform"] = lambda value: value
         self.provider_settings["status"] = 503
         self.assertEqual(self.embeddings()[0], 503)

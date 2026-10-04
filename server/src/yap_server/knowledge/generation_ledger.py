@@ -849,7 +849,10 @@ def serialize_embedding_vector(value: tuple[float, ...]) -> str:
     for item in value:
         if isinstance(item, bool) or not isinstance(item, (int, float)):
             raise ValueError("knowledge embedding value is invalid")
-        number = float(item)
+        try:
+            number = float(item)
+        except OverflowError:
+            raise ValueError("knowledge embedding value is invalid") from None
         if not math.isfinite(number):
             raise ValueError("knowledge embedding value is invalid")
         numbers.append(format(number, ".9g"))

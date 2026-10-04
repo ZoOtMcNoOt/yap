@@ -19,7 +19,9 @@ The fresh successor restored and exercised locked Python dependencies, Node
 24.19/pnpm 11.7.0, Rust 1.96 with rustfmt/Clippy, PowerShell 7.6 and Docker. The
 isolated Ubuntu server and digest-pinned PostgreSQL suites pass. Earlier receipts
 below retain the GTK/WebKit/Chromium/native setup observed in the predecessor;
-this fresh snapshot has not renewed that local desktop toolchain/build claim.
+the fresh snapshot subsequently restored its native libraries and passed a
+focused Linux build/all 16 export-file cases; the earlier full-suite counts stay
+dated baselines. No renewed full native/physical-target result is claimed.
 Hosted Windows software checks are separately recorded below. See
 [cloud development](runbooks/cloud-development.md) for the reproducible setup.
 
@@ -161,20 +163,22 @@ curators explicit HTTP inspection and activation of their own admitted,
 prepared repository generations. Expected-active comparison, complete
 validation/replay and atomic success audit are verified locally: all 129 required
 database and 192 governed portable cases pass without skips; the full isolated
-server suite passes 1,655 cases with 126 declared exclusions. Hosted integration
-is pending. Git review, embedding preparation,
+server suite passes 1,655 cases with 126 declared exclusions. This increment
+merged through PR #205; later counts and hosted checks are recorded above. Git review,
 canonical rebuilding and desktop product integration remain separate open work;
 the overall publication outcome stays open. [Evidence](evidence/knowledge-publication/2026-10-04/verification.md)
 records the scope and checks. End-to-end rebuilding remains in the active queue.
 
-The [export-directory increment](plans/active/2026-10-02-yap-project-hill-climb.md#awaiting-integration-retain-the-admitted-export-directory)
+The [export-directory increment](plans/active/2026-10-02-yap-project-hill-climb.md#completed-increment-retain-the-admitted-export-directory)
 retains the admitted folder for original, accepted-correction and connection-review
 exports. Actual Linux files reproduced a parent replacement redirecting an export
 into internal Yap data. Directory ownership fixes that redirection; 1,383 native
 units and 27 integrations pass, with 11 declared model/hardware ignores. All 36
 related browser export cases, Linux lint and release/documentation checks pass.
-Five of six outcomes are locally verified; Windows and reviewed hosted integration
-remain pending in the [directory evidence](evidence/export-directory-ownership/2026-10-03/verification.md).
+All six outcomes are software verified and merged through PR #205. The dated
+[directory evidence](evidence/export-directory-ownership/2026-10-03/verification.md)
+retains Linux checks; run 551 renews hosted Windows software. Physical picker and
+filesystem qualification remains open.
 
 The earlier [completion recovery](evidence/transcript-export-recovery/2026-10-03/verification.md)
 increment retains its passing 1,377 + 27 native, 404 frontend, production-build
@@ -189,8 +193,8 @@ units pass 404 cases with two Windows-only skips, and the production build passe
 All 27 related browser cases and the complete 231-case Linux browser regression
 pass, with one declared Windows-only island skip (232 total).
 [Evidence and screens](evidence/accepted-correction-selection/2026-10-03/verification.md)
-retain the checks and limits. All retained iterations are now pushed; reviewed
-exact-head hosted integration remains pending.
+retain their dated checks and limits. This increment merged through the reviewed
+six-job green PR #205 head; current hosted counts are recorded above.
 
 [Connection review export](evidence/connection-review-export/2026-10-03/verification.md)
 carries the exact proposal and citations into human Git review. Five local software outcomes pass;
@@ -204,8 +208,9 @@ matching; authorized review and activation remain separate.
 
 [Rollback integrity](evidence/knowledge-rollback-integrity/2026-10-03/verification.md)
 now protects published vectors after replacement. Eight real ledger checks,
-all 119 current database cases and all 185 governed portable cases pass locally
-without skips. Reviewed exact-head integration remains pending.
+all 119 database cases and all 185 governed portable cases passed locally
+without skips in that dated receipt. PR #205 completed reviewed integration;
+later populations and hosted checks are recorded above.
 
 The [complete PostgreSQL gate](evidence/governed-postgres-ci/2026-10-03/verification.md)
 is merged and **5/5 software verified**. [PR #204](https://github.com/ZoOtMcNoOt/yap/pull/204)
@@ -272,8 +277,8 @@ regression passes 102 cases. Human publication and rebuild recovery remain open.
 and [UTF-8 export](evidence/accepted-correction-export/2026-10-03/verification.md)
 retain six verified outcomes each for trusted offline reopening, source/history
 revalidation, exact new-file publication and preserved originals/history.
-[Earlier-revision selection](specs/accepted-correction-history.md) is locally
-implemented with hosted integration pending. Timed/speaker exports and explicit
+[Earlier-revision selection](specs/accepted-correction-history.md) is software
+verified and merged through PR #205. Timed/speaker exports and explicit
 damaged-history repair remain open.
 
 The [shared design](evidence/design-refresh/2026-10-03/review.md) retains seven

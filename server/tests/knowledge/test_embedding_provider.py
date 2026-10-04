@@ -83,6 +83,7 @@ class ReviewedEmbeddingProviderTests(unittest.TestCase):
             lambda value: changed_item(value, embedding=[True] * 768),
             lambda value: changed_item(value, embedding=[float("nan")] * 768),
             lambda value: changed_item(value, embedding=[float("inf")] * 768),
+            lambda value: changed_item(value, embedding=[10**400] * 768),
         ]
         for transform in transformations:
             with self.subTest(transform=transform):

@@ -50,3 +50,7 @@ retain the prepared-provider qualification requirement, 64-chunk/256-KiB input
 boundary, disabled route, strict requests and immutable published-data recovery.
 Desktop rebuild controls, larger rebuild orchestration, actual provider/corpus
 qualification and the entire remaining roadmap stay open.
+
+[Review corrections](review-verification.md) retain actual oversized-numeric
+provider/HTTP failures and the shared-serializer fix, renewed complete suites,
+and consistent integration-status descriptions. The test population is unchanged.
