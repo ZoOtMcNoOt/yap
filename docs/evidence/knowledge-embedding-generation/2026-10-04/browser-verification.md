@@ -1,7 +1,9 @@
 # Recording notification interaction verification
 
 Owner: Grant McNatt. Date: 2026-10-04. Status: locally verified;
-renewed exact-head hosted integration pending.
+renewed exact-head hosted integration pending. This is the dated local baseline;
+[integration evidence](integration.md) supersedes its pending gate with the
+actual reviewed six-green-job merge.
 
 [Run 557](https://github.com/ZoOtMcNoOt/yap/actions/runs/37224381593) at
 `053cb592a4d92dffd50d2b1602a2333410812874` passes five jobs. The frontend job

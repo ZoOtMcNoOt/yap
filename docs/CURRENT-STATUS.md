@@ -18,10 +18,12 @@ enterprise network policy or private-node readiness.
 The fresh successor restored and exercised locked Python dependencies, Node
 24.19/pnpm 11.7.0, Rust 1.96 with rustfmt/Clippy, PowerShell 7.6 and Docker. The
 isolated Ubuntu server and digest-pinned PostgreSQL suites pass. Earlier receipts
-below retain the GTK/WebKit/Chromium/native setup observed in the predecessor;
-the fresh snapshot subsequently restored its native libraries and passed a
-focused Linux build/all 16 export-file cases; the earlier full-suite counts stay
-dated baselines. No renewed full native/physical-target result is claimed.
+below retain the GTK/WebKit/Chromium/native setup observed in the predecessor.
+The fresh snapshot restored its native libraries and renewed the full Linux
+native suite at main `d2d3685b`: 1,383 unit and 27 integration cases pass, with
+11 declared model/hardware ignores and no failures. Its native source tree is
+identical to the merged embedding head `f64bd355`; the tracked checkout stayed
+clean. Physical-target and inference qualification remain open.
 Hosted Windows software checks are separately recorded below. See
 [cloud development](runbooks/cloud-development.md) for the reproducible setup.
 
@@ -82,6 +84,16 @@ Earlier dependency/consolidation results remain in the [desktop evidence](eviden
 
 ## Current increment
 
+The next bounded outcome is the authenticated desktop rebuild workflow, using
+existing native organization identity/leases and operator routes. No desktop
+caller is implemented yet: **0/7 outcomes implemented**. The
+[single queue](plans/active/2026-10-02-yap-project-hill-climb.md#current-increment-complete-the-authenticated-desktop-rebuild-workflow)
+and [desktop contract](specs/knowledge-rebuild.md) record acceptance, typed
+receipts, explicit actions and uncertain-write recovery before code changes.
+The larger canonical-publication outcome and entire roadmap remain open.
+
+## Latest completed increments
+
 Reviewed embedding generation now connects explicit source preparation to
 publication through `POST /v1/knowledge/embedding-preparations`. Deployment
 selects one already-running numeric-loopback provider/model/revision; the
@@ -94,8 +106,18 @@ real PostgreSQL cases/26 modules and 209 portable cases without skips; isolated
 full server 1,672 passes/158 declared exclusions (1,830 total). The full source →
 embedding → publication → permission-filtered vector/read → rollback journey
 uses deterministic local HTTP vectors and real SQL. Actual model quality and
-enterprise identity are unqualified. Six of seven bounded outcomes are locally
-verified; reviewed exact-head hosted integration remains pending.
+enterprise identity are unqualified. All seven bounded software outcomes are
+verified and merged through [PR #207](https://github.com/ZoOtMcNoOt/yap/pull/207)
+as `0d137282805e288d82884c143c79ca39f3614994`, with the identical tested tree
+at `f64bd355`. [Run 558](https://github.com/ZoOtMcNoOt/yap/actions/runs/37226621903)
+passes all six jobs: Windows frontend 406 units/all 238 browser flows/72 release
+contracts; native 1,380 units + 27 integrations/11 declared ignores; Windows
+server 1,633 passes/197 declared exclusions; Linux all 161 required real SQL
+cases without skips, identity and lifecycle; native WDIO smoke. Every review
+thread is resolved. The pushed reviewed tag retains the head; the completed
+branch/worktree is retired.
+[Integration evidence](evidence/knowledge-embedding-generation/2026-10-04/integration.md)
+records the exact-head proof and corrected notification interaction.
 [Evidence](evidence/knowledge-embedding-generation/2026-10-04/verification.md)
 retains limits and the original missing route. Desktop rebuild controls, larger
 rebuilds and every roadmap workstream remain open.
@@ -135,7 +157,8 @@ full isolated server passes 1,664 with 141 declared exclusions.
 [Evidence](evidence/knowledge-embedding-source-integrity/2026-10-04/verification.md)
 retains the reproduced successful write over changed source and observed lock-wait
 regression. This does not verify vector provenance or add an embedding provider;
-actual generation and complete product rebuild integration remain open.
+actual generation was subsequently implemented in PR #207 above. Complete
+product rebuild integration remains open.
 
 
 Curators can inspect and explicitly admit/stage a deployment-selected reviewed
@@ -146,7 +169,8 @@ All 142 required database and 201 governed portable cases pass without skips;
 full isolated server discovery passes 1,664 with 139 declared exclusions.
 [Evidence and operator guidance](evidence/knowledge-source-preparation/2026-10-04/verification.md)
 retain configuration, recovery and the reproduced Linux source-read race.
-Embedding preparation and complete product rebuild integration remain open.
+Embedding preparation was subsequently implemented in PR #207 above; complete
+product rebuild integration remains open.
 
 
 Rebuild staging retries now refuse inconsistent descriptors and all four
