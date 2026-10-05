@@ -1,6 +1,25 @@
 # ADR implementation status
 
 **Status:** Living, non-normative implementation audit
+**Current reconciliation (2026-10-05):** The dated evidence and scores below are
+historical baselines, not the current remaining-work queue. All eight bounded
+role cores and authenticated product surfaces subsequently merged through PR
+#183; all four deterministic terminology projections are delivered under ADR
+0028. PRs #205–#207 integrated reviewed-source preparation, publication integrity,
+retained rollback and embedding generation. Desktop rebuild PR #208 merged as
+`181085af`; larger embedding generations PR #209 merged as `fefbfc11` with the
+reviewed tree tested at `996109b9`. Timed speaker export and the cancelled-warmup
+repair merged through PR #210 as `0c98984f`; Ogg FLAC merged through PR #211 as
+`55109ef4`, with renewed reviewed exact-head gates and fetched-main tree equality.
+Maintenance’s recorded checkpoint required final-head review and renewed checks
+after a tree-identical ancestry repair; [PR #212](https://github.com/ZoOtMcNoOt/yap/pull/212)
+is the live integration record. Original failed observations remain dated evidence.
+See [current status](CURRENT-STATUS.md) for their exact-head gates. Remaining work concerns uncovered end-to-end integration and
+recovery, supported provider integration, production operations and actual
+model/Windows/enterprise qualification. This reconciliation changes no historical
+score or qualification receipt. The [roadmap](roadmap/ROADMAP.md) carries all 31
+decision-register entries, including OQ-31's closed `unadvertised-baseline`.
+
 **As of:** 2026-08-12; Phases 3–9 and Architecture Checkpoints A/B are closed and
 their checked-head evidence remains recorded below. Patched post-Phase-8
 meeting-transcription maintainability candidate
@@ -43,8 +62,9 @@ lifecycle gate at `4b103c1b...`, fresh route qualification at `4d623212...`, and
 aggregate governed gate at `0471b158...`; hosted-green head `6d1400cc...` merged
 through PR #157 as `cac8989b...`. Exact protected head `7bd93dc6...` now
 implements the bounded multi-user admission substrate; public-lock/aggregate
-head `135cc2ba...` qualified it and passed its gate. No workflow consumes it
-yet.
+head `135cc2ba...` qualified it and passed its gate. At that dated checkpoint no
+workflow consumed it; all eight role cores/product surfaces subsequently merged
+through PR #183, as recorded in the current reconciliation above.
 Post-Phase-6 Checkpoint B changes no ADR score. Historical candidate
 `66267af0abf38af0a6b8d3d2fac76543673c0331` and consumed hosted head
 `08ab49ba8d727cb8331a40f28c7c4c70d75d4035` retain their recorded evidence

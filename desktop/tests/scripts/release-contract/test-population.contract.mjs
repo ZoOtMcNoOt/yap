@@ -49,7 +49,7 @@ const MINIMUM_TESTS_PER_SPEC = Object.freeze({
   "design-refresh.spec.ts": 5,
   "first-run.spec.ts": 7,
   "history-recoverable-actions.spec.ts": 1,
-  "knowledge-journey.spec.ts": 10,
+  "knowledge-journey.spec.ts": 11,
   "knowledge-rebuild.spec.ts": 9,
   "live-overlay.spec.ts": 13,
   "local-server-offer.spec.ts": 8,
@@ -78,7 +78,8 @@ test("no e2e spec has fewer tests than its floor", () => {
   for (const [name, floor] of Object.entries(MINIMUM_TESTS_PER_SPEC)) {
     const source = readFileSync(path.join(e2eRoot, name), "utf8");
     const declared = source.match(/^\s*test\(/gm)?.length ?? 0;
-    if (declared < floor) shortfalls.push(`${name}: ${declared} tests, floor ${floor}`);
+    if (declared < floor)
+      shortfalls.push(`${name}: ${declared} tests, floor ${floor}`);
   }
   assert.deepEqual(shortfalls, [], shortfalls.join("\n"));
 });

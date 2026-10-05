@@ -221,8 +221,15 @@ proofs behind this decision: each exported retrieval/traversal/proposal owns the
 transaction holding the tenant shared lock, while activation holds the existing
 exclusive lock and reconstructs/re-hashes every persisted non-embedding
 projection before advancing the active pointer. Focused real-Postgres race and
-tamper tests are green; checkpoint merge and its one final aggregate gate remain
-open.
+tamper tests are green; the checkpoint subsequently passed its exact gate and
+merged through PR #153. [Current status](../CURRENT-STATUS.md) records later
+publication/source-integrity, retained rollback and embedding-generation work
+integrated through PRs #205–#207; desktop rebuild PR #208 merged as `181085af`,
+and larger-generation PR #209 merged as `fefbfc11` with the tree tested at
+`996109b9`. Timed speaker export and Ogg FLAC subsequently integrated through
+PRs #210/#211; those additions do not change canonical knowledge authority.
+These software increments do not qualify production
+database operations, model effectiveness or enterprise publication policy.
 
 Published vector projections remain immutable after replacement, including
 retained rollback targets. The embedding writer checks activation history
