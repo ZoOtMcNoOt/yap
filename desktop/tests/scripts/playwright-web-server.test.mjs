@@ -12,14 +12,32 @@ const playwrightConfigPath = path.resolve(
 );
 
 describe("Playwright web server", () => {
-  test("warms the development frontend before one test worker starts", async () => {
+  test("serves a separate bundled browser artifact before one test worker starts", async () => {
     const configSource = await readFile(playwrightConfigPath, "utf8");
+    const buildSource = await readFile(
+      path.resolve(scriptsDirectory, "..", "vite.playwright.config.ts"),
+      "utf8",
+    );
+    const shippedSource = await readFile(
+      path.resolve(scriptsDirectory, "..", "..", "vite.config.ts"),
+      "utf8",
+    );
 
     expect(configSource).toContain(
       'globalSetup: "./scripts/warm-playwright-application.mjs"',
     );
-    expect(configSource).toContain("pnpm dev --host 127.0.0.1");
+    expect(configSource).toContain(
+      "vite build --config tests/vite.playwright.config.ts",
+    );
+    expect(configSource).toContain(
+      "vite preview --config tests/vite.playwright.config.ts --host 127.0.0.1",
+    );
     expect(configSource).toContain("workers: 1");
-    expect(configSource).not.toContain("pnpm build && pnpm preview");
+    expect(buildSource).toContain('outDir: "tests/results/playwright-app"');
+    expect(buildSource).toContain('"import.meta.env.DEV": "true"');
+    expect(buildSource).toContain("fixtures/archivist-ingestion-owner.html");
+    expect(buildSource).toContain("fixtures/transcript-correction-owner.html");
+    expect(shippedSource).not.toContain("fixtures/");
+    expect(shippedSource).not.toContain('"import.meta.env.DEV"');
   });
 });
