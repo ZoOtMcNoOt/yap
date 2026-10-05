@@ -39,6 +39,34 @@ There is no defensible project-wide completion percentage yet. The initial cross
 
 ## Execution queue
 
+### Authorized repository maintenance (2026-10-05; in progress)
+
+The whole-repository audit found duplicated connector authority guards and
+Analyst/Coordinator request presentation lifecycle, four unused/generated tracked
+files, and current documents that overstate the closure of the decision register.
+Grant authorized this bounded cleanup while the full project goal remains active.
+Acceptance outcomes:
+
+1. Consolidate repeated native connector lease guards within their existing owner,
+   preserving typed capabilities, origin/generation binding, feature-specific
+   errors and the lock held through atomic commit.
+2. Share only the duplicated Analyst/Coordinator request lifecycle, retaining
+   feature-specific validation, result types and user guidance; owner changes,
+   delayed submission, cancellation, stale polling and offline drafts remain safe.
+3. Remove the verified unreferenced field/progress components, elapsed-seconds
+   hook and generated TypeScript build metadata; ignore regenerated metadata.
+   Preserve packaging assets, user data, licenses, provenance and historical evidence.
+4. Reconcile current roadmap/status/architecture claims with executable delivery
+   and all 31 decision-register entries; label historical reproduction tools and
+   index retained research without treating historical receipts as current gates.
+5. Pass applicable build, behavior, documentation and clean-checkout contracts on
+   the final committed head, obtain independent review, and integrate only after
+   all six required hosted checks pass on that unchanged reviewed head.
+
+The source-linked audit is retained outside the execution queue at
+`/workspace/YAP-REMAINING-WORK-AND-DEBT-AUDIT.md`. This maintenance increment does
+not replace remaining product work or grant target qualification.
+
 The rows below cover the full roadmap. Their order is the initial priority; revise it when an audit exposes a higher-impact blocker. Each row needs bounded acceptance outcomes as its implementation begins.
 
 | Workstream | Baseline and next complete outcome | Qualification boundary |
