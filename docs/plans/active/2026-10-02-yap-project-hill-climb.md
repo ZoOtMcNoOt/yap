@@ -477,9 +477,11 @@ retained-history discovery list. Another reviewer's admission remains private.
 
 ## Upcoming increment: prepare larger reviewed embedding generations
 
-**Status:** 6/7 local software outcomes verified; review and integration pending. Acceptance was recorded before code changes.
-PR #208's reviewed integration remains the current gate. This work is isolated
-from its immutable checked head and will integrate after that gate completes.
+**Status:** 6/7 local software outcomes verified; independent review has no unresolved findings and hosted integration remains pending. Acceptance was recorded before code changes.
+PR #208's reviewed integration remains the current gate. The batching head
+includes its reviewed CI ceiling correction and can run the full hosted gates
+while that prerequisite finishes. Integrate only after PR #208; main advancing
+will remove its prerequisite changes from this pull request's diff.
 
 The original configured provider refused 65 reviewed chunks before dispatch.
 Its whole-generation 64-chunk/256-KiB boundary prevented a larger otherwise

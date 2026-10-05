@@ -28,8 +28,11 @@ requests. Ruff and formatting pass for all seven changed Python files. All 165 r
 portable cases pass without skips or expected failures (23.617s). Final isolated-server renewal passes all 1,840 discovered cases: 1,678 passes,
 162 declared platform/fixture/database exclusions and zero failures (123.887s).
 Actual SQL runs separately without skips. All 30 repository contracts also pass without skips (11.118s).
-Independent exact-head re-review and all six hosted jobs remain required before
-integration. Prior pre-correction passes are preserved as dated observations rather
+Independent read-only re-review of `65f3d89ac412de8fa23027a70b387878fb9f9a81`
+found no unresolved actionable findings. The subsequent merge incorporates only
+PR #208's reviewed frontend CI ceiling and dated cancellation receipt; product
+code is unchanged. Final-head review and all six hosted jobs remain required
+before integration. Prior pre-correction passes are preserved as dated observations rather
 than credit for the corrected head. Actual model/capacity/enterprise qualification
 and the entire roadmap remain open.
 
