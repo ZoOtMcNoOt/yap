@@ -16,3 +16,9 @@ exact session identity, source hash, complete serialized turns and JSON content
 assertions. Product export behavior is unchanged. The failed head receives no
 green native gate credit; the corrected reviewed head requires full hosted
 renewal before integration.
+
+Local correction renewal on `c1a858fe2a0f36dd9597c94fafae405ac32bdeb8` passes
+all six native timed-export tests, with no skips or failures. Build completed in
+2m29s; behavior tests completed in 0.06s. Existing Linux platform warnings remain
+separate from the Windows strict-lint gate. Full output is retained outside Git
+at `/tmp/yap-timed-export-canonical-check.log`. Windows renewal remains required.
