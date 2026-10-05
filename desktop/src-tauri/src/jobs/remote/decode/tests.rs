@@ -1277,3 +1277,124 @@ fn aac_cancellation_retains_original_and_reclaims_only_its_temp_file() {
     assert_eq!(std::fs::read_dir(&root).unwrap().count(), 2);
     std::fs::remove_dir_all(root).unwrap();
 }
+
+#[test]
+fn ogg_flac_complete_ending_preserves_declared_duration_content_and_source() {
+    let original = std::fs::read(fixture("tone-48k-flac-pages.ogg")).unwrap();
+    assert!(fixture_ogg_pages(&original).len() > 3);
+    let (evidence, bytes) = decode("tone-48k-flac-pages.ogg");
+    assert_eq!(evidence.source_sample_rate_hz, 48_000);
+    assert_eq!(evidence.source_channels, 2);
+    assert_eq!(evidence.source_frame_count, 96_000);
+    assert!(evidence.output_sample_count.abs_diff(32_000) <= 1);
+    let decoded = samples(&bytes);
+    let settled = &decoded[decoded.len() / 2..];
+    assert!(magnitude(settled, 440.0) > 0.01);
+    assert!(magnitude(settled, 4_000.0) < magnitude(settled, 440.0) / 100.0);
+    assert_eq!(
+        std::fs::read(fixture("tone-48k-flac-pages.ogg")).unwrap(),
+        original
+    );
+}
+
+fn refuse_damaged_ogg_flac(label: &str, bytes: &[u8]) {
+    let directory = scratch(label);
+    let source = directory.join("recording.ogg");
+    std::fs::write(&source, bytes).unwrap();
+    let result = decode_import_if_compressed(&source, label, &directory, || Ok(()));
+    let accepted_frames = result
+        .as_ref()
+        .ok()
+        .and_then(|value| value.as_ref())
+        .map(|value| value.evidence.source_frame_count);
+    // Release any wrongly accepted decoded plaintext before checking cleanup.
+    let refused = result.is_err();
+    drop(result);
+    assert!(
+        refused,
+        "{label} became a decoded result with {accepted_frames:?} source frames"
+    );
+    assert_eq!(std::fs::read(&source).unwrap(), bytes);
+    assert_eq!(std::fs::read_dir(&directory).unwrap().count(), 1);
+    std::fs::remove_dir_all(directory).unwrap();
+}
+
+#[test]
+fn ogg_flac_missing_ending_cannot_become_a_partial_result() {
+    let whole = std::fs::read(fixture("tone-48k-flac-pages.ogg")).unwrap();
+    let pages = fixture_ogg_pages(&whole);
+    refuse_damaged_ogg_flac("flac-no-ending", &whole[..pages.last().unwrap().start]);
+}
+
+#[test]
+fn ogg_flac_damaged_middle_page_cannot_silently_omit_audio() {
+    let mut whole = std::fs::read(fixture("tone-48k-flac-pages.ogg")).unwrap();
+    let pages = fixture_ogg_pages(&whole);
+    whole[pages[3].end - 1] ^= 0x80;
+    refuse_damaged_ogg_flac("flac-bad-page", &whole);
+}
+
+#[test]
+fn ogg_flac_mono_normalization_is_bounded_and_preserves_exact_content_time() {
+    let (evidence, bytes) = decode("tone-48k-mono-flac.ogg");
+    assert_eq!(evidence.source_sample_rate_hz, 48_000);
+    assert_eq!(evidence.source_channels, 1);
+    assert_eq!(evidence.source_frame_count, 48_000);
+    assert!(evidence.output_sample_count.abs_diff(16_000) <= 1);
+    assert!(magnitude(&samples(&bytes), 440.0) > 0.01);
+}
+
+#[test]
+fn ogg_flac_cancellation_and_retry_preserve_the_original_and_owned_cleanup() {
+    let directory = scratch("cancel-flac-ogg");
+    let source = directory.join("recording.ogg");
+    let original = std::fs::read(fixture("tone-48k-flac-pages.ogg")).unwrap();
+    std::fs::write(&source, &original).unwrap();
+    let unrelated = directory.join("unrelated.txt");
+    std::fs::write(&unrelated, "retained work").unwrap();
+    let (result, observed_size) = cancel_after_plaintext(&source, &directory, "cancel-flac-ogg");
+    assert!(observed_size >= 8_192);
+    assert_eq!(result.unwrap_err(), "cancelled");
+    assert_eq!(std::fs::read(&source).unwrap(), original);
+    assert_eq!(std::fs::read_dir(&directory).unwrap().count(), 2);
+    let decoded = decode_import_if_compressed(&source, "retry-flac-ogg", &directory, || Ok(()))
+        .unwrap()
+        .unwrap();
+    assert_eq!(decoded.evidence.source_frame_count, 96_000);
+    drop(decoded);
+    assert_eq!(std::fs::read_to_string(unrelated).unwrap(), "retained work");
+    assert_eq!(std::fs::read(&source).unwrap(), original);
+    assert_eq!(std::fs::read_dir(&directory).unwrap().count(), 2);
+    std::fs::remove_dir_all(directory).unwrap();
+}
+
+#[test]
+fn ogg_flac_chained_streams_and_short_payloads_are_refused_without_partial_files() {
+    let whole = std::fs::read(fixture("tone-48k-flac-pages.ogg")).unwrap();
+    let mut chained = whole.clone();
+    chained.extend_from_slice(&whole);
+    for (label, bytes) in [
+        ("flac-chained", chained),
+        ("flac-short-header", whole[..50].to_vec()),
+        ("flac-short-payload", whole[..whole.len() - 10].to_vec()),
+    ] {
+        refuse_damaged_ogg_flac(label, &bytes);
+    }
+}
+
+#[test]
+fn ogg_flac_conflicting_header_count_and_complete_ending_are_refused() {
+    use symphonia::core::io::Monitor;
+    let mut whole = std::fs::read(fixture("tone-48k-flac-pages.ogg")).unwrap();
+    let pages = fixture_ogg_pages(&whole);
+    let signature = whole.windows(4).position(|bytes| bytes == b"fLaC").unwrap();
+    let count_offset = signature + 4 + 4 + 10;
+    let mut header = u64::from_be_bytes(whole[count_offset..count_offset + 8].try_into().unwrap());
+    header = (header & !((1_u64 << 36) - 1)) | 48_000;
+    whole[count_offset..count_offset + 8].copy_from_slice(&header.to_be_bytes());
+    whole[22..26].fill(0);
+    let mut crc = symphonia::core::checksum::Crc32::new(0);
+    crc.process_buf_bytes(&whole[pages[0].clone()]);
+    whole[22..26].copy_from_slice(&crc.crc().to_le_bytes());
+    refuse_damaged_ogg_flac("flac-conflicting-header", &whole);
+}

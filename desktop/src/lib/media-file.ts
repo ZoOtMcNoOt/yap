@@ -1,5 +1,5 @@
 export const acceptedFormats =
-  "WAV, MP3, FLAC, Ogg Vorbis and M4A/MP4 (AAC-LC)";
+  "WAV, MP3, FLAC, Ogg Vorbis/FLAC and M4A/MP4 (AAC-LC)";
 
 export const audioExtensions = [
   "mp3",

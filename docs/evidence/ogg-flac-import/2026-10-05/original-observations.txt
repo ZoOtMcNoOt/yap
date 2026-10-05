@@ -1,0 +1,26 @@
+Grant McNatt — 2026-10-05 UTC
+Original decoder before all-Ogg ending inspection, synthetic2-second48kHzstereo fixture.
+running 3 tests
+test jobs::remote::decode::tests::ogg_flac_missing_ending_cannot_become_a_partial_result ... ok
+test jobs::remote::decode::tests::ogg_flac_complete_ending_preserves_declared_duration_content_and_source ... ok
+
+thread 'jobs::remote::decode::tests::ogg_flac_damaged_middle_page_cannot_silently_omit_audio' (200521) panicked at src/jobs/remote/decode/tests.rs:1313:5:
+flac-bad-page became a decoded result with Some(82176) source frames
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test jobs::remote::decode::tests::ogg_flac_damaged_middle_page_cannot_silently_omit_audio ... FAILED
+
+failures:
+
+failures:
+    jobs::remote::decode::tests::ogg_flac_damaged_middle_page_cannot_silently_omit_audio
+
+test result: FAILED. 2 passed; 1 failed; 0 ignored; 0 measured; 1411 filtered out; finished in 0.63s
+
+error: test failed, to rerun pass `--lib`
+
+Native full renewal on corrected48k manifest fixture:1405passed1failed12declaredignores.
+Existing concurrent settings publication fixture failed !observed.is_empty():
+both writers can finish before an unsynchronized observer thread gets scheduled.
+Correction synchronizes release with the observer's first actual initialized-file
+read; all payload, final state and temporary leak assertions remain. No sleeps,
+retry or production publication changes. Full native renewal remains required.

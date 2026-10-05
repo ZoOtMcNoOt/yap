@@ -1057,7 +1057,12 @@ fn verify_decoded_source_manifest(fixture_name: &str) {
     )
     .expect("decode must succeed")
     .expect("a supported compressed import must be decoded");
-    assert_eq!(decoded.evidence.source_sample_rate_hz, 44_100);
+    let (expected_rate, expected_frames) = if fixture_name == "tone-48k-flac-pages.ogg" {
+        (48_000, 96_000)
+    } else {
+        (44_100, 44_100)
+    };
+    assert_eq!(decoded.evidence.source_sample_rate_hz, expected_rate);
     assert_eq!(decoded.evidence.source_channels, 2);
 
     let owner = OwnerNamespace::local("i-decoded-import").unwrap();
@@ -1092,7 +1097,7 @@ fn verify_decoded_source_manifest(fixture_name: &str) {
         normalization["componentRevision"],
         "decoded-canonical-pcm16-normalization-v1"
     );
-    assert_eq!(normalization["decodedFrom"]["sampleRateHz"], 44_100);
+    assert_eq!(normalization["decodedFrom"]["sampleRateHz"], expected_rate);
     assert_eq!(normalization["decodedFrom"]["channels"], 2);
     assert!(normalization["decodedFrom"]["frameCount"].as_u64().unwrap() > 0);
     if fixture_name == "tone-44k-gapless.mp3"
@@ -1100,7 +1105,7 @@ fn verify_decoded_source_manifest(fixture_name: &str) {
         || fixture_name.ends_with(".m4a")
         || fixture_name.ends_with(".mp4")
     {
-        assert_eq!(normalization["decodedFrom"]["frameCount"], 44_100);
+        assert_eq!(normalization["decodedFrom"]["frameCount"], expected_frames);
     }
     assert_eq!(normalization["sourceTimePreserved"], true);
     assert_eq!(manifest["schemaVersion"], 2);
@@ -1118,8 +1123,10 @@ fn verify_decoded_source_manifest(fixture_name: &str) {
 }
 
 #[test]
-fn ogg_vorbis_reaches_the_canonical_manifest_with_declared_source_evidence() {
-    verify_decoded_source_manifest("tone-44k-stereo.ogg");
+fn ogg_vorbis_and_flac_reach_the_canonical_manifest_with_declared_source_evidence() {
+    for fixture in ["tone-44k-stereo.ogg", "tone-48k-flac-pages.ogg"] {
+        verify_decoded_source_manifest(fixture);
+    }
 }
 
 #[test]

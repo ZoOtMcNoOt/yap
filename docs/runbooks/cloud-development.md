@@ -31,7 +31,10 @@ No model weights are downloaded. Third-party origins:
 ## Build and verify
 
 Run suites sequentially on the four-core workspace. Timing/concurrency fixtures
-should not compete with a full native compilation.
+should not compete with a full native compilation. When reusing dependency
+packages across worktrees, keep writable Vite `.vite` and `.vite-temp` caches
+private to each worktree; do not link those caches into a shared dependency
+directory. Preserve failure traces before starting a renewal.
 
 ```bash
 source verification/cloud-env.sh

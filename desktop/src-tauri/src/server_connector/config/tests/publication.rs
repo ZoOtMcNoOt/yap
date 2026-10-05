@@ -75,11 +75,16 @@ fn concurrent_writers_publish_only_complete_payloads_without_temp_leaks() {
     let observer_path = path.clone();
     let observer_running = Arc::clone(&observing);
     let observer_values = Arc::clone(&observations);
+    let (observed_once, first_observation) = std::sync::mpsc::sync_channel(1);
     let observer = std::thread::spawn(move || {
+        let mut observed_once = Some(observed_once);
         while observer_running.load(Ordering::Acquire) {
             if let Ok(_lock) = acquire_settings_lock(&observer_path) {
                 if let Ok(text) = std::fs::read_to_string(&observer_path) {
                     observer_values.lock().unwrap().push(text);
+                    if let Some(ready) = observed_once.take() {
+                        ready.send(()).unwrap();
+                    }
                 }
             }
             std::thread::yield_now();
@@ -106,6 +111,11 @@ fn concurrent_writers_publish_only_complete_payloads_without_temp_leaks() {
     };
     let left_writer = spawn_writer(left.clone());
     let right_writer = spawn_writer(right.clone());
+    // Observe the initialized destination before releasing both writers. Merely
+    // spawning the observer does not guarantee it runs before writers finish.
+    first_observation
+        .recv_timeout(std::time::Duration::from_secs(5))
+        .expect("observer must read the initialized settings before publication");
     release.wait();
 
     left_writer.join().unwrap().unwrap();

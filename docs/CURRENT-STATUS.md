@@ -108,6 +108,14 @@ exact-head jobs remain required. [Evidence](evidence/timed-speaker-export/2026-1
 retains those results and qualification limits. Integrate this successor after
 PR #208 and PR #209, then continue formats and the entire roadmap.
 
+Ogg FLAC admission now refuses reproduced silent middle-page loss. Full local
+native checks pass 1,406 units and 27 integrations, with 12 declared ignores.
+All 417 portable frontend cases, 12 recording browser journeys, the build and
+Clippy pass after serial renewal with private Vite caches. [Evidence](evidence/ogg-flac-import/2026-10-05/verification.md)
+retains the original defect and qualification boundaries. Final immutable review,
+clean contracts and hosted gates remain pending; integrate after timed export.
+The single queue retains these successors and the entire roadmap.
+
 ## Latest completed increments
 
 Reviewed embedding generation now connects explicit source preparation to

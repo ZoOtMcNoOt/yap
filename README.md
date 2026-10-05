@@ -43,7 +43,7 @@ quality, Windows behavior and enterprise deployment still require qualification
 in their intended environments. [Current status](docs/CURRENT-STATUS.md) records
 the checks and remaining work.
 
-Current import support covers WAV, MP3, FLAC, Ogg Vorbis, and **M4A/MP4 with one
+Current import support covers WAV, MP3, FLAC, Ogg Vorbis/FLAC, and **M4A/MP4 with one
 mono/stereo AAC-LC audio track**. Video in a supported MP4 is ignored. Container
 and codec restrictions are documented in [Product](PRODUCT.md); AAC distribution
 patent clearance remains a release decision.

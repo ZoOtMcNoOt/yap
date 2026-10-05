@@ -717,33 +717,36 @@ fn flac_import_retains_native_selection_and_catalog_authority() {
 }
 
 #[test]
-fn ogg_vorbis_import_retains_native_selection_and_catalog_authority() {
-    let dir = temp_dir("create-ogg-import");
-    let source = dir.join("meeting.OGG");
-    let fixture =
-        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/tone-44k-stereo.ogg");
-    let original = fs::read(fixture).unwrap();
-    fs::write(&source, &original).unwrap();
-    let jobs = RecordingJobs::from_ledger(JobLedger::open_in_memory().unwrap(), &dir);
-    let media = MediaOwner::new();
-    let created = jobs
-        .create_imports(&media, vec![source.clone()], 1_000)
-        .unwrap();
-    assert_eq!(created.len(), 1);
-    assert_eq!(created[0].status, RecordingJobStatus::Preflighting);
-    assert_eq!(
-        created[0].source_path.as_deref(),
-        source.canonicalize().unwrap().to_str()
-    );
-    assert!(created[0].playback_path.is_some());
-    let record = jobs.ledger().get_job(&created[0].id).unwrap().unwrap();
-    assert!(record.asr_catalog_binding.is_some());
-    assert!(jobs.selection_registry_path.is_file());
-    assert_eq!(jobs.snapshot(&media, 1_001).unwrap()[0].id, created[0].id);
-    assert_eq!(fs::read(&source).unwrap(), original);
-    drop(media);
-    drop(jobs);
-    fs::remove_dir_all(dir).unwrap();
+fn ogg_vorbis_and_flac_imports_retain_native_selection_and_catalog_authority() {
+    for fixture_name in ["tone-44k-stereo.ogg", "tone-48k-flac-pages.ogg"] {
+        let dir = temp_dir("create-ogg-import");
+        let source = dir.join("meeting.OGG");
+        let fixture = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/fixtures")
+            .join(fixture_name);
+        let original = fs::read(fixture).unwrap();
+        fs::write(&source, &original).unwrap();
+        let jobs = RecordingJobs::from_ledger(JobLedger::open_in_memory().unwrap(), &dir);
+        let media = MediaOwner::new();
+        let created = jobs
+            .create_imports(&media, vec![source.clone()], 1_000)
+            .unwrap();
+        assert_eq!(created.len(), 1);
+        assert_eq!(created[0].status, RecordingJobStatus::Preflighting);
+        assert_eq!(
+            created[0].source_path.as_deref(),
+            source.canonicalize().unwrap().to_str()
+        );
+        assert!(created[0].playback_path.is_some());
+        let record = jobs.ledger().get_job(&created[0].id).unwrap().unwrap();
+        assert!(record.asr_catalog_binding.is_some());
+        assert!(jobs.selection_registry_path.is_file());
+        assert_eq!(jobs.snapshot(&media, 1_001).unwrap()[0].id, created[0].id);
+        assert_eq!(fs::read(&source).unwrap(), original);
+        drop(media);
+        drop(jobs);
+        fs::remove_dir_all(dir).unwrap();
+    }
 }
 
 #[test]
