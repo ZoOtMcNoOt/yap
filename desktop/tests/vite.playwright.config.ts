@@ -1,6 +1,6 @@
 import path from "node:path";
 import { defineConfig, mergeConfig } from "vite";
-import desktopConfig from "../vite.config";
+import desktopConfig from "../vite.config.ts";
 
 // Browser journeys use their own artifact. The shipped build keeps its normal
 // entries and production-only preview guard.

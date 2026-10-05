@@ -28,3 +28,14 @@ and final exact-head guards remain. Existing frontend contracts also verify the
 fixture/preview boundary. Bundled fixture URLs, preview behavior and complete
 Windows-suite renewal must pass before integration; request reduction alone
 does not prove this resource failure resolved.
+
+Local bundled renewal passes 28 runnable cases with the one declared Windows-only
+exclusion (1.3m), including both fixture routes, all live-overlay preview states
+and both formerly failing application journeys. The build and existing runner
+contract pass. The first local startup failed because Playwright defaults the
+server working directory to its config directory; the runner now explicitly
+owns the desktop root, and renewal succeeds. Its config imports use explicit
+file extensions. Original local diagnostics remain in
+`/tmp/yap-bundled-browser-focused.log`; corrected output is retained at
+`/tmp/yap-bundled-browser-focused2.log`. Complete hosted Windows renewal remains
+required; this local result does not prove Windows resource recovery.
