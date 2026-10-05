@@ -36,6 +36,15 @@ pass without skips. Formatting subsequently changes whitespace only.
 Exact-head independent re-review and six renewed green jobs remain required
 before merge.
 
+Independent re-review of `20fa6779577f7f0a2bd1e272ae702ba30bdeb607`
+found no unresolved actionable findings. Run 562 passed five jobs and all 411
+Windows frontend units, but the complete serial browser suite reached the
+25-minute job limit after 199 passing case markers. It reported no test failure before
+cancellation and receives no complete-suite credit. Increase only the frontend
+job ceiling to 40 minutes; preserve all 251 cases, one worker, 20-second test
+timeouts, assertions and exact-checkout guards. Renew all six jobs on the changed
+head; run 562 cannot qualify it for integration.
+
 The fixtures use synthetic identities and vectors. They do not qualify actual
 provider quality, enterprise identity or physical Windows operation. The entire
 project roadmap remains active.
