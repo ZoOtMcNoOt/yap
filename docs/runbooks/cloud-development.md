@@ -248,6 +248,16 @@ failure screenshots and traces remain enabled. Outside this workspace, leave
 these variables unset to use Playwright's default browser and video behavior.
 Browser warmup and test workers use the same browser selection.
 
+`pnpm test:e2e` builds a separate multi-entry browser-test artifact into ignored
+`desktop/tests/results/playwright-app` and serves it on an owned loopback port.
+It retains the two owner fixtures and the development-only overlay preview,
+while the shipped build keeps its normal production configuration. Each run
+rebuilds that artifact before serving, unless explicit server reuse is selected.
+Bundled serving avoids loading the development module graph and HMR connection
+in every isolated browser context. Keep worktree build outputs and writable Vite
+caches private; run heavyweight checks sequentially in the four-CPU workspace.
+
+
 ## Verification boundary
 
 A Linux native build verifies compilation and the portable Rust behavior.
