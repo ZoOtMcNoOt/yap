@@ -39,7 +39,7 @@ There is no defensible project-wide completion percentage yet. The initial cross
 
 ## Execution queue
 
-### Authorized repository maintenance (2026-10-05; in progress)
+### Authorized repository maintenance (2026-10-05; local verification complete)
 
 The whole-repository audit found duplicated connector authority guards and
 Analyst/Coordinator request presentation lifecycle, four unused/generated tracked
@@ -62,6 +62,11 @@ Acceptance outcomes:
 5. Pass applicable build, behavior, documentation and clean-checkout contracts on
    the final committed head, obtain independent review, and integrate only after
    all six required hosted checks pass on that unchanged reviewed head.
+
+Full corrected native (1,409 units + 27 integrations), Clippy, frontend/build,
+260 browser cases/one Windows-only exclusion, real PostgreSQL rebuilding and both
+clean-checkout contract sets pass at their documented source heads. Final metadata
+review and exact-head six-job hosted integration remain required.
 
 The [maintenance evidence](../../evidence/repository-maintenance/2026-10-05/verification.md)
 retains this increment’s scope and verification. It does not replace remaining
@@ -550,7 +555,7 @@ Synthetic-vector limits remain separate from actual inference/enterprise capacit
 
 ## Upcoming increment: export the saved timed speaker transcript
 
-**Status:** Implementation, focused verification and independent review complete; integration remains pending. PR #210's `65029dd42b16c67daa1e12883a992496789432b0` head fails [run 569](https://github.com/ZoOtMcNoOt/yap/actions/runs/37278695798) on a real cancelled-warmup destruction race: 1,393 native units pass, one fails and 12 are ignored. Repair is in progress; this head is not all-green or merged. The earlier `d46744f7` Windows path-canonicalization assertion failure remains a dated observation. Its serial local full-browser renewal passed all 257 runnable cases with one Windows-only exclusion (17.5m); that dated result does not verify a changed repair head. Acceptance was recorded before code changes. PRs #208 and #209 are integrated; renew applicable checks and obtain reviewed six-job green exact-head integration for this successor.
+**Status:** Implementation and focused verification complete; independent review reports no findings on corrected `12088dea5eec1bc41f9cd71fd6cff828c2c73832`. [Run 572](https://github.com/ZoOtMcNoOt/yap/actions/runs/37281343011) renews all six gates; integration remains pending. Run569's `65029dd4` real destruction-race failure (1,393 passes/one failure/12 ignores) and the earlier `d46744f7` Windows path assertion failure remain dated observations. The repair passes all 30 focused lifecycle cases without skips and retains destruction ownership outside the mutex. Earlier timed-export native/browser results retain their exact heads; no changed-head credit is assumed. Acceptance preceded implementation; integrate through the reviewed six-green-job rule after PRs #208 and #209.
 
 
 History reads source-bound persisted speaker turns with
@@ -604,7 +609,7 @@ and alignment for accepted free-text corrections remain separate roadmap outcome
 
 ## Upcoming increment: complete Ogg FLAC admission
 
-**Status:** Five acceptance areas were locally verified before the hosted renewal. PR #211's `8e774f730f082d7c2f2ec30d47fd550037e0231f` head now has all six jobs green in [run 570](https://github.com/ZoOtMcNoOt/yap/actions/runs/37278892710), but remains unmerged: its parent PR #210 has a real warmup-race failure under repair. The original `465c5df0` inherited Windows path-canonicalization assertion failure remains a dated observation. Do not transfer this green head's evidence to a changed descendant containing the parent repair; review and renew the required exact-head checks before ordered integration. Acceptance was recorded before code changes at `d5ce762f`.
+**Status:** Five acceptance areas were locally verified before hosted renewal. Corrected `c3beeb9054671d9949b0cb36725925026f257f18` includes the reviewed parent warmup repair and has no independent integration-review findings. [Run 573](https://github.com/ZoOtMcNoOt/yap/actions/runs/37281364719) renews all six exact-head gates; PR #210 must integrate first. Earlier `8e774f73` was all-six-green in run570, while original `465c5df0` failed an inherited Windows path assertion. Both observations remain dated evidence and grant no gate credit to this changed descendant. Acceptance preceded implementation at `d5ce762f`.
 
 
 Executable audit: the locked Symphonia0.6.1 Ogg mapper already recognizes FLAC;
@@ -653,12 +658,12 @@ container reader or infer duration from bitrate.
 
 ## Required verification repair: cancelled warmup destruction ownership
 
-**Status:** Acceptance recorded before implementation. PR #210 run 37278695798 exposed a real native ownership race: bounded cleanup returned success before the cancelled loading result destructor ran. Preserve that failed observation; do not qualify it by retrying.
+**Status:** Acceptance recorded before implementation at `affb15c9`; corrected source `12088dea` passes all 30 focused lifecycle cases and independent review. Hosted run572 remains pending. PR #210 run 37278695798 exposed a real native ownership race: bounded cleanup returned success before the cancelled loading result destructor ran. Preserve that failed observation; do not qualify it by retrying.
 
-- [ ] Track cancelled-load destruction until its destructor completes; publish empty only after completion.
-- [ ] Destroy outside the state mutex and retain bounded cleanup deadlines. Refuse adoption or duplicate loading while destruction owns the result.
-- [ ] Fence destruction failure and keep concurrent ready-model retirement ownership separate.
-- [ ] Prove blocked destruction causes a cleanup timeout, then successful cleanup after release, with deterministic acknowledgements and existing lifecycle regressions.
+- [x] Track cancelled-load destruction until its destructor completes; publish empty only after completion.
+- [x] Destroy outside the state mutex and retain bounded cleanup deadlines. Refuse adoption or duplicate loading while destruction owns the result.
+- [x] Fence destruction failure and keep concurrent ready-model retirement ownership separate.
+- [x] Prove blocked destruction causes a cleanup timeout, then successful cleanup after release, with deterministic acknowledgements and existing lifecycle regressions.
 - [ ] Independently review the exact corrected head, renew applicable local checks and all six hosted gates, then integrate with the original failure retained.
 
 ## Execution record

@@ -53,12 +53,33 @@ not model/provider or physical Windows qualification. The default native suite
 ignores the real PostgreSQL fixture; it was explicitly executed separately with
 its actual built binary and no skip.
 
-PR #210 then exposed a cancelled-warmup destruction ownership race in its hosted
-native suite. Its [separate acceptance and repair](../../timed-speaker-export/2026-10-05/warmup-destruction-repair.md)
-requires inclusion and fresh native verification before this final maintenance
-candidate can integrate. The renderer source exercised by the full browser run
-is unchanged by that native repair.
+## Corrected combined native and clean-checkout renewal
 
-Both committed clean-checkout contract sets, final corrected native renewal,
-independent final-head review and all six hosted gates remain pending. Preserve
-every original failure; final integration must name actual results and exact heads.
+The reviewed source at `d3d5a3123fb58ca696a1f3528913693b3132bf55` includes
+PR #210's [cancelled-load destruction repair](../../timed-speaker-export/2026-10-05/warmup-destruction-repair.md).
+Full native renewal passes 1,409 units and all 27 integrations, with 12 declared
+fixture/model ignores (2m12s compilation, 30.51s units). All-target Clippy passes
+`-D clippy::all` (25.58s), retaining the previously reported Linux platform warnings.
+The exact final built-native PostgreSQL/HTTP journey is explicitly renewed:
+one pass, zero skips, 0.41s, with owned disposable-container cleanup successful.
+An initial extra renewal selected system Python and failed before running tests
+because psycopg was unavailable; `uv run --project server --no-sync` selects the
+locked runtime and succeeds. Logs retain both observations.
+
+Both complete clean-checkout contract sets pass on this committed candidate:
+67/72 release cases with five declared Windows/platform exclusions and 71/86
+local cases with 15 exclusions; no failures. All 30 documentation, dependency,
+provenance, model-provenance, population and workflow contracts pass with no skips.
+The earlier full frontend/build/browser source is unchanged by the native repair.
+Independent read-only review of both original maintenance source and the combined
+`d3d5a312` candidate reports no unresolved actionable findings.
+
+Corrected logs: `/tmp/yap-maintenance-native-final.log`,
+`/tmp/yap-maintenance-clippy-final.log`,
+`/tmp/yap-maintenance-native-postgres-final{,-renewed}.log`,
+`/tmp/yap-maintenance-clean-all.log`, and
+`/tmp/yap-maintenance-documentation-contracts.log`. Final metadata changes require
+clean-contract renewal and independent exact-head review. All six hosted jobs
+must pass on the unchanged reviewed final head before ordered integration after
+PRs #210 and #211; preserve tested tags, fetched-main tree equality and unique
+successors before completed branch/worktree retirement. The full roadmap remains active.

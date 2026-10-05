@@ -29,7 +29,10 @@ cleanup and a successor after release. A panic regression retains the fence.
 The original failing test now waits for acknowledged cancellation rather than
 assuming another thread started within 50 ms.
 
-Local behavior checks, final independent review and all six hosted gates on the
-corrected unchanged head are pending. Failed observations receive no green gate
+All 30 focused lifecycle cases pass without skips on corrected
+`12088dea5eec1bc41f9cd71fd6cff828c2c73832` (2m13s compilation, 2.09s behavior).
+Independent read-only exact-head review reports no actionable findings.
+[Run 572](https://github.com/ZoOtMcNoOt/yap/actions/runs/37281343011) is renewing
+all six hosted gates on that unchanged reviewed head; integration is pending. Failed observations receive no green gate
 credit. Synthetic model owners qualify lifecycle behavior only; actual model,
 physical Windows/RDP and enterprise qualification remain separate.

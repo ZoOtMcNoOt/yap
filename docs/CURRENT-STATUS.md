@@ -112,34 +112,37 @@ retains the source-to-prepare/publish/read/restore scope and limits. The earlier
 records 249 browser passes and two initial-navigation loopback resource failures;
 that failed observation is retained and receives no integration credit.
 
-[PR #210](https://github.com/ZoOtMcNoOt/yap/pull/210) implements saved timed speaker
-JSON export through trusted persisted source data and existing atomic new-file
-ownership. Its current `65029dd42b16c67daa1e12883a992496789432b0` head fails
-[run 569](https://github.com/ZoOtMcNoOt/yap/actions/runs/37278695798) on a real
-cancelled-warmup destruction race: 1,393 native units pass, one fails and 12 are
-ignored. Repair is in progress; this head is neither all-green nor merged.
-The earlier `d46744f7` [run 37276242335](https://github.com/ZoOtMcNoOt/yap/actions/runs/37276242335)
-path-canonicalization assertion failure is retained as a dated observation. That
-head's serial local browser renewal passed all 257 runnable cases with one
-Windows-only exclusion (17.5m); it does not verify a changed repair head.
-[Evidence](evidence/timed-speaker-export/2026-10-05/verification.md) retains prior
-native/frontend/browser checks and physical-picker/model qualification limits.
+[PR #210](https://github.com/ZoOtMcNoOt/yap/pull/210) implements source-bound saved
+timed speaker JSON through existing native atomic new-file ownership. Corrected
+`12088dea5eec1bc41f9cd71fd6cff828c2c73832` retains cancelled-warmup destruction
+ownership outside the mutex until completion, passes all 30 focused lifecycle
+cases without skips and has no independent review findings. [Run 572](https://github.com/ZoOtMcNoOt/yap/actions/runs/37281343011)
+renews all six exact-head gates; integration remains pending. Earlier run569's
+`65029dd4` real destruction-race failure and `d46744f7` Windows canonical-path
+assertion failure remain [dated evidence](evidence/timed-speaker-export/2026-10-05/verification.md).
+The earlier 257-pass/one Windows-only local browser result retains its source head.
 
 [PR #211](https://github.com/ZoOtMcNoOt/yap/pull/211) implements Ogg FLAC admission
-and refuses reproduced silent middle-page loss. Its current
-`8e774f730f082d7c2f2ec30d47fd550037e0231f` head has all six jobs green in [run 570](https://github.com/ZoOtMcNoOt/yap/actions/runs/37278892710),
-but remains unmerged while parent PR #210's warmup-race repair is in progress.
-Its original `465c5df0` Windows job in run 37276564168 passed 1,400 units and
-failed the inherited path-canonicalization assertion; that observation is retained.
-[Evidence](evidence/ogg-flac-import/2026-10-05/verification.md) records earlier
-1,406 local native units/27 integrations, 12 declared ignores, 417 portable
-frontend cases, recording browser journeys and decoder qualification boundaries.
-Green run 570 does not qualify a changed descendant containing the parent repair;
-renew applicable reviewed exact-head checks before ordered integration.
-Main now integrates PRs #208 and #209; PRs #210 and #211 remain pending. These
-software results do not qualify actual models, physical Windows or enterprise
-operation. The maintenance verification record remains separate and unchanged;
-the full project goal stays active.
+and silent middle-page-loss refusal. Corrected `c3beeb9054671d9949b0cb36725925026f257f18`
+includes the independently reviewed warmup repair; [run 573](https://github.com/ZoOtMcNoOt/yap/actions/runs/37281364719)
+renews all six gates before ordered integration after #210. Earlier all-green
+`8e774f73` run570 and original `465c5df0` inherited Windows assertion failure
+remain dated observations, not gate credit for the changed descendant.
+[Evidence](evidence/ogg-flac-import/2026-10-05/verification.md) retains source-head
+native/frontend/browser results and decoder qualification boundaries.
+
+The authorized [repository maintenance](evidence/repository-maintenance/2026-10-05/verification.md)
+consolidates native authority guards and Analyst/Coordinator request lifecycle,
+fixes stale polling after terminal cancellation, removes four verified unused or
+generated files, and reconciles all 31 decision dispositions. Local verification
+passes corrected native 1,409 units plus 27 integrations/12 fixture ignores,
+Clippy, actual built-native PostgreSQL rebuilding, 417 frontend cases/two Windows
+exclusions, TypeScript/Vite, 260 browser cases/one Windows-only exclusion, both
+clean-checkout contract sets and all 30 documentation/provenance contracts at
+their recorded source heads. Final exact-head review/hosted integration remains.
+Main integrates #208 and #209; #210, #211 and maintenance are pending. Actual
+models, physical Windows/RDP and enterprise qualification remain separate; the
+full project goal stays active.
 
 ## Latest completed increments
 
