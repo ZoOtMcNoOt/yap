@@ -29,7 +29,7 @@ from .test_knowledge_source_preparation_api import (
 PATH = "/v1/knowledge/embedding-preparations"
 
 
-class KnowledgeEmbeddingPreparationApiTests(KnowledgeSourcePreparationApiTestCase):
+class KnowledgeEmbeddingPreparationApiTestCase(KnowledgeSourcePreparationApiTestCase):
     def _build_publication_service(self):
         stack = ExitStack()
         self.addCleanup(stack.close)
@@ -64,6 +64,8 @@ class KnowledgeEmbeddingPreparationApiTests(KnowledgeSourcePreparationApiTestCas
         )
         return status, json.loads(body)
 
+
+class KnowledgeEmbeddingPreparationApiTests(KnowledgeEmbeddingPreparationApiTestCase):
     def test_reviewed_source_can_generate_vectors_before_explicit_publication(self):
         source_bytes = {
             p.relative_to(self.source_root): p.read_bytes()

@@ -3,10 +3,13 @@ from __future__ import annotations
 from contextlib import ExitStack
 import dataclasses
 import threading
+import time
 import unittest
 from unittest.mock import patch
 
 from yap_server.knowledge.embedding_provider import configured_embedding_provider
+from yap_server.knowledge import vllm_reasoning_client
+from yap_server.knowledge.knowledge_tool_contract import KnowledgeToolCancelled
 from yap_server.knowledge.knowledge_publication_service import (
     build_knowledge_publication_service,
 )
@@ -57,12 +60,81 @@ class ReviewedEmbeddingProviderTests(unittest.TestCase):
             ],
         )
 
+    def test_larger_generation_preserves_exact_text_and_batch_local_indexes(self):
+        chunks = tuple(
+            chunk(index, f"Synthetic source {index} café 🌱") for index in range(129)
+        )
+        self.settings["transform"] = lambda value: {
+            **value,
+            "data": list(reversed(value["data"])),
+        }
+        vectors = self.provider.generate(chunks)
+        self.assertEqual(len(vectors), 129)
+        self.assertEqual(
+            [len(body["input"]) for _path, body in self.requests], [64, 64, 1]
+        )
+        self.assertEqual(
+            [text for _path, body in self.requests for text in body["input"]],
+            [c.text for c in chunks],
+        )
+        for index, c in enumerate(chunks):
+            self.assertEqual(vectors[c.chunk_id], (0.25 + (index % 64) / 100,) * 768)
+
+    def test_larger_generation_packs_by_utf8_bytes_without_splitting_source(self):
+        chunks = (chunk(0, "é" * 70_000), chunk(1, "é" * 70_000))
+        vectors = self.provider.generate(chunks)
+        self.assertEqual(set(vectors), {"0", "1"})
+        self.assertEqual(
+            [body["input"] for _path, body in self.requests],
+            [[chunks[0].text], [chunks[1].text]],
+        )
+
+    def test_larger_generation_shares_one_transport_budget_across_batches(self):
+        def slow_response(value):
+            time.sleep(0.65)
+            return value
+
+        self.settings["transform"] = slow_response
+        short = dataclasses.replace(
+            self.provider,
+            transport=BoundedVllmJsonClient(
+                endpoint=self.environ["YAP_KNOWLEDGE_EMBEDDING_ENDPOINT"],
+                timeout_seconds=1,
+                maximum_response_bytes=2_000_000,
+            ),
+        )
+        started = time.monotonic()
+        with self.assertRaises(ReasoningRetryableError):
+            short.generate(tuple(chunk(index) for index in range(65)))
+        self.assertLess(time.monotonic() - started, 1.5)
+        self.assertEqual(len(self.requests), 2)
+
+    def test_larger_generation_refuses_a_later_invalid_response(self):
+        def response(value):
+            return {**value, "model": "other"} if len(self.requests) == 2 else value
+
+        self.settings["transform"] = response
+        with self.assertRaises(ValueError):
+            self.provider.generate(tuple(chunk(index) for index in range(65)))
+        self.assertEqual(len(self.requests), 2)
+
+    def test_generation_preflight_refuses_duplicates_and_total_bytes_before_io(self):
+        for chunks in (
+            (chunk(0), chunk(0)),
+            tuple(chunk(index, "é" * 70_000) for index in range(30)),
+        ):
+            with self.subTest(chunks=len(chunks)):
+                self.requests.clear()
+                with self.assertRaises(ValueError):
+                    self.provider.generate(chunks)
+                self.assertEqual(self.requests, [])
+
     def test_empty_generation_needs_no_provider_dispatch(self):
         self.assertEqual(self.provider.generate(()), {})
         self.assertEqual(self.requests, [])
 
     def test_input_bounds_refuse_before_dispatch(self):
-        for chunks in (tuple(chunk(i) for i in range(65)), (chunk(0, "é" * 131073),)):
+        for chunks in (tuple(chunk(i) for i in range(1025)), (chunk(0, "é" * 131073),)):
             with self.assertRaises(ValueError):
                 self.provider.generate(chunks)
         self.assertEqual(self.requests, [])
@@ -172,3 +244,67 @@ class ReviewedEmbeddingProviderTests(unittest.TestCase):
                         authenticated_team_mode=auth,
                     )
         self.assertEqual(self.requests, [])
+
+    def test_delayed_worker_cannot_dispatch_after_expiry_or_cancellation(self):
+        for phase in ("worker", "request"):
+            for expired in (True, False):
+                with self.subTest(phase=phase, expired=expired):
+                    self.requests.clear()
+                    entered, release = threading.Event(), threading.Event()
+                    cancellation = threading.Event()
+                    outcome = []
+                    target = (
+                        vllm_reasoning_client
+                        if phase == "worker"
+                        else vllm_reasoning_client.http.client.HTTPConnection
+                    )
+                    method = "_request" if phase == "worker" else "request"
+                    original = getattr(target, method)
+                    deadline = (
+                        time.monotonic() + 0.1 if expired else time.monotonic() + 2
+                    )
+
+                    def delayed(*args, **kwargs):
+                        entered.set()
+                        if not release.wait(2):
+                            raise RuntimeError("test worker was not released")
+                        return original(*args, **kwargs)
+
+                    def invoke():
+                        try:
+                            self.provider.transport.embed(
+                                {
+                                    "model": "organization/model",
+                                    "input": ["Synthetic reviewed source"],
+                                    "encoding_format": "float",
+                                },
+                                cancellation,
+                                deadline=deadline,
+                            )
+                        except BaseException as error:
+                            outcome.append(error)
+
+                    with patch.object(target, method, delayed):
+                        caller = threading.Thread(target=invoke)
+                        caller.start()
+                        try:
+                            self.assertTrue(entered.wait(1))
+                            if expired:
+                                time.sleep(max(0, deadline - time.monotonic()) + 0.05)
+                            else:
+                                cancellation.set()
+                                time.sleep(0.05)
+                        finally:
+                            release.set()
+                            caller.join(2)
+                    self.assertFalse(caller.is_alive())
+                    self.assertEqual(len(outcome), 1)
+                    self.assertIsInstance(
+                        outcome[0],
+                        ReasoningRetryableError if expired else KnowledgeToolCancelled,
+                    )
+                    self.assertEqual(
+                        self.requests,
+                        [],
+                        "stopped worker dispatched after its caller closed",
+                    )

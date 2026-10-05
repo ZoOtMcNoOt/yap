@@ -475,6 +475,34 @@ state/action layout; preserve Yap's design system and third-party attribution.
 The existing API accepts a saved retained reference; it does not expose a
 retained-history discovery list. Another reviewer's admission remains private.
 
+## Upcoming increment: prepare larger reviewed embedding generations
+
+**Status:** 6/7 local software outcomes verified; independent review has no unresolved findings and hosted integration remains pending. Acceptance was recorded before code changes.
+PR #208's reviewed integration remains the current gate. The batching head
+includes its reviewed CI ceiling correction and can run the full hosted gates
+while that prerequisite finishes. Integrate only after PR #208; main advancing
+will remove its prerequisite changes from this pull request's diff.
+
+The original configured provider refused 65 reviewed chunks before dispatch.
+Its whole-generation 64-chunk/256-KiB boundary prevented a larger otherwise
+valid source from completing the same product journey. Reuse the current provider,
+compiled source, tenant lock, immutable vector and publication owners. Keep the
+existing request/receipt shapes and explicit reviewer controls.
+
+- [x] Preflight the entire generation before any provider I/O: at most 1,024 unique nonempty chunks and 4 MiB of UTF-8 text, with no chunk exceeding the existing 256-KiB request byte bound. Preserve exact text, order and source identities; never truncate, split source spans or repair data.
+- [x] Pack deterministic requests with at most 64 chunks and 256 KiB each to the same deployment-selected provider/model/revision. Validate each indexed 768-dimensional finite response and map batch-local indexes to exact compiled chunk IDs.
+- [x] Share the configured provider's one total deadline across every request, including containment after timeout; refuse an expired budget before another dispatch. No deadline multiplication, automatic retry or provider/model acquisition.
+- [x] Return only a complete validated generation to the existing atomic writer. A later batch/provider/deadline/audit failure must commit no partial vectors or model metadata and preserve source, proposals, active state and history.
+- [x] Keep complete same-owner replay provider-free and published projections immutable; retain existing role, tenant, owner, damaged-source/admission/count and locking refusals.
+- [x] Verify real HTTP/PostgreSQL 65-chunk source → staging → preparation → expected-active publication → permission-filtered read → retained restore, plus invalid later response, timeout and audit refusal. Run the full governed SQL/portable/server regressions and applicable contracts; qualify synthetic vectors separately from real capacity/inference.
+- [ ] Record actual before/after evidence and limits, commit/push as Grant McNatt, integrate only reviewed six-job green exact heads, preserve the tested tag/tree-equal main before branch retirement and continue the entire roadmap.
+
+[Actual evidence](../../evidence/knowledge-embedding-batches/2026-10-05/verification.md)
+records 165 skip-free SQL cases and 215 skip-free portable cases after
+[review corrections](../../evidence/knowledge-embedding-batches/2026-10-05/review-verification.md).
+Final isolated server discovery passes 1,678 cases/162 declared exclusions.
+Synthetic-vector limits remain separate from actual inference/enterprise capacity.
+
 ## Execution record
 
 The [dated execution history](../../archive/implementation-evidence/2026-10-02-project-hill-climb-history.md) retains every iteration, evidence link and next action recorded at the time. Those next actions are historical; the current increment above determines what to do now. Append new iteration receipts there and keep this queue current.

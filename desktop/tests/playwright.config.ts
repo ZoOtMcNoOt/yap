@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import path from "node:path";
 import {
   parsePlaywrightPort,
   parsePlaywrightServerReuse,
@@ -33,10 +34,12 @@ export default defineConfig({
     baseURL: testUrl,
     screenshot: "only-on-failure",
     trace: "retain-on-failure",
-    video: process.env.YAP_PLAYWRIGHT_VIDEO === "off" ? "off" : "retain-on-failure",
+    video:
+      process.env.YAP_PLAYWRIGHT_VIDEO === "off" ? "off" : "retain-on-failure",
   },
   webServer: {
-    command: `pnpm dev --host 127.0.0.1 --port ${testPort} --strictPort`,
+    cwd: path.resolve(import.meta.dirname, ".."),
+    command: `pnpm check:node && pnpm exec vite build --config tests/vite.playwright.config.ts && pnpm exec vite preview --config tests/vite.playwright.config.ts --host 127.0.0.1 --port ${testPort} --strictPort`,
     reuseExistingServer,
     timeout: 60_000,
     url: testUrl,

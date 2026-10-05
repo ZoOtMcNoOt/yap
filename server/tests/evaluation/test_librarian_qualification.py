@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from concurrent.futures import wait
 from dataclasses import dataclass, replace
 import json
 from pathlib import Path
@@ -11,6 +12,7 @@ from unittest import mock
 
 from yap_server.knowledge.okf_compiler import compile_okf_bundle
 
+from yap_server.evaluation import librarian_qualification
 from yap_server.evaluation.librarian_qualification import (
     bind_librarian_compiled_corpus,
     LibrarianExpectedEvidenceItem,
@@ -490,8 +492,13 @@ class LibrarianQualificationTests(unittest.TestCase):
         executor = _BlockingExecutor()
         with (
             mock.patch(
-                "yap_server.evaluation.librarian_qualification._PRIMARY_WAVE_TIMEOUT_SECONDS",
-                0.01,
+                "yap_server.evaluation.librarian_qualification.wait",
+                side_effect=lambda futures, timeout: wait(
+                    futures,
+                    timeout=0.01
+                    if timeout == librarian_qualification._PRIMARY_WAVE_TIMEOUT_SECONDS
+                    else timeout,
+                ),
             ),
             self.assertRaisesRegex(TimeoutError, "wave exceeded"),
         ):
@@ -519,8 +526,13 @@ class LibrarianQualificationTests(unittest.TestCase):
 
         with (
             mock.patch(
-                "yap_server.evaluation.librarian_qualification._PRIMARY_WAVE_TIMEOUT_SECONDS",
-                0.01,
+                "yap_server.evaluation.librarian_qualification.wait",
+                side_effect=lambda futures, timeout: wait(
+                    futures,
+                    timeout=0.01
+                    if timeout == librarian_qualification._PRIMARY_WAVE_TIMEOUT_SECONDS
+                    else timeout,
+                ),
             ),
             mock.patch(
                 "yap_server.evaluation.librarian_qualification._WORKER_CONTAINMENT_SECONDS",

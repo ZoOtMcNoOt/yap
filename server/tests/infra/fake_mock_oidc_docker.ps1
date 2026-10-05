@@ -190,6 +190,9 @@ if ($Group -ceq 'run') {
         Write-Trace -Value 'container run'
     }
     if ($Mode -ceq 'hang-container-run') {
+        Set-Content -LiteralPath (
+            Join-Path $StateRoot 'hung-container-started'
+        ) -Value 'started'
         while ($true) {
             Start-Sleep -Seconds 1
         }

@@ -80,7 +80,7 @@ source verification/cloud-env.sh
 server/.venv/bin/python verification/run-disposable-governed-postgres-suite.py
 ```
 
-It requires all 161 knowledge/agent/API cases across 26 modules without skips, using digest-pinned
+It requires all 165 knowledge/agent/API cases across 27 modules without skips, using digest-pinned
 PostgreSQL 17.11/pgvector 0.8.7 on a random loopback port. Generated credentials,
 data and container belong to this run; cleanup removes only that container.
 Inherited Docker/database routes cannot redirect it. [Evidence and runtime
@@ -101,7 +101,7 @@ The script installs Debian Postgres 17.11 and pgvector 0.8.0 in a separate user-
 prefix, starts a loopback-only cluster with private data/credentials, and enables
 the vector extension. Repeated setup retains the database. Its test DSN stays in
 ignored `.tools/postgres/env`; do not commit or print it. The same complete runner
-requires all 161 cases across 26 modules, including permission-safe retrieval, durable reviewed
+requires all 165 cases across 27 modules, including permission-safe retrieval, durable reviewed
 sources, agent persistence and authenticated APIs. These development versions do
 not renew the separate ARM64 production database lock or enterprise qualification.
 
@@ -244,6 +244,16 @@ blocked here. `YAP_PLAYWRIGHT_VIDEO=off` avoids downloading its video encoder;
 failure screenshots and traces remain enabled. Outside this workspace, leave
 these variables unset to use Playwright's default browser and video behavior.
 Browser warmup and test workers use the same browser selection.
+
+`pnpm test:e2e` builds a separate multi-entry browser-test artifact into ignored
+`desktop/tests/results/playwright-app` and serves it on an owned loopback port.
+It retains the two owner fixtures and the development-only overlay preview,
+while the shipped build keeps its normal production configuration. Each run
+rebuilds that artifact before serving, unless explicit server reuse is selected.
+Bundled serving avoids loading the development module graph and HMR connection
+in every isolated browser context. Keep worktree build outputs and writable Vite
+caches private; run heavyweight checks sequentially in the four-CPU workspace.
+
 
 ## Verification boundary
 

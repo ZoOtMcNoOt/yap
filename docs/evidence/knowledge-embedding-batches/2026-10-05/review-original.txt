@@ -1,0 +1,25 @@
+Independent review of 2ea012aa60b9ee64359470242fc7550537225c57 found delayed worker dispatch after shared-deadline expiry. DB atomicity remains protected.
+
+Actual owned loopback HTTP reproduction, worker startup and request/send phases, expiry and cancellation: each stopped caller was followed by one provider POST.
+
+FAIL: test_delayed_worker_cannot_dispatch_after_expiry_or_cancellation (tests.knowledge.test_embedding_provider.ReviewedEmbeddingProviderTests.test_delayed_worker_cannot_dispatch_after_expiry_or_cancellation) (phase='worker', expired=True)
+First list contains 1 additional elements.
+FAIL: test_delayed_worker_cannot_dispatch_after_expiry_or_cancellation (tests.knowledge.test_embedding_provider.ReviewedEmbeddingProviderTests.test_delayed_worker_cannot_dispatch_after_expiry_or_cancellation) (phase='worker', expired=False)
+First list contains 1 additional elements.
+FAIL: test_delayed_worker_cannot_dispatch_after_expiry_or_cancellation (tests.knowledge.test_embedding_provider.ReviewedEmbeddingProviderTests.test_delayed_worker_cannot_dispatch_after_expiry_or_cancellation) (phase='request', expired=True)
+First list contains 1 additional elements.
+FAIL: test_delayed_worker_cannot_dispatch_after_expiry_or_cancellation (tests.knowledge.test_embedding_provider.ReviewedEmbeddingProviderTests.test_delayed_worker_cannot_dispatch_after_expiry_or_cancellation) (phase='request', expired=False)
+First list contains 1 additional elements.
+Ran 1 test in 0.918s
+FAILED (failures=4)
+
+
+Isolated server renewal stopped at fake child cancellation before dispatch:
+FAIL: test_cancelled_hung_docker_call_is_killed_then_owned_container_is_removed (tests.infra.test_mock_oidc_harness.MockOidcHarnessTests.test_cancelled_hung_docker_call_is_killed_then_owned_container_is_removed)
+AssertionError: Lists differ: ['container inspect', 'container ls', 'container ls'] != ['container run', 'container inspect', 'container rm', 'container ls']
+'container inspect'
+'container run'
+- ['container inspect', 'container ls', 'container ls']
++ ['container run', 'container inspect', 'container rm', 'container ls']
+Ran 1134 tests in 28.631s
+FAILED (failures=1, skipped=87)

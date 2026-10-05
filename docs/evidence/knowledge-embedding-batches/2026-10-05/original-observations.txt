@@ -1,0 +1,35 @@
+yap-batches-provider-original.log
+ERROR: test_larger_generation_preserves_exact_text_and_batch_local_indexes (tests.knowledge.test_embedding_provider.ReviewedEmbeddingProviderTests.test_larger_generation_preserves_exact_text_and_batch_local_indexes)
+ValueError: reviewed embedding input exceeds its bound
+ERROR: test_larger_generation_packs_by_utf8_bytes_without_splitting_source (tests.knowledge.test_embedding_provider.ReviewedEmbeddingProviderTests.test_larger_generation_packs_by_utf8_bytes_without_splitting_source)
+ValueError: reviewed embedding input exceeds its bound
+Ran 2 tests in 1.009s
+FAILED (errors=2)
+
+yap-batches-boundaries-original.log
+ERROR: test_larger_generation_shares_one_transport_budget_across_batches (tests.knowledge.test_embedding_provider.ReviewedEmbeddingProviderTests.test_larger_generation_shares_one_transport_budget_across_batches)
+ValueError: reviewed embedding input exceeds its bound
+FAIL: test_larger_generation_refuses_a_later_invalid_response (tests.knowledge.test_embedding_provider.ReviewedEmbeddingProviderTests.test_larger_generation_refuses_a_later_invalid_response)
+AssertionError: 0 != 2
+FAIL: test_generation_preflight_refuses_duplicates_and_total_bytes_before_io (tests.knowledge.test_embedding_provider.ReviewedEmbeddingProviderTests.test_generation_preflight_refuses_duplicates_and_total_bytes_before_io) (chunks=2)
+AssertionError: ValueError not raised
+FAIL: test_generation_preflight_refuses_duplicates_and_total_bytes_before_io (tests.knowledge.test_embedding_provider.ReviewedEmbeddingProviderTests.test_generation_preflight_refuses_duplicates_and_total_bytes_before_io) (chunks=30)
+AssertionError: Lists differ: [('/v1/embeddings', {'model': 'organizatio[95 chars]t'})] != []
+Ran 3 tests in 1.592s
+FAILED (failures=3, errors=1)
+
+yap-batches-required-postgres.log
+FAIL: test_complete_batched_source_can_publish_read_and_restore_without_regeneration (tests.api.test_knowledge_embedding_batches_api.KnowledgeEmbeddingBatchApiTests.test_complete_batched_source_can_publish_read_and_restore_without_regeneration)
+AssertionError: 64 != 65
+Ran 156 tests in 64.413s
+FAILED (failures=1)
+
+yap-batches-isolated-server.log
+docker: Error response from daemon: invalid mount config for type "bind": bind source path does not exist: /home/agent/.cargo
+
+yap-batches-isolated-server-renewed.log
+FAIL: test_uncontained_worker_raises_without_blocking_shutdown (tests.evaluation.test_librarian_qualification.LibrarianQualificationTests.test_uncontained_worker_raises_without_blocking_shutdown)
+RuntimeError: Librarian qualification synchronization failed
+AssertionError: "not contained" does not match "Librarian qualification synchronization failed"
+Ran 886 tests in 31.829s
+FAILED (failures=1, skipped=87)
