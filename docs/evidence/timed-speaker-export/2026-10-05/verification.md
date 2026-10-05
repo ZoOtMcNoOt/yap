@@ -18,18 +18,31 @@ The browser never submits transcript content or model metadata.
 All seven focused Chromium cases pass (1.5m): exact identity and preserved original
 actions; cancellation; failed save/retry; mismatching hash with retained write
 uncertainty; late success/failure after source changes; and narrow keyboard/reduced
-motion behavior. [Narrow screenshot](narrow.png) was visually inspected: the action
-wraps without horizontal overflow and source turns remain readable. Full native,
-frontend/browser, build, lint and release-contract renewals are in progress.
-No full-suite or integration credit is assigned before those checks complete.
+motion behavior. [Narrow](narrow.png) and [wide](wide.png) screenshots were visually inspected: the action
+wraps without horizontal overflow and source turns remain readable. Native renewal
+passes 1,399 units and all 27 integrations, with 12 declared model/fixture ignores
+(104.78s units). All 417 frontend units pass with two Windows-only exclusions;
+TypeScript/Vite and strict all-target Clippy pass. Release contracts pass 67/72
+with five Windows-only exclusions; local process contracts pass 71/86 with 15
+platform exclusions. All 27 documentation/license/provenance/population/workflow
+cases pass without skips. The initial complete 258-case browser run ended with 254 passes, three failures
+and one declared Windows-only exclusion (30.3m). The first-run and History controls
+appeared after their readiness assertions expired; the collapse-grace trace
+showed browser-command scheduling delays exceeding the actual grace period.
+The run overlapped native builds and another browser suite, and both worktrees
+shared a writable Vite cache. Failure traces/screenshots are retained outside Git
+under `/tmp/yap-timed-export-browser-original`; this run receives no full-suite
+pass credit. A full serial renewal with a private Vite cache is required; cases,
+assertions, one worker and timeouts remain unchanged.
 
 The first build rejected an optional session ID; the action now requires a
 verified saved session and the TypeScript/Vite build passes. The first population
 contract ran before the new spec was added to its explicit inventory and refused
 it; the inventory deliberately includes all four declarations/seven generated
-cases and is being renewed. No assertions or existing test floors were removed.
+cases and passes on renewal. No assertions or existing test floors were removed.
 
 Fixtures exercise real persisted native results/files and the renderer/native
 bridge. They do not qualify actual speaker/timestamp accuracy, enterprise identity
-or a physical Windows picker. Full reviewed six-job green integration after PR
+or a physical Windows picker. Independent read-only review of `8e1804dcf2ff22897d7cb6465846472d39f771fa`
+found no unresolved actionable findings. Full reviewed six-job green integration after PR
 #208 and PR #209 remains required; the entire roadmap remains active.
