@@ -16,6 +16,7 @@ class ServerCapabilities:
     coordinator_bundles: bool
     auditor_reports: bool
     knowledge_connections: bool
+    knowledge_rebuild: bool
     personal_terminology: bool
 
     def to_wire(self) -> dict[str, bool]:
@@ -32,6 +33,7 @@ class ServerCapabilities:
             "coordinatorBundles": self.coordinator_bundles,
             "auditorReports": self.auditor_reports,
             "knowledgeConnections": self.knowledge_connections,
+            "knowledgeRebuild": self.knowledge_rebuild,
             "personalTerminology": self.personal_terminology,
         }
 

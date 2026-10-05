@@ -84,13 +84,15 @@ Earlier dependency/consolidation results remain in the [desktop evidence](eviden
 
 ## Current increment
 
-The next bounded outcome is the authenticated desktop rebuild workflow, using
-existing native organization identity/leases and operator routes. No desktop
-caller is implemented yet: **0/7 outcomes implemented**. The
-[single queue](plans/active/2026-10-02-yap-project-hill-climb.md#current-increment-complete-the-authenticated-desktop-rebuild-workflow)
-and [desktop contract](specs/knowledge-rebuild.md) record acceptance, typed
-receipts, explicit actions and uncertain-write recovery before code changes.
-The larger canonical-publication outcome and entire roadmap remain open.
+The Knowledge workspace now supports authenticated reviewed-source inspection,
+staging, embedding preparation, explicit publication and retained restore through
+existing native identity/leases and operator routes: **6/7 outcomes locally
+software verified**. Reviewed six-job exact-head integration remains pending.
+The [single queue](plans/active/2026-10-02-yap-project-hill-climb.md#current-increment-complete-the-authenticated-desktop-rebuild-workflow),
+[contract](specs/knowledge-rebuild.md) and [evidence](evidence/knowledge-rebuild/2026-10-04/verification.md)
+record strict receipts, uncertain-write recovery, permission revocation, actual
+native HTTP/PostgreSQL and responsive browser checks. Larger rebuilds, actual
+provider/enterprise qualification and the entire roadmap remain open.
 
 ## Latest completed increments
 
@@ -119,8 +121,8 @@ branch/worktree is retired.
 [Integration evidence](evidence/knowledge-embedding-generation/2026-10-04/integration.md)
 records the exact-head proof and corrected notification interaction.
 [Evidence](evidence/knowledge-embedding-generation/2026-10-04/verification.md)
-retains limits and the original missing route. Desktop rebuild controls, larger
-rebuilds and every roadmap workstream remain open.
+retains limits and the original missing route. Desktop controls are locally verified
+in the current increment; larger rebuilds and every roadmap workstream remain open.
 
 Retained-generation rollback merged through [PR #206](https://github.com/ZoOtMcNoOt/yap/pull/206)
 as `d2d3685bdb5d45e6387257113ebe4c27c197c42c`, with the identical tree tested at

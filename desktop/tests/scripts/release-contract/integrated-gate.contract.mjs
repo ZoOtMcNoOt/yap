@@ -2343,7 +2343,9 @@ test("integrated gate records proven cleanup for a clean nonzero command exit", 
   }
 });
 
-test("integrated gate terminates a command whose output exceeds its bounded log", async () => {
+test("integrated gate terminates a command whose output exceeds its bounded log", {
+  skip: process.platform !== "win32",
+}, async () => {
   const root = createCanonicalTemporaryDirectory("yap-gate-command-output-");
   const commandLogDirectory = path.join(root, "command-logs");
   mkdirSync(commandLogDirectory);

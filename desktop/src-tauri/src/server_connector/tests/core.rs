@@ -132,6 +132,7 @@ fn terminology_lease_requires_capability_and_rejects_stale_commits() {
             api_version: "1".into(),
             capabilities: ServerCapabilities {
                 knowledge_connections: false,
+                knowledge_rebuild: false,
                 personal_terminology: true,
                 ..ServerCapabilities::default()
             },
@@ -184,6 +185,7 @@ fn knowledge_connections_lease_requires_capability_and_rejects_stale_commits() {
             api_version: "1".into(),
             capabilities: ServerCapabilities {
                 knowledge_connections: true,
+                knowledge_rebuild: false,
                 personal_terminology: false,
                 ..ServerCapabilities::default()
             },
@@ -239,6 +241,7 @@ fn stale_batch_connection_lease_cannot_commit_after_configuration_changes() {
                 coordinator_bundles: false,
                 auditor_reports: false,
                 knowledge_connections: false,
+                knowledge_rebuild: false,
                 personal_terminology: false,
                 archivist_ingestions: false,
                 curator_proposals: false,
@@ -290,6 +293,7 @@ fn transcript_correction_lease_requires_capability_and_cannot_commit_after_chang
                 coordinator_bundles: false,
                 auditor_reports: false,
                 knowledge_connections: false,
+                knowledge_rebuild: false,
                 personal_terminology: false,
                 archivist_ingestions: false,
                 curator_proposals: false,
@@ -329,6 +333,7 @@ fn transcript_correction_lease_requires_capability_and_cannot_commit_after_chang
                 coordinator_bundles: false,
                 auditor_reports: false,
                 knowledge_connections: false,
+                knowledge_rebuild: false,
                 personal_terminology: false,
                 archivist_ingestions: false,
                 curator_proposals: false,
@@ -379,6 +384,7 @@ fn librarian_lease_requires_capability_and_cannot_commit_after_change() {
                 coordinator_bundles: false,
                 auditor_reports: false,
                 knowledge_connections: false,
+                knowledge_rebuild: false,
                 personal_terminology: false,
                 archivist_ingestions: false,
                 curator_proposals: false,
@@ -415,6 +421,7 @@ fn librarian_lease_requires_capability_and_cannot_commit_after_change() {
                 coordinator_bundles: false,
                 auditor_reports: false,
                 knowledge_connections: false,
+                knowledge_rebuild: false,
                 personal_terminology: false,
                 archivist_ingestions: false,
                 curator_proposals: false,
@@ -601,6 +608,7 @@ fn auditor_lease_requires_capability_and_cannot_commit_after_change() {
             capabilities: ServerCapabilities {
                 auditor_reports: true,
                 knowledge_connections: false,
+                knowledge_rebuild: false,
                 personal_terminology: false,
                 ..ServerCapabilities::default()
             },
@@ -650,6 +658,7 @@ fn student_lease_requires_capability_and_cannot_commit_after_change() {
                 coordinator_bundles: false,
                 auditor_reports: false,
                 knowledge_connections: false,
+                knowledge_rebuild: false,
                 personal_terminology: false,
                 archivist_ingestions: false,
                 curator_proposals: false,
@@ -686,6 +695,7 @@ fn student_lease_requires_capability_and_cannot_commit_after_change() {
                 coordinator_bundles: false,
                 auditor_reports: false,
                 knowledge_connections: false,
+                knowledge_rebuild: false,
                 personal_terminology: false,
                 archivist_ingestions: false,
                 curator_proposals: false,
@@ -736,6 +746,7 @@ fn curator_lease_requires_capability_and_cannot_commit_after_change() {
                 coordinator_bundles: false,
                 auditor_reports: false,
                 knowledge_connections: false,
+                knowledge_rebuild: false,
                 personal_terminology: false,
                 archivist_ingestions: false,
                 curator_proposals: false,
@@ -772,6 +783,7 @@ fn curator_lease_requires_capability_and_cannot_commit_after_change() {
                 coordinator_bundles: false,
                 auditor_reports: false,
                 knowledge_connections: false,
+                knowledge_rebuild: false,
                 personal_terminology: false,
                 archivist_ingestions: false,
                 curator_proposals: true,
@@ -822,6 +834,7 @@ fn archivist_lease_requires_capability_and_cannot_commit_after_change() {
                 coordinator_bundles: false,
                 auditor_reports: false,
                 knowledge_connections: false,
+                knowledge_rebuild: false,
                 personal_terminology: false,
                 archivist_ingestions: true,
                 curator_proposals: false,
@@ -1250,6 +1263,7 @@ fn ready_batch_connector(origin: &str) -> ServerConnector {
                 coordinator_bundles: false,
                 auditor_reports: false,
                 knowledge_connections: false,
+                knowledge_rebuild: false,
                 personal_terminology: false,
                 archivist_ingestions: false,
                 curator_proposals: false,
@@ -1303,7 +1317,7 @@ fn delayed_health_response_cannot_mutate_a_new_settings_generation() {
         assert!(read > 0);
         request_started_tx.send(()).unwrap();
         release_response_rx.recv().unwrap();
-        let body = br#"{"service":"yap-server","status":"ok","apiVersion":"1","auth":"not_configured","capabilities":{"batchJobs":true,"liveStreaming":true,"jobStatus":true,"transcriptCorrection":true,"librarianQueries":true,"analystAnswers":true,"coordinatorBundles":true,"auditorReports":true, "knowledgeConnections":false,"personalTerminology": false,"studentQuestions":true,"archivistIngestions":true,"curatorProposals":true}}"#;
+        let body = br#"{"service":"yap-server","status":"ok","apiVersion":"1","auth":"not_configured","capabilities":{"batchJobs":true,"liveStreaming":true,"jobStatus":true,"transcriptCorrection":true,"librarianQueries":true,"analystAnswers":true,"coordinatorBundles":true,"auditorReports":true, "knowledgeConnections":false,"knowledgeRebuild":false,"personalTerminology": false,"studentQuestions":true,"archivistIngestions":true,"curatorProposals":true}}"#;
         write!(
             stream,
             "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
@@ -1366,4 +1380,141 @@ fn server_settings_save_has_one_end_to_end_owner() {
 
     drop(first);
     assert!(connector.begin_settings_save().is_ok());
+}
+
+#[test]
+fn rebuild_lease_uses_its_service_presence_and_refuses_changed_authority() {
+    let connector = ServerConnector::default();
+    let settings = config::ServerSettings {
+        schema_version: config::CURRENT_SCHEMA_VERSION,
+        enabled: true,
+        base_url: Some("http://127.0.0.1:18765".into()),
+        authentication: None,
+    };
+    connector.synchronize_settings_with(&settings, |_| {});
+    let (generation, _) = connector.begin_health_request_with(|_| {}).unwrap();
+    connector.accept_health_result_with(
+        generation,
+        client::HealthCheckResult::Ready {
+            api_version: "1".into(),
+            capabilities: ServerCapabilities {
+                knowledge_rebuild: true,
+                ..ServerCapabilities::default()
+            },
+        },
+        |_| {},
+        |_, _, _| tauri::async_runtime::spawn(async {}),
+    );
+    let lease = connector
+        .knowledge_rebuild_connection_lease()
+        .unwrap()
+        .unwrap();
+    assert!(connector
+        .knowledge_connections_connection_lease()
+        .unwrap()
+        .is_none());
+    assert!(connector.curator_connection_lease().unwrap().is_none());
+    assert_eq!(
+        connector
+            .with_current_knowledge_rebuild_lease(&lease, || "owned")
+            .unwrap(),
+        "owned"
+    );
+    let mut changed = settings.clone();
+    changed.base_url = Some("http://127.0.0.1:18766".into());
+    connector.synchronize_settings_with(&changed, |_| {});
+    assert!(connector
+        .with_current_knowledge_rebuild_lease(&lease, || panic!("stale result exposed"))
+        .is_err());
+}
+
+#[test]
+fn unchanged_knowledge_leases_commit_using_the_configured_origin() {
+    let connector = ServerConnector::default();
+    let settings = config::ServerSettings {
+        schema_version: config::CURRENT_SCHEMA_VERSION,
+        enabled: true,
+        base_url: Some("http://127.0.0.1:18765".into()),
+        authentication: None,
+    };
+    connector.synchronize_settings_with(&settings, |_| {});
+    let (generation, _) = connector.begin_health_request_with(|_| {}).unwrap();
+    connector.accept_health_result_with(
+        generation,
+        client::HealthCheckResult::Ready {
+            api_version: "1".into(),
+            capabilities: ServerCapabilities {
+                knowledge_connections: true,
+                librarian_queries: true,
+                analyst_answers: true,
+                coordinator_bundles: true,
+                auditor_reports: true,
+                curator_proposals: true,
+                student_questions: true,
+                archivist_ingestions: true,
+                ..ServerCapabilities::default()
+            },
+        },
+        |_| {},
+        |_, _, _| tauri::async_runtime::spawn(async {}),
+    );
+    let connections = connector
+        .knowledge_connections_connection_lease()
+        .unwrap()
+        .unwrap();
+    assert_eq!(
+        connector
+            .with_current_knowledge_connections_lease(&connections, || "connections")
+            .unwrap(),
+        "connections"
+    );
+    let librarian = connector.librarian_connection_lease().unwrap().unwrap();
+    assert_eq!(
+        connector
+            .with_current_librarian_lease(&librarian, || "librarian")
+            .unwrap(),
+        "librarian"
+    );
+    let analyst = connector.analyst_connection_lease().unwrap().unwrap();
+    assert_eq!(
+        connector
+            .with_current_analyst_lease(&analyst, || "analyst")
+            .unwrap(),
+        "analyst"
+    );
+    let coordinator = connector.coordinator_connection_lease().unwrap().unwrap();
+    assert_eq!(
+        connector
+            .with_current_coordinator_lease(&coordinator, || "coordinator")
+            .unwrap(),
+        "coordinator"
+    );
+    let auditor = connector.auditor_connection_lease().unwrap().unwrap();
+    assert_eq!(
+        connector
+            .with_current_auditor_lease(&auditor, || "auditor")
+            .unwrap(),
+        "auditor"
+    );
+    let curator = connector.curator_connection_lease().unwrap().unwrap();
+    assert_eq!(
+        connector
+            .with_current_curator_lease(&curator, || "curator")
+            .unwrap(),
+        "curator"
+    );
+    let student = connector.student_connection_lease().unwrap().unwrap();
+    assert_eq!(
+        connector
+            .with_current_student_lease(&student, || "student")
+            .unwrap(),
+        "student"
+    );
+    let archivist = connector.archivist_connection_lease().unwrap().unwrap();
+    assert_eq!(
+        connector
+            .with_current_archivist_lease(&archivist, || "archivist")
+            .unwrap(),
+        "archivist"
+    );
 }

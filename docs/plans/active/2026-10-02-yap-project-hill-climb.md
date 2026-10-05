@@ -443,25 +443,24 @@ retains the corrected browser interaction, actual hosted counts and qualificatio
 
 ## Current increment: complete the authenticated desktop rebuild workflow
 
-**Status:** 0/7 outcomes implemented. Acceptance is recorded before code changes.
+**Status:** 6/7 outcomes locally software verified; reviewed six-job green exact-head integration remains pending. Acceptance was recorded before implementation.
 
-Executable audit finds no desktop caller for source preparation, embedding
-generation, publication or rollback. The operator service can complete this
-bounded journey; Curator's product workflow still stops at proposals and their
-Git-review handoff. Extend the existing Knowledge tasks with a reviewer-owned
-rebuild view, reusing native organization identity/connection leases, the
-authenticated dispatcher and the existing publication/source/vector owners.
+The Knowledge workspace now has a reviewer-owned Rebuild task for explicit
+source inspection, staging, embedding preparation, publication and retained
+restore. It reuses native organization identity/connection leases, the
+authenticated dispatcher and existing publication/source/vector owners.
+Curator proposals retain their separate Git-review handoff.
 The [desktop contract](../../specs/knowledge-rebuild.md) records request,
-receipt, replay and uncertain-write semantics before implementation.
+receipt, replay and uncertain-write semantics. [Local evidence](../../evidence/knowledge-rebuild/2026-10-04/verification.md) records the implemented boundary and original failures.
 Keep source/deployment review an organization prerequisite. UI actions cannot
 certify Git review or make proposals into approval or canonical source.
 
-- [ ] Inspect the deployment-selected reviewed source and current active generation through the selected authenticated native connection. Strict typed, bounded receipts bind authority revision, exact generation/revision/counts and target; renderer fields cannot select source paths, identities, models, credentials or server endpoints. Add truthful service-presence capability discovery without implying reviewer authorization or source/provider readiness.
-- [ ] Show readable source provenance, counts and current knowledge alongside explicit preparation actions. Contain disabled, unavailable and role-denied states; preserve proposals, graph/search, local capture, saved history and unrelated controls. Retain Yap's floating island/top tabs, responsive stacked surfaces, keyboard focus and reduced-motion behavior.
-- [ ] Let the admitting curator explicitly stage the inspected source and generate its complete embeddings. Preserve exact request/connection ownership, partial/failure recovery and immutable published vectors; no automatic provider selection, model acquisition, publication or source repair. Same-owner staged replay must confirm preparation without regenerating completed vectors.
-- [ ] Inspect the staged generation before explicit expected-active publication, compare it to the inspected source and show the decision's exact target/current state. Refuse stale or inconsistent receipts; only a confirmed authenticated activation can report current knowledge changed. Metadata inspection remains distinct from a completeness certificate, and the service performs final validation.
-- [ ] Inspect and explicitly restore a retained generation using its saved reference and current expected-active state. Handle interruption, failed provider/audit, pruned/unavailable targets, lost replies and account/server changes. Never describe cancellation or a dropped reply as proof a dispatched remote write did not commit; require same-owner reinspection/replay and a renewed decision where state changed, with no automatic cross-owner retry.
-- [ ] Verify actual native authenticated routing/strict decoding, the real HTTP/PostgreSQL source-to-read/restore journey, deterministic browser success/failure/recovery and narrow/wide/keyboard/reduced-motion states. Verify a real native-to-service journey before claiming that combined boundary; keep mock transport, synthetic vectors, hosted/native platform checks and real provider/enterprise/physical Windows qualification distinct. Run applicable full regressions and review the diff/screens.
+- [x] Inspect the deployment-selected reviewed source and current active generation through the selected authenticated native connection. Strict typed, bounded receipts bind authority revision, exact generation/revision/counts and target; renderer fields cannot select source paths, identities, models, credentials or server endpoints. Add truthful service-presence capability discovery without implying reviewer authorization or source/provider readiness.
+- [x] Show readable source provenance, counts and current knowledge alongside explicit preparation actions. Contain disabled, unavailable and role-denied states; preserve proposals, graph/search, local capture, saved history and unrelated controls. Retain Yap's floating island/top tabs, responsive stacked surfaces, keyboard focus and reduced-motion behavior.
+- [x] Let the admitting curator explicitly stage the inspected source and generate its complete embeddings. Preserve exact request/connection ownership, partial/failure recovery and immutable published vectors; no automatic provider selection, model acquisition, publication or source repair. Same-owner staged replay must confirm preparation without regenerating completed vectors.
+- [x] Inspect the staged generation before explicit expected-active publication, compare it to the inspected source and show the decision's exact target/current state. Refuse stale or inconsistent receipts; only a confirmed authenticated activation can report current knowledge changed. Metadata inspection remains distinct from a completeness certificate, and the service performs final validation.
+- [x] Inspect and explicitly restore a retained generation using its saved reference and current expected-active state. Handle interruption, failed provider/audit, pruned/unavailable targets, lost replies and account/server changes. Never describe cancellation or a dropped reply as proof a dispatched remote write did not commit; require same-owner reinspection/replay and a renewed decision where state changed, with no automatic cross-owner retry.
+- [x] Verify actual native authenticated routing/strict decoding, the real HTTP/PostgreSQL source-to-read/restore journey, deterministic browser success/failure/recovery and narrow/wide/keyboard/reduced-motion states. Verify a real native-to-service journey before claiming that combined boundary; keep mock transport, synthetic vectors, hosted/native platform checks and real provider/enterprise/physical Windows qualification distinct. Run applicable full regressions and review the diff/screens.
 - [ ] Record before/after evidence and retained qualification limits; commit/push as Grant McNatt and integrate only a reviewed six-job green exact head. Preserve its tested head and compare the fetched main tree before branch retirement. Continue the whole roadmap, including larger rebuilds, actual provider quality, timed/speaker export, formats, identity/speaker administration, supervised ASR/live and operations.
 
 The [Vercel deployment overview](https://mobbin.com/screens/d8e63884-5d43-4337-bf31-5667bc4ba5db)

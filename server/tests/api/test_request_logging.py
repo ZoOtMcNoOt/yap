@@ -39,6 +39,7 @@ class RequestLoggingTests(HealthServerTestCase):
                 "coordinatorBundles": False,
                 "auditorReports": False,
                 "knowledgeConnections": False,
+                "knowledgeRebuild": False,
                 "personalTerminology": False,
             },
         }

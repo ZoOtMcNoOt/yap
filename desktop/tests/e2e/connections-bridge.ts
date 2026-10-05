@@ -92,7 +92,7 @@ export async function installConnectionsBridge(
           studentQuestions: false,
           archivistIngestions: false,
           curatorProposals: false,
-          knowledgeConnections: true,
+          knowledgeConnections: true, knowledgeRebuild: false,
         },
       });
     }

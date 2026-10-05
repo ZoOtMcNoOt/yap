@@ -76,3 +76,5 @@ host snapshots, credentials, or enterprise configuration. Public evidence may
 record hashes, versions, counts, redacted outcomes, and explicit limitations.
 
 - [Authenticated retained-generation rollback](knowledge-rollback-api/2026-10-04/verification.md): explicit operator recovery with reviewed ownership, atomic audit and real SQL/concurrency checks.
+
+- [Desktop reviewed-source rebuilding](knowledge-rebuild/2026-10-04/verification.md): native authenticated preparation, explicit activation, retained restore and uncertain-delivery recovery.

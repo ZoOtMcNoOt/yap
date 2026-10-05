@@ -99,7 +99,7 @@ describe("Librarian product contract", () => {
         batchJobs: false, liveStreaming: false, jobStatus: false,
         transcriptCorrection: false, librarianQueries: false,
         analystAnswers: false, coordinatorBundles: false, auditorReports: false,
-        knowledgeConnections: false, personalTerminology: false,
+        knowledgeConnections: false, knowledgeRebuild: false, personalTerminology: false,
         studentQuestions: false, archivistIngestions: false, curatorProposals: false,
       },
     }} />);

@@ -1,0 +1,71 @@
+Original missing desktop task
+  ✘  1 [chromium] › tests/e2e/knowledge-rebuild.spec.ts:4:1 › reviewed knowledge rebuilding is an explicit Knowledge task (20.5s)
+
+
+  1) [chromium] › tests/e2e/knowledge-rebuild.spec.ts:4:1 › reviewed knowledge rebuilding is an explicit Knowledge task
+
+    Test timeout of 20000ms exceeded.
+
+    Error: locator.click: Test timeout of 20000ms exceeded.
+    Call log:
+      - waiting for getByRole('tab', { name: 'Rebuild', exact: true })
+
+
+       6 |   await page.goto("/");
+       7 |   await page.getByRole("button", {name: "Knowledge", exact: true}).click();
+    >  8 |   await page.getByRole("tab", {name: "Rebuild", exact: true}).click();
+         |                                                               ^
+       9 |   await expect(page.getByRole("heading", {name: "Rebuild reviewed knowledge", exact: true})).toBeVisible();
+      10 | });
+      11 |
+
+Original strict native capability failure
+test server_connector::client::tests::reviewed_rebuild_presence_is_accepted_without_reasoning_capabilities ... FAILED
+
+failures:
+
+---- server_connector::client::tests::reviewed_rebuild_presence_is_accepted_without_reasoning_capabilities stdout ----
+
+thread 'server_connector::client::tests::reviewed_rebuild_presence_is_accepted_without_reasoning_capabilities' (96582) panicked at src/server_connector/client/tests.rs:381:5:
+assertion failed: matches!(check(&fixture.base_url()), HealthCheckResult::Ready { .. })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    server_connector::client::tests::reviewed_rebuild_presence_is_accepted_without_reasoning_capabilities
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1394 filtered out; finished in 0.08s
+
+Original role revocation disclosure
+  1) [chromium] › tests/e2e/knowledge-rebuild.spec.ts:236:1 › revoked reviewer access clears private inspection and saved references
+
+    Error: expect(locator).not.toBeVisible() failed
+
+    Locator:  getByText('reviewed/organization', { exact: true })
+    Expected: not visible
+    Received: visible
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "not toBeVisible" getByText('reviewed/organization', { exact: true }) with timeout 5000ms
+      - waiting for getByText('reviewed/organization', { exact: true })
+        13 × locator resolved to <dd class="break-all">reviewed/organization</dd>
+           - unexpected value "visible"
+
+
+
+Pre-existing Windows Job Object assertion on clean Linux main
+[gate] bounded.command-output: running
+✖ integrated gate terminates a command whose output exceeds its bounded log (136.155727ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 271.824258
+
+✖ failing tests:
+
+test at desktop/tests/scripts/release-contract/integrated-gate.contract.mjs:2346:1

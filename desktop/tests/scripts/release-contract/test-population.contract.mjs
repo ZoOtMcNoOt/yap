@@ -50,6 +50,7 @@ const MINIMUM_TESTS_PER_SPEC = Object.freeze({
   "first-run.spec.ts": 7,
   "history-recoverable-actions.spec.ts": 1,
   "knowledge-journey.spec.ts": 10,
+  "knowledge-rebuild.spec.ts": 9,
   "live-overlay.spec.ts": 13,
   "local-server-offer.spec.ts": 8,
   "pending-admission.spec.ts": 1,

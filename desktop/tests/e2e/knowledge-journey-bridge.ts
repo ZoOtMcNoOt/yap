@@ -256,7 +256,7 @@ export async function installKnowledgeJourneyBridge(
               analystAnswers: true,
               coordinatorBundles: true,
               auditorReports: true,
-              knowledgeConnections: false,
+              knowledgeConnections: false, knowledgeRebuild: false,
               personalTerminology: false,
               studentQuestions: true,
               curatorProposals: true,

@@ -1,14 +1,16 @@
 # Publish reviewed knowledge
 
-**Owner:** Grant McNatt. **Status:** Bounded operator software verified and integrated through PR #205, #206 and #207; desktop rebuilding remains open.
+**Owner:** Grant McNatt. **Status:** Bounded operator software verified and integrated through PR #205, #206 and #207; desktop controls are locally verified with hosted integration pending.
 
 An organization-server operator can prepare a deployment-selected reviewed
 source through `/v1/knowledge/source-preparations`, then inspect and explicitly
 publish a complete generation through `/v1/knowledge/publications`. Both use
-the existing source-admission, staging, generation and audit owners. No desktop
-approval action is added. The [project queue](../plans/active/2026-10-02-yap-project-hill-climb.md)
-records implemented bounded embedding preparation and keeps complete desktop
-rebuilding, larger rebuild orchestration and provider qualification open.
+the existing source-admission, staging, generation and audit owners. The
+[desktop Rebuild task](knowledge-rebuild.md) uses these authenticated routes
+for explicit preparation, publication and retained restore. Organization Git
+and deployment approval remain prerequisites. The [project queue](../plans/active/2026-10-02-yap-project-hill-climb.md)
+records implemented bounded embedding preparation and records desktop integration pending and keeps larger rebuild orchestration
+and provider qualification open.
 
 ## Prepare and enable
 

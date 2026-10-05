@@ -19,6 +19,7 @@ _HEALTH_VIEW = HealthView(
         coordinator_bundles=False,
         auditor_reports=False,
         knowledge_connections=False,
+        knowledge_rebuild=False,
         personal_terminology=False,
     ),
 )
@@ -37,6 +38,7 @@ def health(
     coordinator_bundles: bool = False,
     auditor_reports: bool = False,
     knowledge_connections: bool = False,
+    knowledge_rebuild: bool = False,
     personal_terminology: bool = False,
 ) -> dict[str, object]:
     if (
@@ -50,6 +52,7 @@ def health(
         and not analyst_answers
         and not coordinator_bundles
         and not auditor_reports
+        and not knowledge_rebuild
         and not knowledge_connections
         and not personal_terminology
     ):
@@ -72,6 +75,7 @@ def health(
             coordinator_bundles=coordinator_bundles,
             auditor_reports=auditor_reports,
             knowledge_connections=knowledge_connections,
+            knowledge_rebuild=knowledge_rebuild,
             personal_terminology=personal_terminology,
         ),
     ).to_wire()

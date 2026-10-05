@@ -33,6 +33,7 @@ export type ServerCapabilities = {
   coordinatorBundles: boolean;
   auditorReports: boolean;
   knowledgeConnections: boolean;
+  knowledgeRebuild: boolean;
   personalTerminology: boolean;
   archivistIngestions: boolean;
   studentQuestions: boolean;

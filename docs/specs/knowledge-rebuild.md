@@ -1,11 +1,12 @@
 # Desktop reviewed-source rebuild contract
 
-**Owner:** Grant McNatt. **Status:** Proposed; 0/7 implemented outcomes in the
+**Owner:** Grant McNatt. **Status:** Implemented; 6/7 locally verified outcomes in the
 [single active queue](../plans/active/2026-10-02-yap-project-hill-climb.md#current-increment-complete-the-authenticated-desktop-rebuild-workflow).
-This contract records the audited interface before implementation. The
-[operator service](knowledge-publication.md) exists; a desktop rebuild caller
-does not yet exist. Preserve the proposal/Git-review workflow and all other
-roadmap work. These controls cannot certify Git or deployment approval.
+Reviewed six-job exact-head integration remains pending. The contract was recorded
+before implementation; [evidence](../evidence/knowledge-rebuild/2026-10-04/verification.md)
+records actual native, SQL and browser checks. The [operator service](knowledge-publication.md)
+and desktop use the same publication owners. Preserve the proposal/Git-review
+workflow and all other roadmap work. These controls cannot certify Git or deployment approval.
 
 ## Product workflow
 
@@ -89,5 +90,5 @@ results distinct from mock transport, hosted/native platform checks and actual
 provider, enterprise, physical Windows and production qualification.
 
 The single queue retains seven acceptance conditions and the six-reviewed-green
-exact-head integration gate. This document supplies no implementation or
-qualification credit and creates no second execution queue.
+exact-head integration gate. Implementation credit is bounded by the linked evidence; production qualification
+remains open. This contract creates no second execution queue.

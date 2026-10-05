@@ -16,6 +16,7 @@ mod file_actions;
 mod install_identity;
 pub mod jobs;
 mod knowledge_connections;
+mod knowledge_rebuild;
 pub mod language;
 pub mod language_preferences;
 mod librarian_query;

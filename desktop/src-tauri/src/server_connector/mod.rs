@@ -15,6 +15,7 @@ mod core;
 pub(crate) mod curator;
 mod desktop;
 pub(crate) mod knowledge_connections;
+pub(crate) mod knowledge_rebuild;
 pub(crate) mod librarian;
 pub(crate) mod lid;
 pub(crate) mod student;

@@ -269,6 +269,7 @@ class _HealthRequestHandler(
                         self._knowledge_connections_service is not None
                     ),
                     personal_terminology=(self._terminology_service is not None),
+                    knowledge_rebuild=(self._knowledge_publication_service is not None),
                 ),
             )
             return

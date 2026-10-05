@@ -108,7 +108,7 @@ export async function installPersonalizationBridge(
               state: next,
               capabilities: {
                 ...(fixture.snapshot.capabilities as object),
-                knowledgeConnections: false, personalTerminology: enabled,
+                knowledgeConnections: false, knowledgeRebuild: false, personalTerminology: enabled,
               },
             });
         },
@@ -133,7 +133,7 @@ export async function installPersonalizationBridge(
             state: fixture.state,
             capabilities: {
               ...original.capabilities,
-              knowledgeConnections: false, personalTerminology: fixture.capability,
+              knowledgeConnections: false, knowledgeRebuild: false, personalTerminology: fixture.capability,
               transcriptCorrection: false,
             },
           };
