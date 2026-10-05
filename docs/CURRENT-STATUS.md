@@ -1,6 +1,6 @@
 # Current status
 
-**Updated:** 2026-10-04. **Project owner:** Grant McNatt.
+**Updated:** 2026-10-05. **Project owner:** Grant McNatt.
 
 ## Current goal
 
@@ -93,6 +93,20 @@ The [single queue](plans/active/2026-10-02-yap-project-hill-climb.md#current-inc
 record strict receipts, uncertain-write recovery, permission revocation, actual
 native HTTP/PostgreSQL and responsive browser checks. Larger rebuilds, actual
 provider/enterprise qualification and the entire roadmap remain open.
+
+[PR #208](https://github.com/ZoOtMcNoOt/yap/pull/208) and the reviewed bounded
+embedding batches in [PR #209](https://github.com/ZoOtMcNoOt/yap/pull/209) each
+retain five successful hosted jobs and a failed initial browser run; complete
+frontend-job renewals are in progress on unchanged reviewed heads. Neither is
+merged. Saved timed speaker JSON export is implemented through trusted persisted
+source data, explicit new-file selection and existing atomic export ownership.
+All seven focused browser cases, 1,399 native units and 27 integrations, and 417
+portable frontend cases pass. Independent review found no unresolved findings.
+The initial full browser run had 254 passes, three timing/readiness failures and
+one Windows-only exclusion; a serial private-cache renewal and all six hosted
+exact-head jobs remain required. [Evidence](evidence/timed-speaker-export/2026-10-05/verification.md)
+retains those results and qualification limits. Integrate this successor after
+PR #208 and PR #209, then continue formats and the entire roadmap.
 
 ## Latest completed increments
 

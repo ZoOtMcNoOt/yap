@@ -56,6 +56,8 @@ export function TranscriptReviewDialog({
   onCopy,
   onCorrect,
   onExport,
+  onExportTimed,
+  timedExportError,
   onOpen,
   onOpenChange,
   onOpenHelp,
@@ -77,6 +79,8 @@ export function TranscriptReviewDialog({
   onCopy: (item: RecordingJobView) => void;
   onCorrect?: () => void;
   onExport?: (item: RecordingJobView) => void;
+  onExportTimed?: () => void;
+  timedExportError?: string;
   onOpen: (path: string) => void;
   onOpenChange: (open: boolean) => void;
   onOpenHelp?: () => void;
@@ -199,6 +203,8 @@ export function TranscriptReviewDialog({
               onCopy={onCopy}
               onCorrect={onCorrect}
               onExport={onExport}
+              onExportTimed={onExportTimed}
+              timedExportError={timedExportError}
               onOpen={onOpen}
               onOpenHelp={onOpenHelp}
               onRetry={onRetry}
