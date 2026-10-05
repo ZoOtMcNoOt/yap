@@ -8,6 +8,8 @@ import unittest
 from unittest.mock import patch
 
 from yap_server.knowledge.embedding_provider import configured_embedding_provider
+from yap_server.knowledge import vllm_reasoning_client
+from yap_server.knowledge.knowledge_tool_contract import KnowledgeToolCancelled
 from yap_server.knowledge.knowledge_publication_service import (
     build_knowledge_publication_service,
 )
@@ -242,3 +244,67 @@ class ReviewedEmbeddingProviderTests(unittest.TestCase):
                         authenticated_team_mode=auth,
                     )
         self.assertEqual(self.requests, [])
+
+    def test_delayed_worker_cannot_dispatch_after_expiry_or_cancellation(self):
+        for phase in ("worker", "request"):
+            for expired in (True, False):
+                with self.subTest(phase=phase, expired=expired):
+                    self.requests.clear()
+                    entered, release = threading.Event(), threading.Event()
+                    cancellation = threading.Event()
+                    outcome = []
+                    target = (
+                        vllm_reasoning_client
+                        if phase == "worker"
+                        else vllm_reasoning_client.http.client.HTTPConnection
+                    )
+                    method = "_request" if phase == "worker" else "request"
+                    original = getattr(target, method)
+                    deadline = (
+                        time.monotonic() + 0.1 if expired else time.monotonic() + 2
+                    )
+
+                    def delayed(*args, **kwargs):
+                        entered.set()
+                        if not release.wait(2):
+                            raise RuntimeError("test worker was not released")
+                        return original(*args, **kwargs)
+
+                    def invoke():
+                        try:
+                            self.provider.transport.embed(
+                                {
+                                    "model": "organization/model",
+                                    "input": ["Synthetic reviewed source"],
+                                    "encoding_format": "float",
+                                },
+                                cancellation,
+                                deadline=deadline,
+                            )
+                        except BaseException as error:
+                            outcome.append(error)
+
+                    with patch.object(target, method, delayed):
+                        caller = threading.Thread(target=invoke)
+                        caller.start()
+                        try:
+                            self.assertTrue(entered.wait(1))
+                            if expired:
+                                time.sleep(max(0, deadline - time.monotonic()) + 0.05)
+                            else:
+                                cancellation.set()
+                                time.sleep(0.05)
+                        finally:
+                            release.set()
+                            caller.join(2)
+                    self.assertFalse(caller.is_alive())
+                    self.assertEqual(len(outcome), 1)
+                    self.assertIsInstance(
+                        outcome[0],
+                        ReasoningRetryableError if expired else KnowledgeToolCancelled,
+                    )
+                    self.assertEqual(
+                        self.requests,
+                        [],
+                        "stopped worker dispatched after its caller closed",
+                    )

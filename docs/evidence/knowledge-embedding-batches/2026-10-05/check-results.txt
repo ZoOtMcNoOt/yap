@@ -13,3 +13,32 @@ OK
 yap-batches-isolated-server-final.log
 Ran 1839 tests in 131.010s
 OK (skipped=162)
+
+
+Independent review corrections
+
+yap-batches-dispatch-green-renewed.log
+Ran 22 tests in 15.304s
+OK
+
+yap-batches-reviewed-portable-final.log
+Ran 215 tests in 23.617s
+OK
+
+yap-batches-timing-fixtures-green.log
+Ran 3 tests in 5.587s
+OK
+
+yap-batches-reviewed-server-final.log
+Ran 1840 tests in 123.887s
+OK (skipped=162)
+
+yap-batches-reviewed-sql-final.log
+Ran 165 tests in 70.464s
+OK
+
+yap-batches-reviewed-contracts-final.log
+ℹ tests 30
+ℹ pass 30
+ℹ fail 0
+ℹ skipped 0

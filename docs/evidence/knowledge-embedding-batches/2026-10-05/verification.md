@@ -54,3 +54,10 @@ These are deterministic identities and synthetic vectors against actual HTTP
 and PostgreSQL. Actual embedding quality/provenance, realistic provider capacity,
 enterprise identity and physical-platform promotion remain open. No dependencies
 or model assets are acquired. The entire roadmap stays active.
+
+
+[Independent review correction](review-verification.md) records actual late-dispatch
+reproductions and the shared worker expiry/cancellation correction. Final source
+passes all 165 required SQL cases, 215 skip-free portable cases and full isolated
+server discovery (1,678 passes/162 declared exclusions). Independent re-review
+and all six exact-head hosted jobs remain required before integration.

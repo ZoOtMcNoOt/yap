@@ -134,6 +134,8 @@ class BoundedVllmJsonClient:
         connection = http.client.HTTPConnection(
             self._host, self._port, timeout=remaining
         )
+        # A closed request must never implicitly reopen during worker scheduling.
+        connection.auto_open = 0
         outcome: queue.Queue[dict[str, object] | BaseException] = queue.Queue(maxsize=1)
         try:
             body = json.dumps(
@@ -150,6 +152,8 @@ class BoundedVllmJsonClient:
                     self._maximum_response_bytes,
                     outcome,
                     dispatched,
+                    deadline,
+                    cancellation,
                 ),
                 daemon=True,
             )
@@ -174,6 +178,7 @@ class BoundedVllmJsonClient:
                             "vLLM reasoning transport did not stop"
                         )
                     raise KnowledgeToolCancelled("vLLM reasoning was cancelled")
+            _request_budget(deadline, cancellation)
             result = outcome.get_nowait()
             if isinstance(result, BaseException):
                 if isinstance(result, (OSError, http.client.HTTPException)):
@@ -259,8 +264,13 @@ def _request(
     maximum_response_bytes: int,
     outcome: queue.Queue[dict[str, object] | BaseException],
     dispatched: threading.Event | None,
+    deadline: float,
+    cancellation: threading.Event,
 ) -> None:
     try:
+        connection.timeout = _request_budget(deadline, cancellation)
+        connection.connect()
+        _request_budget(deadline, cancellation)
         connection.request(
             "POST",
             path,
@@ -282,12 +292,24 @@ def _request(
         outcome.put_nowait(_response_json(response_body))
     except BaseException as error:
         outcome.put_nowait(error)
+    finally:
+        _close_connection(connection)
+
+
+def _request_budget(deadline: float, cancellation: threading.Event) -> float:
+    if cancellation.is_set():
+        raise KnowledgeToolCancelled("vLLM reasoning was cancelled")
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        raise ReasoningRetryableError("vLLM reasoning timed out")
+    return remaining
 
 
 def _close_connection(connection: http.client.HTTPConnection) -> None:
-    if connection.sock is not None:
+    owned_socket = connection.sock
+    if owned_socket is not None:
         try:
-            connection.sock.shutdown(socket.SHUT_RDWR)
+            owned_socket.shutdown(socket.SHUT_RDWR)
         except OSError:
             pass
     connection.close()

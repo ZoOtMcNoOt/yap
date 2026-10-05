@@ -622,8 +622,27 @@ $OwnerValue = 'mock-oidc'
 $RunCancellation = [Threading.CancellationTokenSource]::new()
 $CleanupCancellation = [Threading.CancellationTokenSource]::new()
 $Cancelled = $false
+Add-Type -TypeDefinition @'
+using System;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+public static class FakeDockerStartupCancellation {
+    public static Task Start(CancellationTokenSource cancellation, string marker) {
+        return Task.Run(() => {
+            var elapsed = System.Diagnostics.Stopwatch.StartNew();
+            while (!File.Exists(marker)) {
+                if (elapsed.ElapsedMilliseconds >= 8000) throw new TimeoutException("Fake child did not start.");
+                Thread.Sleep(10);
+            }
+            cancellation.Cancel();
+        });
+    }
+}
+'@
+$StartupMarker = Join-Path $env:YAP_FAKE_DOCKER_STATE_ROOT 'hung-container-started'
+$CancelAfterStartup = [FakeDockerStartupCancellation]::Start($RunCancellation, $StartupMarker)
 try {
-    $RunCancellation.CancelAfter(1500)
     Invoke-MockOidcDockerResourceCreate `
         -DockerPath $DockerPath `
         -DockerPrefixArguments $DockerPrefix `
@@ -656,6 +675,7 @@ finally {
         -OwnerLabelValue $OwnerValue `
         -TimeoutMilliseconds 5000 `
         -CancellationToken $CleanupCancellation.Token
+    $CancelAfterStartup.GetAwaiter().GetResult()
     $RunCancellation.Dispose()
     $CleanupCancellation.Dispose()
 }

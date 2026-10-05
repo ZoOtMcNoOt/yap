@@ -496,8 +496,10 @@ existing request/receipt shapes and explicit reviewer controls.
 - [ ] Record actual before/after evidence and limits, commit/push as Grant McNatt, integrate only reviewed six-job green exact heads, preserve the tested tag/tree-equal main before branch retirement and continue the entire roadmap.
 
 [Actual evidence](../../evidence/knowledge-embedding-batches/2026-10-05/verification.md)
-records 165 skip-free SQL cases, 214 skip-free portable cases and full isolated
-server discovery (1,677 passes/162 declared exclusions), with synthetic-vector limits.
+records 165 skip-free SQL cases and 215 skip-free portable cases after
+[review corrections](../../evidence/knowledge-embedding-batches/2026-10-05/review-verification.md).
+Final isolated server discovery passes 1,678 cases/162 declared exclusions.
+Synthetic-vector limits remain separate from actual inference/enterprise capacity.
 
 ## Execution record
 
