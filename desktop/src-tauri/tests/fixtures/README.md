@@ -65,3 +65,23 @@ ffmpeg -i tone-44k-stereo.m4a -map 0:a -c:a copy -map_metadata -1 \
 For the fractional fixture, use a mono 440 Hz input with `duration=0.997`, `-c:a aac -b:a 96k` and the same metadata, bitexact and faststart options. For two tracks, use separate 440 Hz and 880 Hz mono inputs at 44.1 kHz for one second, `-map 0:a -map 1:a -c:a aac -b:a 96k` with those options. For ALAC, use a one-second mono 440 Hz input and `-c:a alac`. For fragmentation, use that mono input with `-c:a aac -b:a 96k`, replacing faststart with `-movflags +frag_keyframe+empty_moov`.
 
 Tests also mutate these actual containers' edit lists, packet durations and track duration, truncate media, and rename a non-MP4 source. Every refusal must preserve the original and an unrelated neighboring file while removing only its own temporary decoded output.
+
+## Ogg FLAC complete endings
+
+Grant McNatt created `tone-48k-flac-pages.ogg` and
+`tone-48k-mono-flac.ogg` with FFmpeg 7.1.5. They contain synthetic 440-Hz tones
+at 48 kHz with FLAC audio in Ogg: respectively two seconds of stereo (96,000
+source frames) and one second of mono (48,000 frames). Multiple audio pages
+exercise complete end-of-stream granule positions, damaged middle-page refusal,
+missing endings and cancellation. No speech or model qualification is implied.
+FFmpeg is a fixture-generation tool, not a shipped conversion dependency.
+
+```bash
+ffmpeg -f lavfi -i 'sine=frequency=440:sample_rate=48000:duration=2' \
+  -ac 2 -c:a flac -map_metadata -1 -fflags +bitexact -flags:a +bitexact \
+  -f ogg -page_duration 200000 tone-48k-flac-pages.ogg
+# For the mono fixture use duration=1, -ac 1 and tone-48k-mono-flac.ogg.
+```
+
+Stereo SHA-256: `3c78cf9b5ff77032297fcd424939fba31b4838c39a0f3badbfea9214060eae46`.
+Mono SHA-256: `c4cb3b1ea6c8614d15de53591a315fc76d8f443c36a66b3d7202e1f88b714ac0`.

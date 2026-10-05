@@ -14,7 +14,7 @@ use std::{
 
 use symphonia::core::{
     codecs::audio::{
-        well_known::{CODEC_ID_AAC, CODEC_ID_FLAC, CODEC_ID_VORBIS},
+        well_known::{CODEC_ID_AAC, CODEC_ID_FLAC},
         AudioCodecParameters, AudioDecoderOptions,
     },
     errors::Error as SymphoniaError,
@@ -99,12 +99,13 @@ fn decode_to_canonical_wav(
     if is_mpeg4 && format.format_info().short_name != "isomp4" {
         return Err("M4A/MP4 recording is not an ISO MP4 container".into());
     }
-    let (_, parameters) = audio_track(format.as_ref())?;
+    let (initial_track, parameters) = audio_track(format.as_ref())?;
+    let initial_declared_frames = initial_track.num_frames;
     if is_mpeg4 && parameters.codec != CODEC_ID_AAC {
         return Err("M4A/MP4 recordings require one AAC-LC audio track".into());
     }
-    let is_vorbis = parameters.codec == CODEC_ID_VORBIS;
-    if is_vorbis {
+    let is_ogg = format.format_info().short_name == "ogg";
+    if is_ogg {
         // Ogg duration is declared by final granule positions, not a bitrate
         // estimate. Let its reader inspect the ending on the admitted handle.
         drop(format);
@@ -120,10 +121,13 @@ fn decode_to_canonical_wav(
     if is_mpeg4 && track.num_frames.is_none() {
         return Err("M4A/MP4 recording has no complete declared duration".into());
     }
-    if is_vorbis && track.num_frames.is_none() {
+    if is_ogg && track.num_frames.is_none() {
         return Err(
             "Ogg recording has no complete declared ending; select an intact recording".into(),
         );
+    }
+    if is_ogg && initial_declared_frames.is_some_and(|frames| Some(frames) != track.num_frames) {
+        return Err("Ogg recording has conflicting declared duration metadata".into());
     }
     let track_id = track.id;
     let is_flac = parameters.codec == CODEC_ID_FLAC;

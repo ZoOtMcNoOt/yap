@@ -1,6 +1,6 @@
 # Current status
 
-**Updated:** 2026-10-04. **Project owner:** Grant McNatt.
+**Updated:** 2026-10-05. **Project owner:** Grant McNatt.
 
 ## Current goal
 
@@ -93,6 +93,19 @@ The [single queue](plans/active/2026-10-02-yap-project-hill-climb.md#current-inc
 record strict receipts, uncertain-write recovery, permission revocation, actual
 native HTTP/PostgreSQL and responsive browser checks. Larger rebuilds, actual
 provider/enterprise qualification and the entire roadmap remain open.
+
+The next reviewed bounded embedding-batch iteration is pending integration in
+[PR #209](https://github.com/ZoOtMcNoOt/yap/pull/209), after
+[PR #208](https://github.com/ZoOtMcNoOt/yap/pull/208). Both retain five successful
+hosted jobs and a failed initial full browser run; their unchanged reviewed heads
+are undergoing complete frontend-job renewal. No integration is claimed.
+Saved timed speaker JSON export has passed focused review and local native/
+frontend checks; full browser regression remains pending. Ogg FLAC admission now
+refuses reproduced silent middle-page loss and has passed full local native and
+frontend suites. All 12 recording browser journeys and Clippy pass after serial renewal with
+private Vite caches; final review and clean/hosted gates remain pending.
+The [single queue](plans/active/2026-10-02-yap-project-hill-climb.md) retains all
+three successor outcomes and the entire roadmap.
 
 ## Latest completed increments
 

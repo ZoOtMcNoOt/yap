@@ -68,7 +68,7 @@ export function HelpSheet({
               ],
               [
                 "Which recordings can I import?",
-                "WAV, MP3, FLAC and Ogg Vorbis are supported. M4A and MP4 need one mono or stereo AAC-LC audio track. Fragmented files, complex edits and other codecs need conversion first; your original stays unchanged.",
+                "WAV, MP3, FLAC and Ogg Vorbis/FLAC are supported. M4A and MP4 need one mono or stereo AAC-LC audio track. Fragmented files, complex edits and other codecs need conversion first; your original stays unchanged.",
               ],
               [
                 "Why is my recording waiting?",

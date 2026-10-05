@@ -15,7 +15,7 @@ for (const format of ["flac", "ogg", "m4a", "mp4"]) {
       .click();
     await expect(
       page.getByText(
-        "Supported files: WAV, MP3, FLAC, Ogg Vorbis and M4A/MP4 (AAC-LC).",
+        "Supported files: WAV, MP3, FLAC, Ogg Vorbis/FLAC and M4A/MP4 (AAC-LC).",
         { exact: false },
       ),
     ).toBeVisible();
@@ -338,7 +338,7 @@ for (const status of ["queued_server", "failed", "complete"] as const) {
   });
 }
 
-for (const format of ["m4a", "mp4"])
+for (const format of ["ogg", "m4a", "mp4"])
   test(`${format.toUpperCase()} preparation failure and retry fit a narrow window`, async ({
     page,
   }) => {
@@ -348,7 +348,7 @@ for (const format of ["m4a", "mp4"])
     await page
       .getByRole("button", { name: "Transcribe a recording", exact: true })
       .click();
-    await expect(page.getByText(/Supported files:.*M4A\/MP4/)).toBeVisible();
+    await expect(page.getByText(/Supported files:.*Ogg Vorbis\/FLAC.*M4A\/MP4/)).toBeVisible();
     await page
       .getByRole("button", { name: "Choose files", exact: true })
       .focus();

@@ -558,7 +558,7 @@ and alignment for accepted free-text corrections remain separate roadmap outcome
 
 ## Upcoming increment: complete Ogg FLAC admission
 
-**Status:** 0/7 outcomes implemented; acceptance recorded before code changes. Integrate after the reviewed timed speaker export.
+**Status:** 5/7 outcomes locally verified; full regression and reviewed hosted integration remain pending. Acceptance was recorded before code changes at `d5ce762f`. Integrate after the reviewed timed speaker export.
 
 Executable audit: the locked Symphonia0.6.1 Ogg mapper already recognizes FLAC;
 the existing FLAC decoder is enabled and unchanged/MPL2.0 notices are retained.
@@ -566,26 +566,28 @@ The current native Ogg complete-ending reprobe is conditional on Vorbis's codec
 rather than the actual container. A synthetic one-second48kHz Ogg-FLAC recording
 from installed ffmpeg produces num_frames=None/no verification checksum on the
 initial nonseekable probe, then num_frames=48000 when its complete ending is
-inspected with seekable probing. The audit is only metadata evidence, not a full
-native corruption demonstration; preserve /tmp/yap-ogg-flac-audit/probe.log.
+inspected with seekable probing. That initial audit was metadata evidence. The subsequent real native fixture
+reproduced a damaged middle page silently accepted as 82,176/96,000 source
+frames. Complete EOS inspection plus exact decoded-frame equality now refuses
+it. Missing EOS was already refused. [Evidence](../../evidence/ogg-flac-import/2026-10-05/verification.md) preserves the observations and checks.
 Symphonia's logical Ogg reader sets the end bound only on an EOS page.
 
-- [ ] Define supported Ogg FLAC alongside current Vorbis without implying Opus,
+- [x] Define supported Ogg FLAC alongside current Vorbis without implying Opus,
   WebM/Matroska or chained/multiple-audio-track support. Reuse the exact existing
   container/FLAC decoder and license/source notices; add no decoder/model route.
-- [ ] Base complete-ending/declared-frame admission on the actual Ogg container;
+- [x] Base complete-ending/declared-frame admission on the actual Ogg container;
   inspect its complete EOS on the retained admitted source handle before decode.
   Require supported codec, one audio track and exact source-frame duration.
   Preserve immutable source/provenance, downmix/resampling and four-hour resource
   ceiling without advertising that ceiling as qualified recording duration.
-- [ ] Verify mono/stereo Ogg-FLAC normalization with actual synthetic fixtures,
+- [x] Verify mono/stereo Ogg-FLAC normalization with actual synthetic fixtures,
   exact declared timing, meaningful tone/channel content, deterministic PCM,
   source fingerprints and existing prepared-source/frozen-manifest owners.
-- [ ] Refuse missing EOS, damaged pages/CRC, truncated headers/payloads,
+- [x] Refuse missing EOS, damaged pages/CRC, truncated headers/payloads,
   conflicting durations, chained/multiple tracks and unsupported Opus without a
   partial published result. Verify cancellation/retry removes only owned decoded
   plaintext and leaves originals, other jobs and retained history intact.
-- [ ] Exercise native intake/preparation/restored catalog and browser picker/help/
+- [x] Exercise native intake/preparation/restored catalog and browser picker/help/
   queue/success/failure text using explicit format support. Keep existing audio
   format/local controls and all original provenance/byte retention assertions.
 - [ ] Run full native/frontend/build/browser/release/provenance contracts and

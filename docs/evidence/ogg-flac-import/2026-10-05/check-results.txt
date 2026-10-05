@@ -1,0 +1,27 @@
+Grant McNatt — 2026-10-05 UTC
+Actual local suite receipts; stdout/stderr logs retained under /tmp.
+
+/tmp/yap-ogg-flac-native-final3.log: cargo test --locked
+1406units passed,0failed,12declaredmodel/fixture ignores,56.47s.
+All27integrations passed (6+2+8+1+10). Emptydoc suite has0tests.
+/tmp/yap-ogg-flac-clippy.log: cargo clippy --locked --all-targets -- -D clippy::all
+Passed1m43s; existingLinuxunusedplatformwarnings are not Windowsstrictwarningcredit.
+/tmp/yap-ogg-flac-frontend-final.log: pnpm --dir desktop test
+417passed,2declaredWindows-only,419total/70files,21.85s; no failures.
+/tmp/yap-ogg-flac-build.log: TypeScript/Vite build passed.
+/tmp/yap-ogg-flac-browser-final.log: all12recordingjourneys passed,1.1m.
+Private Vite cache; no concurrentnativebuilds/browser suites; originaltimeouts/assertions.
+/tmp/yap-ogg-flac-release.log:72releasecontracts,67passed/5Windows-only,0fail.
+/tmp/yap-ogg-flac-docs-contracts.log:30documentation/license/provenance/population/
+workflowcontracts passed,0excluded/0fail,23.382s.
+
+Initial browser11passed1timeout/2.9m underconcurrentbuild/browserwork;
+originalartifacts preserved/tmp/yap-ogg-flac-browser-original, no fullpasscredit.
+Initialnative compilemissingMonitortrait0tests; no nativepasscredit.
+Native1404passed2failed12ignores beforecorrect48kmanifest expectation;
+next1405passed1observer scheduling failure12ignores; both nofullpasscredit.
+Initialfrontend416passed1localhost sandboxEPERM2Windows-only; nofullpasscredit.
+Local86contracts refuseddirtycheckout, nofullpasscredit; renewoncleanreviewedhead.
+
+No actualmodel/inference/physicalWindows/enterprise qualification claimed.
+Finalimmutable-head independentreview and allsixhostedgreenjobs remainrequired.
