@@ -52,3 +52,13 @@ not qualified maximum recording duration. Synthetic tones and bridge fixtures do
 not qualify actual ASR/speaker/alignment accuracy, physical Windows playback or
 enterprise operation. Hosted six-job green reviewed integration follows the
 saved timed speaker export, PR #208 and PR #209; the full roadmap remains active.
+
+The first hosted run on `465c5df055c9a07b10186da59320c0a66852a4a5`,
+[run 566](https://github.com/ZoOtMcNoOt/yap/actions/runs/37276564168),
+passed 1,400 Windows units but failed the inherited timed-export receipt assertion
+(canonical destination versus temporary-directory 8.3 alias), with 12 declared
+fixture ignores. It receives no full native gate credit. The descendant now
+includes PR #210’s [canonical assertion correction](../../timed-speaker-export/2026-10-05/windows-path-renewal.md)
+and PR #209’s [isolated bundled browser runner](../../knowledge-embedding-batches/2026-10-05/browser-runner-recovery.md).
+Neither changes the Ogg decoder or its acceptance assertions. Full hosted
+renewal on the independently reviewed corrected head remains required.
