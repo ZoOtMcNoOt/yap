@@ -505,7 +505,7 @@ Synthetic-vector limits remain separate from actual inference/enterprise capacit
 
 ## Upcoming increment: export the saved timed speaker transcript
 
-**Status:** Implementation and focused verification complete; full regressions, independent review and integration remain pending. Acceptance was recorded before code changes. Integrate after reviewed PR #208 and PR #209.
+**Status:** Implementation, focused verification and independent review complete; full browser regression and reviewed six-job green integration remain pending. Acceptance was recorded before code changes. Integrate after reviewed PR #208 and PR #209.
 
 History reads source-bound persisted speaker turns with
 start/end milliseconds, anonymous or unknown speaker labels and overlap groups.

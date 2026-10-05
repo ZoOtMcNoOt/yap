@@ -94,18 +94,27 @@ record strict receipts, uncertain-write recovery, permission revocation, actual
 native HTTP/PostgreSQL and responsive browser checks. Larger rebuilds, actual
 provider/enterprise qualification and the entire roadmap remain open.
 
-The next reviewed bounded embedding-batch iteration is pending integration in
-[PR #209](https://github.com/ZoOtMcNoOt/yap/pull/209), after
-[PR #208](https://github.com/ZoOtMcNoOt/yap/pull/208). Both retain five successful
-hosted jobs and a failed initial full browser run; their unchanged reviewed heads
-are undergoing complete frontend-job renewal. No integration is claimed.
-Saved timed speaker JSON export has passed focused review and local native/
-frontend checks; full browser regression remains pending. Ogg FLAC admission now
-refuses reproduced silent middle-page loss and has passed full local native and
-frontend suites. All 12 recording browser journeys and Clippy pass after serial renewal with
-private Vite caches; final review and clean/hosted gates remain pending.
-The [single queue](plans/active/2026-10-02-yap-project-hill-climb.md) retains all
-three successor outcomes and the entire roadmap.
+[PR #208](https://github.com/ZoOtMcNoOt/yap/pull/208) and the reviewed bounded
+embedding batches in [PR #209](https://github.com/ZoOtMcNoOt/yap/pull/209) each
+retain five successful hosted jobs and a failed initial browser run; complete
+frontend-job renewals are in progress on unchanged reviewed heads. Neither is
+merged. Saved timed speaker JSON export is implemented through trusted persisted
+source data, explicit new-file selection and existing atomic export ownership.
+All seven focused browser cases, 1,399 native units and 27 integrations, and 417
+portable frontend cases pass. Independent review found no unresolved findings.
+The initial full browser run had 254 passes, three timing/readiness failures and
+one Windows-only exclusion; a serial private-cache renewal and all six hosted
+exact-head jobs remain required. [Evidence](evidence/timed-speaker-export/2026-10-05/verification.md)
+retains those results and qualification limits. Integrate this successor after
+PR #208 and PR #209, then continue formats and the entire roadmap.
+
+Ogg FLAC admission now refuses reproduced silent middle-page loss. Full local
+native checks pass 1,406 units and 27 integrations, with 12 declared ignores.
+All 417 portable frontend cases, 12 recording browser journeys, the build and
+Clippy pass after serial renewal with private Vite caches. [Evidence](evidence/ogg-flac-import/2026-10-05/verification.md)
+retains the original defect and qualification boundaries. Final immutable review,
+clean contracts and hosted gates remain pending; integrate after timed export.
+The single queue retains these successors and the entire roadmap.
 
 ## Latest completed increments
 
