@@ -503,6 +503,57 @@ records 165 skip-free SQL cases and 215 skip-free portable cases after
 Final isolated server discovery passes 1,678 cases/162 declared exclusions.
 Synthetic-vector limits remain separate from actual inference/enterprise capacity.
 
+## Upcoming increment: export the saved timed speaker transcript
+
+**Status:** 0/7 outcomes implemented; acceptance recorded before code changes. Integrate after reviewed PR #208 and PR #209.
+
+History reads source-bound persisted speaker turns with
+start/end milliseconds, anonymous or unknown speaker labels and overlap groups.
+Its dedicated export action writes original or accepted plain UTF-8 text only.
+Existing owners: jobs/commands/catalog.rs loads and validates persisted result/
+speaker bundles against the recording ledger; file_actions/export.rs owns the
+main-window save dialog, one export permit, protected-root destination checking,
+retained directory handles and atomic no-overwrite creation.
+
+- [ ] Define a version1 UTF-8 JSON export with exact source-result SHA256/session,
+  complete ordered turn IDs/start/end milliseconds/text/anonymous-or-unknown
+  speaker IDs and retained overlap groups. Export source data without inventing
+  speaker identity, timestamps, language fixes or correction alignment. Bound
+  output explicitly and refuse oversized data without truncating it.
+- [ ] Load through the existing trusted native recording/result owner using
+  explicit session/output/source-result-hash preconditions. Renderer requests
+  cannot submit text, turns, paths to arbitrary source bundles or model metadata.
+  Missing/damaged/changed/foreign source identity refuses content-free and preserves
+  every original, accepted correction and published result.
+- [ ] Reuse the shared export permit and explicit main-window new-file picker.
+  Revalidate the complete source-bound projection after destination selection;
+  retain the destination directory handle and atomic no-overwrite writer. Choose
+  a .json filename outside Yap data; preserve existing files and symlinked/swapped
+  destinations. A cancelled picker is cancelled; post-publication failure stays
+  unconfirmed, never a claimed rollback. No network, credentials or model calls.
+- [ ] Offer a distinct accessible timed/speaker export action only when the saved
+  speaker projection is verified and current. Preserve original/accepted text
+  exports and local controls. Keep source/correction provenance clear, prevent
+  duplicate concurrent exports, and clear/hide private late feedback on source
+  selection changes. Retain narrow/wide controls, keyboard and reduced motion.
+- [ ] Verify real native files serialize every ordered turn with exact Unicode,
+  timestamps, unknown/anonymous speakers and overlap provenance; verify missing/
+  changed hash/session/source, source drift during picker, output bounds,
+  protected/existing/linked destinations and lost confirmation preserve data.
+- [ ] Verify deterministic browser native-bridge success/cancel/failure/malformed
+  receipt and changing selection, plus keyboard/narrow/wide behavior. Run full
+  applicable native/frontend/build/contracts and hosted browser/native checks.
+  Distinguish fixture data and Linux/software Windows from physical picker/audio
+  or actual speaker/model quality.
+- [ ] Record original observations/screens/evidence, commit/push as Grant McNatt,
+  independently review and integrate only an all-six-green exact head. Preserve
+  tested tag/fetched-main tree equality and unique work before branch retirement;
+  keep the full roadmap active and select the next available software outcome.
+
+JSON is the bounded first exported representation of existing timed/speaker data.
+Subtitle format conversion, local ASR timestamp generation, named speaker identity
+and alignment for accepted free-text corrections remain separate roadmap outcomes.
+
 ## Execution record
 
 The [dated execution history](../../archive/implementation-evidence/2026-10-02-project-hill-climb-history.md) retains every iteration, evidence link and next action recorded at the time. Those next actions are historical; the current increment above determines what to do now. Append new iteration receipts there and keep this queue current.
