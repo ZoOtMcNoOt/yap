@@ -1,7 +1,7 @@
 # Yap & Voice OS — System Architecture
 
 **Status:** Living long-term Voice OS frame of reference; implementation-status
-snapshot last reconciled 2026-08-12
+snapshot reconciled 2026-10-05; dated qualification receipts retain their original scope
 
 > **Scope notice (2026-07-15):** This document remains the first-class readable
 > frame for the eventual Voice OS architecture. It intentionally combines the
@@ -13,7 +13,7 @@ snapshot last reconciled 2026-08-12
 > review; checkpoint cleanup may repair classification and links but must not
 > silently redefine the target.
 
-**Authority:** Decisions are normative according to status in [ADR 0001–0029](adr/README.md). This doc is the readable synthesis of the full Voice OS flowchart + reconciled Yap decisions.
+**Authority:** Decisions are normative according to status in [ADR 0001–0031](adr/README.md). This doc is the readable synthesis of the full Voice OS flowchart + reconciled Yap decisions.
 
 For implementation truth rather than decision intent, use the living [ADR implementation status audit](ADR-IMPLEMENTATION-STATUS.md). An accepted ADR or a documented flowchart node is not proof that its code exists.
 
@@ -62,12 +62,12 @@ For implementation truth rather than decision intent, use the living [ADR implem
 
 | | **Current + next Yap boundary** | **Voice OS (long-term)** |
 |--|---------------------|---------------------------|
-| Primary input | File imports + explicit live mic + global dictation hotkey; paste-last is optional and imports remain a queue shell | Same client inputs plus future connected server routes |
-| Live language | Executing fallback applies the confirmed primary locale across Nemotron's exact 32 out-of-box locales. The Phase 6 branch implements one optional bounded resident acoustic-LID component, offline switching, and within-utterance source-time language spans under the same Rust live-runtime owner. Exact candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed the no-server target-client channel and the complete Phase 6 matrix: 12/12 paced native cycles and all nine short-boundary cases completed without drops; the unattended release-mode UI run proved local fallback, cancellation recovery, save/delete, production quit, and complete teardown. The consumed representative natural-switch target failed, so the feature remains explicit, default-off Preview behavior. Longer physical-device and low-end battery/thermal certification remains default-on or Phase 10 work. | Multilingual server live follows the authenticated live-transport gate. Local switching remains a best-effort Preview unless new independently frozen evidence justifies a stronger quality tier. |
-| Batch language | Executing Phase 5: Cohere **14 languages**, explicit choice. The unpromoted Phase 6 branch adds the tiered catalog, guarded suggestions, explicit server Nemotron auto mode, and immutable per-segment label corrections under focused tests | Versioned model-agnostic catalog with per-segment provenance and append-only review revisions |
+| Primary input | File imports + explicit live mic + global dictation hotkey; paste-last is optional with durable server jobs and verified native result publication | Same client inputs plus future connected server routes |
+| Live language | Executing fallback applies the confirmed primary locale across Nemotron's exact 32 out-of-box locales. Merged Phase 6 implements one optional bounded resident acoustic-LID component, offline switching, and within-utterance source-time language spans under the same Rust live-runtime owner. Exact candidate `a92f338546a2f8bbaded96b04f8987f0ac475c88` passed the no-server target-client channel and the complete Phase 6 matrix: 12/12 paced native cycles and all nine short-boundary cases completed without drops; the unattended release-mode UI run proved local fallback, cancellation recovery, save/delete, production quit, and complete teardown. The consumed representative natural-switch target failed, so the feature remains explicit, default-off Preview behavior. Longer physical-device and low-end battery/thermal certification remains default-on or Phase 10 work. | Multilingual server live follows the authenticated live-transport gate. Local switching remains a best-effort Preview unless new independently frozen evidence justifies a stronger quality tier. |
+| Batch language | The current capability catalog advertises gated Cohere `en-US`; additional model-card languages are not promoted product routes. Merged Phase 6 provides guarded suggestions, explicit server Nemotron auto mode and source-bound language evidence behind their capability gates. | Versioned model-agnostic catalog with per-segment provenance and append-only review revisions |
 | STT runtime | **Nemotron INT8 sherpa fallback** + gated Phase 5 loopback batch path; authenticated bounded private WebSocket admission and the native lower handshake now exist, but live ASR and the external secure edge remain deferred | Same client shell; heavier pools move server-side |
-| Transcript correction | Renderer/Ollama Polish is removed. Exact Scribe head `e5858424...` passed authenticated native/server finalized-segment correction qualification with visible diff, separate accepted revision, raw fallback, and public-safe evidence SHA-256 `5e187ed4...`; hosted-green head `bc9a88bc...` merged through PR #164 as `ec3af506...`. | Complete the remaining bounded agents through governed already-warm Qwen/Gemma routes |
-| Speakers | Plain dictation; optional anonymous meeting labels later | Revisioned diarization + purpose-authorized server identity + OKF |
+| Transcript correction | Renderer/Ollama Polish is removed. Exact Scribe head `e5858424...` passed authenticated native/server finalized-segment correction qualification with visible diff, separate accepted revision, raw fallback, and public-safe evidence SHA-256 `5e187ed4...`; hosted-green head `bc9a88bc...` merged through PR #164 as `ec3af506...`. | All eight role cores/product surfaces merged through PR #183; finish uncovered end-to-end recovery and production qualification through governed Qwen/Gemma routes |
+| Speakers | Plain dictation plus explicit source-bound anonymous Tiron meeting Preview; no production promotion or purpose-authorized named-profile entry point | Revisioned diarization + purpose-authorized server identity + OKF |
 | Knowledge | Transcripts history (solo) / `yap-knowledge` Google OKF + compiler (team) | Permission-safe OKF graph/vector views + glossary agents + Q&A |
 
 ---
@@ -770,19 +770,18 @@ Scribe, and promoted NeMo/vLLM production capacity remain unwired:
 | Rule | Limit |
 |------|--------|
 | Local STT loaded | Client fallback loads **Nemotron INT8 only**; server router owns fusion/routing |
-| Scribe (HOT) | **1 active rapid request**; queue-inclusive **60 s** candidate deadline; raw ASR on failure |
-| Agent admission | **64 global pending**, **4 active-plus-pending per owner**, owner round robin; one active request per route |
-| Background LLM agents | Typed bounded work classes behind the same owner-fair broker; remaining workflows not yet delivered |
+| Scribe (HOT) | One active request per owner; qualified profile allows four rapid active requests; queue-inclusive **60 s** candidate deadline; raw ASR on failure |
+| Agent admission | **64 global pending**, **4 active-plus-pending per owner**, owner round robin; one active request per owner, with profile-derived four rapid/eight complex active limits |
+| Background LLM agents | All eight role cores/product surfaces merged through PR #183; typed bounded classes reuse the owner-fair broker, with actual simultaneous residency and sustained capacity still open |
 | Speaker evidence | Optional, bounded, anonymous, and independently degradable |
 | Background agents during live | **Blocked** except Scribe |
 | Meeting workers | Load only for meeting work; release by measured idle/resource policy |
 
-The table records the qualified merged one-slot admission boundary. The current
-development branch derives four rapid and eight complex active limits from the
-immutable profiles while retaining one active request per owner, but that
-successor changes protected inputs and has no fresh exact-head qualification,
-public lock, hosted review, or merge. Its configured limits are not current
-capacity, simultaneous-residency, or production-SLO evidence.
+The table records the merged profile-bound admission boundary. ADR 0031 retains
+exact qualification of four rapid/eight complex selected-route admission and one
+active request per owner through the merged role/product work. Same-warm-process
+and sequential lifecycle evidence do not prove simultaneous model residency,
+cross-start/global determinism, sustained mixed-owner capacity or production SLOs.
 
 **VAD:** Runs outside inference ownership and supplies advisory endpointing and
 segment hints. The imported canonical-WAV path now executes the exact pinned
@@ -1137,6 +1136,17 @@ Each phase ships **code + doc/product sync** together, so positioning never lags
 
 ## Hardening checklist (implementation)
 
+Dated receipts below retain their scope. All four deterministic terminology
+projections and all eight bounded role cores/product surfaces are delivered;
+remaining provider/workflow integration and actual qualification stay open.
+PRs #205–#207 integrated reviewed-source preparation/publication integrity, retained
+rollback and embedding generation. Desktop rebuild PR #208 is software verified and merged as
+`181085af`; larger-generation PR #209, timed speaker JSON PR #210 and Ogg
+FLAC PR #211 also remain unmerged. Use [current status](CURRENT-STATUS.md) for their
+failed/pending gates. The [roadmap](roadmap/ROADMAP.md) also preserves diagnostics
+privacy (OQ-28), developer/IT networking ownership (OQ-29), language/speaker/overlap
+composition (OQ-30), and OQ-31’s closed Tiron baseline disposition.
+
 **Client live fallback (Phases 1–2)**
 
 - [x] In-process local Nemotron fallback
@@ -1158,8 +1168,10 @@ Each phase ships **code + doc/product sync** together, so positioning never lags
 - [x] Pinned advisory Silero ONNX over imported canonical WAV with bounded source-
   time intervals/error evidence and complete source retention
 - [ ] Silero ONNX in the live Rust audio path; live `vad_segments`/endpointing
-- [ ] Agent profile registry; v1 enable `scribe` only
-- [ ] Enforce one client-local Nemotron session, one HOT LLM, and one background LLM queue; server pools schedule independently
+- The historical `scribe`-only local agent-registry/HOT-LLM checklist is superseded
+  for the team route by ADR 0031’s eight bounded roles and shared server admission.
+  Keep one client-local Nemotron session; any future solo/local LLM remains a
+  separately scoped and qualified product slice.
 
 **Historical local LLM design**
 
@@ -1237,9 +1249,13 @@ act as a compatibility fallback.
 - [ ] Transient client embeddings; no passive contact/profile enrollment
 - [ ] Server-authoritative reconciliation and purpose-authorized identity
 - [ ] Align raw STT only
-- [ ] Freeze the messy-meeting suite before hypotheses; separate public AMI/ICSI/NOTSOFAR comparators from the independent holdout
+- [x] Freeze the messy-meeting suite before hypotheses; retain public AMI/ICSI/NOTSOFAR comparator classification and the independent-holdout requirement
 - [ ] Prove 1–8 window slots, explicit >8 window pressure, >15-attendee/small-active-subset behavior, 9/16/32-talker cross-epoch linking, overlap, locales, long duration, c1/c2/c4/c8 isolation, cancellation, and teardown
-- [ ] Qualify the pinned Tiron source-time epoch route against the frozen acceptance gates; retain source audio and the model-replacement seam when it fails
+- The prior Tiron production gate (OQ-31) closed as `unadvertised-baseline` because
+  the required independent holdout was unconfigured; no production runtime/scoring
+  admission occurred. Keep Preview outside the default catalog. Any later
+  promotion is a new authorized evidence decision; preserve source audio and the
+  model-replacement seam.
 
 ---
 

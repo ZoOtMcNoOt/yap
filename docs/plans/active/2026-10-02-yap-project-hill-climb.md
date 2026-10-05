@@ -6,7 +6,7 @@
 
 **Build Yap into a complete, maintainable private transcription and governed-knowledge product by repeatedly finishing the highest-impact end-to-end outcome across the entire approved roadmap. Complete and verify every task possible without model hardware, then qualify the remaining behavior on its actual models, Windows clients, and enterprise environment.**
 
-This is the single execution queue for the entire project. The [roadmap](../../roadmap/ROADMAP.md) retains the feature inventory and OQ-01–OQ-27; [Product](../../../PRODUCT.md), [Design](../../../DESIGN.md), the [Voice OS architecture](../../VOICE-OS-ARCHITECTURE.md), accepted ADRs, and contracts retain the requirements. Conditional proposals require their stated evidence before implementation. Nothing is retired by archiving a document or completing a milestone.
+This is the single execution queue for the entire project. The [roadmap](../../roadmap/ROADMAP.md) retains the feature inventory and all 31 entries, OQ-01–OQ-31 (including OQ-31’s closed Tiron baseline disposition); [Product](../../../PRODUCT.md), [Design](../../../DESIGN.md), the [Voice OS architecture](../../VOICE-OS-ARCHITECTURE.md), accepted ADRs, and contracts retain the requirements. Conditional proposals require their stated evidence before implementation. Nothing is retired by archiving a document or completing a milestone.
 
 The [completed UI milestone](../completed/2026-10-02-hardware-free-product-completion.md) is a starting point. Its 30/30 acceptance areas describe supported UI journeys under fixtures, not completion of every feature or production qualification.
 
@@ -71,17 +71,17 @@ The rows below cover the full roadmap. Their order is the initial priority; revi
 
 | Workstream | Baseline and next complete outcome | Qualification boundary |
 | --- | --- | --- |
-| Transcript review and dedicated export | Original and latest accepted-revision UTF-8 exports are software verified alongside reading/search/copy/open/reveal and offline accepted-correction recovery. Preserve the [original](../../evidence/transcript-export/2026-10-02-verification.md) and [accepted export](../../evidence/accepted-correction-export/2026-10-03/verification.md) contracts. Earlier revision selection is software verified and merged through PR #205; timed/speaker exports remain open. | Native dialog/platform filesystem behavior needs target checks; export correctness is model independent. |
-| Terminology and personalization | Personal and explicitly configured shared CRUD connect trusted scope/connection authority, the canonical ledger, frozen snapshots and Settings controls; [shared evidence](../../evidence/shared-terminology/2026-10-03-verification.md) covers nine outcomes. Continue directory administration and provider projections using [ADR 0028](../../adr/0028-model-independent-terminology-authority.md). | Directory/admin policy and provider-specific effectiveness need IT and models. |
+| Transcript review and dedicated export | Original and latest accepted-revision UTF-8 exports are software verified alongside reading/search/copy/open/reveal and offline accepted-correction recovery. Preserve the [original](../../evidence/transcript-export/2026-10-02-verification.md) and [accepted export](../../evidence/accepted-correction-export/2026-10-03/verification.md) contracts. Earlier revision selection is software verified and merged through PR #205. Timed/speaker JSON is implemented in unmerged PR #210; subtitle conversion, corrected-text alignment and explicit damaged-history repair remain separate outcomes. | Native dialog/platform filesystem behavior needs target checks; export correctness is model independent. |
+| Terminology and personalization | Personal and explicitly configured shared CRUD connect trusted scope/connection authority, the canonical ledger, frozen snapshots and Settings controls; [shared evidence](../../evidence/shared-terminology/2026-10-03-verification.md) covers nine outcomes. ADR 0028’s four deterministic projection contracts are delivered; continue directory administration and supported provider/workflow integration using [ADR 0028](../../adr/0028-model-independent-terminology-authority.md). | Directory/admin policy and provider-specific effectiveness need IT and models. |
 | Imported recordings and more formats | WAV/MP3/FLAC/Ogg Vorbis/single-track AAC-LC M4A/MP4 normalization, durable jobs, cancellation/retry and native result access exist. Audit full source-to-result recovery; add remaining approved WebM and broader Ogg codecs incrementally with decoder/license, resource and malformed-input checks. | Actual ASR quality, speaker/alignment quality and advertised maximum duration require representative inference. |
 | Local dictation, setup and model lifecycle | Supported setup/recovery UI is verified under fixtures. Audit capture/session/restart, explicit install/import, corruption, atomic replacement, rollback and offline behavior; close portable gaps and prepare target checks. | Physical microphones, hotkeys, cross-app delivery, tray hit testing and Windows model guards require Windows. |
-| Languages and meeting evidence | Fixed locale and explicit Preview routes exist. Verify unknown/abstention, switching reconciliation, immutable finalized text, source-time alignment and anonymous speaker review. Implement authorized naming/enrollment/profile lifecycle without inferred contact identity. | Locale/switch/overlap/roster promotion, recording length, battery/thermal and sustained performance require actual targets. |
+| Languages and meeting evidence | Fixed locale and explicit Preview routes exist. Verify unknown/abstention, switching reconciliation, immutable finalized text, source-time alignment, anonymous speaker review and independent language/speaker/overlap composition (OQ-30). Implement authorized naming/enrollment/profile lifecycle without inferred contact identity. | Locale/switch/overlap/roster promotion, recording length, battery/thermal and sustained performance require actual targets. |
 | Supervised services and batch ASR | Rust supervision and bounded admission exist. Finish missing supervised ASR integration; verify health/readiness, source/result ownership, fair scheduling, cancellation, crash/restart and model-unavailable failures with deterministic providers. | Full simultaneous model residency, mixed-owner throughput, latency/memory budgets and SLOs need representative nodes. |
-| Server live dictation and secure edge | Authenticated private admission exists; end-to-end live ASR and external serving remain incomplete. Connect native client, authenticated transport and supervised provider; test stream ordering/gaps/backpressure, cancellation, teardown and same-origin WSS/TLS. | Real live quality/performance and enterprise TLS/networking require targets. HTTP/3 requires parity and measured benefit before adoption. |
-| Scribe and governed knowledge | Supported eight-role UI journeys are fixture verified. Audit real service persistence and permission-safe integration, raw-preserving corrections, citations, proposal acceptance/publication, revocation and multi-principal isolation; close software gaps across every role. | Production corpus, real reasoning models, model-benefit evidence and organizational publication governance require actual inputs. |
+| Server live dictation and secure edge | Authenticated private admission exists; end-to-end live ASR and external serving remain incomplete. Connect native client, authenticated transport and supervised provider; test stream ordering/gaps/backpressure, cancellation, teardown and same-origin WSS/TLS. | Real live quality/performance and enterprise TLS/networking require targets. OQ-29 separates developer-owned contracts/rehearsals from IT controls. HTTP/3 requires parity and measured benefit before adoption. |
+| Scribe and governed knowledge | All eight bounded role cores and authenticated product surfaces are merged through PR #183; supported UI journeys are fixture verified. Reviewed-source publication/preparation, retained rollback and embedding generation are integrated through PRs #205–#207; desktop rebuilding is software verified and merged through PR #208. Audit remaining real service persistence and permission-safe integration, raw-preserving corrections, citations, proposal acceptance/publication, revocation and multi-principal isolation; close software gaps across every role. | Production corpus, real reasoning models, model-benefit evidence and organizational publication governance require actual inputs. |
 | Organization identity | Native token authority and owner isolation exist. Verify explicit sign-in/out, capability denial, session expiry, revocation and offline local independence; prepare actual provider/cache/policy checks. Never add Yap credentials or caller-selected identity. | WAM/Entra, tenant registration, audience and conditional-access policy require Windows and IT. |
 | UI, accessibility and documentation | Preserve the 30-area baseline; apply the same usability/recovery checks to every added feature. Keep one queue, readable product/setup guidance and source-linked decisions. Preserve historical goals/features and third-party attribution. | Physical focus/input/hit testing remains target-platform work. |
-| Release and operations | Audit existing observability, redaction, dependency/provenance, SBOM, packaging, backup/deletion, disaster recovery, deployment and rollback paths. Implement missing software and run disposable rehearsals; perform focused correctness/security review. The [complete skip-free PostgreSQL gate](../../evidence/governed-postgres-ci/2026-10-03/verification.md) is software verified and required in hosted Linux CI. | Production retention, monitoring/SLO approval, target installer and deployment/drills need accountable environments. |
+| Release and operations | Audit bounded diagnostics, correlation, retention/deletion and user controls (OQ-28), observability, redaction, dependency/provenance, SBOM, packaging, backup/deletion, disaster recovery, deployment and rollback paths. Implement missing software and run disposable rehearsals; perform focused correctness/security review. The [complete skip-free PostgreSQL gate](../../evidence/governed-postgres-ci/2026-10-03/verification.md) is software verified and required in hosted Linux CI. | Production retention, monitoring/SLO approval, target installer and deployment/drills need accountable environments. |
 | Repository and storage boundaries | Preserve [ADR 0018](../../adr/0018-three-repo-topology.md) and [ADR 0022](../../adr/0022-google-okf-permission-safe-projections.md). Make deployment/access boundaries work before splitting repositories. Add Redis/object storage/Neo4j only for a measured gap. | Organization access and hosting decisions need their owners; diagrams alone do not justify dependencies. |
 
 ## Software-verified increments
@@ -103,27 +103,37 @@ The linked records retain each increment's acceptance conditions, before/after b
 | Ogg Vorbis import | 5/5 | Exact licensed decoder upgrade, native/recording UI, declared duration/content/provenance and safe refusal/recovery; [evidence](../../evidence/ogg-import/2026-10-02-verification.md). Opus, multiple/chained streams and actual ASR/Windows playback remain outside verified support. |
 | Shared terminology | 9/9 | Trusted scope policy, bounded CRUD/discovery, native connection revision binding, read-only controls and frozen snapshots; [evidence](../../evidence/shared-terminology/2026-10-03-verification.md). Automatic directory integration, additional projections and model/Windows effectiveness remain open. |
 | Shared design and motion | 7/7 | Original vector/icon family, coherent tokens, responsive Knowledge tasks, contrast/preference controls and bounded motion; [screen review/evidence](../../evidence/design-refresh/2026-10-03/review.md). Full UI completion, latest native Wispr comparison and Windows compositor qualification remain open. |
-| Knowledge connections | 6/7 | Model-free permission-filtered browsing, source-cited incoming/outgoing links, native lease/cancellation, accessible graph/list and recovery; [evidence](../../evidence/knowledge-connections/2026-10-03/verification.md). Curator connection proposals are separately verified below; human publication and rebuild recovery remain open. |
+| Knowledge connections | 6/7 | Model-free permission-filtered browsing, source-cited incoming/outgoing links, native lease/cancellation, accessible graph/list and recovery; [evidence](../../evidence/knowledge-connections/2026-10-03/verification.md). Curator connection proposals are separately verified below; The human source-review handoff, uncovered recovery/discovery gaps and target qualification remain open; PRs #205–#208 deliver bounded publication/rebuilding. |
 | Connection-owned Knowledge | 5/5 | Shared native authority revision, owner-bound submission/rendering, same-owner offline/task drafts and contained delayed cancellation; [acceptance/evidence](../../evidence/connection-owned-knowledge/2026-10-03-verification.md). |
-| Curator connection proposals | 6/6 | Exact identified source pair, binary review, atomic noncanonical persistence, native owned-query binding and responsive recovery; [evidence/screens](../../evidence/curator-connections/2026-10-03/verification.md). Actual reasoning and human canonical publication/rebuilding remain open. |
+| Curator connection proposals | 6/6 | Exact identified source pair, binary review, atomic noncanonical persistence, native owned-query binding and responsive recovery; [evidence/screens](../../evidence/curator-connections/2026-10-03/verification.md). Actual reasoning and The human source-review handoff, uncovered recovery/discovery gaps and target qualification remain open; PRs #205–#208 deliver bounded publication/rebuilding. |
 | Accepted correction recovery | 6/6 | Trusted bounded source/chain reopening, preserved damaged history, source-bound offline reading/copying and responsive saved-versus-suggested review; [evidence/screens](../../evidence/accepted-correction-recovery/2026-10-03/verification.md). Earlier-revision selection is software verified and merged through PR #205; explicit repair remains open. Accepted UTF-8 export is verified below. |
-| Saved connection inspection | 6/6 | Owned persisted references, current-generation endpoint permissions, exact citations and contained native/UI reads; [acceptance/screens/checks](../../evidence/connection-proposal-inspection/2026-10-03/verification.md). Human publication and rebuilding remain open. |
+| Saved connection inspection | 6/6 | Owned persisted references, current-generation endpoint permissions, exact citations and contained native/UI reads; [acceptance/screens/checks](../../evidence/connection-proposal-inspection/2026-10-03/verification.md). The human source-review handoff, uncovered recovery/discovery gaps and target qualification remain open; PRs #205–#208 deliver bounded publication/rebuilding. |
 | Accepted correction export | 6/6 | Displayed saved-revision preconditions, native source/history revalidation, exact UTF-8 new-file publication and shared original/accepted export ownership; [evidence/screens](../../evidence/accepted-correction-export/2026-10-03/verification.md). Earlier-revision selection is software verified and merged through PR #205; timed/speaker export and Windows picker checks remain open. |
 | AAC in M4A/MP4 | 6/6 | Real single-track AAC-LC container timing/content, retained source/durable preparation, bounded refusal/cancellation and responsive Recording/History; [evidence/screens](../../evidence/aac-import/2026-10-03/verification.md). Distribution patent clearance, inference and Windows playback remain open. |
-| Owned connection discard | 6/6 | Explicit confirmation, retained provenance, atomic audit, capacity release and uncertain-delivery recovery; [acceptance/screens/integration](../../evidence/connection-proposal-discard/2026-10-03/verification.md). Human publication/rebuilding remain open. |
-| Owned connection discovery | 6/6 | Dated owner-only list, strict native receipts, permission-checked selection and confirmed-only cleanup; [acceptance/screens/integration](../../evidence/saved-connection-proposals/2026-10-03/verification.md). Canonical publication/rebuilding remains open. |
+| Owned connection discard | 6/6 | Explicit confirmation, retained provenance, atomic audit, capacity release and uncertain-delivery recovery; [acceptance/screens/integration](../../evidence/connection-proposal-discard/2026-10-03/verification.md). The human source-review handoff, uncovered recovery/discovery gaps and target qualification remain open; PRs #205–#208 deliver bounded publication/rebuilding. |
+| Owned connection discovery | 6/6 | Dated owner-only list, strict native receipts, permission-checked selection and confirmed-only cleanup; [acceptance/screens/integration](../../evidence/saved-connection-proposals/2026-10-03/verification.md). The human source-review handoff, uncovered recovery/discovery gaps and target qualification remain open; PRs #205–#208 deliver bounded publication/rebuilding. |
 | Complete PostgreSQL CI gate | 5/5 | All 23 modules/117 cases, isolated digest-pinned runtime, self-contained fixtures, shared receipt contract and required hosted execution; [evidence/integration](../../evidence/governed-postgres-ci/2026-10-03/verification.md). Model and production-runtime qualification remain separate. |
 
-## Connections: remaining publication outcome
+## Connections: remaining governed source-review outcome
 
-**Status:** 6/7 software outcomes verified; human canonical publication/rebuilding remain open. Broad read-path checks and the Linux application build pass. Permission-filtered topic browsing and bounded incoming/outgoing neighborhoods now run through a model-free authenticated service, strict native connection leases, and responsive graph/list controls. Twenty focused storage/API/configuration cases, seven native cases and ten browser cases pass. Generic agent/MCP responses now preserve source authority; 65 focused agent/storage/API regression cases pass. [Contract](../../specs/knowledge-connections.md) and [screens/evidence](../../evidence/knowledge-connections/2026-10-03/verification.md) record the limits. Preserve the existing compiler/projection/permission owners and eight agent workflows. Curator now implements the typed proposal journey recorded above. Complete human canonical publication and rebuilding before closing the remaining outcome.
+**Current reconciliation (2026-10-05):** PRs #205–#207 integrated the bounded
+reviewed-source preparation/publication, retained rollback and embedding-generation
+journey. PR #208 completes desktop inspect/stage/prepare/publish/restore and merged as
+`181085af` with the tree tested at reviewed head `5f6e62a2`. The dated outcomes
+below retain their original scope; their publication/rebuild limitations do not
+mean those later capabilities are absent. Remaining work is the complete human
+proposal → authorized canonical source-review handoff, any uncovered recovery
+and retained-history discovery gaps, larger-generation integration in PR #209,
+and actual provider/enterprise qualification. Proposals cannot certify Git review.
+
+**Status:** 6/7 software outcomes verified; the complete human source-review handoff remains open, using the publication/rebuild owners delivered through PR #208. Broad read-path checks and the Linux application build pass. Permission-filtered topic browsing and bounded incoming/outgoing neighborhoods now run through a model-free authenticated service, strict native connection leases, and responsive graph/list controls. Twenty focused storage/API/configuration cases, seven native cases and ten browser cases pass. Generic agent/MCP responses now preserve source authority; 65 focused agent/storage/API regression cases pass. [Contract](../../specs/knowledge-connections.md) and [screens/evidence](../../evidence/knowledge-connections/2026-10-03/verification.md) record the limits. Preserve the existing compiler/projection/permission owners and eight agent workflows. Curator now implements the typed proposal journey recorded above. Complete the human proposal-to-reviewed-source handoff and verify its use of the later publication/rebuild owners before closing the remaining outcome.
 
 - [x] Inventory earlier relationship/compiler/agent work and identify what is executable versus proposed; preserve provenance and approval/publication boundaries.
 - [x] Provide a bounded current-generation neighborhood of an authorized concept, with typed edges, source citations and explicit authority; filter both endpoints before traversal and counts.
 - [x] Expose only authenticated principal/connection-owned reads through the private service and native bridge; revoked, expired and changed generations cannot return stale relationships.
 - [x] Offer a readable connections list and optional bounded graph, keyboard selection, focused source details and responsive layout; avoid a force simulation or animation without a concrete use.
 - [x] Retain cancellation, retry, empty/unavailable states and local controls; explain why a relationship exists and provide a useful next action.
-- [ ] Connection-building agents produce reviewed proposals with provenance; deterministic providers can verify persistence, rejection, publication and rebuilding without claiming model reasoning quality.
+- [ ] Finish the human proposal-to-reviewed-source handoff with provenance and verify its complete publication/rebuild journey. Curator proposal persistence, inspection, rejection/discard and the later publication/rebuild owners already execute; deterministic providers verify orchestration without claiming model reasoning quality.
 - [x] Verify stored relationships and multi-principal isolation with real Postgres, native/API/browser contract checks and model-free providers; qualify actual model/corpus/Windows separately.
 
 The proposal-boundary increment verifies four outcomes through the existing
@@ -131,10 +141,16 @@ governed tool and journal: strict bounded endpoints/type/rationale; exact curren
 evidence at both endpoints; stable owner-scoped replay/discard without graph
 mutation; and real storage/MCP checks. All 14 focused cases pass. Existing stored
 proposals remain data. The verified Curator increment in the table connects this contract to its product workflow.
-Next complete human review/publication and verify rebuilding. The remaining project
-outcome stays open until its complete journey passes.
+Next verify the complete human source-review handoff using the delivered publication
+services and merged desktop rebuild. The remaining outcome stays open until that
+combined journey passes.
 
 ## Completed supporting work
+
+The completed increment descriptions below preserve observations and next actions
+recorded at the time. Their former source-preparation/publication/rebuild gaps were
+subsequently closed in bounded increments through PRs #205–#208; use the workstream
+rows and current integration sections for remaining outcomes.
 
 The table above and linked evidence retain the acceptance conditions for
 connection-owned views, Curator proposals and accepted-correction recovery/export.
@@ -146,8 +162,9 @@ damaged-history repair and target qualification remain open.
 Canonical publication still requires a trusted `knowledge.curator` reviewer,
 reviewed repository/source-admission provenance and complete relational/vector
 projection before activation. Inspection or a proposal reference cannot supply
-that approval. Human publication and rebuild recovery remain available software
-work; they are not closed by the model qualification boundary.
+that approval. Remaining source-review handoff and uncovered rebuild/recovery gaps
+remain available software work; PRs #205–#207 already deliver bounded operator
+publication/recovery, and PR #208 delivers the merged desktop workflow.
 
 ## Completed increment: readable documentation and main consolidation
 
@@ -469,9 +486,9 @@ the completed local/remote branch and owned worktree are retired.
 retains the corrected browser interaction, actual hosted counts and qualification limits.
 
 
-## Current increment: complete the authenticated desktop rebuild workflow
+## Completed increment: authenticated desktop rebuild workflow
 
-**Status:** 6/7 outcomes locally software verified; reviewed six-job green exact-head integration remains pending. Acceptance was recorded before implementation.
+**Status:** 7/7 bounded software outcomes verified and merged through PR #208 as `181085afa1b7d026f90c1532b484157b64211d79`, with the identical tree tested at reviewed head `5f6e62a2d1845c4b197d63537d6eb70c37db0296`. Acceptance was recorded before implementation. [Run 37272490398, attempt 2](https://github.com/ZoOtMcNoOt/yap/actions/runs/37272490398/attempts/2) passes all six jobs and final checkout guards. [Integration evidence](../../evidence/knowledge-rebuild/2026-10-04/integration.md) records the tree-equal fetched main, retained tested head and branch/worktree retirement; no actual provider/enterprise/physical Windows qualification is claimed.
 
 The Knowledge workspace now has a reviewer-owned Rebuild task for explicit
 source inspection, staging, embedding preparation, publication and retained
@@ -483,7 +500,8 @@ receipt, replay and uncertain-write semantics. [Local evidence](../../evidence/k
 [Independent review corrections](../../evidence/knowledge-rebuild/2026-10-04/review-verification.md)
 reproduce and fix native identity-error clearing, immutable staging descriptors
 and descriptor binding through lost-reply activation recovery. Run 561's six
-green jobs precede these corrections; renew every required job before merge.
+green jobs preceded these corrections; the later all-six-green result at `5f6e62a2`
+renews that gate. Integration retained the reviewed head and tree-equal main proof.
 Keep source/deployment review an organization prerequisite. UI actions cannot
 certify Git review or make proposals into approval or canonical source.
 
@@ -493,7 +511,7 @@ certify Git review or make proposals into approval or canonical source.
 - [x] Inspect the staged generation before explicit expected-active publication, compare it to the inspected source and show the decision's exact target/current state. Refuse stale or inconsistent receipts; only a confirmed authenticated activation can report current knowledge changed. Metadata inspection remains distinct from a completeness certificate, and the service performs final validation.
 - [x] Inspect and explicitly restore a retained generation using its saved reference and current expected-active state. Handle interruption, failed provider/audit, pruned/unavailable targets, lost replies and account/server changes. Never describe cancellation or a dropped reply as proof a dispatched remote write did not commit; require same-owner reinspection/replay and a renewed decision where state changed, with no automatic cross-owner retry.
 - [x] Verify actual native authenticated routing/strict decoding, the real HTTP/PostgreSQL source-to-read/restore journey, deterministic browser success/failure/recovery and narrow/wide/keyboard/reduced-motion states. Verify a real native-to-service journey before claiming that combined boundary; keep mock transport, synthetic vectors, hosted/native platform checks and real provider/enterprise/physical Windows qualification distinct. Run applicable full regressions and review the diff/screens.
-- [ ] Record before/after evidence and retained qualification limits; commit/push as Grant McNatt and integrate only a reviewed six-job green exact head. Preserve its tested head and compare the fetched main tree before branch retirement. Continue the whole roadmap, including larger rebuilds, actual provider quality, timed/speaker export, formats, identity/speaker administration, supervised ASR/live and operations.
+- [x] Record before/after evidence and retained qualification limits; commit/push as Grant McNatt and integrate only a reviewed six-job green exact head. Preserve its tested head and compare the fetched main tree before branch retirement. Continue the whole roadmap, including larger rebuilds, actual provider quality, timed/speaker export, formats, identity/speaker administration, supervised ASR/live and operations.
 
 The [Vercel deployment overview](https://mobbin.com/screens/d8e63884-5d43-4337-bf31-5667bc4ba5db)
 and [Cofounder launches](https://mobbin.com/screens/3f704e54-eb37-425e-b3a2-096ba3e894c0)
@@ -505,11 +523,11 @@ retained-history discovery list. Another reviewer's admission remains private.
 
 ## Upcoming increment: prepare larger reviewed embedding generations
 
-**Status:** 6/7 local software outcomes verified; independent review has no unresolved findings and hosted integration remains pending. Acceptance was recorded before code changes.
-PR #208's reviewed integration remains the current gate. The batching head
-includes its reviewed CI ceiling correction and can run the full hosted gates
-while that prerequisite finishes. Integrate only after PR #208; main advancing
-will remove its prerequisite changes from this pull request's diff.
+**Status:** 6/7 local software outcomes verified; independent review has no unresolved findings. PR #209 at `af3a65c8` remains unmerged: the hosted browser renewal records 249 passing cases and two buffer-write assertion failures, so it is not a green integration head. Acceptance was recorded before code changes.
+PR #208 is merged; its prerequisite changes are now part of main. The batching
+head remains gated by the two failures in [run 37272605309](https://github.com/ZoOtMcNoOt/yap/actions/runs/37272605309).
+Repair the reproduced browser transport/fixture failure and renew every required
+job on the changed reviewed head before integration.
 
 The original configured provider refused 65 reviewed chunks before dispatch.
 Its whole-generation 64-chunk/256-KiB boundary prevented a larger otherwise
@@ -533,7 +551,7 @@ Synthetic-vector limits remain separate from actual inference/enterprise capacit
 
 ## Upcoming increment: export the saved timed speaker transcript
 
-**Status:** Implementation, focused verification and independent review complete; full browser regression and reviewed six-job green integration remain pending. Acceptance was recorded before code changes. Integrate after reviewed PR #208 and PR #209.
+**Status:** Implementation, focused verification and independent review complete. PR #210 at `d46744f7` remains unmerged: a hosted Windows path-canonicalization assertion fails, and the serial local full-browser renewal and reviewed six-job green integration remain pending. Acceptance was recorded before code changes. Integrate after reviewed PR #208 and PR #209.
 
 History reads source-bound persisted speaker turns with
 start/end milliseconds, anonymous or unknown speaker labels and overlap groups.
@@ -586,7 +604,7 @@ and alignment for accepted free-text corrections remain separate roadmap outcome
 
 ## Upcoming increment: complete Ogg FLAC admission
 
-**Status:** 5/7 outcomes locally verified; full regression and reviewed hosted integration remain pending. Acceptance was recorded before code changes at `d5ce762f`. Integrate after the reviewed timed speaker export.
+**Status:** 5/7 outcomes locally verified; PR #211 at `465c5df0` remains unmerged, with full regression and reviewed hosted integration pending. Acceptance was recorded before code changes at `d5ce762f`. Integrate after the reviewed timed speaker export.
 
 Executable audit: the locked Symphonia0.6.1 Ogg mapper already recognizes FLAC;
 the existing FLAC decoder is enabled and unchanged/MPL2.0 notices are retained.

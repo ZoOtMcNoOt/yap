@@ -1,7 +1,14 @@
-# tao session-lock deadlock reproduction
+# Historical Tao 0.35.3 session-lock deadlock reproduction
 
-Standalone harness for [#92](https://github.com/mcnatg1/yap/issues/92). Not part
-of the product and not built by CI.
+Standalone historical harness for [#92](https://github.com/mcnatg1/yap/issues/92).
+Not part of the product and not built by CI. It preserves the failing Tao 0.35.3
+baseline observed on 2026-08-01; it does not test the current shipped dependency.
+
+The current desktop lockfile selects Tao 0.37.1 through official Tauri 2.12.1.
+The [dependency refresh evidence](../../docs/evidence/dependency-refresh/2026-10-03/verification.md#issue-92)
+records removal of the affected source path. Actual Windows session-lock and RDP
+qualification remains open; the historical result below supplies no current
+qualification credit.
 
 ## What it does
 
@@ -15,8 +22,8 @@ This posts a `WM_KEYDOWN` and then *sends* a `WM_KILLFOCUS`, which
 `PeekMessageW` dispatches inline during key processing. That is the same
 ordering a session lock produces, without locking anyone's workstation.
 
-It pins `tao = "=0.35.3"` on purpose, so it keeps testing the version the
-product ships even after Tauri bumps.
+It pins `tao = "=0.35.3"` on purpose to keep the historical reproduction
+repeatable after the product's dependencies change.
 
 ## Running it
 
@@ -51,7 +58,7 @@ difference is the two messages.
 
 | output | meaning |
 | --- | --- |
-| control `OK`, injected `DEADLOCK` | reproduced; we are affected |
+| control `OK`, injected `DEADLOCK` | reproduced in this pinned historical harness |
 | both `OK` | not reproducible on this machine |
 | control `DEADLOCK` | the harness is invalid here; ignore the injected run |
 
@@ -66,7 +73,10 @@ would be blocked by the very deadlock it was meant to report. The first version
 did exactly that: it hung instead of reporting the hang, and had to be
 interrupted by hand.
 
-## After the fix
+## Current-version qualification
 
-Once a `tauri-runtime-wry` above 2.11.4 ships and `cargo tree -i tao` reports
-0.36, change the pin here to `0.36` and confirm the injected run prints `OK`.
+Preserve this pin and result as the failing baseline. A separately recorded run
+against the current lockfile's Tao 0.37.1 must name its exact version and environment
+and confirm both control and injected cases print `OK` in an interactive desktop
+session. That focused reproduction check does not replace the actual Yap
+lock/unlock and RDP recovery checks linked above before issue #92 can close.

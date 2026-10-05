@@ -266,6 +266,55 @@ fn stale_batch_connection_lease_cannot_commit_after_configuration_changes() {
 }
 
 #[test]
+fn batch_lease_keeps_commit_locked_and_requires_both_current_capabilities() {
+    let connector = ready_batch_connector("http://127.0.0.1:18765");
+    let lease = connector.batch_connection_lease().unwrap().unwrap();
+    assert_eq!(
+        connector
+            .with_current_batch_lease(&lease, || {
+                assert!(matches!(
+                    connector.inner.try_lock(),
+                    Err(TryLockError::WouldBlock)
+                ));
+                "committed"
+            })
+            .unwrap(),
+        "committed"
+    );
+    assert!(connector.inner.try_lock().is_ok());
+
+    for capabilities in [
+        ServerCapabilities {
+            batch_jobs: true,
+            ..ServerCapabilities::default()
+        },
+        ServerCapabilities {
+            job_status: true,
+            ..ServerCapabilities::default()
+        },
+    ] {
+        let (generation, _) = connector.begin_health_request_with(|_| {}).unwrap();
+        connector.accept_health_result_with(
+            generation,
+            client::HealthCheckResult::Ready {
+                api_version: "1".into(),
+                capabilities,
+            },
+            |_| {},
+            |_, _, _| tauri::async_runtime::spawn(async {}),
+        );
+        assert_eq!(connector.current(), generation);
+        assert!(connector.batch_connection_lease().unwrap().is_none());
+        assert_eq!(
+            connector.with_current_batch_lease(&lease, || -> () {
+                panic!("unavailable result exposed")
+            }),
+            Err("Server connection changed before the batch response could commit.".into())
+        );
+    }
+}
+
+#[test]
 fn transcript_correction_lease_requires_capability_and_cannot_commit_after_change() {
     let connector = ServerConnector::default();
     connector.synchronize_settings_with(

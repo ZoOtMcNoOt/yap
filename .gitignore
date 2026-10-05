@@ -15,6 +15,7 @@ desktop/node_modules/
 .pnpm-store/
 desktop/dist/
 desktop/dist-portable/
+*.tsbuildinfo
 desktop/playwright-report/
 desktop/test-results/
 desktop/tests/results/

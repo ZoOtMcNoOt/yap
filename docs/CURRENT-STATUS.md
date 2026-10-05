@@ -4,7 +4,7 @@
 
 ## Current goal
 
-The [project hill-climbing goal](plans/active/2026-10-02-yap-project-hill-climb.md) is active across the entire [roadmap](roadmap/ROADMAP.md): finish and verify all available software work, then qualify actual model, Windows and enterprise behavior. Original/accepted-transcript export, personal/shared terminology, damaged-audio rejection, FLAC, Ogg Vorbis and single-track AAC-LC M4A/MP4 import are implemented and checked in the cloud; broader terminology and recording-format work remain open. Format expansion, supervised ASR/live integration and release/operations remain in the same queue. All 27 open questions and conditional directions retain their source-linked dispositions.
+The [project hill-climbing goal](plans/active/2026-10-02-yap-project-hill-climb.md) is active across the entire [roadmap](roadmap/ROADMAP.md): finish and verify all available software work, then qualify actual model, Windows and enterprise behavior. Original/accepted-transcript export, personal/shared terminology, damaged-audio rejection, FLAC, Ogg Vorbis and single-track AAC-LC M4A/MP4 import are implemented and checked in the cloud; broader terminology and recording-format work remain open. Format expansion, supervised ASR/live integration and release/operations remain in the same queue. All 31 decision-register entries retain source-linked dispositions, including diagnostics/privacy (OQ-28), developer/IT networking ownership (OQ-29), language/speaker/overlap composition (OQ-30) and the closed Tiron `unadvertised-baseline` decision (OQ-31). Conditional directions require their stated evidence.
 
 The completed UI milestone verified **30/30 supported UI acceptance areas**, with fixture/native boundaries in the [acceptance evidence](evidence/ui-completion/2026-10-02-acceptance.md). That subset does not establish project-wide completion or authorize production promotion.
 
@@ -82,39 +82,54 @@ Earlier dependency/consolidation results remain in the [desktop evidence](eviden
 - Deeply nested Curator responses remain rejected regardless of the host Python recursion limit. The language-preflight fixture now creates private working directories explicitly.
 - Setup, shell environment, and isolated server checks are reusable repository commands. The root README, documentation index, roadmap, and active plan now share one execution order.
 
-## Current increment
+## Current integration work
 
-The Knowledge workspace now supports authenticated reviewed-source inspection,
-staging, embedding preparation, explicit publication and retained restore through
-existing native identity/leases and operator routes: **6/7 outcomes locally
-software verified**. Reviewed six-job exact-head integration remains pending.
-The [single queue](plans/active/2026-10-02-yap-project-hill-climb.md#current-increment-complete-the-authenticated-desktop-rebuild-workflow),
-[contract](specs/knowledge-rebuild.md) and [evidence](evidence/knowledge-rebuild/2026-10-04/verification.md)
-record strict receipts, uncertain-write recovery, permission revocation, actual
-native HTTP/PostgreSQL and responsive browser checks. Larger rebuilds, actual
-provider/enterprise qualification and the entire roadmap remain open.
+The authenticated desktop rebuild workflow is now **7/7 software outcomes
+verified and merged** through [PR #208](https://github.com/ZoOtMcNoOt/yap/pull/208)
+as `181085afa1b7d026f90c1532b484157b64211d79`. Reviewed head
+`5f6e62a2d1845c4b197d63537d6eb70c37db0296` passes all six hosted jobs and final
+checkout guards in [run 37272490398, attempt 2](https://github.com/ZoOtMcNoOt/yap/actions/runs/37272490398/attempts/2).
+Fetched main has the identical tree `69eac6112b4c3e99ae6b7f2596b08620c548b61a`;
+the tested head is retained and the completed branch/worktree is retired.
+[Integration evidence](evidence/knowledge-rebuild/2026-10-04/integration.md), the
+[contract](specs/knowledge-rebuild.md) and [local evidence](evidence/knowledge-rebuild/2026-10-04/verification.md)
+record authenticated source inspection, staging, embedding preparation, explicit
+publication and retained restore, strict receipts and uncertain-write recovery.
+The complete human proposal-to-reviewed-source handoff, uncovered recovery and
+retained-history discovery gaps, larger rebuilds and actual provider/enterprise
+qualification remain open; the whole project goal stays active.
 
-[PR #208](https://github.com/ZoOtMcNoOt/yap/pull/208) and the reviewed bounded
-embedding batches in [PR #209](https://github.com/ZoOtMcNoOt/yap/pull/209) each
-retain five successful hosted jobs and a failed initial browser run; complete
-frontend-job renewals are in progress on unchanged reviewed heads. Neither is
-merged. Saved timed speaker JSON export is implemented through trusted persisted
-source data, explicit new-file selection and existing atomic export ownership.
-All seven focused browser cases, 1,399 native units and 27 integrations, and 417
-portable frontend cases pass. Independent review found no unresolved findings.
-The initial full browser run had 254 passes, three timing/readiness failures and
-one Windows-only exclusion; a serial private-cache renewal and all six hosted
-exact-head jobs remain required. [Evidence](evidence/timed-speaker-export/2026-10-05/verification.md)
-retains those results and qualification limits. Integrate this successor after
-PR #208 and PR #209, then continue formats and the entire roadmap.
+[PR #209](https://github.com/ZoOtMcNoOt/yap/pull/209) implements bounded larger
+embedding generations at `af3a65c8` and remains unmerged. Its hosted browser renewal
+in [run 37272605309](https://github.com/ZoOtMcNoOt/yap/actions/runs/37272605309)
+records 249 passing cases and two buffer-write assertion failures; that result
+is not an all-green integration gate. Integrate only after PR #208 and a reviewed
+six-job green exact head.
 
-Ogg FLAC admission now refuses reproduced silent middle-page loss. Full local
-native checks pass 1,406 units and 27 integrations, with 12 declared ignores.
-All 417 portable frontend cases, 12 recording browser journeys, the build and
-Clippy pass after serial renewal with private Vite caches. [Evidence](evidence/ogg-flac-import/2026-10-05/verification.md)
-retains the original defect and qualification boundaries. Final immutable review,
-clean contracts and hosted gates remain pending; integrate after timed export.
-The single queue retains these successors and the entire roadmap.
+[PR #210](https://github.com/ZoOtMcNoOt/yap/pull/210) implements saved timed speaker
+JSON export at `d46744f7` through trusted persisted source data, explicit new-file
+selection and existing atomic export ownership. All seven focused browser cases,
+1,399 native units and 27 integrations, and 417 portable frontend cases pass.
+Independent review found no unresolved findings. The initial local full browser
+run had 254 passes, three timing/readiness failures and one Windows-only exclusion;
+its serial private-cache renewal remains in progress. The hosted Windows suite
+in [run 37276242335](https://github.com/ZoOtMcNoOt/yap/actions/runs/37276242335)
+reports a path-canonicalization assertion failure (extended/canonical path versus
+an 8.3 alias), so this head remains unmerged.
+[Evidence](evidence/timed-speaker-export/2026-10-05/verification.md) retains prior
+results and qualification limits. Repair and renew applicable exact-head checks,
+then integrate after PR #208 and PR #209.
+
+[PR #211](https://github.com/ZoOtMcNoOt/yap/pull/211) at `465c5df0` implements Ogg FLAC
+admission and refuses reproduced silent middle-page loss. Full local native
+checks pass 1,406 units and 27 integrations, with 12 declared ignores. All 417
+portable frontend cases, 12 recording browser journeys, the build and Clippy pass
+after serial renewal with private Vite caches. [Evidence](evidence/ogg-flac-import/2026-10-05/verification.md)
+retains the original defect and qualification boundaries. Full regression and
+reviewed hosted integration remain pending; this head remains unmerged and must
+follow timed export. PRs #209–#211 remain pending descendants; main now integrates PR #208.
+Their pending capabilities and hosted results do not establish integrated main
+capability or model/physical Windows/enterprise qualification. The single queue retains them and the entire roadmap.
 
 ## Latest completed increments
 

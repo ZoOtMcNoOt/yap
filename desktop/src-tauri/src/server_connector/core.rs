@@ -667,14 +667,18 @@ impl ServerConnector {
             .snapshot()
     }
 
-    pub(crate) fn batch_connection_lease(&self) -> Result<Option<BatchConnectionLease>, String> {
+    fn with_authenticated_connection<T>(
+        &self,
+        capability: impl FnOnce(&state::ServerCapabilities) -> bool,
+        changed_message: &str,
+        create: impl FnOnce(u64, String, super::AuthenticatedRequestDispatcher) -> Result<T, String>,
+    ) -> Result<Option<T>, String> {
         let generation = self.generation.load(Ordering::Acquire);
         let inner = self.inner.lock().expect("server connector poisoned");
         let snapshot = inner.snapshot();
         if inner.generation() != generation
             || snapshot.state != runtime::state::ServerConnectorState::Ready
-            || !snapshot.capabilities.batch_jobs
-            || !snapshot.capabilities.job_status
+            || !capability(&snapshot.capabilities)
         {
             return Ok(None);
         }
@@ -684,108 +688,113 @@ impl ServerConnector {
         let authenticated = self
             .authenticated
             .bind_current_transport(generation, &base_url)
-            .map_err(|_| "The server connection changed before batch dispatch.".to_string())?;
-        let client = batch::BatchApiClient::new_authorized(authenticated, &base_url)
-            .map_err(|error| error.to_string())?;
-        let base_url = client.base_url_identity().trim_end_matches('/').to_owned();
-        Ok(Some(BatchConnectionLease {
-            generation,
-            base_url,
-            client,
-        }))
+            .map_err(|_| changed_message.to_string())?;
+        // Build the typed lease before releasing its configuration guard.
+        let lease = create(generation, base_url, authenticated)?;
+        drop(inner);
+        Ok(Some(lease))
+    }
+
+    fn with_current_connection<T>(
+        &self,
+        generation: u64,
+        base_url: &str,
+        capability: impl FnOnce(&state::ServerCapabilities) -> bool,
+        changed_message: &str,
+        commit: impl FnOnce() -> T,
+    ) -> Result<T, String> {
+        let inner = self.inner.lock().expect("server connector poisoned");
+        let snapshot = inner.snapshot();
+        if self.generation.load(Ordering::Acquire) != generation
+            || inner.generation() != generation
+            || inner.configured_base_url(generation).as_deref() != Some(base_url)
+            || snapshot.state != runtime::state::ServerConnectorState::Ready
+            || !capability(&snapshot.capabilities)
+        {
+            return Err(changed_message.into());
+        }
+        // Keep configuration changes behind the same guard until publication finishes.
+        let committed = commit();
+        drop(inner);
+        Ok(committed)
+    }
+
+    pub(crate) fn batch_connection_lease(&self) -> Result<Option<BatchConnectionLease>, String> {
+        self.with_authenticated_connection(
+            |capabilities| capabilities.batch_jobs && capabilities.job_status,
+            "The server connection changed before batch dispatch.",
+            |generation, base_url, authenticated| {
+                let client = batch::BatchApiClient::new_authorized(authenticated, &base_url)
+                    .map_err(|error| error.to_string())?;
+                let base_url = client.base_url_identity().trim_end_matches('/').to_owned();
+                Ok(BatchConnectionLease {
+                    generation,
+                    base_url,
+                    client,
+                })
+            },
+        )
     }
 
     pub(crate) fn transcript_correction_connection_lease(
         &self,
     ) -> Result<Option<TranscriptCorrectionConnectionLease>, String> {
-        let generation = self.generation.load(Ordering::Acquire);
-        let inner = self.inner.lock().expect("server connector poisoned");
-        let snapshot = inner.snapshot();
-        if inner.generation() != generation
-            || snapshot.state != runtime::state::ServerConnectorState::Ready
-            || !snapshot.capabilities.transcript_correction
-        {
-            return Ok(None);
-        }
-        let Some(base_url) = inner.configured_base_url(generation) else {
-            return Ok(None);
-        };
-        let authenticated = self
-            .authenticated
-            .bind_current_transport(generation, &base_url)
-            .map_err(|_| {
-                "The server connection changed before transcript correction dispatch.".to_string()
-            })?;
-        let client =
-            transcript_correction::TranscriptCorrectionApiClient::new(authenticated, &base_url)
+        self.with_authenticated_connection(
+            |capabilities| capabilities.transcript_correction,
+            "The server connection changed before transcript correction dispatch.",
+            |generation, base_url, authenticated| {
+                let client = transcript_correction::TranscriptCorrectionApiClient::new(
+                    authenticated,
+                    &base_url,
+                )
                 .map_err(|_| "The transcript correction server origin is invalid.".to_string())?;
-        let base_url = client.base_url_identity().trim_end_matches('/').to_owned();
-        Ok(Some(TranscriptCorrectionConnectionLease {
-            generation,
-            base_url,
-            client,
-        }))
+                let base_url = client.base_url_identity().trim_end_matches('/').to_owned();
+                Ok(TranscriptCorrectionConnectionLease {
+                    generation,
+                    base_url,
+                    client,
+                })
+            },
+        )
     }
 
     pub(crate) fn librarian_connection_lease(
         &self,
     ) -> Result<Option<LibrarianConnectionLease>, String> {
-        let generation = self.generation.load(Ordering::Acquire);
-        let inner = self.inner.lock().expect("server connector poisoned");
-        let snapshot = inner.snapshot();
-        if inner.generation() != generation
-            || snapshot.state != runtime::state::ServerConnectorState::Ready
-            || !snapshot.capabilities.librarian_queries
-        {
-            return Ok(None);
-        }
-        let Some(base_url) = inner.configured_base_url(generation) else {
-            return Ok(None);
-        };
-        let authenticated = self
-            .authenticated
-            .bind_current_transport(generation, &base_url)
-            .map_err(|_| {
-                "The server connection changed before knowledge query dispatch.".to_string()
-            })?;
-        let client = librarian::LibrarianApiClient::new(authenticated, &base_url)
-            .map_err(|_| "The knowledge query server origin is invalid.".to_string())?;
-        let base_url = client.base_url_identity().trim_end_matches('/').to_owned();
-        Ok(Some(LibrarianConnectionLease {
-            generation,
-            base_url,
-            client,
-        }))
+        self.with_authenticated_connection(
+            |capabilities| capabilities.librarian_queries,
+            "The server connection changed before knowledge query dispatch.",
+            |generation, base_url, authenticated| {
+                let client = librarian::LibrarianApiClient::new(authenticated, &base_url)
+                    .map_err(|_| "The knowledge query server origin is invalid.".to_string())?;
+                let base_url = client.base_url_identity().trim_end_matches('/').to_owned();
+                Ok(LibrarianConnectionLease {
+                    generation,
+                    base_url,
+                    client,
+                })
+            },
+        )
     }
 
     pub(crate) fn terminology_connection_lease(
         &self,
     ) -> Result<Option<TerminologyConnectionLease>, String> {
-        let generation = self.generation.load(Ordering::Acquire);
-        let inner = self.inner.lock().expect("server connector poisoned");
-        let snapshot = inner.snapshot();
-        if inner.generation() != generation
-            || snapshot.state != runtime::state::ServerConnectorState::Ready
-            || !snapshot.capabilities.personal_terminology
-        {
-            return Ok(None);
-        }
-        let Some(base_url) = inner.configured_base_url(generation) else {
-            return Ok(None);
-        };
-        let authenticated = self
-            .authenticated
-            .bind_current_transport(generation, &base_url)
-            .map_err(|_| {
-                "The server connection changed before personal terminology dispatch.".to_string()
-            })?;
-        let client = terminology::TerminologyClient::new(authenticated, &base_url)
-            .map_err(|_| "The personal terminology server origin is invalid.".to_string())?;
-        Ok(Some(TerminologyConnectionLease {
-            generation,
-            base_url: client.base_url_identity().trim_end_matches('/').to_owned(),
-            client,
-        }))
+        self.with_authenticated_connection(
+            |capabilities| capabilities.personal_terminology,
+            "The server connection changed before personal terminology dispatch.",
+            |generation, base_url, authenticated| {
+                let client = terminology::TerminologyClient::new(authenticated, &base_url)
+                    .map_err(|_| {
+                        "The personal terminology server origin is invalid.".to_string()
+                    })?;
+                Ok(TerminologyConnectionLease {
+                    generation,
+                    base_url: client.base_url_identity().trim_end_matches('/').to_owned(),
+                    client,
+                })
+            },
+        )
     }
 
     pub(crate) fn with_current_terminology_lease<T>(
@@ -793,50 +802,34 @@ impl ServerConnector {
         lease: &TerminologyConnectionLease,
         commit: impl FnOnce() -> T,
     ) -> Result<T, String> {
-        let inner = self.inner.lock().expect("server connector poisoned");
-        let snapshot = inner.snapshot();
-        if self.generation.load(Ordering::Acquire) != lease.generation
-            || inner.generation() != lease.generation
-            || inner.configured_base_url(lease.generation).as_deref()
-                != Some(lease.base_url.as_str())
-            || snapshot.state != runtime::state::ServerConnectorState::Ready
-            || !snapshot.capabilities.personal_terminology
-        {
-            return Err(
-                "Server connection changed before personal terminology could commit.".into(),
-            );
-        }
-        Ok(commit())
+        self.with_current_connection(
+            lease.generation,
+            &lease.base_url,
+            |capabilities| capabilities.personal_terminology,
+            "Server connection changed before personal terminology could commit.",
+            commit,
+        )
     }
 
     pub(crate) fn knowledge_connections_connection_lease(
         &self,
     ) -> Result<Option<KnowledgeConnectionsConnectionLease>, String> {
-        let generation = self.generation.load(Ordering::Acquire);
-        let inner = self.inner.lock().expect("server connector poisoned");
-        let snapshot = inner.snapshot();
-        if inner.generation() != generation
-            || snapshot.state != runtime::state::ServerConnectorState::Ready
-            || !snapshot.capabilities.knowledge_connections
-        {
-            return Ok(None);
-        }
-        let Some(base_url) = inner.configured_base_url(generation) else {
-            return Ok(None);
-        };
-        let authenticated = self
-            .authenticated
-            .bind_current_transport(generation, &base_url)
-            .map_err(|_| {
-                "The server connection changed before knowledge connections dispatch.".to_string()
-            })?;
-        let client = knowledge_connections::ConnectionsClient::new(authenticated, &base_url)
-            .map_err(|_| "The knowledge connections server origin is invalid.".to_string())?;
-        Ok(Some(KnowledgeConnectionsConnectionLease {
-            generation,
-            base_url: client.base_url_identity().trim_end_matches('/').to_owned(),
-            client,
-        }))
+        self.with_authenticated_connection(
+            |capabilities| capabilities.knowledge_connections,
+            "The server connection changed before knowledge connections dispatch.",
+            |generation, base_url, authenticated| {
+                let client =
+                    knowledge_connections::ConnectionsClient::new(authenticated, &base_url)
+                        .map_err(|_| {
+                            "The knowledge connections server origin is invalid.".to_string()
+                        })?;
+                Ok(KnowledgeConnectionsConnectionLease {
+                    generation,
+                    base_url: client.base_url_identity().trim_end_matches('/').to_owned(),
+                    client,
+                })
+            },
+        )
     }
 
     pub(crate) fn with_current_knowledge_connections_lease<T>(
@@ -844,50 +837,31 @@ impl ServerConnector {
         lease: &KnowledgeConnectionsConnectionLease,
         commit: impl FnOnce() -> T,
     ) -> Result<T, String> {
-        let inner = self.inner.lock().expect("server connector poisoned");
-        let snapshot = inner.snapshot();
-        if self.generation.load(Ordering::Acquire) != lease.generation
-            || inner.generation() != lease.generation
-            || inner.configured_base_url(lease.generation).as_deref()
-                != Some(lease.base_url.as_str())
-            || snapshot.state != runtime::state::ServerConnectorState::Ready
-            || !snapshot.capabilities.knowledge_connections
-        {
-            return Err(
-                "Server connection changed before knowledge connections could commit.".into(),
-            );
-        }
-        Ok(commit())
+        self.with_current_connection(
+            lease.generation,
+            &lease.base_url,
+            |capabilities| capabilities.knowledge_connections,
+            "Server connection changed before knowledge connections could commit.",
+            commit,
+        )
     }
 
     pub(crate) fn knowledge_rebuild_connection_lease(
         &self,
     ) -> Result<Option<KnowledgeRebuildConnectionLease>, String> {
-        let generation = self.generation.load(Ordering::Acquire);
-        let inner = self.inner.lock().expect("server connector poisoned");
-        let snapshot = inner.snapshot();
-        if inner.generation() != generation
-            || snapshot.state != runtime::state::ServerConnectorState::Ready
-            || !snapshot.capabilities.knowledge_rebuild
-        {
-            return Ok(None);
-        }
-        let Some(base_url) = inner.configured_base_url(generation) else {
-            return Ok(None);
-        };
-        let authenticated = self
-            .authenticated
-            .bind_current_transport(generation, &base_url)
-            .map_err(|_| {
-                "The server connection changed before knowledge rebuild dispatch.".to_string()
-            })?;
-        let client = knowledge_rebuild::RebuildClient::new(authenticated, &base_url)
-            .map_err(|_| "The knowledge rebuild server origin is invalid.".to_string())?;
-        Ok(Some(KnowledgeRebuildConnectionLease {
-            generation,
-            base_url: client.base_url_identity().trim_end_matches('/').to_owned(),
-            client,
-        }))
+        self.with_authenticated_connection(
+            |capabilities| capabilities.knowledge_rebuild,
+            "The server connection changed before knowledge rebuild dispatch.",
+            |generation, base_url, authenticated| {
+                let client = knowledge_rebuild::RebuildClient::new(authenticated, &base_url)
+                    .map_err(|_| "The knowledge rebuild server origin is invalid.".to_string())?;
+                Ok(KnowledgeRebuildConnectionLease {
+                    generation,
+                    base_url: client.base_url_identity().trim_end_matches('/').to_owned(),
+                    client,
+                })
+            },
+        )
     }
 
     pub(crate) fn with_current_knowledge_rebuild_lease<T>(
@@ -895,204 +869,127 @@ impl ServerConnector {
         lease: &KnowledgeRebuildConnectionLease,
         commit: impl FnOnce() -> T,
     ) -> Result<T, String> {
-        let inner = self.inner.lock().expect("server connector poisoned");
-        let snapshot = inner.snapshot();
-        if self.generation.load(Ordering::Acquire) != lease.generation
-            || inner.generation() != lease.generation
-            || inner.configured_base_url(lease.generation).as_deref()
-                != Some(lease.base_url.as_str())
-            || snapshot.state != runtime::state::ServerConnectorState::Ready
-            || !snapshot.capabilities.knowledge_rebuild
-        {
-            return Err("Server connection changed before knowledge rebuild could commit.".into());
-        }
-        Ok(commit())
+        self.with_current_connection(
+            lease.generation,
+            &lease.base_url,
+            |capabilities| capabilities.knowledge_rebuild,
+            "Server connection changed before knowledge rebuild could commit.",
+            commit,
+        )
     }
 
     pub(crate) fn analyst_connection_lease(
         &self,
     ) -> Result<Option<AnalystConnectionLease>, String> {
-        let generation = self.generation.load(Ordering::Acquire);
-        let inner = self.inner.lock().expect("server connector poisoned");
-        let snapshot = inner.snapshot();
-        if inner.generation() != generation
-            || snapshot.state != runtime::state::ServerConnectorState::Ready
-            || !snapshot.capabilities.analyst_answers
-        {
-            return Ok(None);
-        }
-        let Some(base_url) = inner.configured_base_url(generation) else {
-            return Ok(None);
-        };
-        let authenticated = self
-            .authenticated
-            .bind_current_transport(generation, &base_url)
-            .map_err(|_| {
-                "The server connection changed before cited-answer dispatch.".to_string()
-            })?;
-        let client = analyst::AnalystApiClient::new(authenticated, &base_url)
-            .map_err(|_| "The cited-answer server origin is invalid.".to_string())?;
-        let base_url = client.base_url_identity().trim_end_matches('/').to_owned();
-        Ok(Some(AnalystConnectionLease {
-            generation,
-            base_url,
-            client,
-        }))
+        self.with_authenticated_connection(
+            |capabilities| capabilities.analyst_answers,
+            "The server connection changed before cited-answer dispatch.",
+            |generation, base_url, authenticated| {
+                let client = analyst::AnalystApiClient::new(authenticated, &base_url)
+                    .map_err(|_| "The cited-answer server origin is invalid.".to_string())?;
+                let base_url = client.base_url_identity().trim_end_matches('/').to_owned();
+                Ok(AnalystConnectionLease {
+                    generation,
+                    base_url,
+                    client,
+                })
+            },
+        )
     }
 
     pub(crate) fn coordinator_connection_lease(
         &self,
     ) -> Result<Option<CoordinatorConnectionLease>, String> {
-        let generation = self.generation.load(Ordering::Acquire);
-        let inner = self.inner.lock().expect("server connector poisoned");
-        let snapshot = inner.snapshot();
-        if inner.generation() != generation
-            || snapshot.state != runtime::state::ServerConnectorState::Ready
-            || !snapshot.capabilities.coordinator_bundles
-        {
-            return Ok(None);
-        }
-        let Some(base_url) = inner.configured_base_url(generation) else {
-            return Ok(None);
-        };
-        let authenticated = self
-            .authenticated
-            .bind_current_transport(generation, &base_url)
-            .map_err(|_| {
-                "The server connection changed before coordination-bundle dispatch.".to_string()
-            })?;
-        let client = coordinator::CoordinatorApiClient::new(authenticated, &base_url)
-            .map_err(|_| "The coordination-bundle server origin is invalid.".to_string())?;
-        let base_url = client.base_url_identity().trim_end_matches('/').to_owned();
-        Ok(Some(CoordinatorConnectionLease {
-            generation,
-            base_url,
-            client,
-        }))
+        self.with_authenticated_connection(
+            |capabilities| capabilities.coordinator_bundles,
+            "The server connection changed before coordination-bundle dispatch.",
+            |generation, base_url, authenticated| {
+                let client = coordinator::CoordinatorApiClient::new(authenticated, &base_url)
+                    .map_err(|_| "The coordination-bundle server origin is invalid.".to_string())?;
+                let base_url = client.base_url_identity().trim_end_matches('/').to_owned();
+                Ok(CoordinatorConnectionLease {
+                    generation,
+                    base_url,
+                    client,
+                })
+            },
+        )
     }
 
     pub(crate) fn auditor_connection_lease(
         &self,
     ) -> Result<Option<AuditorConnectionLease>, String> {
-        let generation = self.generation.load(Ordering::Acquire);
-        let inner = self.inner.lock().expect("server connector poisoned");
-        let snapshot = inner.snapshot();
-        if inner.generation() != generation
-            || snapshot.state != runtime::state::ServerConnectorState::Ready
-            || !snapshot.capabilities.auditor_reports
-        {
-            return Ok(None);
-        }
-        let Some(base_url) = inner.configured_base_url(generation) else {
-            return Ok(None);
-        };
-        let authenticated = self
-            .authenticated
-            .bind_current_transport(generation, &base_url)
-            .map_err(|_| {
-                "The server connection changed before audit-report dispatch.".to_string()
-            })?;
-        let client = auditor::AuditorApiClient::new(authenticated, &base_url)
-            .map_err(|_| "The audit-report server origin is invalid.".to_string())?;
-        let base_url = client.base_url_identity().trim_end_matches('/').to_owned();
-        Ok(Some(AuditorConnectionLease {
-            generation,
-            base_url,
-            client,
-        }))
+        self.with_authenticated_connection(
+            |capabilities| capabilities.auditor_reports,
+            "The server connection changed before audit-report dispatch.",
+            |generation, base_url, authenticated| {
+                let client = auditor::AuditorApiClient::new(authenticated, &base_url)
+                    .map_err(|_| "The audit-report server origin is invalid.".to_string())?;
+                let base_url = client.base_url_identity().trim_end_matches('/').to_owned();
+                Ok(AuditorConnectionLease {
+                    generation,
+                    base_url,
+                    client,
+                })
+            },
+        )
     }
 
     pub(crate) fn student_connection_lease(
         &self,
     ) -> Result<Option<StudentConnectionLease>, String> {
-        let generation = self.generation.load(Ordering::Acquire);
-        let inner = self.inner.lock().expect("server connector poisoned");
-        let snapshot = inner.snapshot();
-        if inner.generation() != generation
-            || snapshot.state != runtime::state::ServerConnectorState::Ready
-            || !snapshot.capabilities.student_questions
-        {
-            return Ok(None);
-        }
-        let Some(base_url) = inner.configured_base_url(generation) else {
-            return Ok(None);
-        };
-        let authenticated = self
-            .authenticated
-            .bind_current_transport(generation, &base_url)
-            .map_err(|_| {
-                "The server connection changed before learning-question dispatch.".to_string()
-            })?;
-        let client = student::StudentApiClient::new(authenticated, &base_url)
-            .map_err(|_| "The learning-question server origin is invalid.".to_string())?;
-        let base_url = client.base_url_identity().trim_end_matches('/').to_owned();
-        Ok(Some(StudentConnectionLease {
-            generation,
-            base_url,
-            client,
-        }))
+        self.with_authenticated_connection(
+            |capabilities| capabilities.student_questions,
+            "The server connection changed before learning-question dispatch.",
+            |generation, base_url, authenticated| {
+                let client = student::StudentApiClient::new(authenticated, &base_url)
+                    .map_err(|_| "The learning-question server origin is invalid.".to_string())?;
+                let base_url = client.base_url_identity().trim_end_matches('/').to_owned();
+                Ok(StudentConnectionLease {
+                    generation,
+                    base_url,
+                    client,
+                })
+            },
+        )
     }
 
     pub(crate) fn archivist_connection_lease(
         &self,
     ) -> Result<Option<ArchivistConnectionLease>, String> {
-        let generation = self.generation.load(Ordering::Acquire);
-        let inner = self.inner.lock().expect("server connector poisoned");
-        let snapshot = inner.snapshot();
-        if inner.generation() != generation
-            || snapshot.state != runtime::state::ServerConnectorState::Ready
-            || !snapshot.capabilities.archivist_ingestions
-        {
-            return Ok(None);
-        }
-        let Some(base_url) = inner.configured_base_url(generation) else {
-            return Ok(None);
-        };
-        let authenticated = self
-            .authenticated
-            .bind_current_transport(generation, &base_url)
-            .map_err(|_| {
-                "The server connection changed before knowledge staging dispatch.".to_string()
-            })?;
-        let client = archivist::ArchivistApiClient::new(authenticated, &base_url)
-            .map_err(|_| "The knowledge staging server origin is invalid.".to_string())?;
-        let base_url = client.base_url_identity().trim_end_matches('/').to_owned();
-        Ok(Some(ArchivistConnectionLease {
-            generation,
-            base_url,
-            client,
-        }))
+        self.with_authenticated_connection(
+            |capabilities| capabilities.archivist_ingestions,
+            "The server connection changed before knowledge staging dispatch.",
+            |generation, base_url, authenticated| {
+                let client = archivist::ArchivistApiClient::new(authenticated, &base_url)
+                    .map_err(|_| "The knowledge staging server origin is invalid.".to_string())?;
+                let base_url = client.base_url_identity().trim_end_matches('/').to_owned();
+                Ok(ArchivistConnectionLease {
+                    generation,
+                    base_url,
+                    client,
+                })
+            },
+        )
     }
 
     pub(crate) fn curator_connection_lease(
         &self,
     ) -> Result<Option<CuratorConnectionLease>, String> {
-        let generation = self.generation.load(Ordering::Acquire);
-        let inner = self.inner.lock().expect("server connector poisoned");
-        let snapshot = inner.snapshot();
-        if inner.generation() != generation
-            || snapshot.state != runtime::state::ServerConnectorState::Ready
-            || !snapshot.capabilities.curator_proposals
-        {
-            return Ok(None);
-        }
-        let Some(base_url) = inner.configured_base_url(generation) else {
-            return Ok(None);
-        };
-        let authenticated = self
-            .authenticated
-            .bind_current_transport(generation, &base_url)
-            .map_err(|_| {
-                "The server connection changed before knowledge-proposal dispatch.".to_string()
-            })?;
-        let client = curator::CuratorApiClient::new(authenticated, &base_url)
-            .map_err(|_| "The knowledge-proposal server origin is invalid.".to_string())?;
-        let base_url = client.base_url_identity().trim_end_matches('/').to_owned();
-        Ok(Some(CuratorConnectionLease {
-            generation,
-            base_url,
-            client,
-        }))
+        self.with_authenticated_connection(
+            |capabilities| capabilities.curator_proposals,
+            "The server connection changed before knowledge-proposal dispatch.",
+            |generation, base_url, authenticated| {
+                let client = curator::CuratorApiClient::new(authenticated, &base_url)
+                    .map_err(|_| "The knowledge-proposal server origin is invalid.".to_string())?;
+                let base_url = client.base_url_identity().trim_end_matches('/').to_owned();
+                Ok(CuratorConnectionLease {
+                    generation,
+                    base_url,
+                    client,
+                })
+            },
+        )
     }
 
     pub(crate) fn asr_capability_lease(&self) -> Option<AsrCapabilityLease> {
@@ -1180,19 +1077,13 @@ impl ServerConnector {
         lease: &BatchConnectionLease,
         commit: impl FnOnce() -> T,
     ) -> Result<T, String> {
-        let inner = self.inner.lock().expect("server connector poisoned");
-        let snapshot = inner.snapshot();
-        let current = self.generation.load(Ordering::Acquire) == lease.generation
-            && inner.generation() == lease.generation
-            && inner.configured_base_url(lease.generation).as_deref()
-                == Some(lease.base_url.as_str())
-            && snapshot.state == runtime::state::ServerConnectorState::Ready
-            && snapshot.capabilities.batch_jobs
-            && snapshot.capabilities.job_status;
-        if !current {
-            return Err("Server connection changed before the batch response could commit.".into());
-        }
-        Ok(commit())
+        self.with_current_connection(
+            lease.generation,
+            &lease.base_url,
+            |capabilities| capabilities.batch_jobs && capabilities.job_status,
+            "Server connection changed before the batch response could commit.",
+            commit,
+        )
     }
 
     pub(crate) fn with_current_transcript_correction_lease<T>(
@@ -1200,20 +1091,13 @@ impl ServerConnector {
         lease: &TranscriptCorrectionConnectionLease,
         commit: impl FnOnce() -> T,
     ) -> Result<T, String> {
-        let inner = self.inner.lock().expect("server connector poisoned");
-        let snapshot = inner.snapshot();
-        let current = self.generation.load(Ordering::Acquire) == lease.generation
-            && inner.generation() == lease.generation
-            && inner.configured_base_url(lease.generation).as_deref()
-                == Some(lease.base_url.as_str())
-            && snapshot.state == runtime::state::ServerConnectorState::Ready
-            && snapshot.capabilities.transcript_correction;
-        if !current {
-            return Err(
-                "Server connection changed before transcript correction could commit.".into(),
-            );
-        }
-        Ok(commit())
+        self.with_current_connection(
+            lease.generation,
+            &lease.base_url,
+            |capabilities| capabilities.transcript_correction,
+            "Server connection changed before transcript correction could commit.",
+            commit,
+        )
     }
 
     pub(crate) fn with_current_librarian_lease<T>(
@@ -1221,18 +1105,13 @@ impl ServerConnector {
         lease: &LibrarianConnectionLease,
         commit: impl FnOnce() -> T,
     ) -> Result<T, String> {
-        let inner = self.inner.lock().expect("server connector poisoned");
-        let snapshot = inner.snapshot();
-        let current = self.generation.load(Ordering::Acquire) == lease.generation
-            && inner.generation() == lease.generation
-            && inner.configured_base_url(lease.generation).as_deref()
-                == Some(lease.base_url.as_str())
-            && snapshot.state == runtime::state::ServerConnectorState::Ready
-            && snapshot.capabilities.librarian_queries;
-        if !current {
-            return Err("Server connection changed before knowledge query could commit.".into());
-        }
-        Ok(commit())
+        self.with_current_connection(
+            lease.generation,
+            &lease.base_url,
+            |capabilities| capabilities.librarian_queries,
+            "Server connection changed before knowledge query could commit.",
+            commit,
+        )
     }
 
     pub(crate) fn with_current_analyst_lease<T>(
@@ -1240,18 +1119,13 @@ impl ServerConnector {
         lease: &AnalystConnectionLease,
         commit: impl FnOnce() -> T,
     ) -> Result<T, String> {
-        let inner = self.inner.lock().expect("server connector poisoned");
-        let snapshot = inner.snapshot();
-        let current = self.generation.load(Ordering::Acquire) == lease.generation
-            && inner.generation() == lease.generation
-            && inner.configured_base_url(lease.generation).as_deref()
-                == Some(lease.base_url.as_str())
-            && snapshot.state == runtime::state::ServerConnectorState::Ready
-            && snapshot.capabilities.analyst_answers;
-        if !current {
-            return Err("Server connection changed before cited answer could commit.".into());
-        }
-        Ok(commit())
+        self.with_current_connection(
+            lease.generation,
+            &lease.base_url,
+            |capabilities| capabilities.analyst_answers,
+            "Server connection changed before cited answer could commit.",
+            commit,
+        )
     }
 
     pub(crate) fn with_current_coordinator_lease<T>(
@@ -1259,20 +1133,13 @@ impl ServerConnector {
         lease: &CoordinatorConnectionLease,
         commit: impl FnOnce() -> T,
     ) -> Result<T, String> {
-        let inner = self.inner.lock().expect("server connector poisoned");
-        let snapshot = inner.snapshot();
-        let current = self.generation.load(Ordering::Acquire) == lease.generation
-            && inner.generation() == lease.generation
-            && inner.configured_base_url(lease.generation).as_deref()
-                == Some(lease.base_url.as_str())
-            && snapshot.state == runtime::state::ServerConnectorState::Ready
-            && snapshot.capabilities.coordinator_bundles;
-        if !current {
-            return Err(
-                "Server connection changed before coordination bundle could commit.".into(),
-            );
-        }
-        Ok(commit())
+        self.with_current_connection(
+            lease.generation,
+            &lease.base_url,
+            |capabilities| capabilities.coordinator_bundles,
+            "Server connection changed before coordination bundle could commit.",
+            commit,
+        )
     }
 
     pub(crate) fn with_current_auditor_lease<T>(
@@ -1280,18 +1147,13 @@ impl ServerConnector {
         lease: &AuditorConnectionLease,
         commit: impl FnOnce() -> T,
     ) -> Result<T, String> {
-        let inner = self.inner.lock().expect("server connector poisoned");
-        let snapshot = inner.snapshot();
-        let current = self.generation.load(Ordering::Acquire) == lease.generation
-            && inner.generation() == lease.generation
-            && inner.configured_base_url(lease.generation).as_deref()
-                == Some(lease.base_url.as_str())
-            && snapshot.state == runtime::state::ServerConnectorState::Ready
-            && snapshot.capabilities.auditor_reports;
-        if !current {
-            return Err("Server connection changed before audit report could commit.".into());
-        }
-        Ok(commit())
+        self.with_current_connection(
+            lease.generation,
+            &lease.base_url,
+            |capabilities| capabilities.auditor_reports,
+            "Server connection changed before audit report could commit.",
+            commit,
+        )
     }
 
     pub(crate) fn with_current_student_lease<T>(
@@ -1299,18 +1161,13 @@ impl ServerConnector {
         lease: &StudentConnectionLease,
         commit: impl FnOnce() -> T,
     ) -> Result<T, String> {
-        let inner = self.inner.lock().expect("server connector poisoned");
-        let snapshot = inner.snapshot();
-        let current = self.generation.load(Ordering::Acquire) == lease.generation
-            && inner.generation() == lease.generation
-            && inner.configured_base_url(lease.generation).as_deref()
-                == Some(lease.base_url.as_str())
-            && snapshot.state == runtime::state::ServerConnectorState::Ready
-            && snapshot.capabilities.student_questions;
-        if !current {
-            return Err("Server connection changed before learning questions could commit.".into());
-        }
-        Ok(commit())
+        self.with_current_connection(
+            lease.generation,
+            &lease.base_url,
+            |capabilities| capabilities.student_questions,
+            "Server connection changed before learning questions could commit.",
+            commit,
+        )
     }
 
     pub(crate) fn with_current_archivist_lease<T>(
@@ -1318,18 +1175,13 @@ impl ServerConnector {
         lease: &ArchivistConnectionLease,
         commit: impl FnOnce() -> T,
     ) -> Result<T, String> {
-        let inner = self.inner.lock().expect("server connector poisoned");
-        let snapshot = inner.snapshot();
-        let current = self.generation.load(Ordering::Acquire) == lease.generation
-            && inner.generation() == lease.generation
-            && inner.configured_base_url(lease.generation).as_deref()
-                == Some(lease.base_url.as_str())
-            && snapshot.state == runtime::state::ServerConnectorState::Ready
-            && snapshot.capabilities.archivist_ingestions;
-        if !current {
-            return Err("Server connection changed before knowledge staging could commit.".into());
-        }
-        Ok(commit())
+        self.with_current_connection(
+            lease.generation,
+            &lease.base_url,
+            |capabilities| capabilities.archivist_ingestions,
+            "Server connection changed before knowledge staging could commit.",
+            commit,
+        )
     }
 
     pub(crate) fn with_current_curator_lease<T>(
@@ -1337,18 +1189,13 @@ impl ServerConnector {
         lease: &CuratorConnectionLease,
         commit: impl FnOnce() -> T,
     ) -> Result<T, String> {
-        let inner = self.inner.lock().expect("server connector poisoned");
-        let snapshot = inner.snapshot();
-        let current = self.generation.load(Ordering::Acquire) == lease.generation
-            && inner.generation() == lease.generation
-            && inner.configured_base_url(lease.generation).as_deref()
-                == Some(lease.base_url.as_str())
-            && snapshot.state == runtime::state::ServerConnectorState::Ready
-            && snapshot.capabilities.curator_proposals;
-        if !current {
-            return Err("Server connection changed before knowledge proposal could commit.".into());
-        }
-        Ok(commit())
+        self.with_current_connection(
+            lease.generation,
+            &lease.base_url,
+            |capabilities| capabilities.curator_proposals,
+            "Server connection changed before knowledge proposal could commit.",
+            commit,
+        )
     }
 
     pub(crate) fn with_current_batch_catalog_proof<T>(

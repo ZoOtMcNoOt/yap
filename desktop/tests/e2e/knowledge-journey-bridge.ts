@@ -29,6 +29,8 @@ export async function installKnowledgeJourneyBridge(
       const releaseCancellations = new Map<string, () => void>();
       const delayedSubmissions = new Set<string>();
       const releaseSubmissions = new Map<string, () => void>();
+      const delayedStatuses = new Set<string>();
+      const releaseStatuses = new Map<string, () => void>();
       let sequence = 0;
       let authorityRevision = "1";
       let latestSnapshot: Record<string, unknown> | null = null;
@@ -201,6 +203,15 @@ export async function installKnowledgeJourneyBridge(
           releaseSubmission(task: string) {
             releaseSubmissions.get(task)?.();
           },
+          delayNextStatus(task: string) {
+            delayedStatuses.add(task);
+          },
+          statusPending(task: string) {
+            return releaseStatuses.has(task);
+          },
+          releaseStatus(task: string) {
+            releaseStatuses.get(task)?.();
+          },
           setStatus(task: string, status: string) {
             statuses.set(task, status);
           },
@@ -256,7 +267,8 @@ export async function installKnowledgeJourneyBridge(
               analystAnswers: true,
               coordinatorBundles: true,
               auditorReports: true,
-              knowledgeConnections: false, knowledgeRebuild: false,
+              knowledgeConnections: false,
+              knowledgeRebuild: false,
               personalTerminology: false,
               studentQuestions: true,
               curatorProposals: true,
@@ -334,7 +346,17 @@ export async function installKnowledgeJourneyBridge(
           /^(librarian_query|analyst_answer|coordinator_bundle|auditor_report|student_question|curator_proposal)_status$/.exec(
             command,
           );
-        if (poll) return view(poll[1]);
+        if (poll) {
+          const task = poll[1];
+          const polled = view(task);
+          if (delayedStatuses.delete(task)) {
+            await new Promise<void>((resolve) =>
+              releaseStatuses.set(task, resolve),
+            );
+            releaseStatuses.delete(task);
+          }
+          return polled;
+        }
         return baseInvoke(command, args);
       };
     },
