@@ -1,4 +1,4 @@
-use super::authorization::AuthenticatedRequestDispatcher;
+use super::authorization::{AuthenticatedDispatchError, AuthenticatedRequestDispatcher};
 use reqwest::{StatusCode, Url};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
@@ -289,6 +289,13 @@ impl RebuildClient {
             return Err(RebuildError::new("invalid", false));
         }
         let uncertain = || RebuildError::new("unavailable", request.mutates());
+        let identity_changed = |_| RebuildError::new("identityChanged", request.mutates());
+        let dispatch_error = |error| match error {
+            AuthenticatedDispatchError::Authorization(_) => {
+                RebuildError::new("identityChanged", request.mutates())
+            }
+            AuthenticatedDispatchError::Transport(_) => uncertain(),
+        };
         let mut url = self.base_url.clone();
         url.set_path(match request {
             RebuildRequest::Source {} | RebuildRequest::Stage { .. } => {
@@ -338,8 +345,8 @@ impl RebuildClient {
                     .header(reqwest::header::ACCEPT, "application/json"),
             )
             .await
-            .map_err(|_| uncertain())?;
-        let status = response.status().map_err(|_| uncertain())?;
+            .map_err(dispatch_error)?;
+        let status = response.status().map_err(identity_changed)?;
         if status != StatusCode::OK {
             return Err(match status {
                 StatusCode::CONFLICT => RebuildError::new("knowledgeChanged", false),
@@ -352,19 +359,19 @@ impl RebuildClient {
         }
         if response
             .content_length()
-            .map_err(|_| uncertain())?
+            .map_err(identity_changed)?
             .is_some_and(|n| n > MAXIMUM_RESPONSE_BYTES as u64)
         {
             return Err(RebuildError::new("invalidResponse", request.mutates()));
         }
         let mut body = Vec::new();
-        while let Some(chunk) = response.chunk().await.map_err(|_| uncertain())? {
+        while let Some(chunk) = response.chunk().await.map_err(dispatch_error)? {
             if body.len().saturating_add(chunk.len()) > MAXIMUM_RESPONSE_BYTES {
                 return Err(RebuildError::new("invalidResponse", request.mutates()));
             }
             body.extend_from_slice(&chunk);
         }
-        response.ensure_current().map_err(|_| uncertain())?;
+        response.ensure_current().map_err(identity_changed)?;
         decode(request, &body)
     }
 }

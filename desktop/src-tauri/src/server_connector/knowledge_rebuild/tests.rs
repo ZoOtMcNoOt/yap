@@ -336,3 +336,42 @@ fn native_real_postgres_rebuild_journey() {
         );
     });
 }
+
+#[test]
+fn authorization_failure_clears_identity_even_without_a_connector_revision() {
+    use crate::server_connector::authorization::{
+        AccessTokenFuture, AuthenticatedSession, RequestAuthorizationError, ServerAccessTokenSource,
+    };
+    struct FailedRefresh(RequestAuthorizationError);
+    impl ServerAccessTokenSource for FailedRefresh {
+        fn access(&self) -> AccessTokenFuture<'_> {
+            Box::pin(async move { Err(self.0) })
+        }
+    }
+    let runtime = tokio::runtime::Runtime::new().unwrap();
+    for failure in [
+        RequestAuthorizationError::Unavailable,
+        RequestAuthorizationError::InvalidToken,
+        RequestAuthorizationError::AccountChanged,
+    ] {
+        for request in [
+            RebuildRequest::Source {},
+            RebuildRequest::Stage {
+                generation_sha256: "a".repeat(64),
+            },
+        ] {
+            let client = RebuildClient::new(
+                AuthenticatedRequestDispatcher::from_source(
+                    reqwest::Client::new(),
+                    std::sync::Arc::new(FailedRefresh(failure)),
+                    AuthenticatedSession::new(),
+                ),
+                "http://127.0.0.1:1",
+            )
+            .unwrap();
+            let error = runtime.block_on(client.execute(&request)).unwrap_err();
+            assert_eq!(error.code, "identityChanged", "{failure:?}");
+            assert_eq!(error.unconfirmed, request.mutates());
+        }
+    }
+}

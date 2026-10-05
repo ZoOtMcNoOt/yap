@@ -233,27 +233,92 @@ test("denied reviewers and pruned retained references remain contained", async (
   await expect(button(page, "Review restore")).toBeDisabled();
 });
 
-test("revoked reviewer access clears private inspection and saved references", async ({
+for (const failure of ["denied", "identityChanged"]) {
+  test(`${failure} without a connector revision clears private inspection and saved references`, async ({
+    page,
+  }) => {
+    await installRebuildBridge(page);
+    await enter(page);
+    await button(page, "Inspect reviewed source").click();
+    await expect(
+      page.getByText("reviewed/organization", { exact: true }),
+    ).toBeVisible();
+    await page
+      .getByRole("textbox", { name: "Saved generation reference" })
+      .fill("b".repeat(64));
+    await control(page, "failNext", failure);
+    await button(page, "Inspect reviewed source").click();
+    await expect(page.getByRole("alert")).toContainText(
+      failure === "denied"
+        ? "not granted this reviewer action"
+        : "sign-in changed",
+    );
+    await expect(
+      page.getByText("reviewed/organization", { exact: true }),
+    ).not.toBeVisible();
+    await expect(
+      page.getByRole("textbox", { name: "Saved generation reference" }),
+    ).toHaveValue("");
+  });
+}
+
+test("staging refuses changed inspected descriptors and retains the original source", async ({
   page,
 }) => {
   await installRebuildBridge(page);
   await enter(page);
   await button(page, "Inspect reviewed source").click();
-  await expect(
-    page.getByText("reviewed/organization", { exact: true }),
-  ).toBeVisible();
-  await page
-    .getByRole("textbox", { name: "Saved generation reference" })
-    .fill("b".repeat(64));
-  await control(page, "failNext", "denied");
-  await button(page, "Inspect reviewed source").click();
-  await expect(page.getByRole("alert")).toContainText(
-    "not granted this reviewer action",
+  await control(page, "wrongDescriptor");
+  await button(page, "Stage reviewed source").click();
+  await expect(page.getByRole("alert").first()).toContainText(
+    "could not be verified",
   );
   await expect(
-    page.getByText("reviewed/organization", { exact: true }),
-  ).not.toBeVisible();
-  await expect(
-    page.getByRole("textbox", { name: "Saved generation reference" }),
-  ).toHaveValue("");
+    page.getByText(/The write outcome is unconfirmed/),
+  ).toBeVisible();
+  await expect(button(page, "Prepare embeddings")).toBeDisabled();
+  await button(page, "Confirm previous request").click();
+  await expect(page.getByRole("status")).toContainText("Staging confirmed.");
+  await expect(button(page, "Prepare embeddings")).toBeEnabled();
 });
+
+for (const action of ["publish", "restore"] as const) {
+  test(`${action} replay retains its inspected descriptors after a lost reply`, async ({
+    page,
+  }) => {
+    await installRebuildBridge(page);
+    await enter(page);
+    await prepare(page);
+    if (action === "restore") {
+      await publish(page);
+      await button(page, "Inspect saved generation").click();
+      await button(page, "Review restore").click();
+    } else {
+      await button(page, "Review publication").click();
+    }
+    await control(page, "loseNextReply");
+    await button(
+      page,
+      action === "restore" ? "Restore knowledge" : "Publish knowledge",
+    ).click();
+    await expect(
+      page.getByText(/The write outcome is unconfirmed/),
+    ).toBeVisible();
+    await button(page, "Inspect reviewed source").click();
+    await control(page, "wrongDescriptor");
+    await button(page, "Confirm previous request").click();
+    await expect(page.getByRole("alert").first()).toContainText(
+      "could not be verified",
+    );
+    await expect(
+      page.getByText(/The write outcome is unconfirmed/),
+    ).toBeVisible();
+    await expect(page.getByRole("status")).not.toContainText(
+      "Activation confirmed.",
+    );
+    await button(page, "Confirm previous request").click();
+    await expect(page.getByRole("status")).toContainText(
+      "Activation confirmed.",
+    );
+  });
+}

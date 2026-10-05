@@ -48,6 +48,11 @@ Reject unknown or missing required fields, wrong versions/status, malformed
 references/model metadata, invalid counts and responses for a different target.
 Required nullable active references must distinguish JSON null from absence.
 Compare inspected source/generation revision and all four descriptor counts.
+Staging must match the original inspection. Preserve immutable descriptors with
+an unconfirmed request and check every activation replay against them, including
+after a new source inspection. Active references and deployment paths may refresh
+without changing that immutable binding. Authorization failures clear private
+inspection even if silent refresh has not emitted a connector-revision event.
 Source and generation inspections report metadata; the service's complete
 source/admission/vector validator remains the publication authority.
 

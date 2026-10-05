@@ -96,3 +96,12 @@ shape had the same omission. Both expectations now include the required field.
 head/job/artifact identity. This changes fixture expectations only. All six jobs
 must be renewed on the correction before integration; the original run remains
 a failed observation, not integration credit.
+
+
+## Independent review corrections
+
+[Review verification](review-verification.md) records the exact-head independent
+review, original reproductions and corrections for identity-error clearing,
+staging descriptor binding and activation descriptor binding through lost-reply
+recovery. Run 561 passed all six jobs on the pre-correction head; the corrections
+require a renewed reviewed six-job gate.

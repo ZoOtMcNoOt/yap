@@ -49,7 +49,10 @@ export function RebuildPanel({
   const [prepared, setPrepared] = useState<EmbeddingReceipt | null>(null);
   const [activation, setActivation] = useState<ActivationReceipt | null>(null);
   const [saved, setSaved] = useState("");
-  const [uncertain, setUncertain] = useState<RebuildRequest | null>(null);
+  const [uncertain, setUncertain] = useState<{
+    request: RebuildRequest;
+    descriptor: SourceReceipt | GenerationReceipt | null;
+  } | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [decision, setDecision] = useState<ActivationRequest | null>(null);
@@ -72,7 +75,13 @@ export function RebuildPanel({
     setNotice("");
     setInspectingRestore(false);
   }, [owner, snapshot.authorityRevision]);
-  async function run(request: RebuildRequest, restoring = false) {
+  async function run(
+    request: RebuildRequest,
+    restoring = false,
+    descriptor = request.action === "publish" || request.action === "restore"
+      ? generation
+      : source,
+  ) {
     if (!enabled || running.current) return;
     const started = owner;
     running.current = true;
@@ -85,6 +94,11 @@ export function RebuildPanel({
       const response = await knowledgeRebuild(request, started);
       if (revision.current !== started) return;
       if (response.kind === "source" || response.kind === "staged") {
+        if (
+          response.kind === "staged" &&
+          (!descriptor || !sameGeneration(descriptor, response.value))
+        )
+          throw { code: "invalidResponse", unconfirmed: true };
         const changed =
           !source ||
           !sameGeneration(source, response.value) ||
@@ -105,9 +119,9 @@ export function RebuildPanel({
         else setNotice("Reviewed source and current knowledge inspected.");
       } else if (response.kind === "prepared") {
         if (
-          !source ||
-          response.value.generationSha256 !== source.generationSha256 ||
-          response.value.chunkCount !== source.chunkCount
+          !descriptor ||
+          response.value.generationSha256 !== descriptor.generationSha256 ||
+          response.value.chunkCount !== descriptor.chunkCount
         )
           throw { code: "invalidResponse", unconfirmed: true };
         setPrepared(response.value);
@@ -141,11 +155,7 @@ export function RebuildPanel({
             : "Generation inspected. The service performs the final completeness checks on publication.",
         );
       } else {
-        if (
-          generation &&
-          generation.generationSha256 === response.value.generationSha256 &&
-          !sameGeneration(generation, response.value)
-        )
+        if (!descriptor || !sameGeneration(descriptor, response.value))
           throw { code: "invalidResponse", unconfirmed: true };
         setActivation(response.value);
         setGeneration(response.value);
@@ -198,7 +208,7 @@ export function RebuildPanel({
             : "Private inspection was cleared after access changed. Inspect again after your organization restores access.",
         );
       } else if (mutates && failure.unconfirmed) {
-        setUncertain(request);
+        setUncertain({ request, descriptor });
         setGeneration(null);
         setPrepared(null);
         setNotice(
@@ -277,20 +287,22 @@ export function RebuildPanel({
         <Alert>
           <AlertDescription className="grid gap-3">
             <p>
-              Unconfirmed request: {uncertain.action}. Inspect current state
-              first, or explicitly confirm the original request. A dropped reply
-              does not undo a server write.
+              Unconfirmed request: {uncertain.request.action}. Inspect current
+              state first, or explicitly confirm the original request. A dropped
+              reply does not undo a server write.
             </p>
-            {uncertain.action !== "source" && (
+            {uncertain.request.action !== "source" && (
               <code className="break-all text-xs">
-                {uncertain.generationSha256}
+                {uncertain.request.generationSha256}
               </code>
             )}
             <Button
               type="button"
               variant="outline"
               disabled={!enabled}
-              onClick={() => void run(uncertain)}
+              onClick={() =>
+                void run(uncertain.request, false, uncertain.descriptor)
+              }
             >
               Confirm previous request
             </Button>

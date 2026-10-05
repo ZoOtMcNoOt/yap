@@ -452,6 +452,10 @@ authenticated dispatcher and existing publication/source/vector owners.
 Curator proposals retain their separate Git-review handoff.
 The [desktop contract](../../specs/knowledge-rebuild.md) records request,
 receipt, replay and uncertain-write semantics. [Local evidence](../../evidence/knowledge-rebuild/2026-10-04/verification.md) records the implemented boundary and original failures.
+[Independent review corrections](../../evidence/knowledge-rebuild/2026-10-04/review-verification.md)
+reproduce and fix native identity-error clearing, immutable staging descriptors
+and descriptor binding through lost-reply activation recovery. Run 561's six
+green jobs precede these corrections; renew every required job before merge.
 Keep source/deployment review an organization prerequisite. UI actions cannot
 certify Git review or make proposals into approval or canonical source.
 

@@ -47,3 +47,36 @@ yap-rebuild-model-provenance.log
 
 yap-rebuild-clippy-final.log
     Finished `dev` profile [unoptimized + debuginfo] target(s) in 55.20s
+
+Review corrections, 2026-10-05 UTC
+
+yap-rebuild-review-native-green.log
+test result: ok. 1393 passed; 0 failed; 12 ignored; 0 measured; 0 filtered out; finished in 61.87s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.27s
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.19s
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.23s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.45s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+yap-rebuild-review-native-sql.log
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1404 filtered out; finished in 0.65s
+
+yap-rebuild-review-browser-green.log
+  13 passed (2.7m)
+
+yap-rebuild-review-frontend.log
+ Test Files  69 passed (69)
+      Tests  409 passed | 2 skipped (411)
+
+yap-rebuild-review-build.log
+✓ built in 1.53s
+
+yap-rebuild-review-clippy.log
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 37.51s
+
+yap-rebuild-review-contracts.log
+ℹ pass 30
+ℹ fail 0
+ℹ skipped 0

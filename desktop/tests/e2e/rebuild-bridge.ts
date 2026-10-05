@@ -166,10 +166,6 @@ export async function installRebuildBridge(
           throw { code: "notFound", unconfirmed: false };
         kind = "generation";
         value = metadata(request.generationSha256!);
-        if (failure === "descriptor") {
-          failure = null;
-          value = { ...(value as object), chunkCount: 9 };
-        }
       } else {
         const changed = active !== request.generationSha256;
         if (changed && active !== request.expectedActiveGenerationSha256)
@@ -182,6 +178,10 @@ export async function installRebuildBridge(
           changed,
           previousActiveGenerationSha256: before,
         };
+      }
+      if (failure === "descriptor") {
+        failure = null;
+        value = { ...(value as object), chunkCount: 9 };
       }
       if (lost) {
         lost = false;

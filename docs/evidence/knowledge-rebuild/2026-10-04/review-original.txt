@@ -1,0 +1,28 @@
+Independent read-only review of 4369712e27c4c2a325a9deaa86bfaf84762fe94e
+
+P1: authorization failures were flattened to unavailable, retaining private renderer state without a connector-revision event.
+P2: staging overwrote inspected immutable descriptors; later generation inspection still prevented mismatching publication.
+P2: lost-reply activation recovery retained only the request and skipped descriptor binding after clearing generation state.
+
+assertion `left == right` failed: Unavailable
+  left: "unavailable"
+ right: "identityChanged"
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1404 filtered out; finished in 0.12s
+
+  ✘  10 [chromium] › tests/e2e/knowledge-rebuild.spec.ts:262:1 › staging refuses changed inspected descriptors and retains the original source (13.3s)
+  ✘  11 [chromium] › tests/e2e/knowledge-rebuild.spec.ts:277:3 › publish replay retains its inspected descriptors after a lost reply (9.9s)
+  ✘  12 [chromium] › tests/e2e/knowledge-rebuild.spec.ts:277:3 › restore replay retains its inspected descriptors after a lost reply (13.6s)
+  1) [chromium] › tests/e2e/knowledge-rebuild.spec.ts:262:1 › staging refuses changed inspected descriptors and retains the original source 
+    Expected substring: "could not be verified"
+    Error: element(s) not found
+  2) [chromium] › tests/e2e/knowledge-rebuild.spec.ts:277:3 › publish replay retains its inspected descriptors after a lost reply 
+    Expected substring: "could not be verified"
+    Error: element(s) not found
+  3) [chromium] › tests/e2e/knowledge-rebuild.spec.ts:277:3 › restore replay retains its inspected descriptors after a lost reply 
+    Expected substring: "could not be verified"
+    Error: element(s) not found
+  3 failed
+    [chromium] › tests/e2e/knowledge-rebuild.spec.ts:262:1 › staging refuses changed inspected descriptors and retains the original source 
+    [chromium] › tests/e2e/knowledge-rebuild.spec.ts:277:3 › publish replay retains its inspected descriptors after a lost reply 
+    [chromium] › tests/e2e/knowledge-rebuild.spec.ts:277:3 › restore replay retains its inspected descriptors after a lost reply 
+  9 passed (1.8m)
