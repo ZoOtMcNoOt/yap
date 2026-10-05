@@ -556,6 +556,16 @@ JSON is the bounded first exported representation of existing timed/speaker data
 Subtitle format conversion, local ASR timestamp generation, named speaker identity
 and alignment for accepted free-text corrections remain separate roadmap outcomes.
 
+## Required verification repair: cancelled warmup destruction ownership
+
+**Status:** Acceptance recorded before implementation. PR #210 run 37278695798 exposed a real native ownership race: bounded cleanup returned success before the cancelled loading result destructor ran. Preserve that failed observation; do not qualify it by retrying.
+
+- [ ] Track cancelled-load destruction until its destructor completes; publish empty only after completion.
+- [ ] Destroy outside the state mutex and retain bounded cleanup deadlines. Refuse adoption or duplicate loading while destruction owns the result.
+- [ ] Fence destruction failure and keep concurrent ready-model retirement ownership separate.
+- [ ] Prove blocked destruction causes a cleanup timeout, then successful cleanup after release, with deterministic acknowledgements and existing lifecycle regressions.
+- [ ] Independently review the exact corrected head, renew applicable local checks and all six hosted gates, then integrate with the original failure retained.
+
 ## Execution record
 
 The [dated execution history](../../archive/implementation-evidence/2026-10-02-project-hill-climb-history.md) retains every iteration, evidence link and next action recorded at the time. Those next actions are historical; the current increment above determines what to do now. Append new iteration receipts there and keep this queue current.
