@@ -102,7 +102,7 @@ qualification remain open; the whole project goal stays active.
 [PR #209](https://github.com/ZoOtMcNoOt/yap/pull/209) implements bounded larger
 embedding generations at `af3a65c8` and remains unmerged. Its hosted browser renewal
 in [run 37272605309](https://github.com/ZoOtMcNoOt/yap/actions/runs/37272605309)
-records 249 passing cases and two buffer-write assertion failures; that result
+records 249 passing cases and two initial-navigation loopback resource failures; that result
 is not an all-green integration gate. Integrate only after PR #208 and a reviewed
 six-job green exact head.
 
@@ -112,7 +112,8 @@ selection and existing atomic export ownership. All seven focused browser cases,
 1,399 native units and 27 integrations, and 417 portable frontend cases pass.
 Independent review found no unresolved findings. The initial local full browser
 run had 254 passes, three timing/readiness failures and one Windows-only exclusion;
-its serial private-cache renewal remains in progress. The hosted Windows suite
+its serial private-cache renewal passed all 257 runnable cases with the one
+declared Windows-only exclusion (17.5m). The hosted Windows suite
 in [run 37276242335](https://github.com/ZoOtMcNoOt/yap/actions/runs/37276242335)
 reports a path-canonicalization assertion failure (extended/canonical path versus
 an 8.3 alias), so this head remains unmerged.
@@ -126,7 +127,9 @@ checks pass 1,406 units and 27 integrations, with 12 declared ignores. All 417
 portable frontend cases, 12 recording browser journeys, the build and Clippy pass
 after serial renewal with private Vite caches. [Evidence](evidence/ogg-flac-import/2026-10-05/verification.md)
 retains the original defect and qualification boundaries. Full regression and
-reviewed hosted integration remain pending; this head remains unmerged and must
+reviewed hosted integration remain pending. Its Windows rust job in run
+37276564168 passed 1,400 units and failed the inherited timed-export path
+assertion; the correction belongs to PR #210. This head remains unmerged and must
 follow timed export. PRs #209–#211 remain pending descendants; main now integrates PR #208.
 Their pending capabilities and hosted results do not establish integrated main
 capability or model/physical Windows/enterprise qualification. The single queue retains them and the entire roadmap.

@@ -63,9 +63,9 @@ Acceptance outcomes:
    the final committed head, obtain independent review, and integrate only after
    all six required hosted checks pass on that unchanged reviewed head.
 
-The source-linked audit is retained outside the execution queue at
-`/workspace/YAP-REMAINING-WORK-AND-DEBT-AUDIT.md`. This maintenance increment does
-not replace remaining product work or grant target qualification.
+The [maintenance evidence](../../evidence/repository-maintenance/2026-10-05/verification.md)
+retains this increment’s scope and verification. It does not replace remaining
+product work or grant target qualification.
 
 The rows below cover the full roadmap. Their order is the initial priority; revise it when an audit exposes a higher-impact blocker. Each row needs bounded acceptance outcomes as its implementation begins.
 
@@ -523,7 +523,7 @@ retained-history discovery list. Another reviewer's admission remains private.
 
 ## Upcoming increment: prepare larger reviewed embedding generations
 
-**Status:** 6/7 local software outcomes verified; independent review has no unresolved findings. PR #209 at `af3a65c8` remains unmerged: the hosted browser renewal records 249 passing cases and two buffer-write assertion failures, so it is not a green integration head. Acceptance was recorded before code changes.
+**Status:** 6/7 local software outcomes verified; independent review has no unresolved findings. PR #209 at `af3a65c8` remains unmerged: the hosted browser renewal records 249 passing cases and two initial-navigation loopback resource failures, so it is not a green integration head. Acceptance was recorded before code changes.
 PR #208 is merged; its prerequisite changes are now part of main. The batching
 head remains gated by the two failures in [run 37272605309](https://github.com/ZoOtMcNoOt/yap/actions/runs/37272605309).
 Repair the reproduced browser transport/fixture failure and renew every required
@@ -551,7 +551,7 @@ Synthetic-vector limits remain separate from actual inference/enterprise capacit
 
 ## Upcoming increment: export the saved timed speaker transcript
 
-**Status:** Implementation, focused verification and independent review complete. PR #210 at `d46744f7` remains unmerged: a hosted Windows path-canonicalization assertion fails, and the serial local full-browser renewal and reviewed six-job green integration remain pending. Acceptance was recorded before code changes. Integrate after reviewed PR #208 and PR #209.
+**Status:** Implementation, focused verification and independent review complete. PR #210 at `d46744f7` remains unmerged: a hosted Windows path-canonicalization assertion fails. The serial local full-browser renewal passed all 257 runnable cases with one Windows-only exclusion (17.5m); reviewed six-job green integration remains pending. Acceptance was recorded before code changes. Integrate after reviewed PR #208 and PR #209.
 
 History reads source-bound persisted speaker turns with
 start/end milliseconds, anonymous or unknown speaker labels and overlap groups.
