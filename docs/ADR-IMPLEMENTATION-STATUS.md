@@ -8,9 +8,12 @@ role cores and authenticated product surfaces subsequently merged through PR
 0028. PRs #205–#207 integrated reviewed-source preparation, publication integrity,
 retained rollback and embedding generation. Desktop rebuild PR #208 merged as
 `181085af`; larger embedding generations PR #209 merged as `fefbfc11` with the
-reviewed tree tested at `996109b9`. Timed speaker export PR #210 remains unmerged
-with a real cancelled-warmup destruction race under repair; Ogg FLAC PR #211 has
-a green current head but waits for that parent repair and ordered integration.
+reviewed tree tested at `996109b9`. Timed speaker export and the cancelled-warmup
+repair merged through PR #210 as `0c98984f`; Ogg FLAC merged through PR #211 as
+`55109ef4`, with renewed reviewed exact-head gates and fetched-main tree equality.
+Maintenance’s recorded checkpoint required final-head review and renewed checks
+after a tree-identical ancestry repair; [PR #212](https://github.com/ZoOtMcNoOt/yap/pull/212)
+is the live integration record. Original failed observations remain dated evidence.
 See [current status](CURRENT-STATUS.md) for their exact-head gates. Remaining work concerns uncovered end-to-end integration and
 recovery, supported provider integration, production operations and actual
 model/Windows/enterprise qualification. This reconciliation changes no historical

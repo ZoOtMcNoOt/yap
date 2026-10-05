@@ -1,5 +1,8 @@
 # Verification Evidence
 
+- [Timed speaker export integration](timed-speaker-export/2026-10-05/integration.md): PR #210 reviewed `12088dea`, seven export/five warmup-repair outcomes, six-green-job run572 attempt1, tree-equal fetched main and preserved tag; original failures retained.
+- [Ogg FLAC integration](ogg-flac-import/2026-10-05/integration.md): PR #211 reviewed `c3beeb90`, seven software outcomes, six-green-job run573 attempt1, ordered tree-equal integration and preserved tag; actual inference/playback qualification remains open.
+
 - [Bounded embedding integration](knowledge-embedding-batches/2026-10-05/integration.md): PR #209 reviewed head `996109b9`, six-green-job run 568 attempt 1, identical fetched main tree, preserved tag and clean branch/worktree retirement; prior browser failures retained.
 - [Desktop rebuild integration](knowledge-rebuild/2026-10-04/integration.md): PR #208 reviewed six-job green receipt and tree-equal main proof.
 

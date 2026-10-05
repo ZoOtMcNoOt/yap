@@ -83,3 +83,32 @@ clean-contract renewal and independent exact-head review. All six hosted jobs
 must pass on the unchanged reviewed final head before ordered integration after
 PRs #210 and #211; preserve tested tags, fetched-main tree equality and unique
 successors before completed branch/worktree retirement. The full roadmap remains active.
+
+## Hosted source verification and ancestry renewal
+
+[Run 574](https://github.com/ZoOtMcNoOt/yap/actions/runs/37281864081) passes all
+six required jobs and every final unchanged-checkout guard on independently
+reviewed `5438a899c8303746d3f8948af671264a92519644`, attempt 1. Windows
+verification passes 1,404 native units and all 27 integrations/12 declared
+fixture ignores, strict Clippy `-D warnings`, both exact connector runtime
+checks, dependency boundary/audit, 419 frontend units, 72 release contracts,
+two WDIO framework contracts, TypeScript/Vite and all 261 browser cases (5.2m).
+The actual built Windows app smoke, skip-free owned-process/PostgreSQL checks,
+core server suite and orchestrator checks also pass. Linux and Windows native
+populations differ by their compiled platform-specific cases; no model or
+physical Windows qualification is inferred. Annotated tag
+`reviewed/pr-212-5438a899` preserves this tested source head.
+
+After PRs #210 and #211 integrated, GitHub refused PR #212's merge with HTTP405
+and stated merge conflicts. Local Git's ort strategy computed the exact tested
+tree without conflicts, with two merge bases (`12088dea` and `8e774f73`).
+An explicit merge of fetched main `55109ef46c9cc8ca90e97b563fd4b90eb732dcb1`
+produces `babdc2ff43e1982298a8aaf521ef9c6ebe90a958` with the identical entire
+tree `bbf044c1658d67daec1f0f25a4a26328b3d0398b`, and one unambiguous main
+ancestor. This is an ancestry repair; executable source has not changed.
+
+The following metadata renewal records actual parent integrations and preserves
+this original failed merge observation. Its final reviewed head requires both
+clean-contract sets and all six hosted gates to pass again. [PR #212](https://github.com/ZoOtMcNoOt/yap/pull/212)
+is the live integration record; preserve the final tested tag and compare the
+fetched main tree before retiring the completed temporary branch/worktree.

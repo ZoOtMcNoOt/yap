@@ -32,7 +32,11 @@ assuming another thread started within 50 ms.
 All 30 focused lifecycle cases pass without skips on corrected
 `12088dea5eec1bc41f9cd71fd6cff828c2c73832` (2m13s compilation, 2.09s behavior).
 Independent read-only exact-head review reports no actionable findings.
-[Run 572](https://github.com/ZoOtMcNoOt/yap/actions/runs/37281343011) is renewing
-all six hosted gates on that unchanged reviewed head; integration is pending. Failed observations receive no green gate
+[Run 572](https://github.com/ZoOtMcNoOt/yap/actions/runs/37281343011) passes all
+six hosted gates and their unchanged-checkout guards on that reviewed head.
+Windows native verification passes 1,396 units and all 27 integrations, with
+12 declared fixture ignores and strict Clippy. [Integration](integration.md)
+records actual merged main, preserved tested tag, fetched-tree equality and
+completed branch/worktree retirement. Failed observations receive no green gate
 credit. Synthetic model owners qualify lifecycle behavior only; actual model,
 physical Windows/RDP and enterprise qualification remain separate.

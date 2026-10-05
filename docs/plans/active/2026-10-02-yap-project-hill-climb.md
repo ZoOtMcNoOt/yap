@@ -65,8 +65,13 @@ Acceptance outcomes:
 
 Full corrected native (1,409 units + 27 integrations), Clippy, frontend/build,
 260 browser cases/one Windows-only exclusion, real PostgreSQL rebuilding and both
-clean-checkout contract sets pass at their documented source heads. Final metadata
-review and exact-head six-job hosted integration remain required.
+clean-checkout contract sets pass at their documented source heads. The recorded
+maintenance checkpoint is six-job green at `5438a899`, followed by GitHub HTTP405
+merge rejection while the branch had two merge bases. Explicit main merge
+`babdc2ff` is tree-identical and resolves ancestry; at that checkpoint final
+metadata review and all six renewed exact-head jobs were required. This receipt
+does not certify a maintenance merge; [PR #212](https://github.com/ZoOtMcNoOt/yap/pull/212)
+is the live integration record.
 
 The [maintenance evidence](../../evidence/repository-maintenance/2026-10-05/verification.md)
 retains this increment’s scope and verification. It does not replace remaining
@@ -76,9 +81,9 @@ The rows below cover the full roadmap. Their order is the initial priority; revi
 
 | Workstream | Baseline and next complete outcome | Qualification boundary |
 | --- | --- | --- |
-| Transcript review and dedicated export | Original and latest accepted-revision UTF-8 exports are software verified alongside reading/search/copy/open/reveal and offline accepted-correction recovery. Preserve the [original](../../evidence/transcript-export/2026-10-02-verification.md) and [accepted export](../../evidence/accepted-correction-export/2026-10-03/verification.md) contracts. Earlier revision selection is software verified and merged through PR #205. Timed/speaker JSON is implemented in unmerged PR #210; subtitle conversion, corrected-text alignment and explicit damaged-history repair remain separate outcomes. | Native dialog/platform filesystem behavior needs target checks; export correctness is model independent. |
+| Transcript review and dedicated export | Original and latest accepted-revision UTF-8 exports are software verified alongside reading/search/copy/open/reveal and offline accepted-correction recovery. Preserve the [original](../../evidence/transcript-export/2026-10-02-verification.md) and [accepted export](../../evidence/accepted-correction-export/2026-10-03/verification.md) contracts. Earlier revision selection is software verified and merged through PR #205. Timed/speaker JSON is software verified and merged through PR #210; subtitle conversion, corrected-text alignment and explicit damaged-history repair remain separate outcomes. | Native dialog/platform filesystem behavior needs target checks; export correctness is model independent. |
 | Terminology and personalization | Personal and explicitly configured shared CRUD connect trusted scope/connection authority, the canonical ledger, frozen snapshots and Settings controls; [shared evidence](../../evidence/shared-terminology/2026-10-03-verification.md) covers nine outcomes. ADR 0028’s four deterministic projection contracts are delivered; continue directory administration and supported provider/workflow integration using [ADR 0028](../../adr/0028-model-independent-terminology-authority.md). | Directory/admin policy and provider-specific effectiveness need IT and models. |
-| Imported recordings and more formats | WAV/MP3/FLAC/Ogg Vorbis/single-track AAC-LC M4A/MP4 normalization, durable jobs, cancellation/retry and native result access exist. Audit full source-to-result recovery; add remaining approved WebM and broader Ogg codecs incrementally with decoder/license, resource and malformed-input checks. | Actual ASR quality, speaker/alignment quality and advertised maximum duration require representative inference. |
+| Imported recordings and more formats | WAV/MP3/FLAC/Ogg Vorbis/FLAC and single-track AAC-LC M4A/MP4 normalization, durable jobs, cancellation/retry and native result access exist. Audit full source-to-result recovery; add remaining approved WebM and broader Ogg codecs incrementally with decoder/license, resource and malformed-input checks. | Actual ASR quality, speaker/alignment quality and advertised maximum duration require representative inference. |
 | Local dictation, setup and model lifecycle | Supported setup/recovery UI is verified under fixtures. Audit capture/session/restart, explicit install/import, corruption, atomic replacement, rollback and offline behavior; close portable gaps and prepare target checks. | Physical microphones, hotkeys, cross-app delivery, tray hit testing and Windows model guards require Windows. |
 | Languages and meeting evidence | Fixed locale and explicit Preview routes exist. Verify unknown/abstention, switching reconciliation, immutable finalized text, source-time alignment, anonymous speaker review and independent language/speaker/overlap composition (OQ-30). Implement authorized naming/enrollment/profile lifecycle without inferred contact identity. | Locale/switch/overlap/roster promotion, recording length, battery/thermal and sustained performance require actual targets. |
 | Supervised services and batch ASR | Rust supervision and bounded admission exist. Finish missing supervised ASR integration; verify health/readiness, source/result ownership, fair scheduling, cancellation, crash/restart and model-unavailable failures with deterministic providers. | Full simultaneous model residency, mixed-owner throughput, latency/memory budgets and SLOs need representative nodes. |
@@ -553,9 +558,9 @@ records 165 skip-free SQL cases and 215 skip-free portable cases after
 Final isolated server discovery passes 1,678 cases/162 declared exclusions.
 Synthetic-vector limits remain separate from actual inference/enterprise capacity.
 
-## Upcoming increment: export the saved timed speaker transcript
+## Completed increment: export the saved timed speaker transcript
 
-**Status:** Implementation and focused verification complete; independent review reports no findings on corrected `12088dea5eec1bc41f9cd71fd6cff828c2c73832`. [Run 572](https://github.com/ZoOtMcNoOt/yap/actions/runs/37281343011) renews all six gates; integration remains pending. Run569's `65029dd4` real destruction-race failure (1,393 passes/one failure/12 ignores) and the earlier `d46744f7` Windows path assertion failure remain dated observations. The repair passes all 30 focused lifecycle cases without skips and retains destruction ownership outside the mutex. Earlier timed-export native/browser results retain their exact heads; no changed-head credit is assumed. Acceptance preceded implementation; integrate through the reviewed six-green-job rule after PRs #208 and #209.
+**Status:** 7/7 bounded software outcomes verified and merged through PR #210 as `0c98984fc47767237e52e6e61d1a1b43ff4613a7`, with the identical tree tested at `12088dea5eec1bc41f9cd71fd6cff828c2c73832`. [Run 572, attempt 1](https://github.com/ZoOtMcNoOt/yap/actions/runs/37281343011/attempts/1) passes all six jobs and final guards, including 1,396 hosted Windows native units/27 integrations/12 ignores, all 419 frontend cases without skips and all 258 browser cases. [Integration evidence](../../evidence/timed-speaker-export/2026-10-05/integration.md) records fetched-main tree equality, preserved tag and completed branch/worktree retirement. Run569's real cancelled-warmup race and earlier Windows path assertion remain dated observations; all five repair outcomes are now verified. Actual speaker/model/physical picker qualification remains separate.
 
 
 History reads source-bound persisted speaker turns with
@@ -591,12 +596,12 @@ retained directory handles and atomic no-overwrite creation.
   timestamps, unknown/anonymous speakers and overlap provenance; verify missing/
   changed hash/session/source, source drift during picker, output bounds,
   protected/existing/linked destinations and lost confirmation preserve data.
-- [ ] Verify deterministic browser native-bridge success/cancel/failure/malformed
+- [x] Verify deterministic browser native-bridge success/cancel/failure/malformed
   receipt and changing selection, plus keyboard/narrow/wide behavior. Run full
   applicable native/frontend/build/contracts and hosted browser/native checks.
   Distinguish fixture data and Linux/software Windows from physical picker/audio
   or actual speaker/model quality.
-- [ ] Record original observations/screens/evidence, commit/push as Grant McNatt,
+- [x] Record original observations/screens/evidence, commit/push as Grant McNatt,
   independently review and integrate only an all-six-green exact head. Preserve
   tested tag/fetched-main tree equality and unique work before branch retirement;
   keep the full roadmap active and select the next available software outcome.
@@ -607,9 +612,9 @@ JSON is the bounded first exported representation of existing timed/speaker data
 Subtitle format conversion, local ASR timestamp generation, named speaker identity
 and alignment for accepted free-text corrections remain separate roadmap outcomes.
 
-## Upcoming increment: complete Ogg FLAC admission
+## Completed increment: complete Ogg FLAC admission
 
-**Status:** Five acceptance areas were locally verified before hosted renewal. Corrected `c3beeb9054671d9949b0cb36725925026f257f18` includes the reviewed parent warmup repair and has no independent integration-review findings. [Run 573](https://github.com/ZoOtMcNoOt/yap/actions/runs/37281364719) renews all six exact-head gates; PR #210 must integrate first. Earlier `8e774f73` was all-six-green in run570, while original `465c5df0` failed an inherited Windows path assertion. Both observations remain dated evidence and grant no gate credit to this changed descendant. Acceptance preceded implementation at `d5ce762f`.
+**Status:** 7/7 bounded software outcomes verified and merged through PR #211 as `55109ef46c9cc8ca90e97b563fd4b90eb732dcb1`, with the identical tree tested at `c3beeb9054671d9949b0cb36725925026f257f18`. [Run 573, attempt 1](https://github.com/ZoOtMcNoOt/yap/actions/runs/37281364719/attempts/1) passes all six jobs and final guards, including 1,403 hosted Windows native units/27 integrations/12 ignores, all 419 frontend cases without skips and all 259 browser cases. [Integration evidence](../../evidence/ogg-flac-import/2026-10-05/integration.md) records ordered integration after #210, fetched-main tree equality, preserved tag and completed branch/worktree retirement. Earlier `8e774f73` run570 and original `465c5df0` inherited assertion failure remain dated evidence. Actual ASR/speaker/alignment/playback and physical Windows/enterprise qualification remain open.
 
 
 Executable audit: the locked Symphonia0.6.1 Ogg mapper already recognizes FLAC;
@@ -642,10 +647,10 @@ Symphonia's logical Ogg reader sets the end bound only on an EOS page.
 - [x] Exercise native intake/preparation/restored catalog and browser picker/help/
   queue/success/failure text using explicit format support. Keep existing audio
   format/local controls and all original provenance/byte retention assertions.
-- [ ] Run full native/frontend/build/browser/release/provenance contracts and
+- [x] Run full native/frontend/build/browser/release/provenance contracts and
   focused independent review; distinguish decoded fixtures from ASR/speaker/
   playback/Windows/model qualification. Update accurate product/operator claims.
-- [ ] Commit/push as Grant McNatt, integrate only independently reviewed six-job
+- [x] Commit/push as Grant McNatt, integrate only independently reviewed six-job
   green exact heads, preserve tested tag/fetched-main tree equality before owned
   branch retirement, and continue the entire roadmap.
 
@@ -656,15 +661,16 @@ track/timebase/container-ending reconciliation contract. The locked Symphonia
 codec feature set has no Opus decoder. Do not advertise either from an enabled
 container reader or infer duration from bitrate.
 
-## Required verification repair: cancelled warmup destruction ownership
+## Completed verification repair: cancelled warmup destruction ownership
 
-**Status:** Acceptance recorded before implementation at `affb15c9`; corrected source `12088dea` passes all 30 focused lifecycle cases and independent review. Hosted run572 remains pending. PR #210 run 37278695798 exposed a real native ownership race: bounded cleanup returned success before the cancelled loading result destructor ran. Preserve that failed observation; do not qualify it by retrying.
+**Status:** All 5/5 repair outcomes verified and integrated through PR #210. Acceptance was recorded before implementation at `affb15c9`; corrected source `12088dea` passes all 30 focused lifecycle cases, independent review and all six hosted jobs/final guards in run572 attempt1. PR #210 run 37278695798 exposed a real native ownership race: bounded cleanup returned success before the cancelled loading result destructor ran. Preserve that failed observation; the corrected exact-head integration supplies renewed evidence. The [repair record](../../evidence/timed-speaker-export/2026-10-05/warmup-destruction-repair.md) and [integration receipt](../../evidence/timed-speaker-export/2026-10-05/integration.md) retain the boundary and original failure.
+
 
 - [x] Track cancelled-load destruction until its destructor completes; publish empty only after completion.
 - [x] Destroy outside the state mutex and retain bounded cleanup deadlines. Refuse adoption or duplicate loading while destruction owns the result.
 - [x] Fence destruction failure and keep concurrent ready-model retirement ownership separate.
 - [x] Prove blocked destruction causes a cleanup timeout, then successful cleanup after release, with deterministic acknowledgements and existing lifecycle regressions.
-- [ ] Independently review the exact corrected head, renew applicable local checks and all six hosted gates, then integrate with the original failure retained.
+- [x] Independently review the exact corrected head, renew applicable local checks and all six hosted gates, then integrate with the original failure retained.
 
 ## Execution record
 

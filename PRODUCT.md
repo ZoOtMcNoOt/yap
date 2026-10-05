@@ -8,17 +8,18 @@ They usually arrive with files already on disk (MP3, M4A, WAV, MP4, and similar 
 
 ## Product Purpose
 
-The integrated main baseline includes PRs #205–#209, including authenticated
-desktop rebuilding and bounded larger embedding generations. Timed speaker JSON
-export (#210) and Ogg FLAC (#211) remain unmerged: #210's current hosted native
-checks expose a cancelled-warmup destruction race, while #211's current green
-head waits for that parent repair and renewed ordered integration. The descriptions
-below distinguish these pending additions from main. [Current status](docs/CURRENT-STATUS.md)
-records exact-head checks and qualification limits.
+The integrated main baseline includes PRs #205–#211: reviewed-source rebuilding,
+bounded larger embedding generations, timed speaker JSON export and Ogg FLAC.
+The cancelled-warmup destruction ownership repair is integrated through #210.
+These are bounded software outcomes, with actual model/physical Windows/enterprise
+qualification still open. Repository maintenance’s recorded checkpoint required
+final-head review and renewed hosted checks after a tree-identical ancestry repair;
+[PR #212](https://github.com/ZoOtMcNoOt/yap/pull/212) is its live integration record.
+[Current status](docs/CURRENT-STATUS.md) retains exact-head evidence and limitations.
 
-Yap is a desktop transcription app (Tauri + React in `desktop/`). The current desktop implementation records and transcribes explicit live sessions locally with Nemotron 3.5 ASR Streaming 0.6B INT8 through in-process `sherpa-onnx`. The integrated imported-recording path accepts canonical mono PCM16/16 kHz WAV and decodes MP3, FLAC, Ogg Vorbis and AAC-LC in M4A/MP4 into that canonical format before using the durable private-server contract. It publishes only natively verified results. Disconnected imports remain queued or blocked instead of receiving official-looking fallback output. Additional audio/video formats remain the target product experience; integrated decoding support is WAV, MP3, FLAC, Ogg Vorbis and M4A/MP4; pending PR #211 adds Ogg FLAC. M4A/MP4 supports one mono/stereo AAC-LC track. Ogg requires a single, non-chained track with a complete ending: Vorbis in main, with FLAC added by pending PR #211. M4A/MP4 requires a complete nonfragmented container with supported presentation timing; video is ignored. Opus, other MP4 codecs and complex edits remain unsupported. AAC distribution patent clearance remains a separate release decision.
+Yap is a desktop transcription app (Tauri + React in `desktop/`). The current desktop implementation records and transcribes explicit live sessions locally with Nemotron 3.5 ASR Streaming 0.6B INT8 through in-process `sherpa-onnx`. The integrated imported-recording path accepts canonical mono PCM16/16 kHz WAV and decodes MP3, FLAC, Ogg Vorbis/FLAC and AAC-LC in M4A/MP4 into that canonical format before using the durable private-server contract. It publishes only natively verified results. Disconnected imports remain queued or blocked instead of receiving official-looking fallback output. Additional audio/video formats remain the target product experience; integrated decoding support is WAV, MP3, FLAC, Ogg Vorbis/FLAC and M4A/MP4. M4A/MP4 supports one mono/stereo AAC-LC track. Ogg requires a single, non-chained Vorbis or FLAC track with a complete ending. M4A/MP4 requires a complete nonfragmented container with supported presentation timing; video is ignored. Opus, other MP4 codecs and complex edits remain unsupported. AAC distribution patent clearance remains a separate release decision.
 
-The target product loop is files in, accurate transcripts out, with minimal friction between drop → durable queue → private server transcript → copy/export. The integrated connected path accepts canonical mono PCM16/16 kHz WAV, MP3, FLAC, Ogg Vorbis and supported M4A/MP4 files. Pending PR #211 adds Ogg FLAC; additional audio/video formats remain open. The supported offline loop is explicit live capture → local transcript → history/playback/copy or reveal. The interface should make the current file and its transcript the center of attention; model names, auth paths, and runner details stay in secondary status unless something needs attention.
+The target product loop is files in, accurate transcripts out, with minimal friction between drop → durable queue → private server transcript → copy/export. The integrated connected path accepts canonical mono PCM16/16 kHz WAV, MP3, FLAC, Ogg Vorbis/FLAC and supported M4A/MP4 files; additional audio/video formats remain open. The supported offline loop is explicit live capture → local transcript → history/playback/copy or reveal. The interface should make the current file and its transcript the center of attention; model names, auth paths, and runner details stay in secondary status unless something needs attention.
 
 Supported navigation:
 
@@ -28,7 +29,7 @@ Supported navigation:
 - **Knowledge** — cited search/answers and human review of proposals/conflicts
 - **Settings and Help** — setup, recovery, and concise guidance
 
-Transcript history lives on Home. Review offers copy, open, reveal and **Export text** for the original UTF-8 transcript. Export creates a new file outside Yap data and preserves existing files. If completion is unconfirmed, a file may already exist: check the destination before explicitly retrying. This guidance also applies to saved-correction exports. Timed/speaker JSON export is implemented in pending PR #210; subtitle conversion and alignment of saved free-text corrections remain separate planned outcomes.
+Transcript history lives on Home. Review offers copy, open, reveal and **Export text** for the original UTF-8 transcript. Export creates a new file outside Yap data and preserves existing files. If completion is unconfirmed, a file may already exist: check the destination before explicitly retrying. This guidance also applies to saved-correction exports. Timed/speaker JSON export is software verified and merged through PR #210; subtitle conversion and alignment of saved free-text corrections remain separate planned outcomes.
 
 Correct requests source-bound suggestions through Scribe on the connected organization server. **Save revision** accepts edits separately and preserves raw ASR. Reopening starts with the latest accepted revision; **Accepted revision** can select an earlier one for offline reading, copying and **Export saved correction**. Reading an older revision does not replace the latest acceptance. A new acceptance resets selection to latest. Export revalidates the selected revision and source/history after destination selection. Unsaved suggestions stay separate; damaged history reports an error without replacing files. [Selection guidance and local verification](docs/specs/accepted-correction-history.md) retain the remaining integration and target checks.
 

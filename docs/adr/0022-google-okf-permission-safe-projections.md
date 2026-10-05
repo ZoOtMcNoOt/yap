@@ -226,7 +226,9 @@ merged through PR #153. [Current status](../CURRENT-STATUS.md) records later
 publication/source-integrity, retained rollback and embedding-generation work
 integrated through PRs #205–#207; desktop rebuild PR #208 merged as `181085af`,
 and larger-generation PR #209 merged as `fefbfc11` with the tree tested at
-`996109b9`. These software increments do not qualify production
+`996109b9`. Timed speaker export and Ogg FLAC subsequently integrated through
+PRs #210/#211; those additions do not change canonical knowledge authority.
+These software increments do not qualify production
 database operations, model effectiveness or enterprise publication policy.
 
 Published vector projections remain immutable after replacement, including

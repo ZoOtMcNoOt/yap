@@ -112,24 +112,34 @@ retains the source-to-prepare/publish/read/restore scope and limits. The earlier
 records 249 browser passes and two initial-navigation loopback resource failures;
 that failed observation is retained and receives no integration credit.
 
-[PR #210](https://github.com/ZoOtMcNoOt/yap/pull/210) implements source-bound saved
-timed speaker JSON through existing native atomic new-file ownership. Corrected
-`12088dea5eec1bc41f9cd71fd6cff828c2c73832` retains cancelled-warmup destruction
-ownership outside the mutex until completion, passes all 30 focused lifecycle
-cases without skips and has no independent review findings. [Run 572](https://github.com/ZoOtMcNoOt/yap/actions/runs/37281343011)
-renews all six exact-head gates; integration remains pending. Earlier run569's
-`65029dd4` real destruction-race failure and `d46744f7` Windows canonical-path
-assertion failure remain [dated evidence](evidence/timed-speaker-export/2026-10-05/verification.md).
-The earlier 257-pass/one Windows-only local browser result retains its source head.
+Saved timed speaker JSON export is now **7/7 bounded software outcomes verified
+and merged** through [PR #210](https://github.com/ZoOtMcNoOt/yap/pull/210) as
+`0c98984fc47767237e52e6e61d1a1b43ff4613a7`, with the identical tree tested at
+`12088dea5eec1bc41f9cd71fd6cff828c2c73832`. [Run 572, attempt 1](https://github.com/ZoOtMcNoOt/yap/actions/runs/37281343011/attempts/1)
+passes all six jobs and final checkout guards: hosted Windows 1,396 native units
+and 27 integrations/12 declared ignores; all 419 frontend cases without skips;
+all 258 browser cases in 6.1 minutes. Fetched main matches tree
+`1d2585685e4d8ba3320e8f53aa3a0dbef231e9f3`; tag `reviewed/pr-210-12088dea`
+retains the tested head and the completed branch/worktree is retired.
+All five cancelled-warmup destruction repair outcomes are verified with the
+original `65029dd4` race failure and earlier `d46744f7` Windows path assertion
+preserved. [Integration evidence](evidence/timed-speaker-export/2026-10-05/integration.md)
+and the [repair record](evidence/timed-speaker-export/2026-10-05/warmup-destruction-repair.md)
+retain source-head focused checks and qualification limits.
 
-[PR #211](https://github.com/ZoOtMcNoOt/yap/pull/211) implements Ogg FLAC admission
-and silent middle-page-loss refusal. Corrected `c3beeb9054671d9949b0cb36725925026f257f18`
-includes the independently reviewed warmup repair; [run 573](https://github.com/ZoOtMcNoOt/yap/actions/runs/37281364719)
-renews all six gates before ordered integration after #210. Earlier all-green
-`8e774f73` run570 and original `465c5df0` inherited Windows assertion failure
-remain dated observations, not gate credit for the changed descendant.
-[Evidence](evidence/ogg-flac-import/2026-10-05/verification.md) retains source-head
-native/frontend/browser results and decoder qualification boundaries.
+Ogg FLAC admission is now **7/7 bounded software outcomes verified and merged**
+through [PR #211](https://github.com/ZoOtMcNoOt/yap/pull/211) as
+`55109ef46c9cc8ca90e97b563fd4b90eb732dcb1`, with the identical tree tested at
+`c3beeb9054671d9949b0cb36725925026f257f18`. [Run 573, attempt 1](https://github.com/ZoOtMcNoOt/yap/actions/runs/37281364719/attempts/1)
+passes all six jobs and final checkout guards: hosted Windows 1,403 native units
+and 27 integrations/12 declared ignores; all 419 frontend cases without skips;
+all 259 browser cases in 5.0 minutes. Fetched main matches tree
+`ce541a7614aa832b547d572c1e4c0da63574a4d6`; tag `reviewed/pr-211-c3beeb90`
+retains the tested head and the completed branch/worktree is retired.
+[Integration evidence](evidence/ogg-flac-import/2026-10-05/integration.md) retains
+original silent-loss/Windows failure observations and distinguishes earlier green
+run 570 from the renewed corrected-head run 573. This does not qualify actual
+ASR/speakers/alignment, physical Windows playback or enterprise deployment.
 
 The authorized [repository maintenance](evidence/repository-maintenance/2026-10-05/verification.md)
 consolidates native authority guards and Analyst/Coordinator request lifecycle,
@@ -139,8 +149,14 @@ passes corrected native 1,409 units plus 27 integrations/12 fixture ignores,
 Clippy, actual built-native PostgreSQL rebuilding, 417 frontend cases/two Windows
 exclusions, TypeScript/Vite, 260 browser cases/one Windows-only exclusion, both
 clean-checkout contract sets and all 30 documentation/provenance contracts at
-their recorded source heads. Final exact-head review/hosted integration remains.
-Main integrates #208 and #209; #210, #211 and maintenance are pending. Actual
+their recorded source heads. The recorded maintenance checkpoint has all six hosted jobs green at `5438a899`,
+followed by GitHub HTTP 405 merge rejection after the parent integrations. The
+branch had two merge bases; local Git produced a clean merge with the tested tree. Explicit main merge `babdc2ff43e1982298a8aaf521ef9c6ebe90a958` has the
+identical tree to `5438a899` and resolves ancestry. At that checkpoint, final-head
+independent review and all six renewed hosted jobs were still required; no
+maintenance merge is certified by this receipt. [PR #212](https://github.com/ZoOtMcNoOt/yap/pull/212)
+is the live integration record.
+Main integrates #208–#211. Actual
 models, physical Windows/RDP and enterprise qualification remain separate; the
 full project goal stays active.
 
