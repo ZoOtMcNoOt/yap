@@ -1141,9 +1141,12 @@ projections and all eight bounded role cores/product surfaces are delivered;
 remaining provider/workflow integration and actual qualification stay open.
 PRs #205–#207 integrated reviewed-source preparation/publication integrity, retained
 rollback and embedding generation. Desktop rebuild PR #208 is software verified and merged as
-`181085af`; larger-generation PR #209, timed speaker JSON PR #210 and Ogg
-FLAC PR #211 also remain unmerged. Use [current status](CURRENT-STATUS.md) for their
-failed/pending gates. The [roadmap](roadmap/ROADMAP.md) also preserves diagnostics
+`181085af`; larger-generation PR #209 merged as `fefbfc11` with reviewed tested
+head `996109b9`. Timed speaker JSON PR #210 remains unmerged with a real
+cancelled-warmup destruction race under repair. Ogg FLAC PR #211’s current head
+is six-job green but remains unmerged behind that parent repair; changed
+descendants need renewed reviewed exact-head checks. Use
+[current status](CURRENT-STATUS.md) for failed/pending gates. The [roadmap](roadmap/ROADMAP.md) also preserves diagnostics
 privacy (OQ-28), developer/IT networking ownership (OQ-29), language/speaker/overlap
 composition (OQ-30), and OQ-31’s closed Tiron baseline disposition.
 

@@ -96,43 +96,50 @@ the tested head is retained and the completed branch/worktree is retired.
 record authenticated source inspection, staging, embedding preparation, explicit
 publication and retained restore, strict receipts and uncertain-write recovery.
 The complete human proposal-to-reviewed-source handoff, uncovered recovery and
-retained-history discovery gaps, larger rebuilds and actual provider/enterprise
+retained-history discovery gaps, and actual provider/enterprise
 qualification remain open; the whole project goal stays active.
 
-[PR #209](https://github.com/ZoOtMcNoOt/yap/pull/209) implements bounded larger
-embedding generations at `af3a65c8` and remains unmerged. Its hosted browser renewal
-in [run 37272605309](https://github.com/ZoOtMcNoOt/yap/actions/runs/37272605309)
-records 249 passing cases and two initial-navigation loopback resource failures; that result
-is not an all-green integration gate. Integrate only after PR #208 and a reviewed
-six-job green exact head.
+Bounded larger embedding preparation is now **7/7 software outcomes verified
+and merged** through [PR #209](https://github.com/ZoOtMcNoOt/yap/pull/209) as
+`fefbfc114fbf4967b6615f1aa49b3f99a05dc778`, with the identical tree tested at
+`996109b946423a6c8e85fbd7288cd483f3cdb4d4`. [Run 568, attempt 1](https://github.com/ZoOtMcNoOt/yap/actions/runs/37278373605/attempts/1)
+passes all six jobs and final checkout guards, including all 251 hosted browser
+cases. Fetched main matches tree `ca83bad3dbb7285797516d0449d513fe1ca1ce84`;
+tag `reviewed/pr-209-996109b9` retains the tested head and the completed clean
+branch/worktree is retired. [Integration evidence](evidence/knowledge-embedding-batches/2026-10-05/integration.md)
+retains the source-to-prepare/publish/read/restore scope and limits. The earlier
+`af3a65c8` [run 37272605309](https://github.com/ZoOtMcNoOt/yap/actions/runs/37272605309)
+records 249 browser passes and two initial-navigation loopback resource failures;
+that failed observation is retained and receives no integration credit.
 
 [PR #210](https://github.com/ZoOtMcNoOt/yap/pull/210) implements saved timed speaker
-JSON export at `d46744f7` through trusted persisted source data, explicit new-file
-selection and existing atomic export ownership. All seven focused browser cases,
-1,399 native units and 27 integrations, and 417 portable frontend cases pass.
-Independent review found no unresolved findings. The initial local full browser
-run had 254 passes, three timing/readiness failures and one Windows-only exclusion;
-its serial private-cache renewal passed all 257 runnable cases with the one
-declared Windows-only exclusion (17.5m). The hosted Windows suite
-in [run 37276242335](https://github.com/ZoOtMcNoOt/yap/actions/runs/37276242335)
-reports a path-canonicalization assertion failure (extended/canonical path versus
-an 8.3 alias), so this head remains unmerged.
+JSON export through trusted persisted source data and existing atomic new-file
+ownership. Its current `65029dd42b16c67daa1e12883a992496789432b0` head fails
+[run 569](https://github.com/ZoOtMcNoOt/yap/actions/runs/37278695798) on a real
+cancelled-warmup destruction race: 1,393 native units pass, one fails and 12 are
+ignored. Repair is in progress; this head is neither all-green nor merged.
+The earlier `d46744f7` [run 37276242335](https://github.com/ZoOtMcNoOt/yap/actions/runs/37276242335)
+path-canonicalization assertion failure is retained as a dated observation. That
+head's serial local browser renewal passed all 257 runnable cases with one
+Windows-only exclusion (17.5m); it does not verify a changed repair head.
 [Evidence](evidence/timed-speaker-export/2026-10-05/verification.md) retains prior
-results and qualification limits. Repair and renew applicable exact-head checks,
-then integrate after PR #208 and PR #209.
+native/frontend/browser checks and physical-picker/model qualification limits.
 
-[PR #211](https://github.com/ZoOtMcNoOt/yap/pull/211) at `465c5df0` implements Ogg FLAC
-admission and refuses reproduced silent middle-page loss. Full local native
-checks pass 1,406 units and 27 integrations, with 12 declared ignores. All 417
-portable frontend cases, 12 recording browser journeys, the build and Clippy pass
-after serial renewal with private Vite caches. [Evidence](evidence/ogg-flac-import/2026-10-05/verification.md)
-retains the original defect and qualification boundaries. Full regression and
-reviewed hosted integration remain pending. Its Windows rust job in run
-37276564168 passed 1,400 units and failed the inherited timed-export path
-assertion; the correction belongs to PR #210. This head remains unmerged and must
-follow timed export. PRs #209–#211 remain pending descendants; main now integrates PR #208.
-Their pending capabilities and hosted results do not establish integrated main
-capability or model/physical Windows/enterprise qualification. The single queue retains them and the entire roadmap.
+[PR #211](https://github.com/ZoOtMcNoOt/yap/pull/211) implements Ogg FLAC admission
+and refuses reproduced silent middle-page loss. Its current
+`8e774f730f082d7c2f2ec30d47fd550037e0231f` head has all six jobs green in [run 570](https://github.com/ZoOtMcNoOt/yap/actions/runs/37278892710),
+but remains unmerged while parent PR #210's warmup-race repair is in progress.
+Its original `465c5df0` Windows job in run 37276564168 passed 1,400 units and
+failed the inherited path-canonicalization assertion; that observation is retained.
+[Evidence](evidence/ogg-flac-import/2026-10-05/verification.md) records earlier
+1,406 local native units/27 integrations, 12 declared ignores, 417 portable
+frontend cases, recording browser journeys and decoder qualification boundaries.
+Green run 570 does not qualify a changed descendant containing the parent repair;
+renew applicable reviewed exact-head checks before ordered integration.
+Main now integrates PRs #208 and #209; PRs #210 and #211 remain pending. These
+software results do not qualify actual models, physical Windows or enterprise
+operation. The maintenance verification record remains separate and unchanged;
+the full project goal stays active.
 
 ## Latest completed increments
 

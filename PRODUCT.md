@@ -8,13 +8,13 @@ They usually arrive with files already on disk (MP3, M4A, WAV, MP4, and similar 
 
 ## Product Purpose
 
-The integrated main baseline includes PRs #205–#208, including authenticated
-desktop rebuilding. The inspected development successors implement larger
-embedding generations (#209), timed speaker JSON export (#210) and Ogg FLAC
-(#211); those three remain unmerged. The capability descriptions below distinguish
-those pending additions
-from the integrated baseline. [Current status](docs/CURRENT-STATUS.md) records
-their remaining checks and qualification limits.
+The integrated main baseline includes PRs #205–#209, including authenticated
+desktop rebuilding and bounded larger embedding generations. Timed speaker JSON
+export (#210) and Ogg FLAC (#211) remain unmerged: #210's current hosted native
+checks expose a cancelled-warmup destruction race, while #211's current green
+head waits for that parent repair and renewed ordered integration. The descriptions
+below distinguish these pending additions from main. [Current status](docs/CURRENT-STATUS.md)
+records exact-head checks and qualification limits.
 
 Yap is a desktop transcription app (Tauri + React in `desktop/`). The current desktop implementation records and transcribes explicit live sessions locally with Nemotron 3.5 ASR Streaming 0.6B INT8 through in-process `sherpa-onnx`. The integrated imported-recording path accepts canonical mono PCM16/16 kHz WAV and decodes MP3, FLAC, Ogg Vorbis and AAC-LC in M4A/MP4 into that canonical format before using the durable private-server contract. It publishes only natively verified results. Disconnected imports remain queued or blocked instead of receiving official-looking fallback output. Additional audio/video formats remain the target product experience; integrated decoding support is WAV, MP3, FLAC, Ogg Vorbis and M4A/MP4; pending PR #211 adds Ogg FLAC. M4A/MP4 supports one mono/stereo AAC-LC track. Ogg requires a single, non-chained track with a complete ending: Vorbis in main, with FLAC added by pending PR #211. M4A/MP4 requires a complete nonfragmented container with supported presentation timing; video is ignored. Opus, other MP4 codecs and complex edits remain unsupported. AAC distribution patent clearance remains a separate release decision.
 

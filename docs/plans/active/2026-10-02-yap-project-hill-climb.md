@@ -123,8 +123,9 @@ journey. PR #208 completes desktop inspect/stage/prepare/publish/restore and mer
 below retain their original scope; their publication/rebuild limitations do not
 mean those later capabilities are absent. Remaining work is the complete human
 proposal → authorized canonical source-review handoff, any uncovered recovery
-and retained-history discovery gaps, larger-generation integration in PR #209,
-and actual provider/enterprise qualification. Proposals cannot certify Git review.
+and retained-history discovery gaps, and actual provider/enterprise qualification.
+PR #209 subsequently integrates larger-generation preparation; it does not close
+those separate source-review or qualification outcomes. Proposals cannot certify Git review.
 
 **Status:** 6/7 software outcomes verified; the complete human source-review handoff remains open, using the publication/rebuild owners delivered through PR #208. Broad read-path checks and the Linux application build pass. Permission-filtered topic browsing and bounded incoming/outgoing neighborhoods now run through a model-free authenticated service, strict native connection leases, and responsive graph/list controls. Twenty focused storage/API/configuration cases, seven native cases and ten browser cases pass. Generic agent/MCP responses now preserve source authority; 65 focused agent/storage/API regression cases pass. [Contract](../../specs/knowledge-connections.md) and [screens/evidence](../../evidence/knowledge-connections/2026-10-03/verification.md) record the limits. Preserve the existing compiler/projection/permission owners and eight agent workflows. Curator now implements the typed proposal journey recorded above. Complete the human proposal-to-reviewed-source handoff and verify its use of the later publication/rebuild owners before closing the remaining outcome.
 
@@ -521,13 +522,11 @@ state/action layout; preserve Yap's design system and third-party attribution.
 The existing API accepts a saved retained reference; it does not expose a
 retained-history discovery list. Another reviewer's admission remains private.
 
-## Upcoming increment: prepare larger reviewed embedding generations
+## Completed increment: prepare larger reviewed embedding generations
 
-**Status:** 6/7 local software outcomes verified; independent review has no unresolved findings. PR #209 at `af3a65c8` remains unmerged: the hosted browser renewal records 249 passing cases and two initial-navigation loopback resource failures, so it is not a green integration head. Acceptance was recorded before code changes.
-PR #208 is merged; its prerequisite changes are now part of main. The batching
-head remains gated by the two failures in [run 37272605309](https://github.com/ZoOtMcNoOt/yap/actions/runs/37272605309).
-Repair the reproduced browser transport/fixture failure and renew every required
-job on the changed reviewed head before integration.
+**Status:** 7/7 bounded software outcomes verified and merged through PR #209 as `fefbfc114fbf4967b6615f1aa49b3f99a05dc778`, with the identical tree tested at reviewed head `996109b946423a6c8e85fbd7288cd483f3cdb4d4`. [Run 568, attempt 1](https://github.com/ZoOtMcNoOt/yap/actions/runs/37278373605/attempts/1) passes all six required jobs and final checkout guards, including all 251 hosted browser cases. Acceptance was recorded before code changes. [Integration evidence](../../evidence/knowledge-embedding-batches/2026-10-05/integration.md) retains the tree-equal fetched main, reviewed tag and clean branch/worktree retirement.
+
+The earlier `af3a65c8` head's [run 37272605309](https://github.com/ZoOtMcNoOt/yap/actions/runs/37272605309) recorded 249 browser passes and two initial-navigation loopback resource failures. It receives no integration credit. The browser runner repair prebundles specific test/fixture entries while preserving the development overlay and assertions; the later reviewed run supplies the complete renewed gate.
 
 The original configured provider refused 65 reviewed chunks before dispatch.
 Its whole-generation 64-chunk/256-KiB boundary prevented a larger otherwise
@@ -541,7 +540,7 @@ existing request/receipt shapes and explicit reviewer controls.
 - [x] Return only a complete validated generation to the existing atomic writer. A later batch/provider/deadline/audit failure must commit no partial vectors or model metadata and preserve source, proposals, active state and history.
 - [x] Keep complete same-owner replay provider-free and published projections immutable; retain existing role, tenant, owner, damaged-source/admission/count and locking refusals.
 - [x] Verify real HTTP/PostgreSQL 65-chunk source → staging → preparation → expected-active publication → permission-filtered read → retained restore, plus invalid later response, timeout and audit refusal. Run the full governed SQL/portable/server regressions and applicable contracts; qualify synthetic vectors separately from real capacity/inference.
-- [ ] Record actual before/after evidence and limits, commit/push as Grant McNatt, integrate only reviewed six-job green exact heads, preserve the tested tag/tree-equal main before branch retirement and continue the entire roadmap.
+- [x] Record actual before/after evidence and limits, commit/push as Grant McNatt, integrate only reviewed six-job green exact heads, preserve the tested tag/tree-equal main before branch retirement and continue the entire roadmap.
 
 [Actual evidence](../../evidence/knowledge-embedding-batches/2026-10-05/verification.md)
 records 165 skip-free SQL cases and 215 skip-free portable cases after
@@ -551,7 +550,8 @@ Synthetic-vector limits remain separate from actual inference/enterprise capacit
 
 ## Upcoming increment: export the saved timed speaker transcript
 
-**Status:** Implementation, focused verification and independent review complete. PR #210 at `d46744f7` remains unmerged: a hosted Windows path-canonicalization assertion fails. The serial local full-browser renewal passed all 257 runnable cases with one Windows-only exclusion (17.5m); reviewed six-job green integration remains pending. Acceptance was recorded before code changes. Integrate after reviewed PR #208 and PR #209.
+**Status:** Implementation, focused verification and independent review complete; integration remains pending. PR #210's `65029dd42b16c67daa1e12883a992496789432b0` head fails [run 569](https://github.com/ZoOtMcNoOt/yap/actions/runs/37278695798) on a real cancelled-warmup destruction race: 1,393 native units pass, one fails and 12 are ignored. Repair is in progress; this head is not all-green or merged. The earlier `d46744f7` Windows path-canonicalization assertion failure remains a dated observation. Its serial local full-browser renewal passed all 257 runnable cases with one Windows-only exclusion (17.5m); that dated result does not verify a changed repair head. Acceptance was recorded before code changes. PRs #208 and #209 are integrated; renew applicable checks and obtain reviewed six-job green exact-head integration for this successor.
+
 
 History reads source-bound persisted speaker turns with
 start/end milliseconds, anonymous or unknown speaker labels and overlap groups.
@@ -604,7 +604,8 @@ and alignment for accepted free-text corrections remain separate roadmap outcome
 
 ## Upcoming increment: complete Ogg FLAC admission
 
-**Status:** 5/7 outcomes locally verified; PR #211 at `465c5df0` remains unmerged, with full regression and reviewed hosted integration pending. Acceptance was recorded before code changes at `d5ce762f`. Integrate after the reviewed timed speaker export.
+**Status:** Five acceptance areas were locally verified before the hosted renewal. PR #211's `8e774f730f082d7c2f2ec30d47fd550037e0231f` head now has all six jobs green in [run 570](https://github.com/ZoOtMcNoOt/yap/actions/runs/37278892710), but remains unmerged: its parent PR #210 has a real warmup-race failure under repair. The original `465c5df0` inherited Windows path-canonicalization assertion failure remains a dated observation. Do not transfer this green head's evidence to a changed descendant containing the parent repair; review and renew the required exact-head checks before ordered integration. Acceptance was recorded before code changes at `d5ce762f`.
+
 
 Executable audit: the locked Symphonia0.6.1 Ogg mapper already recognizes FLAC;
 the existing FLAC decoder is enabled and unchanged/MPL2.0 notices are retained.
