@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 import type { RecordingJobView } from "@/lib/recording-job";
+import { exportSpeakerTranscript, type SpeakerTranscriptExportIdentity } from "@/speaker-transcript-export";
 import {
   exportAcceptedTranscriptCorrection,
   type PublishedTranscriptCorrection,
@@ -37,6 +38,23 @@ export function useTranscriptFileActions(
   }>();
   const [acceptedExportFailure, setAcceptedExportFailure] =
     useState<AcceptedCorrectionExportFailure>();
+  const [speakerExportFailure, setSpeakerExportFailure] = useState<{ scope: string; message: string }>();
+
+  async function exportTimedSpeakerTranscript(identity: SpeakerTranscriptExportIdentity, scope: string, isCurrent: () => boolean) {
+    if (!isCurrent()) return;
+    await runExport(async () => {
+      setSpeakerExportFailure(undefined);
+      try {
+        const result = await exportSpeakerTranscript(identity);
+        if (!isCurrent()) return;
+        if (result.status === "saved") toast.success("Timed speaker transcript exported", { description: result.path });
+        else toast.info("Timed speaker export cancelled");
+      } catch (cause) {
+        if (!isCurrent()) return;
+        setSpeakerExportFailure({ scope, message: typeof cause === "string" ? cause : cause instanceof Error ? cause.message : exportUnconfirmed });
+      }
+    });
+  }
 
   async function runExport(action: () => Promise<void>) {
     if (exporting.current) return;
@@ -155,6 +173,8 @@ export function useTranscriptFileActions(
     exportBusy,
     exportFailure,
     exportAcceptedCorrection,
+    exportTimedSpeakerTranscript,
+    speakerExportFailure,
     acceptedExportFailure,
     openAppPath,
     revealPath,

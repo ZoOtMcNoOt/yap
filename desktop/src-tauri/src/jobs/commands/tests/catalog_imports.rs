@@ -446,6 +446,42 @@ fn completed_remote_catalog_revalidates_the_immutable_result_before_history_proj
         "turn-000001"
     );
 
+    // Export the actual persisted source-bound projection through the new owner.
+    use crate::file_actions::export::speaker_transcript as timed_export;
+    let session = &catalog.sessions[0].session_id;
+    let output_path = &catalog.sessions[0].output_path;
+    let loaded =
+        timed_export::load_source(&jobs, output_path, session, &expected_result_sha256).unwrap();
+    assert_eq!(loaded, speaker_transcript);
+    for (requested_session, requested_hash) in [
+        ("foreign-session", expected_result_sha256.as_str()),
+        (session.as_str(), "invalid"),
+        (session.as_str(), &"b".repeat(64)),
+    ] {
+        assert!(
+            timed_export::load_source(&jobs, output_path, requested_session, requested_hash)
+                .is_err()
+        );
+    }
+    assert!(
+        timed_export::load_source(&jobs, "unowned.txt", session, &expected_result_sha256).is_err()
+    );
+    let exported = dir.join("timed-speakers.json");
+    timed_export::export_selected(
+        &loaded,
+        &timed_export::serialize(&loaded).unwrap(),
+        &exported,
+        &remote_jobs,
+        || timed_export::load_source(&jobs, output_path, session, &expected_result_sha256),
+    )
+    .unwrap();
+    let mut expected_export = serde_json::to_value(&speaker_transcript).unwrap();
+    expected_export["schemaVersion"] = 1.into();
+    assert_eq!(
+        serde_json::from_slice::<serde_json::Value>(&std::fs::read(&exported).unwrap()).unwrap(),
+        expected_export
+    );
+
     let status_corruption = rusqlite::Connection::open(&database).unwrap();
     status_corruption
         .execute(

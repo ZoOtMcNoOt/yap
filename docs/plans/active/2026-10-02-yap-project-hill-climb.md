@@ -505,7 +505,7 @@ Synthetic-vector limits remain separate from actual inference/enterprise capacit
 
 ## Upcoming increment: export the saved timed speaker transcript
 
-**Status:** 0/7 outcomes implemented; acceptance recorded before code changes. Integrate after reviewed PR #208 and PR #209.
+**Status:** Implementation and focused verification complete; full regressions, independent review and integration remain pending. Acceptance was recorded before code changes. Integrate after reviewed PR #208 and PR #209.
 
 History reads source-bound persisted speaker turns with
 start/end milliseconds, anonymous or unknown speaker labels and overlap groups.
@@ -515,28 +515,28 @@ speaker bundles against the recording ledger; file_actions/export.rs owns the
 main-window save dialog, one export permit, protected-root destination checking,
 retained directory handles and atomic no-overwrite creation.
 
-- [ ] Define a version1 UTF-8 JSON export with exact source-result SHA256/session,
+- [x] Define a version1 UTF-8 JSON export with exact source-result SHA256/session,
   complete ordered turn IDs/start/end milliseconds/text/anonymous-or-unknown
   speaker IDs and retained overlap groups. Export source data without inventing
   speaker identity, timestamps, language fixes or correction alignment. Bound
   output explicitly and refuse oversized data without truncating it.
-- [ ] Load through the existing trusted native recording/result owner using
+- [x] Load through the existing trusted native recording/result owner using
   explicit session/output/source-result-hash preconditions. Renderer requests
   cannot submit text, turns, paths to arbitrary source bundles or model metadata.
   Missing/damaged/changed/foreign source identity refuses content-free and preserves
   every original, accepted correction and published result.
-- [ ] Reuse the shared export permit and explicit main-window new-file picker.
+- [x] Reuse the shared export permit and explicit main-window new-file picker.
   Revalidate the complete source-bound projection after destination selection;
   retain the destination directory handle and atomic no-overwrite writer. Choose
   a .json filename outside Yap data; preserve existing files and symlinked/swapped
   destinations. A cancelled picker is cancelled; post-publication failure stays
   unconfirmed, never a claimed rollback. No network, credentials or model calls.
-- [ ] Offer a distinct accessible timed/speaker export action only when the saved
+- [x] Offer a distinct accessible timed/speaker export action only when the saved
   speaker projection is verified and current. Preserve original/accepted text
   exports and local controls. Keep source/correction provenance clear, prevent
   duplicate concurrent exports, and clear/hide private late feedback on source
   selection changes. Retain narrow/wide controls, keyboard and reduced motion.
-- [ ] Verify real native files serialize every ordered turn with exact Unicode,
+- [x] Verify real native files serialize every ordered turn with exact Unicode,
   timestamps, unknown/anonymous speakers and overlap provenance; verify missing/
   changed hash/session/source, source drift during picker, output bounds,
   protected/existing/linked destinations and lost confirmation preserve data.
@@ -549,6 +549,8 @@ retained directory handles and atomic no-overwrite creation.
   independently review and integrate only an all-six-green exact head. Preserve
   tested tag/fetched-main tree equality and unique work before branch retirement;
   keep the full roadmap active and select the next available software outcome.
+
+[Contract and evidence](../../evidence/timed-speaker-export/2026-10-05/verification.md) retain actual checks and qualification boundaries.
 
 JSON is the bounded first exported representation of existing timed/speaker data.
 Subtitle format conversion, local ASR timestamp generation, named speaker identity

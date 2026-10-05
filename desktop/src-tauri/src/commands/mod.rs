@@ -108,6 +108,7 @@ pub(crate) fn register(builder: tauri::Builder<tauri::Wry>) -> tauri::Builder<ta
         crate::file_actions::transcripts::read_text_file,
         crate::file_actions::transcripts::read_text_preview,
         crate::file_actions::export::export_transcript,
+        crate::file_actions::export::speaker_transcript::export_speaker_transcript,
         crate::file_actions::export::accepted_correction::export_accepted_transcript_correction,
         crate::transcript_correction::start_transcript_correction,
         crate::terminology::terminology,

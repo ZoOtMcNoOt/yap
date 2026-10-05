@@ -10,6 +10,7 @@ use tauri_plugin_dialog::DialogExt;
 use tokio::sync::{OwnedSemaphorePermit, Semaphore};
 
 pub(crate) mod accepted_correction;
+pub(crate) mod speaker_transcript;
 
 const EXPORT_UNCONFIRMED: &str = "Export could not be confirmed. Check the selected destination before trying again; the file may already have been saved.";
 
@@ -105,6 +106,7 @@ fn validate_text(text: &str) -> Result<(), String> {
 pub(crate) enum ExportKind {
     Transcript,
     ConnectionReview,
+    SpeakerTranscript,
 }
 
 pub(crate) fn export_destination(
@@ -115,6 +117,7 @@ pub(crate) fn export_destination(
     let (extension, description) = match kind {
         ExportKind::Transcript => ("txt", "transcript"),
         ExportKind::ConnectionReview => ("json", "review package"),
+        ExportKind::SpeakerTranscript => ("json", "timed speaker transcript"),
     };
     if !selected.is_absolute() {
         return Err(format!(

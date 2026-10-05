@@ -20,6 +20,8 @@ type AppOverlaysProps = {
   copyTranscript: (item: RecordingJobView) => unknown;
   exportTranscript: (item: RecordingJobView) => unknown;
   exportBusy: boolean;
+  onExportTimed?: () => void;
+  timedExportError?: string;
   exportFailure?: { path: string; message: string };
   detailsOpen: boolean;
   helpOpen: boolean;
@@ -52,6 +54,8 @@ export function AppOverlays({
   copyTranscript,
   exportTranscript,
   exportBusy,
+  onExportTimed,
+  timedExportError,
   exportFailure,
   detailsOpen,
   helpOpen,
@@ -122,6 +126,8 @@ export function AppOverlays({
       />
       <HelpSheet onOpenChange={onHelpOpenChange} onOpenSettings={() => openWorkspace("details")} open={helpOpen} />
       <TranscriptReviewDialog
+        onExportTimed={onExportTimed}
+        timedExportError={timedExportError}
         exportBusy={exportBusy}
         exportError={exportFailure?.path === selectedHistoryItem?.outputPath ? exportFailure?.message : undefined}
         onExport={exportTranscript}

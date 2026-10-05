@@ -51,6 +51,8 @@ export function TranscriptPanel({
   onCopy,
   onCorrect,
   onExport,
+  onExportTimed,
+  timedExportError,
   onOpen,
   onOpenHelp,
   onRetry,
@@ -79,6 +81,8 @@ export function TranscriptPanel({
   onCopy: (item: RecordingJobView) => void;
   onCorrect?: () => void;
   onExport?: (item: RecordingJobView) => void;
+  onExportTimed?: () => void;
+  timedExportError?: string;
   onOpen: (path: string) => void;
   onOpenHelp?: () => void;
   onRetry: (id: string) => void;
@@ -219,6 +223,21 @@ export function TranscriptPanel({
                   Review corrections
                 </Button>
               ) : null}
+              {isDone && speakerTranscript?.status === "ready" && onExportTimed ? (
+                <Button
+                  aria-label={`Export timed speaker transcript for ${item.name}`}
+                  aria-disabled={exportBusy || undefined}
+                  className="aria-disabled:pointer-events-none aria-disabled:opacity-50"
+                  onClick={() => { if (!exportBusy) onExportTimed(); }}
+                  size="sm"
+                  title="Save original timed turns and anonymous speaker IDs as JSON. Accepted text corrections are exported separately."
+                  type="button"
+                  variant="secondary"
+                >
+                  <DownloadSimple data-icon="inline-start" />
+                  {exportBusy ? "Exporting…" : "Export timed speakers"}
+                </Button>
+              ) : null}
               {knowledgeStaging ? (
                 <Button
                   aria-label={`Stage ${item.name} for knowledge review`}
@@ -245,6 +264,9 @@ export function TranscriptPanel({
         <p className="border-b px-5 py-3 text-sm text-destructive" role="alert">
           {exportError}
         </p>
+      ) : null}
+      {timedExportError ? (
+        <p className="border-b px-5 py-3 text-sm text-destructive" role="alert">{timedExportError}</p>
       ) : null}
       <CardContent className="flex min-h-0 flex-1 flex-col p-0">
         {item ? (

@@ -69,6 +69,8 @@ export default function App() {
     exportBusy,
     exportFailure,
     exportAcceptedCorrection,
+    exportTimedSpeakerTranscript,
+    speakerExportFailure,
     acceptedExportFailure,
     openAppPath,
     revealPath,
@@ -111,6 +113,20 @@ export default function App() {
     history, queue, reviewAvailable: workspaceView === "home" && !detailsOpen && !helpOpen,
   });
   const speakerTranscript = useHistorySpeakerTranscript(displayedHistoryEntry);
+  const speakerExportIdentity = displayedHistoryEntry?.origin === "remote" && displayedHistoryEntry.sessionId && speakerTranscript.status === "ready"
+    ? { outputPath: displayedHistoryEntry.outputPath, sessionId: displayedHistoryEntry.sessionId, sourceResultSha256: speakerTranscript.sourceResultSha256 }
+    : undefined;
+  const speakerExportKey = JSON.stringify([speakerExportIdentity, workspaceView, historyReviewOpen, detailsOpen, helpOpen]);
+  const speakerExportSelection = useRef({ key: speakerExportKey, version: 0 });
+  if (speakerExportSelection.current.key !== speakerExportKey) {
+    speakerExportSelection.current = { key: speakerExportKey, version: speakerExportSelection.current.version + 1 };
+  }
+  const speakerExportScope = `${speakerExportKey}:${speakerExportSelection.current.version}`;
+  const onExportTimed = speakerExportIdentity ? () => {
+    const selection = speakerExportSelection.current;
+    void exportTimedSpeakerTranscript(speakerExportIdentity, speakerExportScope, () => speakerExportSelection.current === selection);
+  } : undefined;
+  const timedExportError = speakerExportFailure?.scope === speakerExportScope ? speakerExportFailure.message : undefined;
   const archivistEligible = selectedItem?.route === "serverBatch"
     && isRecordingFinished(selectedItem.status);
   const recordingDrop = useRecordingDrop();
@@ -326,6 +342,8 @@ export default function App() {
     <div className="h-full min-w-0">
       <TranscriptPanel
         exportBusy={exportBusy}
+        onExportTimed={onExportTimed}
+        timedExportError={timedExportError}
         exportError={exportFailure?.path === selectedItem?.outputPath ? exportFailure?.message : undefined}
         onExport={exportTranscript}
         elapsedSeconds={0}
@@ -422,6 +440,8 @@ export default function App() {
         </div>
       </SidebarInset>
       <AppOverlays
+        onExportTimed={onExportTimed}
+        timedExportError={timedExportError}
         closeHistoryReview={closeHistoryReview}
         closeTranscriptPreview={closeTranscriptPreview}
         copyTranscript={copyTranscript}
