@@ -70,7 +70,7 @@ fn timed_export_serializes_exact_complete_source_and_unknown_overlap_turns() {
     assert_eq!(
         receipt,
         SpeakerTranscriptExport::Saved {
-            path: path.display().to_string(),
+            path: path.canonicalize().unwrap().display().to_string(),
             session_id: source().session_id,
             source_result_sha256: source().source_result_sha256
         }
