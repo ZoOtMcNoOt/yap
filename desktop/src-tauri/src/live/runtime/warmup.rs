@@ -23,6 +23,7 @@ pub(super) struct SharedWarmup<T> {
 enum SharedWarmupState<T> {
     Empty,
     Loading { cancelled: Arc<AtomicBool> },
+    DiscardingLoad,
     Ready(T),
     InUse,
     Failed(String),
@@ -65,6 +66,9 @@ where
                 SharedWarmupState::Loading { cancelled } => {
                     cancelled.store(false, Ordering::Release);
                     return Ok(false);
+                }
+                SharedWarmupState::DiscardingLoad => {
+                    return Err("Live model cleanup is still in progress.".to_string())
                 }
                 SharedWarmupState::Ready(_) | SharedWarmupState::InUse => return Ok(false),
                 SharedWarmupState::Empty | SharedWarmupState::Failed(_) => {}
@@ -127,7 +131,7 @@ where
                 SharedWarmupState::InUse => {
                     return Err("Live model is already owned by a stream.".to_string())
                 }
-                SharedWarmupState::Loading { .. } => {
+                SharedWarmupState::Loading { .. } | SharedWarmupState::DiscardingLoad => {
                     let (next, _) = self
                         .changed
                         .wait_timeout(state, Duration::from_millis(25))
@@ -166,15 +170,29 @@ where
         if !owns_load {
             return;
         }
-        *state = if cancelled.load(Ordering::Acquire) {
-            SharedWarmupState::Empty
+        if cancelled.load(Ordering::Acquire) {
+            // Keep cleanup-visible ownership while the loading worker destroys its
+            // result. Native destruction must not hold the mutex or defeat deadlines.
+            *state = SharedWarmupState::DiscardingLoad;
+            self.changed.notify_all();
+            drop(state);
+            if catch_unwind(AssertUnwindSafe(|| drop(result))).is_err() {
+                self.report_incomplete_retirement();
+                return;
+            }
+            let mut state = self
+                .state
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            *state = SharedWarmupState::Empty;
+            self.changed.notify_all();
         } else {
-            match result {
+            *state = match result {
                 Ok(value) => SharedWarmupState::Ready(value),
                 Err(error) => SharedWarmupState::Failed(error),
-            }
-        };
-        self.changed.notify_all();
+            };
+            self.changed.notify_all();
+        }
     }
 
     fn reset_failed_spawn(&self, cancelled: &Arc<AtomicBool>) {
@@ -324,7 +342,7 @@ where
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner());
         match &*state {
-            SharedWarmupState::Empty => Ok(()),
+            SharedWarmupState::Empty | SharedWarmupState::DiscardingLoad => Ok(()),
             SharedWarmupState::InUse => Err("Live model is still owned by a stream.".to_string()),
             SharedWarmupState::Loading { cancelled } => {
                 cancelled.store(true, Ordering::Release);
@@ -383,6 +401,9 @@ where
                 SharedWarmupState::InUse => {
                     return Err("Live model is still owned by a stream.".to_string())
                 }
+                SharedWarmupState::DiscardingLoad => {
+                    state = self.wait_for_cleanup_progress(state, deadline)?;
+                }
                 SharedWarmupState::Loading { cancelled } => {
                     cancelled.store(true, Ordering::Release);
                     self.changed.notify_all();
@@ -435,6 +456,23 @@ where
             SharedWarmupState::Loading { cancelled } => cancelled.load(Ordering::Acquire),
             _ => false,
         }
+    }
+
+    #[cfg(test)]
+    pub(super) fn wait_for_loading_cancelled_for_test(&self, timeout: Duration) -> bool {
+        let state = self
+            .state
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        let (state, _) = self
+            .changed
+            .wait_timeout_while(state, timeout, |state| {
+                matches!(state, SharedWarmupState::Loading { cancelled }
+                    if !cancelled.load(Ordering::Acquire))
+            })
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        matches!(&*state, SharedWarmupState::Loading { cancelled }
+            if cancelled.load(Ordering::Acquire))
     }
 
     #[cfg(test)]

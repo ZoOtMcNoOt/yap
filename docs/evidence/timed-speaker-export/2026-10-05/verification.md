@@ -54,3 +54,6 @@ Both complete contract sets renewed on that clean head: 67/72 release cases and
 71/86 local cases pass with their five/15 declared platform exclusions; no failures.
 Full reviewed six-job green integration after PR
 #208 and PR #209 remains required; the entire roadmap remains active.
+
+The subsequent real cancelled-warmup destruction failure and required production
+repair are retained in [the ownership repair record](warmup-destruction-repair.md).
