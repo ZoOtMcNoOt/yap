@@ -84,3 +84,15 @@ The full project goal and remaining roadmap remain active.
 ![Wide staged generation](wide.png)
 
 ![Narrow source inspection](narrow.png)
+
+## Hosted WDIO correction
+
+[Run 560](https://github.com/ZoOtMcNoOt/yap/actions/runs/37265980798) at
+`e17465b7` fails the required Windows WDIO exact-capabilities assertion. Its
+actual native result is ready with `knowledgeRebuild: false`; the smoke
+expectation omitted the newly required field. The private-server-ASR expected
+shape had the same omission. Both expectations now include the required field.
+[Original artifact observation](hosted-wdio-original.txt) retains the failed
+head/job/artifact identity. This changes fixture expectations only. All six jobs
+must be renewed on the correction before integration; the original run remains
+a failed observation, not integration credit.
