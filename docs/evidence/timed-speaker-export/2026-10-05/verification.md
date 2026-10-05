@@ -44,5 +44,9 @@ cases and passes on renewal. No assertions or existing test floors were removed.
 Fixtures exercise real persisted native results/files and the renderer/native
 bridge. They do not qualify actual speaker/timestamp accuracy, enterprise identity
 or a physical Windows picker. Independent read-only review of `8e1804dcf2ff22897d7cb6465846472d39f771fa`
-found no unresolved actionable findings. Full reviewed six-job green integration after PR
+found no unresolved actionable findings. Final read-only metadata review of
+`60d4d25916af6bcdda0d1fad41d89c271d59e94e` also found no unresolved issues.
+Both complete contract sets renewed on that clean head: 67/72 release cases and
+71/86 local cases pass with their five/15 declared platform exclusions; no failures.
+Full reviewed six-job green integration after PR
 #208 and PR #209 remains required; the entire roadmap remains active.
