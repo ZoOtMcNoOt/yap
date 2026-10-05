@@ -32,8 +32,12 @@ showed browser-command scheduling delays exceeding the actual grace period.
 The run overlapped native builds and another browser suite, and both worktrees
 shared a writable Vite cache. Failure traces/screenshots are retained outside Git
 under `/tmp/yap-timed-export-browser-original`; this run receives no full-suite
-pass credit. A full serial renewal with a private Vite cache is required; cases,
-assertions, one worker and timeouts remain unchanged.
+pass credit. A full serial renewal on `d46744f7155e06524b1061d4cf3d94494fbffe22` with a
+private Vite cache passed all 257 runnable cases, with the one declared
+Windows-only exclusion (17.5m). Cases, assertions, one worker and timeouts
+remained unchanged. Logs are retained at `/tmp/yap-timed-export-browser-final.log`.
+The subsequent Windows-only assertion correction is documented in
+[its failure and renewal record](windows-path-renewal.md).
 
 The first build rejected an optional session ID; the action now requires a
 verified saved session and the TypeScript/Vite build passes. The first population
