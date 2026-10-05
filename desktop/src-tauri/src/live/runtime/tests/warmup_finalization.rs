@@ -386,7 +386,11 @@ fn clearing_idle_warmup_cancels_and_waits_for_a_loading_model() {
         let result = clearing.clear_idle_with_timeout(Duration::from_secs(1));
         cleared_tx.send(result).unwrap();
     });
-    assert!(cleared_rx.recv_timeout(Duration::from_millis(50)).is_err());
+    assert!(warmup.wait_for_loading_cancelled_for_test(Duration::from_secs(1)));
+    assert!(matches!(
+        cleared_rx.try_recv(),
+        Err(mpsc::TryRecvError::Empty)
+    ));
     release_tx.send(()).unwrap();
 
     assert_eq!(
@@ -396,6 +400,111 @@ fn clearing_idle_warmup_cancels_and_waits_for_a_loading_model() {
     clearer.join().unwrap();
     assert!(dropped.load(Ordering::Acquire));
     assert!(warmup.is_empty_for_test());
+}
+
+#[test]
+fn cancelled_load_cleanup_waits_for_destruction_without_holding_the_state_lock() {
+    let warmup = Arc::new(SharedWarmup::new());
+    let (blocking_drop, drop_started_rx, release_drop_tx, drop_finished_rx) =
+        blocking_drop_fixture();
+    let (entered_tx, entered_rx) = mpsc::channel();
+    let (release_load_tx, release_load_rx) = mpsc::channel();
+    warmup
+        .request("cancelled-loading-model-retirement", move || {
+            entered_tx.send(()).unwrap();
+            release_load_rx.recv().unwrap();
+            Ok(blocking_drop)
+        })
+        .unwrap();
+    entered_rx.recv_timeout(Duration::from_secs(1)).unwrap();
+    warmup.cancel_loading();
+    release_load_tx.send(()).unwrap();
+    drop_started_rx
+        .recv_timeout(Duration::from_secs(1))
+        .unwrap();
+
+    let started = Instant::now();
+    let pending_cleanup = warmup.clear_idle_with_timeout(Duration::from_millis(25));
+    let elapsed = started.elapsed();
+    let empty_during_destruction = warmup.is_empty_for_test();
+    let idle_clear = warmup.request_idle_clear();
+    let new_request = warmup.request("duplicate-during-disposal", || {
+        panic!("cleanup admitted a duplicate load")
+    });
+    // Release the fixture before checking outcomes so a regression cannot strand it.
+    release_drop_tx.send(()).unwrap();
+    drop_finished_rx
+        .recv_timeout(Duration::from_secs(1))
+        .unwrap();
+    warmup
+        .clear_idle_with_timeout(Duration::from_secs(1))
+        .unwrap();
+
+    assert!(pending_cleanup.unwrap_err().contains("cleanup deadline"));
+    assert!(elapsed < Duration::from_secs(1));
+    assert!(!empty_during_destruction);
+    assert_eq!(idle_clear, Ok(()));
+    assert_eq!(
+        new_request,
+        Err("Live model cleanup is still in progress.".into())
+    );
+    assert!(warmup.is_empty_for_test());
+    assert!(warmup
+        .request("successor-after-disposal", || {
+            Err("synthetic successor".to_string())
+        })
+        .unwrap());
+    assert!(warmup.wait_cancellable(|| false).is_err());
+    warmup
+        .clear_idle_with_timeout(Duration::from_secs(1))
+        .unwrap();
+}
+
+#[test]
+fn panicked_cancelled_load_destruction_keeps_cleanup_fenced() {
+    struct PanicDrop;
+
+    impl Drop for PanicDrop {
+        fn drop(&mut self) {
+            panic!("synthetic cancelled model destructor panic");
+        }
+    }
+
+    let warmup = Arc::new(SharedWarmup::new());
+    let observed_retirement_epoch = warmup.incomplete_retirement_epoch_for_test();
+    let (entered_tx, entered_rx) = mpsc::channel();
+    let (release_tx, release_rx) = mpsc::channel();
+    warmup
+        .request("panicked-cancelled-model-retirement", move || {
+            entered_tx.send(()).unwrap();
+            release_rx.recv().unwrap();
+            Ok(PanicDrop)
+        })
+        .unwrap();
+    entered_rx.recv_timeout(Duration::from_secs(1)).unwrap();
+    warmup.cancel_loading();
+    release_tx.send(()).unwrap();
+    assert!(warmup.wait_for_incomplete_retirement_after_for_test(
+        observed_retirement_epoch,
+        Duration::from_secs(1),
+    ));
+
+    for _ in 0..2 {
+        let error = warmup
+            .clear_idle_with_timeout(Duration::from_millis(25))
+            .expect_err("panicked cancelled-load destruction was forgotten");
+        assert!(error.contains("cleanup deadline"));
+    }
+    assert!(!warmup.is_empty_for_test());
+    assert!(!warmup.is_retirement_active_for_test());
+    assert_eq!(
+        warmup.request("duplicate-after-disposal-panic", || {
+            panic!("incomplete disposal admitted another load")
+        }),
+        Err("Live model cleanup is still in progress.".into())
+    );
+    assert_eq!(warmup.request_idle_clear(), Ok(()));
+    assert!(!warmup.is_empty_for_test());
 }
 
 #[test]
