@@ -16,6 +16,7 @@
     "coordinatorBundles": false,
     "auditorReports": false,
     "personalTerminology": false,
-    "knowledgeConnections": false
+    "knowledgeConnections": false,
+    "knowledgeRebuild": false
   }
 }

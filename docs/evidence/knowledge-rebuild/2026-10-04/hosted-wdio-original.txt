@@ -1,0 +1,8 @@
+PR #208 / CI run 560 / e17465b799ea8c5cc54856d170fbe144f9fec3c2
+Native WDIO required job 111622788992 failed.
+Artifact 11326323139, ZIP digest f598cdae261bbdea0762b421b52a20d56e8b3024305bb210a6a02457191c834b.
+The actual refresh_server_connection result reports state ready and knowledgeRebuild false.
+The exact-capabilities assertion in smoke.spec.js:443 omitted that required field.
+Failure capture name: expect-received-toEqual-expected-deep-equality-Expected-0-Received-1.
+The matching private-server-ASR expectation also omitted it.
+No hosted success or physical Windows qualification is claimed for this failed run.

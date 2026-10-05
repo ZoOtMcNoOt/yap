@@ -343,6 +343,7 @@ class ContractTests(unittest.TestCase):
             coordinator_bundles=False,
             auditor_reports=False,
             knowledge_connections=False,
+            knowledge_rebuild=False,
             personal_terminology=False,
         )
         view = HealthView(
@@ -368,6 +369,7 @@ class ContractTests(unittest.TestCase):
                 "coordinatorBundles": False,
                 "auditorReports": False,
                 "knowledgeConnections": False,
+                "knowledgeRebuild": False,
                 "personalTerminology": False,
             },
         )

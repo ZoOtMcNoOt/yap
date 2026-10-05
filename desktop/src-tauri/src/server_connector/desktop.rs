@@ -472,6 +472,7 @@ mod authentication_projection_tests {
                 coordinator_bundles: true,
                 auditor_reports: true,
                 knowledge_connections: false,
+                knowledge_rebuild: false,
                 personal_terminology: false,
                 student_questions: true,
                 archivist_ingestions: true,

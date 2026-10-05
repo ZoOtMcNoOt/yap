@@ -1,5 +1,6 @@
 # Verification Evidence
 
+- [Reviewed embedding integration](knowledge-embedding-generation/2026-10-04/integration.md): PR #207 exact-head six-green-job receipt, identical main tree, preserved head and browser interaction correction.
 - [Reviewed embedding generation](knowledge-embedding-generation/2026-10-04/verification.md): bounded authenticated source-to-vector operator journey, actual PostgreSQL/HTTP checks and model limits.
 - [Reviewed backlog integration](connection-review-export/2026-10-04/integration.md): PR #205 exact-head six-green-job receipt, identical main tree and preserved head.
 
@@ -75,3 +76,5 @@ host snapshots, credentials, or enterprise configuration. Public evidence may
 record hashes, versions, counts, redacted outcomes, and explicit limitations.
 
 - [Authenticated retained-generation rollback](knowledge-rollback-api/2026-10-04/verification.md): explicit operator recovery with reviewed ownership, atomic audit and real SQL/concurrency checks.
+
+- [Desktop reviewed-source rebuilding](knowledge-rebuild/2026-10-04/verification.md): native authenticated preparation, explicit activation, retained restore and uncertain-delivery recovery.

@@ -1,7 +1,9 @@
 # Generate reviewed embeddings through the operator service
 
 Owner: Grant McNatt. Date: 2026-10-04. Status: 6/7 outcomes locally software
-verified; reviewed all-six-job exact-head hosted integration remains pending.
+verified; reviewed all-six-job exact-head hosted integration remains pending. This is the dated local baseline;
+[integration evidence](integration.md) supersedes its pending gate with the
+actual reviewed six-green-job merge.
 
 The actual source-preparation journey stopped at staging: no authenticated action
 could generate its missing vectors. The regression returned `404`; [original

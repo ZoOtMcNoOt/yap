@@ -10,7 +10,7 @@ use crate::{jobs::AsrCatalogBinding, runtime};
 
 use super::{
     analyst, archivist, auditor, batch, client, config, coordinator, curator,
-    knowledge_connections, librarian,
+    knowledge_connections, knowledge_rebuild, librarian,
     state::{self, ConnectorInner, SettingsDisposition},
     student, terminology, transcript_correction, AsrCapabilityCatalog, ServerConnectionSnapshot,
 };
@@ -93,6 +93,22 @@ impl KnowledgeConnectionsConnectionLease {
     }
 }
 
+pub(crate) struct KnowledgeRebuildConnectionLease {
+    generation: u64,
+    base_url: String,
+    client: knowledge_rebuild::RebuildClient,
+}
+
+impl KnowledgeRebuildConnectionLease {
+    pub(crate) fn authority_revision(&self) -> String {
+        self.generation.to_string()
+    }
+
+    pub(crate) fn client(&self) -> &knowledge_rebuild::RebuildClient {
+        &self.client
+    }
+}
+
 #[derive(Clone)]
 pub(crate) struct AnalystConnectionLease {
     generation: u64,
@@ -157,7 +173,7 @@ pub(crate) fn transcript_correction_connection_lease_for_test(
     .expect("fixed test correction origin");
     TranscriptCorrectionConnectionLease {
         generation: 1,
-        base_url: client.base_url_identity().to_owned(),
+        base_url: client.base_url_identity().trim_end_matches('/').to_owned(),
         client,
     }
 }
@@ -180,7 +196,7 @@ pub(crate) fn librarian_connection_lease_for_test() -> LibrarianConnectionLease 
         .expect("fixed test librarian origin");
     LibrarianConnectionLease {
         generation: 1,
-        base_url: client.base_url_identity().to_owned(),
+        base_url: client.base_url_identity().trim_end_matches('/').to_owned(),
         client,
     }
 }
@@ -203,7 +219,7 @@ pub(crate) fn analyst_connection_lease_for_test() -> AnalystConnectionLease {
         .expect("fixed test analyst origin");
     AnalystConnectionLease {
         generation: 1,
-        base_url: client.base_url_identity().to_owned(),
+        base_url: client.base_url_identity().trim_end_matches('/').to_owned(),
         client,
     }
 }
@@ -226,7 +242,7 @@ pub(crate) fn coordinator_connection_lease_for_test() -> CoordinatorConnectionLe
         .expect("fixed test coordinator origin");
     CoordinatorConnectionLease {
         generation: 1,
-        base_url: client.base_url_identity().to_owned(),
+        base_url: client.base_url_identity().trim_end_matches('/').to_owned(),
         client,
     }
 }
@@ -249,7 +265,7 @@ pub(crate) fn auditor_connection_lease_for_test() -> AuditorConnectionLease {
         .expect("fixed test auditor origin");
     AuditorConnectionLease {
         generation: 1,
-        base_url: client.base_url_identity().to_owned(),
+        base_url: client.base_url_identity().trim_end_matches('/').to_owned(),
         client,
     }
 }
@@ -272,7 +288,7 @@ pub(crate) fn student_connection_lease_for_test() -> StudentConnectionLease {
         .expect("fixed test student origin");
     StudentConnectionLease {
         generation: 1,
-        base_url: client.base_url_identity().to_owned(),
+        base_url: client.base_url_identity().trim_end_matches('/').to_owned(),
         client,
     }
 }
@@ -295,7 +311,7 @@ pub(crate) fn archivist_connection_lease_for_test() -> ArchivistConnectionLease 
         .expect("fixed test archivist origin");
     ArchivistConnectionLease {
         generation: 1,
-        base_url: client.base_url_identity().to_owned(),
+        base_url: client.base_url_identity().trim_end_matches('/').to_owned(),
         client,
     }
 }
@@ -318,7 +334,7 @@ pub(crate) fn curator_connection_lease_for_test() -> CuratorConnectionLease {
         .expect("fixed test curator origin");
     CuratorConnectionLease {
         generation: 1,
-        base_url: client.base_url_identity().to_owned(),
+        base_url: client.base_url_identity().trim_end_matches('/').to_owned(),
         client,
     }
 }
@@ -671,7 +687,7 @@ impl ServerConnector {
             .map_err(|_| "The server connection changed before batch dispatch.".to_string())?;
         let client = batch::BatchApiClient::new_authorized(authenticated, &base_url)
             .map_err(|error| error.to_string())?;
-        let base_url = client.base_url_identity().to_owned();
+        let base_url = client.base_url_identity().trim_end_matches('/').to_owned();
         Ok(Some(BatchConnectionLease {
             generation,
             base_url,
@@ -703,7 +719,7 @@ impl ServerConnector {
         let client =
             transcript_correction::TranscriptCorrectionApiClient::new(authenticated, &base_url)
                 .map_err(|_| "The transcript correction server origin is invalid.".to_string())?;
-        let base_url = client.base_url_identity().to_owned();
+        let base_url = client.base_url_identity().trim_end_matches('/').to_owned();
         Ok(Some(TranscriptCorrectionConnectionLease {
             generation,
             base_url,
@@ -734,7 +750,7 @@ impl ServerConnector {
             })?;
         let client = librarian::LibrarianApiClient::new(authenticated, &base_url)
             .map_err(|_| "The knowledge query server origin is invalid.".to_string())?;
-        let base_url = client.base_url_identity().to_owned();
+        let base_url = client.base_url_identity().trim_end_matches('/').to_owned();
         Ok(Some(LibrarianConnectionLease {
             generation,
             base_url,
@@ -767,7 +783,7 @@ impl ServerConnector {
             .map_err(|_| "The personal terminology server origin is invalid.".to_string())?;
         Ok(Some(TerminologyConnectionLease {
             generation,
-            base_url: client.base_url_identity().to_owned(),
+            base_url: client.base_url_identity().trim_end_matches('/').to_owned(),
             client,
         }))
     }
@@ -818,7 +834,7 @@ impl ServerConnector {
             .map_err(|_| "The knowledge connections server origin is invalid.".to_string())?;
         Ok(Some(KnowledgeConnectionsConnectionLease {
             generation,
-            base_url: client.base_url_identity().to_owned(),
+            base_url: client.base_url_identity().trim_end_matches('/').to_owned(),
             client,
         }))
     }
@@ -840,6 +856,55 @@ impl ServerConnector {
             return Err(
                 "Server connection changed before knowledge connections could commit.".into(),
             );
+        }
+        Ok(commit())
+    }
+
+    pub(crate) fn knowledge_rebuild_connection_lease(
+        &self,
+    ) -> Result<Option<KnowledgeRebuildConnectionLease>, String> {
+        let generation = self.generation.load(Ordering::Acquire);
+        let inner = self.inner.lock().expect("server connector poisoned");
+        let snapshot = inner.snapshot();
+        if inner.generation() != generation
+            || snapshot.state != runtime::state::ServerConnectorState::Ready
+            || !snapshot.capabilities.knowledge_rebuild
+        {
+            return Ok(None);
+        }
+        let Some(base_url) = inner.configured_base_url(generation) else {
+            return Ok(None);
+        };
+        let authenticated = self
+            .authenticated
+            .bind_current_transport(generation, &base_url)
+            .map_err(|_| {
+                "The server connection changed before knowledge rebuild dispatch.".to_string()
+            })?;
+        let client = knowledge_rebuild::RebuildClient::new(authenticated, &base_url)
+            .map_err(|_| "The knowledge rebuild server origin is invalid.".to_string())?;
+        Ok(Some(KnowledgeRebuildConnectionLease {
+            generation,
+            base_url: client.base_url_identity().trim_end_matches('/').to_owned(),
+            client,
+        }))
+    }
+
+    pub(crate) fn with_current_knowledge_rebuild_lease<T>(
+        &self,
+        lease: &KnowledgeRebuildConnectionLease,
+        commit: impl FnOnce() -> T,
+    ) -> Result<T, String> {
+        let inner = self.inner.lock().expect("server connector poisoned");
+        let snapshot = inner.snapshot();
+        if self.generation.load(Ordering::Acquire) != lease.generation
+            || inner.generation() != lease.generation
+            || inner.configured_base_url(lease.generation).as_deref()
+                != Some(lease.base_url.as_str())
+            || snapshot.state != runtime::state::ServerConnectorState::Ready
+            || !snapshot.capabilities.knowledge_rebuild
+        {
+            return Err("Server connection changed before knowledge rebuild could commit.".into());
         }
         Ok(commit())
     }
@@ -867,7 +932,7 @@ impl ServerConnector {
             })?;
         let client = analyst::AnalystApiClient::new(authenticated, &base_url)
             .map_err(|_| "The cited-answer server origin is invalid.".to_string())?;
-        let base_url = client.base_url_identity().to_owned();
+        let base_url = client.base_url_identity().trim_end_matches('/').to_owned();
         Ok(Some(AnalystConnectionLease {
             generation,
             base_url,
@@ -898,7 +963,7 @@ impl ServerConnector {
             })?;
         let client = coordinator::CoordinatorApiClient::new(authenticated, &base_url)
             .map_err(|_| "The coordination-bundle server origin is invalid.".to_string())?;
-        let base_url = client.base_url_identity().to_owned();
+        let base_url = client.base_url_identity().trim_end_matches('/').to_owned();
         Ok(Some(CoordinatorConnectionLease {
             generation,
             base_url,
@@ -929,7 +994,7 @@ impl ServerConnector {
             })?;
         let client = auditor::AuditorApiClient::new(authenticated, &base_url)
             .map_err(|_| "The audit-report server origin is invalid.".to_string())?;
-        let base_url = client.base_url_identity().to_owned();
+        let base_url = client.base_url_identity().trim_end_matches('/').to_owned();
         Ok(Some(AuditorConnectionLease {
             generation,
             base_url,
@@ -960,7 +1025,7 @@ impl ServerConnector {
             })?;
         let client = student::StudentApiClient::new(authenticated, &base_url)
             .map_err(|_| "The learning-question server origin is invalid.".to_string())?;
-        let base_url = client.base_url_identity().to_owned();
+        let base_url = client.base_url_identity().trim_end_matches('/').to_owned();
         Ok(Some(StudentConnectionLease {
             generation,
             base_url,
@@ -991,7 +1056,7 @@ impl ServerConnector {
             })?;
         let client = archivist::ArchivistApiClient::new(authenticated, &base_url)
             .map_err(|_| "The knowledge staging server origin is invalid.".to_string())?;
-        let base_url = client.base_url_identity().to_owned();
+        let base_url = client.base_url_identity().trim_end_matches('/').to_owned();
         Ok(Some(ArchivistConnectionLease {
             generation,
             base_url,
@@ -1022,7 +1087,7 @@ impl ServerConnector {
             })?;
         let client = curator::CuratorApiClient::new(authenticated, &base_url)
             .map_err(|_| "The knowledge-proposal server origin is invalid.".to_string())?;
-        let base_url = client.base_url_identity().to_owned();
+        let base_url = client.base_url_identity().trim_end_matches('/').to_owned();
         Ok(Some(CuratorConnectionLease {
             generation,
             base_url,

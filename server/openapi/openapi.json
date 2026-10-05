@@ -7362,7 +7362,8 @@
           "coordinatorBundles",
           "auditorReports",
           "personalTerminology",
-          "knowledgeConnections"
+          "knowledgeConnections",
+          "knowledgeRebuild"
         ],
         "properties": {
           "batchJobs": {
@@ -7415,6 +7416,10 @@
           "knowledgeConnections": {
             "type": "boolean",
             "description": "True when authenticated model-free reviewed knowledge connections are explicitly configured."
+          },
+          "knowledgeRebuild": {
+            "type": "boolean",
+            "description": "True when the authenticated reviewed-source publication service is configured. This does not attest reviewer authorization or source/embedding readiness."
           }
         }
       },

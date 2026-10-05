@@ -78,6 +78,7 @@ class RequestAuthenticationTests(HealthServerTestCase):
                 "coordinatorBundles": False,
                 "auditorReports": False,
                 "knowledgeConnections": False,
+                "knowledgeRebuild": False,
                 "personalTerminology": False,
             },
         )

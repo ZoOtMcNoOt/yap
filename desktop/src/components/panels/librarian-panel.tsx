@@ -1,6 +1,7 @@
 import { ConnectionProposalComposer } from "@/components/curator/connection-proposal-composer";
 import { ConnectionsPanel } from "@/components/knowledge/connections-panel";
 import { ConnectionProposalPanel } from "@/components/knowledge/connection-proposal-panel";
+import { RebuildPanel } from "@/components/knowledge/rebuild-panel";
 import type { ProposalHandoff } from "@/components/knowledge/use-connection-proposal";
 import type { ServerConnectionSnapshot } from "@/server";
 import { Books } from "@phosphor-icons/react/Books";
@@ -53,6 +54,7 @@ export function LibrarianPanel({
     authorityRevision: serverSnapshot.authorityRevision,
   });
   const [task, setTask] = useState("search");
+  const detailedTask = task === "connections" || task === "rebuild";
   const [proposalHandoff, setProposalHandoff] = useState<ProposalHandoff>();
   const connectionsAvailable =
     serverSnapshot.state === "ready" &&
@@ -62,16 +64,19 @@ export function LibrarianPanel({
     [serverSnapshot.authorityRevision],
   );
   const taskAvailable =
-    task === "connections"
+    task === "rebuild"
       ? serverSnapshot.state === "ready" &&
-        serverSnapshot.capabilities.knowledgeConnections
-      : task === "search"
-        ? available
-        : task === "ask"
-          ? analystAvailable
-          : task === "proposals"
-            ? coordinatorAvailable || connectionsAvailable
-            : auditorAvailable;
+        serverSnapshot.capabilities.knowledgeRebuild
+      : task === "connections"
+        ? serverSnapshot.state === "ready" &&
+          serverSnapshot.capabilities.knowledgeConnections
+        : task === "search"
+          ? available
+          : task === "ask"
+            ? analystAvailable
+            : task === "proposals"
+              ? coordinatorAvailable || connectionsAvailable
+              : auditorAvailable;
   const [studentSource, setStudentSource] = useState<LibrarianEvidenceItem>();
 
   useEffect(() => {
@@ -89,7 +94,7 @@ export function LibrarianPanel({
 
   return (
     <Card className="surface-workspace-inset min-w-0 bg-card gap-0 py-0">
-      {task !== "connections" ? (
+      {!detailedTask ? (
         <CardHeader className="p-4 sm:p-5">
           <Badge
             className="w-fit"
@@ -107,7 +112,7 @@ export function LibrarianPanel({
         </CardHeader>
       ) : null}
       <CardContent
-        className={`px-4 pb-4 sm:px-5 sm:pb-5 ${task === "connections" ? "pt-4 sm:pt-5" : ""}`}
+        className={`px-4 pb-4 sm:px-5 sm:pb-5 ${detailedTask ? "pt-4 sm:pt-5" : ""}`}
       >
         <Tabs.Root className="grid gap-5" onValueChange={setTask} value={task}>
           <Tabs.List
@@ -121,6 +126,7 @@ export function LibrarianPanel({
                 ["proposals", "Review proposals"],
                 ["conflicts", "Review conflicts"],
                 ["connections", "Connections"],
+                ["rebuild", "Rebuild"],
               ] as const
             ).map(([value, label]) => (
               <Tabs.Trigger
@@ -156,6 +162,13 @@ export function LibrarianPanel({
                   : undefined
               }
             />
+          </Tabs.Content>
+          <Tabs.Content
+            className="data-[state=inactive]:hidden"
+            forceMount
+            value="rebuild"
+          >
+            <RebuildPanel snapshot={serverSnapshot} />
           </Tabs.Content>
           {/* Keep pending work and drafts mounted when another task is selected. */}
           <Tabs.Content

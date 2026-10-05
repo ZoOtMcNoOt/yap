@@ -1,7 +1,9 @@
 # Embedding review corrections
 
 Owner: Grant McNatt. Date: 2026-10-04. Status: verified locally; exact-head
-hosted renewal pending.
+hosted renewal pending. This is the dated local baseline;
+[integration evidence](integration.md) supersedes its pending gate with the
+actual reviewed six-green-job merge.
 
 Review identified valid JSON integers too large for Python float conversion.
 A local HTTP provider returning 401-digit vector values reproduced an unhandled

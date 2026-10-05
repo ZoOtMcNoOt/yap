@@ -15,7 +15,8 @@ permissions:
 jobs:
   frontend:
     runs-on: windows-latest
-    timeout-minutes: 25
+    # The serial 251-case browser suite needs room beyond its 25-minute baseline.
+    timeout-minutes: 40
     env:
       POWERSHELL_74_SHA256: 266479A93B82CD0DC0F043419388FD4A738A51082821C301FFF497212FAF6760
       POWERSHELL_74_VERSION: 7.4.17
