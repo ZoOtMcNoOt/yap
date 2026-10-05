@@ -1,0 +1,15 @@
+yap-batches-provider-green.log
+Ran 21 tests in 13.673s
+OK
+
+yap-batches-required-postgres-renewed.log
+Ran 165 tests in 102.644s
+OK
+
+yap-batches-portable-renewed.log
+Ran 214 tests in 42.626s
+OK
+
+yap-batches-isolated-server-final.log
+Ran 1839 tests in 131.010s
+OK (skipped=162)

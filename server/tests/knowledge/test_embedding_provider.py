@@ -3,6 +3,7 @@ from __future__ import annotations
 from contextlib import ExitStack
 import dataclasses
 import threading
+import time
 import unittest
 from unittest.mock import patch
 
@@ -57,12 +58,81 @@ class ReviewedEmbeddingProviderTests(unittest.TestCase):
             ],
         )
 
+    def test_larger_generation_preserves_exact_text_and_batch_local_indexes(self):
+        chunks = tuple(
+            chunk(index, f"Synthetic source {index} café 🌱") for index in range(129)
+        )
+        self.settings["transform"] = lambda value: {
+            **value,
+            "data": list(reversed(value["data"])),
+        }
+        vectors = self.provider.generate(chunks)
+        self.assertEqual(len(vectors), 129)
+        self.assertEqual(
+            [len(body["input"]) for _path, body in self.requests], [64, 64, 1]
+        )
+        self.assertEqual(
+            [text for _path, body in self.requests for text in body["input"]],
+            [c.text for c in chunks],
+        )
+        for index, c in enumerate(chunks):
+            self.assertEqual(vectors[c.chunk_id], (0.25 + (index % 64) / 100,) * 768)
+
+    def test_larger_generation_packs_by_utf8_bytes_without_splitting_source(self):
+        chunks = (chunk(0, "é" * 70_000), chunk(1, "é" * 70_000))
+        vectors = self.provider.generate(chunks)
+        self.assertEqual(set(vectors), {"0", "1"})
+        self.assertEqual(
+            [body["input"] for _path, body in self.requests],
+            [[chunks[0].text], [chunks[1].text]],
+        )
+
+    def test_larger_generation_shares_one_transport_budget_across_batches(self):
+        def slow_response(value):
+            time.sleep(0.65)
+            return value
+
+        self.settings["transform"] = slow_response
+        short = dataclasses.replace(
+            self.provider,
+            transport=BoundedVllmJsonClient(
+                endpoint=self.environ["YAP_KNOWLEDGE_EMBEDDING_ENDPOINT"],
+                timeout_seconds=1,
+                maximum_response_bytes=2_000_000,
+            ),
+        )
+        started = time.monotonic()
+        with self.assertRaises(ReasoningRetryableError):
+            short.generate(tuple(chunk(index) for index in range(65)))
+        self.assertLess(time.monotonic() - started, 1.5)
+        self.assertEqual(len(self.requests), 2)
+
+    def test_larger_generation_refuses_a_later_invalid_response(self):
+        def response(value):
+            return {**value, "model": "other"} if len(self.requests) == 2 else value
+
+        self.settings["transform"] = response
+        with self.assertRaises(ValueError):
+            self.provider.generate(tuple(chunk(index) for index in range(65)))
+        self.assertEqual(len(self.requests), 2)
+
+    def test_generation_preflight_refuses_duplicates_and_total_bytes_before_io(self):
+        for chunks in (
+            (chunk(0), chunk(0)),
+            tuple(chunk(index, "é" * 70_000) for index in range(30)),
+        ):
+            with self.subTest(chunks=len(chunks)):
+                self.requests.clear()
+                with self.assertRaises(ValueError):
+                    self.provider.generate(chunks)
+                self.assertEqual(self.requests, [])
+
     def test_empty_generation_needs_no_provider_dispatch(self):
         self.assertEqual(self.provider.generate(()), {})
         self.assertEqual(self.requests, [])
 
     def test_input_bounds_refuse_before_dispatch(self):
-        for chunks in (tuple(chunk(i) for i in range(65)), (chunk(0, "é" * 131073),)):
+        for chunks in (tuple(chunk(i) for i in range(1025)), (chunk(0, "é" * 131073),)):
             with self.assertRaises(ValueError):
                 self.provider.generate(chunks)
         self.assertEqual(self.requests, [])

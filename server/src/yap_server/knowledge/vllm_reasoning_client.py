@@ -91,14 +91,23 @@ class BoundedVllmJsonClient:
             raise ValueError("vLLM rendered token response differs from the contract")
         return len(token_ids)
 
+    def request_deadline(self) -> float:
+        """Share the configured request budget across one multi-request operation."""
+        return time.monotonic() + self._timeout_seconds
+
     def embed(
-        self, payload: dict[str, object], cancellation: threading.Event
+        self,
+        payload: dict[str, object],
+        cancellation: threading.Event,
+        *,
+        deadline: float,
     ) -> dict[str, object]:
         return self._exchange(
             path="/v1/embeddings",
             payload=payload,
             cancellation=cancellation,
             dispatched=None,
+            deadline=deadline,
         )
 
     def _exchange(
@@ -108,13 +117,22 @@ class BoundedVllmJsonClient:
         payload: dict[str, object],
         cancellation: threading.Event,
         dispatched: threading.Event | None,
+        deadline: float | None = None,
     ) -> dict[str, object]:
         if not isinstance(payload, dict) or not payload:
             raise ValueError("vLLM request payload is invalid")
         if cancellation.is_set():
             raise KnowledgeToolCancelled("vLLM reasoning was cancelled")
+        deadline = (
+            min(self.request_deadline(), deadline)
+            if deadline is not None
+            else self.request_deadline()
+        )
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise ReasoningRetryableError("vLLM reasoning timed out")
         connection = http.client.HTTPConnection(
-            self._host, self._port, timeout=self._timeout_seconds
+            self._host, self._port, timeout=remaining
         )
         outcome: queue.Queue[dict[str, object] | BaseException] = queue.Queue(maxsize=1)
         try:
@@ -135,8 +153,9 @@ class BoundedVllmJsonClient:
                 ),
                 daemon=True,
             )
+            if time.monotonic() >= deadline:
+                raise ReasoningRetryableError("vLLM reasoning timed out")
             worker.start()
-            deadline = time.monotonic() + self._timeout_seconds
             while worker.is_alive():
                 remaining = deadline - time.monotonic()
                 if remaining <= 0:

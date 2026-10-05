@@ -57,7 +57,7 @@ class KnowledgeSourcePreparationApiTestCase(
     def _build_publication_service(self):
         self.source_root = self.root / "reviewed-source"
         self.source_root.mkdir()
-        publication_fixtures._tamper_bundle(self.source_root, self.tenant)
+        self._write_reviewed_source()
         self.source_generation = compile_okf_bundle(
             self.source_root,
             tenant_id=self.tenant,
@@ -79,6 +79,9 @@ class KnowledgeSourcePreparationApiTestCase(
             YAP_KNOWLEDGE_REVIEWED_SOURCE_SHA256=hashlib.sha256(body).hexdigest(),
         )
         return super()._build_publication_service()
+
+    def _write_reviewed_source(self):
+        publication_fixtures._tamper_bundle(self.source_root, self.tenant)
 
     def source_request(
         self,

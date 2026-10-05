@@ -204,12 +204,20 @@ exactly:
 The service validates the entire stored compiled source, admission and counts
 under the same tenant lock before dispatching exact stored chunk text. The request
 cannot provide source text, vectors, endpoint, model, approval, tenant or subject.
-One generation is bounded to 64 nonempty chunks and 262,144 UTF-8 input bytes;
-the provider exchange has a 10-second deadline and 2,000,000-byte response limit.
-The service refuses oversized inputs, incomplete/duplicate indexed responses,
-model mismatches, invalid dimensions and nonfinite values. It does not truncate
-source or retry another provider automatically. Larger rebuild orchestration
-remains open. A zero-chunk generation needs no provider call.
+The whole generation is preflighted before provider I/O: at most 1,024 unique,
+nonempty chunks and 4 MiB of UTF-8 input text, with each chunk at most 262,144
+bytes. Deterministic requests preserve exact text and order, carrying at most
+64 chunks and 262,144 input-text bytes each to the same configured provider.
+Batch-local indexed vectors map back to the exact compiled chunk IDs.
+
+All requests share the configured 10-second total generation deadline; a later
+batch receives only the remaining budget. Each response is limited to 2,000,000
+bytes. Oversized inputs, duplicate identities, incomplete/duplicate indexed
+responses, model mismatches, invalid dimensions and nonfinite values refuse
+without truncation, source splitting, repair or automatic retry. Only the complete
+validated vector set reaches the atomic writer; a later batch or timeout cannot
+commit earlier vectors or model metadata. A zero-chunk generation needs no
+provider call. Larger sources and actual provider capacity remain unqualified.
 
 A `200` receipt reports `status: prepared`, the generation/chunk count, configured
 model/revision and `changed`. Complete vectors, model metadata and the content-free
@@ -232,7 +240,8 @@ read → rollback journey is checked using deterministic local HTTP output and r
 PostgreSQL. That verifies orchestration, not real embedding provenance/quality,
 production identity, model capacity or enterprise deployment. Qualify the selected
 prepared provider and representative corpus before promotion. Desktop rebuild
-controls and broader source/product integration remain open.
+controls are documented in the [desktop contract](knowledge-rebuild.md); broader
+source/product integration remains open.
 
 ## Restore a retained generation
 
