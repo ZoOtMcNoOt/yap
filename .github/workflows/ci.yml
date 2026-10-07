@@ -698,6 +698,12 @@ jobs:
             ~/.cargo/registry/cache
             ~/.cargo/git/db
           key: cargo-server-orchestrator-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('server/orchestrator/Cargo.lock') }}
+      - name: Run optimized GLib borrowed-iterator regression
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes libglib2.0-dev pkg-config
+          cargo test --release --locked --manifest-path verification/glib-backport-regression/Cargo.toml
       - name: Check server-orchestrator formatting
         working-directory: server/orchestrator
         run: cargo fmt --all --check

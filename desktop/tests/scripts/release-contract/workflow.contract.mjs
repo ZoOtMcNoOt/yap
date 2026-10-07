@@ -30,6 +30,22 @@ function assertNoRunnerContextInJobEnvironment(value, location) {
   }
 }
 
+test("GLib security repair is enforced by integrity and optimized Linux execution", async () => {
+  const ci = await readWorkflow(".github/workflows/ci.yml");
+  const { job, steps } = workflowSteps(ci, "server-orchestrator");
+  assert.equal(job["runs-on"], "ubuntu-latest");
+  const probe = steps.find((step) => step.name === "Run optimized GLib borrowed-iterator regression");
+  assert.ok(probe);
+  assert.equal(probe.shell, "bash");
+  assert.match(probe.run, /cargo test --release --locked --manifest-path verification\/glib-backport-regression\/Cargo\.toml/);
+  assert.doesNotMatch(probe.run, /continue-on-error|\|\|\s*true|--ignored|--skip/);
+  const auditor = await readRepoFile("verification/audit-windows-rust-dependencies.ps1");
+  const auditIndex = auditor.indexOf("& $CargoAudit audit");
+  assert.ok(auditIndex > 0);
+  assert.ok(auditor.indexOf("verify-glib-backport.mjs") < auditIndex);
+  assert.match(auditor, /if \(\$LASTEXITCODE -ne 0\) \{\s*throw 'The GLib/);
+});
+
 test("release contract has an explicit package command outside Vitest discovery", async () => {
   const packageJson = JSON.parse(await readRepoFile("desktop/package.json"));
   assert.equal(

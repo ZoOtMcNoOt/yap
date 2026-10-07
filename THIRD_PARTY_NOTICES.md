@@ -359,3 +359,37 @@ SOFTWARE.
 
 The bundled build includes SQLite 3.53.2. SQLite is in the public domain. See
 SQLite's public-domain dedication at https://www.sqlite.org/copyright.html.
+
+## GLib 0.18.5 security backport
+
+The Linux GTK3 dependency graph uses the complete published MIT-licensed
+`glib` 0.18.5 crate, with the two-line borrowed string iterator fix from
+[gtk-rs PR #1343](https://github.com/gtk-rs/gtk-rs-core/pull/1343), commit
+`b5a4071e439bef2b5eea76c3aa25e5ae84839e34`. The package retains its original
+version. The upstream source revision is
+`42b9caf98e03ded086362d9653ca58fe94dc8658`; the original archive and every
+source file are pinned in `desktop/src-tauri/vendor/glib-backport.json`.
+Only `src/variant_iter.rs` differs. Full original COPYRIGHT and LICENSE files
+remain with the source. Copyrights are retained by gtk-rs contributors.
+The bindings do not contain the linked GNOME libraries; those retain their
+own licenses. This backport does not qualify a Linux production release.
+
+MIT License
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

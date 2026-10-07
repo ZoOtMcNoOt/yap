@@ -69,7 +69,8 @@ this version-update constraint does not suppress security alerts or audit result
 GitHub denied reads of both security-alert endpoints during this work. The
 local audit establishes the frontend dependency result; it does not establish
 that code-scanning alerts are absent or that GitHub has closed every alert.
-The GLib/upstream Linux boundary and warning discussion below still apply.
+The GLib source backport and Windows boundary below apply independently of
+GitHub alert visibility.
 
 ## October 3 dependency refresh
 
@@ -111,22 +112,27 @@ exception; it does not qualify native desktop execution.
 
 ## GLib and the Windows boundary
 
-`GHSA-wrw7-89jp-8q8g` / `RUSTSEC-2024-0429` remains open for `glib` `0.18.5` in the
-Linux GTK dependency graph. Affected versions are `0.15.0` through `0.19.x`;
-the fix begins at `0.20.0`.
+`GHSA-wrw7-89jp-8q8g` / `RUSTSEC-2024-0429` affects the registry release
+of `glib` 0.18.5 in the Linux GTK graph. Published fixes begin at 0.20.0,
+which GTK3's 0.18 bindings cannot use. The maintained 0.18 branch has no
+published backport. Yap therefore retains the truthful 0.18.5 version and
+vendors the complete published crate with upstream's two-line repair:
+`let mut p` and `&mut p` at the borrowed iterator's C out-pointer boundary.
 
-The Windows guard enumerates the complete locked feature/target graph and
-rejects **every** reachable `glib` version. This prevents another affected
-version from becoming Windows-reachable. A lockfile entry alone does not show
-that a package ships for a particular target.
+`cargo-audit` 0.22.2 skips local path packages. Its disappearance from audit
+output is **not evidence of repair**. Before the Windows audit and shipped
+inventory checks, `verification/verify-glib-backport.mjs` verifies all 121
+original archive files, the exact repaired file, and the selected Linux graph.
+A changed, missing, additional, linked or unpatched source fails the gate.
+The required Linux CI job also executes the optimized borrowed-iterator
+regression, which crashes against the original crate. There are no advisory
+ignores. See [backport evidence](../evidence/glib-backport/2026-10-07/verification.md).
 
-`cargo audit` still reports this as an allowed `unsound` warning. Its warning
-classification explains the successful exit; target exclusion explains the
-Windows exposure boundary. Neither closes the advisory. Linux development
-builds do not qualify Linux releases: release support requires removing or
-upgrading the affected GTK path and passing the Linux build/runtime matrix.
-Repeat the classification whenever Tauri/Wry features change, Linux becomes a
-release target or the Windows guard finds GLib.
+The Windows guard still rejects every reachable `glib` version. The complete
+locked Windows graph contains no GLib; modern 0.21 bindings elsewhere in the
+lock remain unchanged. These tests establish the source repair and target
+boundary, not Linux release qualification or GitHub alert closure. GitHub's
+alert lists remain inaccessible with this session's credentials.
 
 The other current warning is unmaintained `proc-macro-error` `1.0.4`
 (`RUSTSEC-2024-0370`). The refreshed graph removes the old `unic-*` paths. Do not add `cargo audit -D warnings` until that

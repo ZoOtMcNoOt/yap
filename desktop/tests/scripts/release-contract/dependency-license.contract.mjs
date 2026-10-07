@@ -1,5 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+
+import {
+  verifyGlibBackportSelection,
+  verifyGlibBackportSources,
+} from "../../../../verification/verify-glib-backport.mjs";
 
 import {
   cargoCommandEnvironment,
@@ -7,6 +15,45 @@ import {
   verifyShippedDependencyNotices,
 } from "../shipped-dependency-inventory.mjs";
 import { readRepoFile } from "./workflow-access.mjs";
+
+test("GLib backport rejects reverted, changed, missing and additional source", async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "yap-glib-integrity-"));
+  const source = path.resolve(import.meta.dirname, "../../../../desktop/src-tauri/vendor");
+  const destination = path.join(root, "desktop/src-tauri/vendor");
+  try {
+    await cp(source, destination, { recursive: true });
+    await verifyGlibBackportSources(root);
+    const iterator = path.join(destination, "glib/src/variant_iter.rs");
+    const original = await readFile(iterator, "utf8");
+    await writeFile(iterator, original.replace("let mut p =", "let p =").replace("&mut p,", "&p,"));
+    await assert.rejects(verifyGlibBackportSources(root), /hash mismatch/);
+    await writeFile(iterator, original);
+    const license = path.join(destination, "glib/LICENSE");
+    const licenseBytes = await readFile(license);
+    await writeFile(license, "changed license");
+    await assert.rejects(verifyGlibBackportSources(root), /hash mismatch/);
+    await rm(license);
+    await assert.rejects(verifyGlibBackportSources(root), /file set differs/);
+    await writeFile(license, licenseBytes);
+    await writeFile(path.join(destination, "glib/unrecorded.rs"), "extra source");
+    await assert.rejects(verifyGlibBackportSources(root), /hash mismatch/);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("GLib selection rejects registry fallback and absent or different local sources", () => {
+  const root = path.resolve(import.meta.dirname, "../../../..");
+  const selected = {
+    name: "glib", version: "0.18.5", source: null, id: "verified-glib",
+    manifest_path: path.join(root, "desktop/src-tauri/vendor/glib/Cargo.toml"),
+  };
+  const metadata = (item, nodes = [{ id: selected.id }]) => ({ packages: [item], resolve: { nodes } });
+  verifyGlibBackportSelection(metadata(selected), root);
+  assert.throws(() => verifyGlibBackportSelection(metadata({ ...selected, source: "registry+https://github.com/rust-lang/crates.io-index" }), root), /unpatched registry/);
+  assert.throws(() => verifyGlibBackportSelection(metadata({ ...selected, manifest_path: path.join(root, "other/Cargo.toml") }), root), /does not select/);
+  assert.throws(() => verifyGlibBackportSelection(metadata(selected, []), root), /does not contain/);
+});
 
 test("Cargo dependency inventory disables terminal color in machine-readable output", () => {
   assert.deepEqual(
