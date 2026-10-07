@@ -41,7 +41,7 @@ symphonia = { version = "=0.6.1", default-features = false, features = ["mp3", "
 # Canonical WAV writing. Zero transitive dependencies.
 hound = "3.5"
 sherpa-onnx = "1.13.4"
-ort = { version = "=2.0.0-rc.12", default-features = false, features = ["std", "api-24", "alternative-backend"] }
+ort = { version = "=2.0.0-rc.13", default-features = false, features = ["std", "api-24", "alternative-backend"] }
 realfft = "=3.5.0"
 tauri-plugin-wdio = { version = "1.4.0", optional = true }
 # Test-only upstream WebView2 fix; return to registry after a compatible release.
