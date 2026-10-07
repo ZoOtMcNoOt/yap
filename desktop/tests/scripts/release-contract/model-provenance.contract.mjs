@@ -149,7 +149,7 @@ test("desktop model provenance pins the import-only AmberNet language detector a
   }
   assert.match(lifecycle, /import_verified_file/);
   assert.doesNotMatch(lifecycle, /download_to_verified/);
-  assert.match(cargo, /^ort = .*2\.0\.0-rc\.12/m);
+  assert.match(cargo, /^ort = .*2\.0\.0-rc\.13/m);
   assert.match(cargo, /^realfft = "=3\.5\.0"$/m);
   assert.match(notice, /^## NVIDIA AmberNet 1\.12\.0 language detector$/m);
   assert.match(notice, /No AmberNet\s+model bytes are bundled or hosted by Yap/);

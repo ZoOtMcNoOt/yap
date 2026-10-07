@@ -130,11 +130,11 @@
       "files": [
         {
           "path": "desktop/src-tauri/Cargo.toml",
-          "sha256": "93f604e0e1e20e33588e34eca95e2a231d8276f22bd1f3d6854eec7cc71980cb"
+          "sha256": "1fa5c7b788b01a0e95c2cb509ad24b45cfce172e8e9ce57f68433d291101a52c"
         },
         {
           "path": "desktop/src-tauri/Cargo.lock",
-          "sha256": "37ca001be10efc44e6f57fe4d540e64089c7cf424ed392a7a893e9a9f0293d8f"
+          "sha256": "c2c04efb22b94decb9ba514a53f3d0927a012a8d23c15840f61709978e6342ed"
         }
       ]
     }

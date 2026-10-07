@@ -48,7 +48,30 @@ This gate covers the core lock, not model overlays or container base images.
 The [core server evidence](../evidence/server-dependencies/2026-10-03/verification.md)
 records fixed versions, behavioral checks and separate unresolved NeMo findings.
 
-## Current dependency refresh
+## October 7 dependency remediation
+
+The frontend's complete audit reports zero vulnerabilities after the exact
+`mocha@11.8.0>diff` override selects `diff` 8.0.4. A timeout-bounded child
+reproduces the old diff 7 parser hang; the patched consumer terminates on hostile
+headers and preserves ordinary patch roundtrips. Actual Mocha unified/inline
+assertion diffs and WDIO async hooks, retries, skips and result reporting pass.
+There are no advisory exceptions. See the
+[remediation evidence](../evidence/dependency-remediation/2026-10-07/verification.md).
+
+The Cargo refresh includes ORT 2.0.0-rc.13 and dirs 7, with exact regenerated
+Windows-target inventory, notices and local provenance hashes. ORT's typed
+tensor extraction preserves the logits dtype/shape checks. Direct
+`windows-future` stays at exactly 0.3.2: windows 0.62.2 uses windows-core 0.62,
+while windows-future 0.100 uses incompatible core types and fails WAM compilation.
+Dependabot defers that version range until a coordinated Windows binding update;
+this version-update constraint does not suppress security alerts or audit results.
+
+GitHub denied reads of both security-alert endpoints during this work. The
+local audit establishes the frontend dependency result; it does not establish
+that code-scanning alerts are absent or that GitHub has closed every alert.
+The GLib/upstream Linux boundary and warning discussion below still apply.
+
+## October 3 dependency refresh
 
 The locked refresh passes the frontend high/critical gate with **one low finding**
 and the Rust vulnerability gate with **zero vulnerability-class findings** and
@@ -79,12 +102,12 @@ Rust selections are in [`Cargo.lock`](../../desktop/src-tauri/Cargo.lock).
 Issue #92 stays open until Windows RDP/session-lock reproduction and recovery
 checks establish the behavior on the intended client.
 
-The remaining frontend finding is low-severity `diff` through Mocha
+The October 3 frontend finding was low-severity `diff` through Mocha
 (`GHSA-73rr-hh4g-fpgx`), affecting `parsePatch`/`applyPatch`. The installed Mocha
 reporter uses diff creation/word comparison, not those patch-parsing functions.
-The published fix begins at `diff` 8, a major change for this consumer; retain
-the visible finding until a verified consumer update removes it. It is not an
-audit exception, and this does not qualify native desktop execution.
+The published fix begins at `diff` 8, a major change for this consumer. The
+October 7 consumer verification above removes this path without an advisory
+exception; it does not qualify native desktop execution.
 
 ## GLib and the Windows boundary
 
