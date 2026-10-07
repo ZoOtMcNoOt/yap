@@ -14,7 +14,10 @@ use std::{
     sync::OnceLock,
 };
 
-use ort::{session::Session, value::TensorRef};
+use ort::{
+    session::Session,
+    value::{DynTensorValueType, TensorRef},
+};
 
 use crate::{
     language::{
@@ -197,17 +200,17 @@ impl AmberNetLanguageIdentifier {
             .session
             .run(ort::inputs!["processed_signal" => input])
             .map_err(|_| AmberNetLanguageError::InferenceFailed)?;
-        let logits = outputs
+        let output = outputs
             .get("logits")
             .ok_or(AmberNetLanguageError::InvalidResult)?
-            .try_extract_array::<f32>()
+            .downcast_ref::<DynTensorValueType>()
             .map_err(|_| AmberNetLanguageError::InvalidResult)?;
-        if logits.shape() != [1, OUTPUT_LABEL_COUNT] {
+        let (shape, logits) = output
+            .try_extract_tensor::<f32>()
+            .map_err(|_| AmberNetLanguageError::InvalidResult)?;
+        if **shape != [1, OUTPUT_LABEL_COUNT as i64] {
             return Err(AmberNetLanguageError::InvalidResult);
         }
-        let logits = logits
-            .as_slice()
-            .ok_or(AmberNetLanguageError::InvalidResult)?;
         self.resolver.classify(logits).map_err(classification_error)
     }
 }

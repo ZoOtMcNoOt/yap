@@ -40,9 +40,9 @@ download_checked \
 tar -xzf "$tools_root/downloads/powershell-7.6.0-linux-x64.tar.gz" -C "$tools_root/powershell"
 chmod +x "$tools_root/powershell/pwsh"
 download_checked \
-  https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.4/sherpa-onnx-v1.13.4-linux-x64-static-lib.tar.bz2 \
-  "$tools_root/sherpa/sherpa-onnx-v1.13.4-linux-x64-static-lib.tar.bz2" \
-  98b0e31996426f6e78244dbce1955548f2c64e8f01c4be75b85af7cdaa2e8d5c
+  https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.8/sherpa-onnx-v1.13.8-linux-x64-static-lib.tar.bz2 \
+  "$tools_root/sherpa/sherpa-onnx-v1.13.8-linux-x64-static-lib.tar.bz2" \
+  e1fdc5b67530e15741ef897fa5ffff297056f3bf0c6d829a27af9225a4c4b5a6
 
 # A user-owned prefix supplies native headers/libraries without administrator
 # access. Package signatures and the session's proxy/TLS trust remain enabled.

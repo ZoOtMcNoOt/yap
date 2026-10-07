@@ -1,9 +1,57 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
+import { createRequire } from "node:module";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { MochaAdapter } from "@wdio/mocha-framework";
+
+const adapterRequire = createRequire(import.meta.resolve("@wdio/mocha-framework"));
+const mochaRequire = createRequire(adapterRequire.resolve("mocha"));
+
+test("the adapter's Mocha preserves unified and inline assertion diffs", () => {
+  const Base = mochaRequire("./lib/reporters/base.js");
+  const previous = { inlineDiffs: Base.inlineDiffs, useColors: Base.useColors };
+  try {
+    Base.useColors = false;
+    for (const inline of [false, true]) {
+      Base.inlineDiffs = inline;
+      const output = Base.generateDiff("before\n", "after\n");
+      assert.doesNotMatch(output, /failed to generate Mocha diff/i);
+      assert.match(output, /before/);
+      assert.match(output, /after/);
+      if (!inline) {
+        assert.match(output, /-before/);
+        assert.match(output, /\+after/);
+      }
+    }
+  } finally {
+    Object.assign(Base, previous);
+  }
+});
+
+test("the adapter's diff parser terminates on hostile headers and retains patch roundtrips", () => {
+  const script = `
+    const assert = require('node:assert/strict');
+    const diff = require(process.argv[1]);
+    for (const header of ['--- a\\rb', '--- \\ra', '--- a\\u2028b']) {
+      const patch = header + '\\n+++ b\\n@@ -1 +1 @@\\n-before\\n+after\\n';
+      for (const operation of [() => diff.parsePatch(patch), () => diff.applyPatch('before\\n', patch)]) {
+        try { operation(); } catch (error) { assert.ok(error instanceof Error); }
+      }
+    }
+    const ordinary = diff.createPatch('fixture', 'before\\n', 'after\\n');
+    assert.equal(diff.applyPatch('before\\n', ordinary), 'after\\n');
+    process.stdout.write('completed');
+  `;
+  const output = execFileSync(process.execPath, ["-e", script, mochaRequire.resolve("diff")], {
+    timeout: 2000,
+    encoding: "utf8",
+    maxBuffer: 4096,
+  });
+  assert.equal(output, "completed");
+});
 
 // Exercise the actual locked adapter after the security-driven Mocha upgrade.
 // These are framework checks; they do not launch or qualify a desktop driver.

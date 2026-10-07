@@ -38,6 +38,11 @@ updates:
           - minor
           - patch
     ignore:
+      # windows 0.62 exposes windows-future 0.3 WinRT types. Updating this
+      # independently to 0.100 breaks WAM; revisit with the Windows bindings.
+      - dependency-name: windows-future
+        versions:
+          - ">=0.100.0"
       - dependency-name: cpal
         versions:
           - 0.18.0

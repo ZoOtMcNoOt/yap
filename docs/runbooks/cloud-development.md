@@ -20,7 +20,7 @@ Source the environment file in each new shell. It selects the user-owned native
 library prefix, cached Sherpa runtime archive, and repository-local pnpm store. This also keeps license checks on the same package index as installation. Setup preserves locked package
 versions, package signatures, the cloud proxy, and TLS verification.
 
-PowerShell uses its published release SHA-256. The Linux Sherpa 1.13.4 archive
+PowerShell uses its published release SHA-256. The Linux Sherpa 1.13.8 archive
 is pinned to the observed upstream download SHA-256 in the setup script; it is
 a development runtime, separate from the qualified Windows shipping artifact.
 No model weights are downloaded. Third-party origins:
