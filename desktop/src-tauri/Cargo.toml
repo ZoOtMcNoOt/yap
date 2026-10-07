@@ -60,3 +60,8 @@ libc = "0.2"
 windows = { version = "0.62.2", features = ["Win32_Foundation", "Win32_Graphics_Gdi", "Win32_Security_Authorization", "Win32_Storage_FileSystem", "Win32_System_DataExchange", "Win32_System_IO", "Win32_System_Memory", "Win32_System_ProcessStatus", "Win32_System_Threading", "Win32_UI_Input_KeyboardAndMouse", "Win32_UI_WindowsAndMessaging", "Foundation", "Security_Authentication_Web_Core", "Security_Credentials", "Win32_System_WinRT", "Win32_System_Com"] }
 # Must share windows-core with windows 0.62; 0.100 uses incompatible WinRT types.
 windows-future = "=0.3.2"
+
+# GTK3 requires GLib 0.18. This exact-source backport fixes RUSTSEC-2024-0429;
+# verification/verify-glib-backport.mjs verifies every copied file and the fix.
+[patch.crates-io]
+glib = { path = "vendor/glib" }

@@ -130,11 +130,52 @@
       "files": [
         {
           "path": "desktop/src-tauri/Cargo.toml",
-          "sha256": "1fa5c7b788b01a0e95c2cb509ad24b45cfce172e8e9ce57f68433d291101a52c"
+          "sha256": "3ae7e2df24cf28dd15d909d88b1734627baf8bdc5a8fb12c2eebdea98b842419"
         },
         {
           "path": "desktop/src-tauri/Cargo.lock",
-          "sha256": "c2c04efb22b94decb9ba514a53f3d0927a012a8d23c15840f61709978e6342ed"
+          "sha256": "6cf4ce0d1b641c8736daa45944b690216a8ea6e19e340058cafa668c1ef37618"
+        }
+      ]
+    },
+    {
+      "id": "glib-018-security-backport",
+      "repository": "https://github.com/gtk-rs/gtk-rs-core",
+      "revision": {
+        "status": "reviewed",
+        "value": "42b9caf98e03ded086362d9653ca58fe94dc8658",
+        "evidence": {
+          "commitUrl": "https://github.com/gtk-rs/gtk-rs-core/commit/42b9caf98e03ded086362d9653ca58fe94dc8658",
+          "licensePath": "LICENSE",
+          "licenseSha256": "8cf56d10131ce201cf69ab74b111d3ebac1acca3833d7efb39ae357224b70edb",
+          "reviewScope": "upstream revision and license attribution",
+          "localFileEvidence": "integrity-only",
+          "upstreamFiles": [
+            {
+              "path": "glib/src/variant_iter.rs",
+              "sha256": "1fd02859333761c45321b32f28b24233446b97d0022a90d3a937ed162585b90e"
+            }
+          ]
+        }
+      },
+      "license": "MIT",
+      "notice": "THIRD_PARTY_NOTICES.md",
+      "files": [
+        {
+          "path": "desktop/src-tauri/vendor/glib-backport.json",
+          "sha256": "007b66df6ff3109580b89e6357afe7be293754e38b0eba47bacdb340d1f8d6b6"
+        },
+        {
+          "path": "desktop/src-tauri/vendor/glib/src/variant_iter.rs",
+          "sha256": "a0f5ee8acb8faa089bcdfbc9a57372609fce7654026ccef7d9a224d05a654ccc"
+        },
+        {
+          "path": "desktop/src-tauri/vendor/glib/LICENSE",
+          "sha256": "8cf56d10131ce201cf69ab74b111d3ebac1acca3833d7efb39ae357224b70edb"
+        },
+        {
+          "path": "desktop/src-tauri/vendor/glib/COPYRIGHT",
+          "sha256": "dae402989de65164815b7e2b6bc2b9576285434c3785934c8b6ece0fa055960d"
         }
       ]
     }

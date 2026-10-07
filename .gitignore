@@ -66,3 +66,5 @@ Thumbs.db
 
 .superpowers/sdd/
 desktop/src-tauri/resources/bundled-models/
+
+verification/glib-backport-regression/target/

@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { verifyGlibBackport } from "../../../verification/verify-glib-backport.mjs";
 
 const repoRoot = path.resolve(import.meta.dirname, "..", "..", "..");
 const inventoryPath = path.join(repoRoot, "SHIPPED_DEPENDENCY_INVENTORY.json");
@@ -35,6 +36,7 @@ const knownLicenseTerms = new Set([
 ]);
 
 export async function buildShippedDependencyArtifacts() {
+  await verifyGlibBackport();
   const exemptions = await loadNoticeExemptions();
   const packageSources = {
     javascript: javascriptRuntimePackageSources(),

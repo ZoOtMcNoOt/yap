@@ -1,0 +1,11 @@
+[package]
+name = "yap-glib-security-probe"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+glib = "=0.18.5"
+
+[patch.crates-io]
+glib = { path = "../../desktop/src-tauri/vendor/glib" }

@@ -5,6 +5,10 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $Repository = Split-Path -Parent $PSScriptRoot
+& node (Join-Path $PSScriptRoot 'verify-glib-backport.mjs')
+if ($LASTEXITCODE -ne 0) {
+    throw 'The GLib source backport or its exact dependency selection is unverified.'
+}
 $Version = '0.22.2'
 $ExpectedSha256 = '0a7316540862c13d954f648917ceacca593747baed6eec180fafa590be2710ab'
 $ArchiveName = "cargo-audit-x86_64-pc-windows-msvc-v$Version.zip"
