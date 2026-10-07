@@ -61,7 +61,7 @@
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.3",
     "vite": "^8.3.2",
-    "vitest": "^4.1.11",
+    "vitest": "^5.0.3",
     "webdriverio": "^9.32.0",
     "yaml": "^2.9.1"
   }
