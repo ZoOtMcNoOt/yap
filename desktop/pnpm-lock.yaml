@@ -93,11 +93,11 @@ importers:
         specifier: ^9.32.0
         version: 9.32.0
       '@wdio/tauri-plugin':
-        specifier: ^1.4.0
-        version: 1.4.0(supports-color@8.1.1)(tsx@4.23.15)
+        specifier: ^1.5.0
+        version: 1.5.0(supports-color@8.1.1)(tsx@4.23.15)
       '@wdio/tauri-service':
-        specifier: ^1.4.0
-        version: 1.4.0(expect-webdriverio@6.1.0)(supports-color@8.1.1)(tsx@4.23.15)(webdriverio@9.32.0(yauzl@2.10.0))
+        specifier: ^1.5.0
+        version: 1.5.0(expect-webdriverio@6.1.0)(tsx@4.23.15)(webdriverio@9.32.0(yauzl@2.10.0))
       tailwindcss:
         specifier: ^4.3.3
         version: 4.3.3
@@ -1404,9 +1404,6 @@ packages:
     peerDependencies:
       vite: ^5.2.0 || ^6 || ^7 || ^8
 
-  '@tauri-apps/api@2.11.1':
-    resolution: {integrity: sha512-M2FPuYND2m+wh5hfW9ZpSdxMPdEJovPBWwoHJmwUpysTYNHaOkVFN419m/K0LIgjb/7KU2vBgsUepJWugQCvAA==}
-
   '@tauri-apps/api@2.12.1':
     resolution: {integrity: sha512-DeyFHa3wynpyoqTDikDEDGTJIq4LQ5USfolQGRmGIWT6JMADyxZBTDa5cAdT3tDg73rUXufPaCwN7aXBos4OnQ==}
 
@@ -1486,8 +1483,8 @@ packages:
     engines: {node: '>= 10'}
     hasBin: true
 
-  '@tauri-apps/plugin-log@2.9.1':
-    resolution: {integrity: sha512-8dYNEQOgZcIEqeFtHAsOIGLoptm+j94270Jf2MrGS/zbsYNd4C8DKyOdeYggAyE3ugwr12mTefIfC8lVVEhdlg==}
+  '@tauri-apps/plugin-log@2.10.0':
+    resolution: {integrity: sha512-IHMspJx/fDA+8q8O6MTbrKffkemSDa1I5iXRhnLrLVnOd7xK4bAosyQbWcjnpPA7E+c6BMkpsE2kESHhkiBrDg==}
 
   '@types/chai@5.2.3':
     resolution: {integrity: sha512-Mw558oeA9fFbv65/y4mHtXDs9bPnFMZAL/jxdPFUpOHHIXX91mcgEHbS5Lahr+pwZFR8A7GQleRWeI6cGFC2UA==}
@@ -1515,6 +1512,9 @@ packages:
 
   '@types/node@26.6.4':
     resolution: {integrity: sha512-ldVPDCzj7fsaGZrLB0NuHuTvJcsNasysBAqMolr/cgxrLd1xbqxIr3XJiPnHHJUCxj5sNF1vnRj9aWnrVh5Jcg==}
+
+  '@types/node@26.6.5':
+    resolution: {integrity: sha512-uMzsv9stDdofIZBx4UGh4Z9ZgXnGC9seRDscilBcTHAeOFk67MZg/k9bWVfO+bk4qZmG+l52hRnLwUiH2LnJTg==}
 
   '@types/normalize-package-data@2.4.4':
     resolution: {integrity: sha512-37i+OaWTh9qeK4LSHPsyRC7NahnGotNuZvjLSgcPzblpHB3rrCJxAOgI5gCdKm7coonsaX1Of0ILiTcnZjbfxA==}
@@ -1626,17 +1626,17 @@ packages:
     resolution: {integrity: sha512-POrOuA9pEN03sB7eLh13hmrhgvyZ20rQC6PwAZ/9v2LeebmW9xlSIC1UoBqiSiIKQ9qiGGf7lf7CX4NWIqzC2w==}
     engines: {node: '>=18.20.0'}
 
-  '@wdio/native-core@1.2.0':
-    resolution: {integrity: sha512-Z/Qa2xmV/2IMSCsCKyVk79tda8n47FOOOS9XEOWGpHUiFr1z4gGOFxt13Fd9RQu9Kk1IA9fJB1VmJZtrtkXvEw==}
-    engines: {node: ^18.12.0 || ^20.9.0 || >=22.11.0}
+  '@wdio/native-core@1.3.0':
+    resolution: {integrity: sha512-wUwc0QTdvhD0LwH4YcRaN9JWLX/yac8sovddUR5/4sqHMNJr3yaN11bpIfYoD/bEk+1nTLjWuDCFpe5l5wUgLQ==}
+    engines: {node: '>=18.20.0'}
 
-  '@wdio/native-spy@1.3.0':
-    resolution: {integrity: sha512-Kw1/HsOM8CNnlPHozlv0FP+nFnms5efICq5WqpaNdwa0urv/C9K/jhM69OqAbocBfRXkDVuWecNPmCV9S/cXGw==}
-    engines: {node: ^18.12.0 || ^20.9.0 || >=22.11.0}
+  '@wdio/native-spy@1.4.0':
+    resolution: {integrity: sha512-unsC2Vgu5T9atD478Zj/p2N+rVSK4i/NibIaaEw4rZF/T5u5bmAHChFntEiBEfyMzd62VwbhKhzwwOSKjzrfJA==}
+    engines: {node: '>=18.20.0'}
 
-  '@wdio/native-types@2.5.0':
-    resolution: {integrity: sha512-NjaIfcsEKpU9gm0goywEG0A7J4pyEsgORKNrQ1xboSy10BeTk5QpgHWP1bNvqUnZrKoKJRonpSn81ZyYKghO1g==}
-    engines: {node: ^18.12.0 || ^20.9.0 || >=22.11.0}
+  '@wdio/native-types@2.6.0':
+    resolution: {integrity: sha512-MVMVpZTH+UY6nUtLClCzY4BQSIs/nCCHo81i4ClLR+b2NehyBvwccttXDAGPgf0icyHUhd+PgIPXaLgRcm4M9A==}
+    engines: {node: '>=18.20.0'}
 
   '@wdio/native-utils@2.5.0':
     resolution: {integrity: sha512-Qv0mJ2elRBZCgYbHCnKPNgE9VaqnmNJyjythTDYyOQpj8pAs6FZXXmWXGkUIdMds5cK0ux/qtxyKU0Y0tDsUUQ==}
@@ -1654,8 +1654,8 @@ packages:
     resolution: {integrity: sha512-FLTF0VL6+o5BSTCO7yLSXocm3kUnu31zYwzdsz4n9s5YWt83sCtzGZlZpt7TaTzb3jVUfxuHNQDTb8UMkCu0lQ==}
     engines: {node: '>=18.20.0'}
 
-  '@wdio/reporter@9.30.1':
-    resolution: {integrity: sha512-0whWaLfJtOAy3PzbGUxGrCAGitgaUCMe8qUgAuP2l7ess70AXqvp1wJibw74a/Z2giegJlJiAc4PxS0abs9/tw==}
+  '@wdio/reporter@9.31.2':
+    resolution: {integrity: sha512-3cKE6vCOsro/Ep9dGTIbo3FBn3WNvJ++BIn32lFd9m19pFdjuwlVgLtPXHb9jWNCJs740h5AIUcVkcscqUYhAA==}
     engines: {node: '>=18.20.0'}
 
   '@wdio/reporter@9.32.0':
@@ -1669,26 +1669,26 @@ packages:
       expect-webdriverio: ^6.0.9
       webdriverio: ^9.28.0
 
-  '@wdio/spec-reporter@9.30.1':
-    resolution: {integrity: sha512-En74iLuj8xjNanSPA05rTCii0qHZQe6Zpwi74vTGO6LtfGxvcNr1Z1zUj8xWwnoclnAne3DtmCAyXTezLX1pEA==}
+  '@wdio/spec-reporter@9.31.2':
+    resolution: {integrity: sha512-lNLLPUk4y1Yp5pWwBFF+tjZIy7bOv0TPTk4HDWV4LnnHnkc24abI0nN+kb2y5/JV8ZgwLCCVKUFRdRUxfKsAaQ==}
     engines: {node: '>=18.20.0'}
 
   '@wdio/spec-reporter@9.32.0':
     resolution: {integrity: sha512-WXL98WXqSGLffvDhLNsn4zD/sCGaWK1GF+i/gQsBxJN86vRiktL8XsB7q4SfBr7doyrR5+POwceX248M26bRgA==}
     engines: {node: '>=18.20.0'}
 
-  '@wdio/tauri-plugin@1.4.0':
-    resolution: {integrity: sha512-fXebQlQiomyNWYRNBN6OBsaJTXDQSbkvRFeGteEedI/VPSXNVgv23WgjwHYOu3+ZOhiF2UwaiigjP6821tLSOw==}
-    engines: {node: ^18.12.0 || ^20.9.0 || >=22.11.0}
+  '@wdio/tauri-plugin@1.5.0':
+    resolution: {integrity: sha512-Bd7rWgqr3bKz6iLALULsOrwB8m3wg29GvFsOwWRzNjBxDxqwjLVg3DwCZmHr6cv1pW6RsZnNwMxqeoXemkOl9g==}
+    engines: {node: '>=18.20.0'}
 
-  '@wdio/tauri-service@1.4.0':
-    resolution: {integrity: sha512-EUTS8tfMOXK1yPNEaRd6yiSdPoX19zeV+gtp2m7UuPTWFZGayPuMUoFyttP6Lx3OFvJC3lnbxjr1vcCNAOA7tg==}
-    engines: {node: ^18.12.0 || ^20.9.0 || >=22.11.0}
+  '@wdio/tauri-service@1.5.0':
+    resolution: {integrity: sha512-S3fs8T+jgNOFi4x/X2z69unS/1K3ZB28+owBouhHtVnrMKeBWAKP46IHnp8c8AZXppn6fiPNC4M1jfRZbLKeKw==}
+    engines: {node: '>=18.20.0'}
     peerDependencies:
       webdriverio: ^9.0.0
 
-  '@wdio/types@9.30.1':
-    resolution: {integrity: sha512-umKQDbSmu3/ucUsIA5UUTK5gCWnClyVpWz3fC39044rCXQ3zCd1a3GoJibbAITKiwnPFf2yU3LvTa+C78sh9Lg==}
+  '@wdio/types@9.31.2':
+    resolution: {integrity: sha512-lQKaiQDCJJ6VC1K/cKzaAxCpwB9pL1U0VbmX2uGksMxO4EDbNuLvIxWryuUDJ7OaSYTjxILTKYFErdbT/xEikg==}
     engines: {node: '>=18.20.0'}
 
   '@wdio/types@9.32.0':
@@ -2878,8 +2878,8 @@ packages:
   safe-buffer@5.2.1:
     resolution: {integrity: sha512-rp3So07KcdmmKbGvgaNxQSJr7bGVSVk5S9Eq1F+ppbRo70+YeaDxkw5Dd8NPN+GD6bjnYm2VuPuCXmpuYvmCXQ==}
 
-  safe-regex2@5.1.1:
-    resolution: {integrity: sha512-mOSBvHGDZMuIEZMdOz/aCEYDCv0E7nfcNsIhUF+/P+xC7Hyf3FkvymqgPbg9D1EdSGu+uKbJgy09K/RKKc7kJA==}
+  safe-regex2@5.1.2:
+    resolution: {integrity: sha512-tAtCGFPPP02VroDVzp4daGi6bC7jWG+41D47GKf18FeH/ubvKQHT9VmhAkvtjNOmJwqtApzWeUpEhkyEYULvmw==}
     hasBin: true
 
   safer-buffer@2.1.2:
@@ -2920,8 +2920,8 @@ packages:
     resolution: {integrity: sha512-g9Q1haeby36OSStwb4ntCGGGaKsaVSjQ68fBxoQcutl5fS1vuY18H3wSt3jFyFtrkx+Kz0V1G85A4MyAdDMi2Q==}
     engines: {node: '>=8'}
 
-  smol-toml@1.9.0:
-    resolution: {integrity: sha512-hpd+HLON7HdZXqYchMM/+LaTTbdK0AU3NngIJ4KVyWbY9bfQqdL9cD+4yf6dUoU2Ap4VsU0JkQi6FxAI1B2mXQ==}
+  smol-toml@1.9.1:
+    resolution: {integrity: sha512-j7WyPdf0CJoutMzMoPLF/bVXHtKZIT9Rb4eGeEbWw8X2t5oirjPgpL+OpaENZrILYaXqYwnVH+qgUwVbl+pUJQ==}
     engines: {node: '>= 18'}
 
   sonner@2.0.8:
@@ -3596,7 +3596,7 @@ snapshots:
 
   '@jest/pattern@30.5.0':
     dependencies:
-      '@types/node': 26.6.4
+      '@types/node': 26.6.5
       jest-regex-util: 30.5.0
 
   '@jest/schemas@30.5.0':
@@ -3609,7 +3609,7 @@ snapshots:
       '@jest/schemas': 30.5.0
       '@types/istanbul-lib-coverage': 2.0.6
       '@types/istanbul-reports': 3.0.4
-      '@types/node': 26.6.4
+      '@types/node': 26.6.5
       '@types/yargs': 17.0.35
       chalk: 4.1.2
 
@@ -4525,8 +4525,6 @@ snapshots:
       tailwindcss: 4.3.3
       vite: 8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)
 
-  '@tauri-apps/api@2.11.1': {}
-
   '@tauri-apps/api@2.12.1': {}
 
   '@tauri-apps/cli-darwin-arm64@2.12.1':
@@ -4576,7 +4574,7 @@ snapshots:
       '@tauri-apps/cli-win32-ia32-msvc': 2.12.1
       '@tauri-apps/cli-win32-x64-msvc': 2.12.1
 
-  '@tauri-apps/plugin-log@2.9.1':
+  '@tauri-apps/plugin-log@2.10.0':
     dependencies:
       '@tauri-apps/api': 2.12.1
 
@@ -4606,6 +4604,10 @@ snapshots:
       undici-types: 6.21.0
 
   '@types/node@26.6.4':
+    dependencies:
+      undici-types: 8.9.0
+
+  '@types/node@26.6.5':
     dependencies:
       undici-types: 8.9.0
 
@@ -4764,7 +4766,7 @@ snapshots:
       chalk: 5.6.2
       loglevel: 1.9.2
       loglevel-plugin-prefix: 0.8.4
-      safe-regex2: 5.1.1
+      safe-regex2: 5.1.2
       strip-ansi: 7.2.0
 
   '@wdio/logger@9.29.1':
@@ -4772,7 +4774,7 @@ snapshots:
       chalk: 5.6.2
       loglevel: 1.9.2
       loglevel-plugin-prefix: 0.8.4
-      safe-regex2: 5.1.1
+      safe-regex2: 5.1.2
       strip-ansi: 7.2.0
 
   '@wdio/mocha-framework@9.32.0(yauzl@2.10.0)':
@@ -4788,10 +4790,10 @@ snapshots:
       - supports-color
       - yauzl
 
-  '@wdio/native-core@1.2.0(supports-color@8.1.1)(tsx@4.23.15)':
+  '@wdio/native-core@1.3.0(tsx@4.23.15)':
     dependencies:
       '@wdio/logger': 9.29.1
-      '@wdio/native-types': 2.5.0
+      '@wdio/native-types': 2.6.0
       '@wdio/native-utils': 2.5.0(supports-color@8.1.1)(tsx@4.23.15)
       debug: 4.4.3(supports-color@8.1.1)
       get-port: 7.2.0
@@ -4800,9 +4802,9 @@ snapshots:
       - supports-color
       - tsx
 
-  '@wdio/native-spy@1.3.0': {}
+  '@wdio/native-spy@1.4.0': {}
 
-  '@wdio/native-types@2.5.0': {}
+  '@wdio/native-types@2.6.0': {}
 
   '@wdio/native-utils@2.5.0(supports-color@8.1.1)(tsx@4.23.15)':
     dependencies:
@@ -4811,7 +4813,7 @@ snapshots:
       esbuild: 0.28.2
       find-up-simple: 1.0.1
       json5: 2.2.3
-      smol-toml: 1.9.0
+      smol-toml: 1.9.1
       yaml: 2.9.1
     optionalDependencies:
       tsx: 4.23.15
@@ -4824,11 +4826,11 @@ snapshots:
     dependencies:
       '@types/node': 20.19.43
 
-  '@wdio/reporter@9.30.1':
+  '@wdio/reporter@9.31.2':
     dependencies:
       '@types/node': 20.19.43
       '@wdio/logger': 9.29.1
-      '@wdio/types': 9.30.1
+      '@wdio/types': 9.31.2
       diff: 8.0.4
       object-inspect: 1.13.4
 
@@ -4860,10 +4862,10 @@ snapshots:
       - utf-8-validate
       - yauzl
 
-  '@wdio/spec-reporter@9.30.1':
+  '@wdio/spec-reporter@9.31.2':
     dependencies:
-      '@wdio/reporter': 9.30.1
-      '@wdio/types': 9.30.1
+      '@wdio/reporter': 9.31.2
+      '@wdio/types': 9.31.2
       chalk: 5.6.2
       easy-table: 1.2.0
       pretty-ms: 9.3.1
@@ -4876,26 +4878,26 @@ snapshots:
       easy-table: 1.2.0
       pretty-ms: 9.3.1
 
-  '@wdio/tauri-plugin@1.4.0(supports-color@8.1.1)(tsx@4.23.15)':
+  '@wdio/tauri-plugin@1.5.0(supports-color@8.1.1)(tsx@4.23.15)':
     dependencies:
-      '@tauri-apps/api': 2.11.1
-      '@tauri-apps/plugin-log': 2.9.1
-      '@wdio/native-spy': 1.3.0
+      '@tauri-apps/api': 2.12.1
+      '@tauri-apps/plugin-log': 2.10.0
+      '@wdio/native-spy': 1.4.0
       '@wdio/native-utils': 2.5.0(supports-color@8.1.1)(tsx@4.23.15)
     transitivePeerDependencies:
       - supports-color
       - tsx
 
-  '@wdio/tauri-service@1.4.0(expect-webdriverio@6.1.0)(supports-color@8.1.1)(tsx@4.23.15)(webdriverio@9.32.0(yauzl@2.10.0))':
+  '@wdio/tauri-service@1.5.0(expect-webdriverio@6.1.0)(tsx@4.23.15)(webdriverio@9.32.0(yauzl@2.10.0))':
     dependencies:
       '@wdio/globals': 9.31.3(expect-webdriverio@6.1.0)(webdriverio@9.32.0(yauzl@2.10.0))
       '@wdio/logger': 9.29.1
-      '@wdio/native-core': 1.2.0(supports-color@8.1.1)(tsx@4.23.15)
-      '@wdio/native-spy': 1.3.0
-      '@wdio/native-types': 2.5.0
+      '@wdio/native-core': 1.3.0(tsx@4.23.15)
+      '@wdio/native-spy': 1.4.0
+      '@wdio/native-types': 2.6.0
       '@wdio/native-utils': 2.5.0(supports-color@8.1.1)(tsx@4.23.15)
-      '@wdio/spec-reporter': 9.30.1
-      '@wdio/types': 9.30.1
+      '@wdio/spec-reporter': 9.31.2
+      '@wdio/types': 9.31.2
       debug: 4.4.3(supports-color@8.1.1)
       get-port: 7.2.0
       tslib: 2.8.1
@@ -4905,7 +4907,7 @@ snapshots:
       - supports-color
       - tsx
 
-  '@wdio/types@9.30.1':
+  '@wdio/types@9.31.2':
     dependencies:
       '@types/node': 20.19.43
 
@@ -5589,7 +5591,7 @@ snapshots:
     dependencies:
       '@jest/expect-utils': 30.5.2
       '@jest/types': 30.5.1
-      '@types/node': 26.6.4
+      '@types/node': 26.6.5
       jest-util: 30.5.1
 
   jest-regex-util@30.5.0: {}
@@ -5597,7 +5599,7 @@ snapshots:
   jest-util@30.5.1:
     dependencies:
       '@jest/types': 30.5.1
-      '@types/node': 26.6.4
+      '@types/node': 26.6.5
       chalk: 4.1.2
       ci-info: 4.4.0
       graceful-fs: 4.2.11
@@ -6133,7 +6135,7 @@ snapshots:
 
   safe-buffer@5.2.1: {}
 
-  safe-regex2@5.1.1:
+  safe-regex2@5.1.2:
     dependencies:
       ret: 0.5.0
 
@@ -6161,7 +6163,7 @@ snapshots:
 
   slash@3.0.0: {}
 
-  smol-toml@1.9.0: {}
+  smol-toml@1.9.1: {}
 
   sonner@2.0.8(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0):
     dependencies:
