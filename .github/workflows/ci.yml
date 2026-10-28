@@ -101,7 +101,7 @@ jobs:
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6
         with:
           version: 11.7.0
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v6
         with:
           node-version-file: .node-version
           package-manager-cache: false
@@ -196,7 +196,7 @@ jobs:
             -RepositoryRoot $RepositoryRoot `
             -ExpectedTrackedManifestSha256 '${{ steps.exact_head_checkout.outputs.tracked_manifest_sha256 }}' `
             -ExpectedGitIndexSha256 '${{ steps.exact_head_checkout.outputs.git_index_sha256 }}'
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
         with:
           name: frontend-test-artifacts
@@ -256,15 +256,15 @@ jobs:
             -GitCommandName git.exe `
             -ExpectedPowerShellExecutable 'C:\Program Files\PowerShell\7\pwsh.exe' `
             -OutputFile $env:GITHUB_OUTPUT
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
         with:
           version: "0.11.21"
           enable-cache: true
           cache-dependency-glob: server/uv.lock
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v6
         with:
           node-version-file: .node-version
           package-manager-cache: false
@@ -417,7 +417,7 @@ jobs:
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6
         with:
           version: 11.7.0
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v6
         with:
           node-version: "24.14.0"
           package-manager-cache: false
@@ -520,7 +520,7 @@ jobs:
             -RepositoryRoot $RepositoryRoot `
             -ExpectedTrackedManifestSha256 '${{ steps.exact_head_checkout.outputs.tracked_manifest_sha256 }}' `
             -ExpectedGitIndexSha256 '${{ steps.exact_head_checkout.outputs.git_index_sha256 }}'
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
         with:
           name: native-wdio-failure-${{ github.run_id }}
@@ -576,10 +576,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) {
             throw 'The historical model qualification head is not a commit.'
           }
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
         with:
           version: "0.11.21"
           enable-cache: true
@@ -830,7 +830,7 @@ jobs:
             -GitCommandName git `
             -ExpectedPowerShellExecutable '/opt/microsoft/powershell/7/pwsh' `
             -OutputFile $env:GITHUB_OUTPUT
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v6
         with:
           node-version-file: .node-version
           package-manager-cache: false
@@ -840,10 +840,10 @@ jobs:
           node --test
           --test-name-pattern "real Git executable-bit drift"
           tests/scripts/release-contract/github-hosted-checkout.contract.mjs
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
         with:
           version: "0.11.21"
           enable-cache: true
