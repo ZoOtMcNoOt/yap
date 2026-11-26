@@ -4,6 +4,9 @@ use std::{
     path::{Path, PathBuf},
 };
 
+#[cfg(target_os = "macos")]
+use std::os::unix::fs::PermissionsExt;
+
 use super::Artifact;
 use crate::stt::{
     error::SttError,
@@ -31,6 +34,7 @@ impl UnixModelLoadGuard {
         #[cfg(target_os = "macos")]
         let directory = tempfile::Builder::new()
             .prefix("yap-model-")
+            .permissions(std::fs::Permissions::from_mode(0o700))
             .tempdir()
             .map_err(|_| SttError::ModelCorrupt)?;
         let mut snapshots = Vec::with_capacity(artifacts.len());
