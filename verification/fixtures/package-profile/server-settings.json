@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 2,
+  "enabled": false,
+  "baseUrl": "https://package-check.example",
+  "authentication": {
+    "tenantId": "00000000-0000-4000-8000-000000000071",
+    "clientId": "00000000-0000-4000-8000-000000000074",
+    "apiScope": "api://00000000-0000-4000-8000-000000000075/access_as_user"
+  }
+}

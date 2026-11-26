@@ -85,3 +85,12 @@ ffmpeg -f lavfi -i 'sine=frequency=440:sample_rate=48000:duration=2' \
 
 Stereo SHA-256: `3c78cf9b5ff77032297fcd424939fba31b4838c39a0f3badbfea9214060eae46`.
 Mono SHA-256: `c4cb3b1ea6c8614d15de53591a315fc76d8f443c36a66b3d7202e1f88b714ac0`.
+
+The installed-profile check uses a synthetic mono Vorbis recording with its
+accepted transcript revisions. Reproduce its source with FFmpeg 7.1.5.
+
+```sh
+ffmpeg -f lavfi -i 'sine=frequency=523:sample_rate=16000:duration=2' \
+  -af atrim=end_sample=16256 -c:a libvorbis -q:a 4 -cluster_time_limit 250 \
+  -fflags +bitexact -flags:a +bitexact -map_metadata -1 tone-mono-vorbis.webm
+```
