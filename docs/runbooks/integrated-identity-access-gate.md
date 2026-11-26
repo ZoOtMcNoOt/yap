@@ -437,7 +437,7 @@ WDIO, `server`, and `mock-oidc`—must:
 - capture the exact checkout-guard bytes/hash, Git-index hash, and an
   index-independent manifest that hashes every tracked file as initial step
   outputs;
-- use `windows-latest` for the four Windows jobs and `ubuntu-latest` for the
+- use `windows-latest` for the four Windows jobs and `ubuntu-24.04` for the
   Linux mock-OIDC lifecycle; and
 - prove tracked source and the index remain unchanged after execution by
   using the same absolute shell chain, verifying and executing the admitted

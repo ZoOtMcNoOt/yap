@@ -167,7 +167,7 @@ fn component_name(name: &OsStr) -> io::Result<CString> {
 }
 
 #[cfg(unix)]
-fn open_at(parent: &File, name: &OsStr, flags: i32, mode: libc::mode_t) -> io::Result<File> {
+fn open_at(parent: &File, name: &OsStr, flags: i32, mode: libc::c_uint) -> io::Result<File> {
     use std::os::fd::{AsRawFd, FromRawFd};
     let name = component_name(name)?;
     let descriptor = unsafe {

@@ -287,13 +287,18 @@ pub(in crate::live::recordings) fn transcript_result_value(
         "captureSidecarSha256".into(),
         serde_json::Value::from(capture_sidecar_sha256),
     );
-    let correction_segments = bind_finalized_transcript_segments(transcript, transcript_segments)?;
-    if !correction_segments.is_empty() {
-        object.insert(
-            "correctionSegments".into(),
-            serde_json::to_value(correction_segments)
-                .map_err(|error| format!("Failed to serialize correction segments: {error}"))?,
-        );
+    match bind_finalized_transcript_segments(transcript, transcript_segments) {
+        Ok(segments) if !segments.is_empty() => {
+            object.insert(
+                "correctionSegments".into(),
+                serde_json::to_value(segments)
+                    .map_err(|error| format!("Failed to serialize correction segments: {error}"))?,
+            );
+        }
+        Err(reason) => {
+            crate::diagnostics::log(&format!("Omitted transcript correction segments: {reason}"))
+        }
+        Ok(_) => (),
     }
     Ok(value)
 }

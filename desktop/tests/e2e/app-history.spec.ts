@@ -30,10 +30,11 @@ test("history body search paints indexing before an empty result", async ({ page
 
 test("history keeps committed review actions separate from recoverable capture actions", async ({ context, page }) => {
   const committedName = "live-s-18f001122334455-2a-0";
+  const audioName = "live-s-18f001122334455-2a-2";
   const recoverableName = "live-s-18f001122334455-2a-1";
   const recordingsDir = "C:\\Users\\tester\\AppData\\Local\\Yap\\live-recordings";
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
-  await page.addInitScript(({ committedName, recoverableName, recordingsDir }) => {
+  await page.addInitScript(({ committedName, recoverableName, recordingsDir, audioName }) => {
     const committedSessionId = committedName.slice("live-".length);
     const recoverableSessionId = recoverableName.slice("live-".length);
     const committedCreatedAt = "2026-07-11T12:00:00.000Z";
@@ -70,13 +71,23 @@ test("history keeps committed review actions separate from recoverable capture a
           currentWindow: { label: "main" },
         },
         transformCallback: () => ++callbackId,
-        invoke: async (command: string) => {
+        invoke: async (command: string, args?: { path?: string }) => {
+          if (command === "reveal_app_path") localStorage.setItem("revealedRecording", args?.path ?? "");
+
           if (command === "plugin:event|listen") return ++callbackId;
           if (command === "plugin:event|unlisten") return undefined;
           if (command === "history_catalog") {
             return {
               maintenanceWarnings: [],
               sessions: [
+                {
+                  name: audioName, sessionId: audioName.slice(5), origin: "live",
+                  createdAtMs: Date.parse(committedCreatedAt),
+                  captureCommitPath: `${recordingsDir}\\${audioName}.commit.json`,
+                  outputPath: `${recordingsDir}\\${audioName}.wav`,
+                  sourcePath: `${recordingsDir}\\${audioName}.wav`,
+                  warning: "Yap could not verify the matching text file. Choose Show in folder to inspect it beside the recording.",
+                },
                 {
                   captureCommitPath: committed.captureCommitPath,
                   createdAtMs: Date.parse(committedCreatedAt),
@@ -161,12 +172,19 @@ test("history keeps committed review actions separate from recoverable capture a
         },
       },
     });
-  }, { committedName, recoverableName, recordingsDir });
+  }, { committedName, recoverableName, recordingsDir, audioName });
 
   await page.goto("/");
 
   const rows = page.locator("tr[data-history-entry-row]");
-  await expect(rows).toHaveCount(2);
+  await expect(rows).toHaveCount(3);
+  const audioRow = rows.filter({ has: page.getByRole("button", { name: `Open recording ${audioName}` }) });
+  await expect(audioRow.getByText(/could not verify the matching text file/)).toBeVisible();
+  await expect(audioRow.getByRole("button", { name: /Copy transcript/ })).toHaveCount(0);
+  await audioRow.getByRole("button", { name: `Actions for ${audioName}` }).click();
+  await expect(page.getByRole("menuitem", { name: "Preview" })).toHaveCount(0);
+  await page.getByRole("menuitem", { name: "Show in folder" }).click();
+  await expect.poll(() => page.evaluate(() => localStorage.getItem("revealedRecording"))).toBe(`${recordingsDir}\\${audioName}.wav`);
 
   const committedRow = rows.filter({
     has: page.getByRole("button", { name: `Review recording ${committedName}` }),

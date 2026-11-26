@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   canDeleteTranscriptHistoryEntry,
+  isAudioOnlySavedRecording,
   isRecoverableTranscriptHistoryEntry,
   isUntrustedNativeLiveTranscriptHistoryEntry,
   recoverableLiveSessionActionIdentity,
@@ -49,6 +50,7 @@ export function HistoryActionMenu({
   const canDelete = canDeleteTranscriptHistoryEntry(entry);
   const recoverable = isRecoverableTranscriptHistoryEntry(entry);
   const canMutateRecoverable = recoverableLiveSessionActionIdentity(entry) !== undefined;
+  const audioOnly = isAudioOnlySavedRecording(entry);
   const hideOnly = isUntrustedNativeLiveTranscriptHistoryEntry(entry);
 
   return (
@@ -69,7 +71,7 @@ export function HistoryActionMenu({
         <DropdownMenuContent align="end" onClick={(event) => event.stopPropagation()} onCloseAutoFocus={(event) => {
           if (confirmDelete) event.preventDefault();
         }}>
-          <DropdownMenuLabel>{recoverable ? "Partial" : "Transcript"}</DropdownMenuLabel>
+          <DropdownMenuLabel>{recoverable ? "Partial" : audioOnly ? "Recording" : "Transcript"}</DropdownMenuLabel>
           {recoverable ? (
             <DropdownMenuGroup>
               {canMutateRecoverable ? (
@@ -104,21 +106,23 @@ export function HistoryActionMenu({
           ) : (
             <>
               <DropdownMenuGroup>
-                <DropdownMenuItem onSelect={() => actions.onPreview(entry)}>
-                  <FileText />
-                  Preview
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => actions.onCopy(entry)}>
-                  <Copy />
-                  Copy transcript
-                </DropdownMenuItem>
+                {!audioOnly && <>
+                  <DropdownMenuItem onSelect={() => actions.onPreview(entry)}>
+                    <FileText />
+                    Preview
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => actions.onCopy(entry)}>
+                    <Copy />
+                    Copy transcript
+                  </DropdownMenuItem>
+                </>}
                 <DropdownMenuItem onSelect={() => actions.onOpen(entry)}>
                   <FileText />
-                  Open file
+                  {audioOnly ? "Open recording" : "Open file"}
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => actions.onReveal(entry)}>
                   <FolderOpen />
-                  Reveal in Explorer
+                  Show in folder
                 </DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />

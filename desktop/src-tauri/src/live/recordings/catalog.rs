@@ -129,23 +129,30 @@ fn list_history_sources_from_dir_at_while_owned(
         .map(|committed| {
             let name = format!("live-{}", committed.manifest.session_id);
             let audio = dir.join(&committed.manifest.audio_file);
+            let output = committed_session_output_path(dir, &committed);
+            let id = committed.manifest.session_id.as_str();
+            let mut warning = pending
+                .session_warnings
+                .get(id)
+                .or_else(|| retention_warnings.get(id))
+                .cloned();
+            if output == audio
+                && dir.join(format!("{name}.txt"))
+                    .symlink_metadata()
+                    .is_ok_and(|metadata| metadata.is_file())
+            {
+                warning = super::save::combine_warning(
+                    warning,
+                    "Yap could not verify the matching text file. Choose Show in folder to inspect it beside the recording.",
+                );
+            }
             SavedLiveSession {
                 session_id: committed.manifest.session_id.to_string(),
                 name,
                 source_path: stable_existing_path_string(&audio),
-                output_path: stable_existing_path_string(&committed_session_output_path(
-                    dir, &committed,
-                )),
+                output_path: stable_existing_path_string(&output),
                 created_at_ms: committed_at_ms(&committed.manifest.committed_at_utc),
-                warning: pending
-                    .session_warnings
-                    .get(committed.manifest.session_id.as_str())
-                    .cloned()
-                    .or_else(|| {
-                        retention_warnings
-                            .get(committed.manifest.session_id.as_str())
-                            .cloned()
-                    }),
+                warning,
                 capture_commit_path: Some(stable_existing_path_string(&dir.join(format!(
                     "live-{}.commit.json",
                     committed.manifest.session_id

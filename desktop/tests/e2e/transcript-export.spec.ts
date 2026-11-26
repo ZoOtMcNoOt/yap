@@ -1,8 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 import { installRecordingJourneyBridge, journeyTranscript } from "./recording-journey-bridge";
 
-async function installExportBridge(page: Page) {
-  await installRecordingJourneyBridge(page, "complete");
+async function installExportBridge(page: Page, transcript = journeyTranscript) {
+  await installRecordingJourneyBridge(page, "complete", undefined, transcript);
   await page.addInitScript(() => {
     const host = globalThis as unknown as {
       __TAURI_INTERNALS__: { invoke: (command: string, args?: unknown) => Promise<unknown> };
@@ -192,4 +192,21 @@ test("unconfirmed original export retains readable text and inspected-destinatio
       fullPage: true,
     });
   }
+});
+
+test("saved transcript with a null character keeps the clipboard and exports the complete source", async ({ context, page }) => {
+  const original = "First\u0000second 知識 🦀";
+  await installExportBridge(page, original);
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.goto("/");
+  await page.evaluate(() => navigator.clipboard.writeText("existing clipboard"));
+  await page.getByRole("button", { name: "Copy transcript for restored.mp3", exact: true }).click();
+  await expect(page.getByText("Use Export to keep the null characters in this transcript.")).toBeVisible();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("existing clipboard");
+  await page.getByRole("button", { name: "Review recording restored.mp3", exact: true }).click();
+  await page.getByRole("button", { name: "Export original transcript for restored.mp3", exact: true }).click();
+  await expect(page.getByText("Transcript exported", { exact: true })).toBeVisible();
+  expect(await exportCalls(page)).toEqual([{
+    path: "C:\\Yap\\remote-jobs\\restored-1\\transcript.txt",
+  }]);
 });

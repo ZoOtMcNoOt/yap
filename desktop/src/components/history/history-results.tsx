@@ -17,6 +17,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
+  isAudioOnlySavedRecording,
   isRecoverableTranscriptHistoryEntry,
   isUntrustedNativeLiveTranscriptHistoryEntry,
 } from "@/native-history";
@@ -46,7 +47,8 @@ function HistoryEntryRow({
   const selected = entry.outputPath === selectedOutputPath;
   const recoverable = isRecoverableTranscriptHistoryEntry(entry);
   const hideOnly = isUntrustedNativeLiveTranscriptHistoryEntry(entry);
-  const selectable = !recoverable && !hideOnly;
+  const audioOnly = isAudioOnlySavedRecording(entry);
+  const selectable = !recoverable && !hideOnly && !audioOnly;
 
   function selectEntry(event: MouseEvent<HTMLElement>) {
     if (!selectable) return;
@@ -80,7 +82,12 @@ function HistoryEntryRow({
         onClick={selectable ? selectEntry : undefined}
       >
         <div className="flex min-w-0 items-start gap-2">
-          {recoverable ? (
+          {audioOnly ? (
+            <button aria-label={`Open recording ${entry.name}`} className="min-w-0 text-left" onClick={() => actions.onOpen(entry)} type="button">
+              <span className="block truncate font-medium">{entry.name}</span>
+              <span className="text-xs text-muted-foreground">Saved audio</span>
+            </button>
+          ) : recoverable ? (
             <span className="shrink-0 text-xs font-medium text-muted-foreground">Partial</span>
           ) : hideOnly ? (
             <span className="truncate text-sm text-muted-foreground">{entry.name}</span>
@@ -92,6 +99,7 @@ function HistoryEntryRow({
             />
           )}
         </div>
+        {audioOnly && entry.warning ? <p className="mt-1 text-xs text-muted-foreground">{entry.warning}</p> : null}
       </TableCell>
       <TableCell className="w-[4.5rem] align-top text-right">
         <div className="flex items-center justify-end gap-0.5">
