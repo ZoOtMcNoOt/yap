@@ -203,7 +203,7 @@ test("every exact-head CI closure job verifies its own checked-out commit", asyn
       shell: linuxShell,
       expectedRunnerOs: "Linux",
       jobName: "mock-oidc",
-      runsOn: "ubuntu-latest",
+      runsOn: "ubuntu-24.04",
     },
   ];
   assert.deepEqual(
@@ -550,7 +550,7 @@ test("mock OIDC CI is the reviewed pinned Linux Docker closure", async () => {
   );
 
   assert.equal(job.name, "mock-oidc");
-  assert.equal(job["runs-on"], "ubuntu-latest");
+  assert.equal(job["runs-on"], "ubuntu-24.04");
   assert.equal(job["timeout-minutes"], 10);
   assert.equal(job.defaults?.run?.shell, "pwsh");
   assert.deepEqual(
