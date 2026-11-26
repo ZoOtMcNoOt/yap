@@ -54,6 +54,26 @@ This gate covers the core lock, not model overlays or container base images.
 The [core server evidence](../evidence/server-dependencies/2026-10-03/verification.md)
 records fixed versions, behavioral checks and separate unresolved NeMo findings.
 
+## November 26 Python model runtime audit
+
+The five model overlay locks cover 2 ASR evaluation, 14 ASR, 5 LID,
+50 NeMo and 18 Tiron package pins. Msgpack 1.2.3 clears CVE-2026-114613
+in ASR, NeMo and Tiron. The NeMo overlay also updates pytorch-lightning to
+2.6.6. The CPython 3.12 ARM64 msgpack wheel and the platform-independent
+pytorch-lightning wheel retain their prior license texts and runtime requirements.
+The active comparator and meeting acceptance plans identify the patched runtime.
+The transcript-correction evidence retains the original model and comparator
+inputs for its 647 English and 908 Spanish cases.
+
+Four overlays have zero known advisories in their declared pins. NeMo still
+has five distinct pip-audit IDs across fsspec, Hydra and Lightning. The pinned
+NeMo revision requires Hydra at or below 1.3.2 and Lightning at or below 2.4.0.
+Lightning 2.4.0 also requires fsspec below 2026.0. The applicable fixes require
+fsspec 2026.6.0, Hydra 1.3.6 and a compatible Lightning upgrade. The advisory
+feed lists no fixed version for PYSEC-2026-3972. Keep this runtime out of
+production promotion pending compatible upstream pins, an image audit and a
+new ARM64/CUDA qualification.
+
 ## November 26 desktop Rust audit
 
 At RustSec revision `c9f6c91a44dbad9d71742329e9df061279f9c4be`, public

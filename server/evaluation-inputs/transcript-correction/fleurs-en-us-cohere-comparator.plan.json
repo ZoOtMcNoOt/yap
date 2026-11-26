@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "purpose": "locked-public-comparator",
+  "promotionEligible": false,
+  "exposureStatus": "unknown",
+  "source": {
+    "releaseLockSha256": "cd279a72b51e0e6bc557cfc570d72c92fe640bf96e89b7cfae04f8485e726d44",
+    "datasetId": "google/fleurs",
+    "datasetRevision": "70bb2e84b976b7e960aa89f1c648e09c59f894dd",
+    "datasetConfig": "en_us",
+    "split": "test",
+    "evaluationLocaleBcp47": "en-US"
+  },
+  "candidate": {
+    "modelLockSha256": "895e454406ed87363607cc1539dde59db142643db3600806e493d037a24f5d19",
+    "poolId": "cohere-batch",
+    "modelId": "CohereLabs/cohere-transcribe-03-2026",
+    "modelRevision": "b1eacc2686a3d08ceaae5f24a88b1d519620bc09"
+  },
+  "route": {
+    "providerLanguage": "en",
+    "punctuation": true
+  },
+  "execution": {
+    "batchSize": 8,
+    "warmupCases": 1,
+    "selections": [
+      {
+        "id": "screen",
+        "caseCount": 20,
+        "selection": "metadata-prefix-v1"
+      },
+      {
+        "id": "full",
+        "caseCount": 647,
+        "selection": "all-cases-v1"
+      }
+    ]
+  },
+  "scoring": {
+    "profile": "word-primary-v1",
+    "qualityDecision": "descriptive-baseline-only",
+    "promotionThresholds": null
+  },
+  "privacy": {
+    "cacheEnvironment": "YAP_EVAL_CACHE",
+    "repositoryFallback": false,
+    "terminalOutput": "aggregate-only",
+    "caseEvidence": "private-only"
+  }
+}

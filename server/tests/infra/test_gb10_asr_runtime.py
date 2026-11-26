@@ -157,7 +157,7 @@ test "$(/bin/bash -c 'printf %s "$PATH"')" = "$PATH"
             "joblib": "1.5.3",
             "lazy-loader": "0.5",
             "librosa": "0.11.0",
-            "msgpack": "1.2.1",
+            "msgpack": "1.2.3",
             "narwhals": "2.24.0",
             "pooch": "1.9.0",
             "scikit-learn": "1.9.0",

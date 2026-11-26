@@ -12,7 +12,7 @@
     "evaluationLocaleBcp47": "en-US"
   },
   "candidate": {
-    "modelLockSha256": "895e454406ed87363607cc1539dde59db142643db3600806e493d037a24f5d19",
+    "modelLockSha256": "b3221736eb1405a152910937d72ca3400ac221082cc8988e4fbb512a4172d772",
     "poolId": "cohere-batch",
     "modelId": "CohereLabs/cohere-transcribe-03-2026",
     "modelRevision": "b1eacc2686a3d08ceaae5f24a88b1d519620bc09"
