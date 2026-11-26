@@ -48,6 +48,20 @@ This gate covers the core lock, not model overlays or container base images.
 The [core server evidence](../evidence/server-dependencies/2026-10-03/verification.md)
 records fixed versions, behavioral checks and separate unresolved NeMo findings.
 
+## November 26 desktop Rust audit
+
+At RustSec revision `c9f6c91a44dbad9d71742329e9df061279f9c4be`, public
+main at `4074a5a3` reported 28 vulnerability advisories across 13 packages.
+The updated lockfile passed both the full audit and the Windows x64 audit
+with zero vulnerabilities. No advisory ignores were added. Five unmaintained
+warnings remain in the full lockfile for chrono, proc-macro-error, zbus_names,
+zvariant and zvariant_derive. Recheck them before promotion.
+
+The SQLite wrapper now resolves to 0.41.1. Pinning the sherpa-onnx crate to
+1.13.4 matches the recorded native speech runtime and removes the vulnerable
+ZIP dependency path. The shipped dependency inventory and notices were
+regenerated from the locked sources.
+
 ## October 7 dependency remediation
 
 The frontend's complete audit reports zero vulnerabilities after the exact

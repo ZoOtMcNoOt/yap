@@ -16,11 +16,9 @@ jobs:
       matrix:
         include:
           - runner: ubuntu-24.04
-            sherpa_platform: linux-x64
-            sha256: e1fdc5b67530e15741ef897fa5ffff297056f3bf0c6d829a27af9225a4c4b5a6
+            sherpa_platform: linux-x86_64
           - runner: macos-15
-            sherpa_platform: osx-arm64
-            sha256: 9091bf160dc7fdacedbc906b212badf53c2993f4e5277a0e03998e96c31d60da
+            sherpa_platform: macos-aarch64
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     env:
@@ -46,12 +44,8 @@ jobs:
       - name: Verify native speech runtime archive
         env:
           SHERPA_PLATFORM: ${{ matrix.sherpa_platform }}
-          ARCHIVE_SHA256: ${{ matrix.sha256 }}
         run: |
-          archive="sherpa-onnx-v1.13.8-${SHERPA_PLATFORM}-static-lib.tar.bz2"
-          cd "$RUNNER_TEMP"
-          curl -fsSL --retry 2 "https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.8/$archive" -o "$archive"
-          echo "$ARCHIVE_SHA256  $archive" | shasum -a 256 --check
+          python3 verification/stage-desktop-speech-runtime.py "$SHERPA_PLATFORM" "$RUNNER_TEMP"
           echo "SHERPA_ONNX_ARCHIVE_DIR=$RUNNER_TEMP" >> "$GITHUB_ENV"
       - name: Build native desktop package
         working-directory: desktop/src-tauri

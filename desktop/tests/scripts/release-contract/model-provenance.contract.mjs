@@ -4,7 +4,7 @@ import test from "node:test";
 
 import { readRepoFile } from "./workflow-access.mjs";
 
-test("desktop model provenance pins the Silero bytes, lineage, runtime, and native archive", async () => {
+test("desktop model provenance pins the Silero bytes, lineage, runtime, and native archives", async () => {
   const lock = JSON.parse(await readRepoFile("desktop/model-artifacts.lock.json"));
   const artifact = lock.artifacts.find(({ id }) => id === "silero-vad-v4-k2-export");
   const source = await readRepoFile("desktop/src-tauri/src/stt/silero_vad.rs");
@@ -41,8 +41,10 @@ test("desktop model provenance pins the Silero bytes, lineage, runtime, and nati
     artifact.runtime.revision,
     "142807252687d81b40d6315f23470a1512a00de3",
   );
-  assert.equal(artifact.runtime.nativeArchives.length, 1);
-  assert.deepEqual(artifact.runtime.nativeArchives[0], {
+  const archives = Object.fromEntries(artifact.runtime.nativeArchives.map((entry) => [entry.platform, entry]));
+  assert.equal(artifact.runtime.nativeArchives.length, 3);
+  assert.deepEqual(Object.keys(archives).sort(), ["linux-x86_64", "macos-aarch64", "windows-x86_64"]);
+  assert.deepEqual(archives["windows-x86_64"], {
     platform: "windows-x86_64",
     releaseAssetId: 469211798,
     fileName: "sherpa-onnx-v1.13.4-win-x64-static-MT-Release-lib.tar.bz2",
@@ -51,10 +53,30 @@ test("desktop model provenance pins the Silero bytes, lineage, runtime, and nati
     sha256: "d81bd1d25112540862d2387072e76b2b6843ef962918d6b5c7db5a19c6276b4c",
   });
 
+  for (const [platform, suffix, size, digest] of [
+    ["linux-x86_64", "linux-x64", 22276804, "98b0e31996426f6e78244dbce1955548f2c64e8f01c4be75b85af7cdaa2e8d5c"],
+    ["macos-aarch64", "osx-arm64", 19551872, "57801db2bbb786a5d343f515a38ff210b401842338bdc804fa075312d1cd2404"],
+  ]) {
+    const fileName = `sherpa-onnx-v${artifact.runtime.version}-${suffix}-static-lib.tar.bz2`;
+    assert.deepEqual(archives[platform], {
+      platform,
+      fileName,
+      source: `${artifact.runtime.repository}/releases/download/v${artifact.runtime.version}/${fileName}`,
+      sizeBytes: size,
+      sha256: digest,
+    });
+  }
+
   assert.match(source, new RegExp(artifact.distribution.sha256));
   assert.match(source, new RegExp(String(artifact.distribution.sizeBytes).replace("643854", "643_854")));
   assert.match(source, /releases\/download\/asr-models\/silero_vad\.onnx/);
-  assert.match(cargo, /^sherpa-onnx = "1\.13\.4"$/m);
+  assert.ok(cargo.split(/\r?\n/).includes(`sherpa-onnx = "=${artifact.runtime.version}"`));
+  const cargoLock = await readRepoFile("desktop/src-tauri/Cargo.lock");
+  const packageVersions = [...cargoLock.matchAll(/^name = "(sherpa-onnx(?:-sys)?)"\r?\nversion = "([^"]+)"$/gm)];
+  assert.deepEqual(packageVersions.map(([, name, version]) => [name, version]), [
+    ["sherpa-onnx", artifact.runtime.version],
+    ["sherpa-onnx-sys", artifact.runtime.version],
+  ]);
   assert.match(notice, /^## Silero VAD v4 model$/m);
   assert.match(notice, /^## sherpa-onnx$/m);
   assert.match(notice, /Copyright \(c\) 2020-present Silero Team/);
