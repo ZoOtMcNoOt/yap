@@ -100,9 +100,12 @@ def main():
             wav.writeframes(bytes(samples * params.sampwidth))
         inputs = [audio, silence, audio]
         result = subprocess.run(
-            [*command, "--batch", *inputs], cwd=cwd, env=env, check=True,
+            [*command, "--batch", *inputs], cwd=cwd, env=env, check=False,
             stdout=subprocess.PIPE, encoding="utf-8",
         )
+        if result.returncode:
+            sys.stderr.write(result.stdout)
+            result.check_returncode()
         check_sessions(result.stdout, inputs, samples, audio_ms, fixture["goldenTranscript"])
 
 

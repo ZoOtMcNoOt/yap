@@ -1,7 +1,6 @@
 use std::{
     fs::File,
     io::{self, Read, Seek},
-    os::fd::AsRawFd,
     path::{Path, PathBuf},
 };
 
@@ -38,7 +37,7 @@ impl UnixModelLoadGuard {
             .map_err(|_| SttError::ModelCorrupt)?;
             verify_open_artifact(&snapshot, artifact.bytes, artifact.sha256, || false)?;
             (&snapshot).rewind().map_err(|_| SttError::ModelCorrupt)?;
-            let path = descriptor_path(&snapshot);
+            let path = native_model_path(&snapshot).map_err(|_| SttError::ModelCorrupt)?;
             snapshots.push((snapshot, path));
         }
         Ok(Self {
@@ -63,17 +62,34 @@ impl UnixModelLoadGuard {
     }
 }
 
-fn descriptor_path(file: &File) -> PathBuf {
-    #[cfg(target_os = "linux")]
-    let dir = "/proc/self/fd";
-    #[cfg(target_os = "macos")]
-    let dir = "/dev/fd";
-    Path::new(dir).join(file.as_raw_fd().to_string())
+#[cfg(target_os = "linux")]
+fn native_model_path(file: &File) -> io::Result<PathBuf> {
+    use std::os::fd::AsRawFd;
+    Ok(Path::new("/proc/self/fd").join(file.as_raw_fd().to_string()))
+}
+
+#[cfg(target_os = "macos")]
+fn native_model_path(file: &File) -> io::Result<PathBuf> {
+    use std::os::unix::fs::MetadataExt;
+    // Darwin's /dev/fd duplicates a descriptor and shares its file offset.
+    // The native model reader needs independently seekable opens of the same inode.
+    let held = file.metadata()?;
+    let path = Path::new("/.vol")
+        .join(held.dev().to_string())
+        .join(held.ino().to_string());
+    let opened = File::open(&path)?.metadata()?;
+    if (opened.dev(), opened.ino()) != (held.dev(), held.ino()) {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "model file identity changed",
+        ));
+    }
+    Ok(path)
 }
 
 #[cfg(target_os = "linux")]
 fn snapshot_file(write: impl FnOnce(&mut File) -> io::Result<()>) -> io::Result<File> {
-    use std::os::fd::FromRawFd;
+    use std::os::fd::{AsRawFd, FromRawFd};
     // memfd_create returns a new owned descriptor. The kernel seals apply to every opener.
     let fd = unsafe {
         libc::memfd_create(
@@ -90,7 +106,7 @@ fn snapshot_file(write: impl FnOnce(&mut File) -> io::Result<()>) -> io::Result<
     if unsafe { libc::fcntl(fd, libc::F_ADD_SEALS, seals) } < 0 {
         return Err(io::Error::last_os_error());
     }
-    File::open(descriptor_path(&file))
+    File::open(native_model_path(&file)?)
 }
 
 #[cfg(target_os = "macos")]
