@@ -170,18 +170,20 @@ fn short_automatic_utterance_flushes_once_as_the_confirmed_primary() {
     let mut session = automatic_session(Some(pipeline), None);
     assert!(!session.begin_session());
 
-    let pushed = session.push(frame(0, SAMPLE_RATE as usize / 2)).unwrap();
-    assert!(pushed.actions.is_empty());
-    assert!(pushed.direct_primary_frame.is_none());
+    for sequence in 0..2 {
+        let pushed = session.push(frame(sequence, 167)).unwrap();
+        assert!(pushed.actions.is_empty());
+        assert!(pushed.direct_primary_frame.is_none());
+    }
 
     let finished = session.finish().unwrap();
     assert_eq!(finished.actions.len(), 1);
-    assert_contiguous_primary_coverage(&finished.actions, SAMPLE_RATE / 2);
+    assert_contiguous_primary_coverage(&finished.actions, 334);
     assert_primary_evidence(
         finished.evidence.unwrap(),
         LiveLanguageStatus::Complete,
         None,
-        SAMPLE_RATE / 2,
+        334,
         Some(COMPONENT_REVISION),
     );
 }
@@ -346,4 +348,21 @@ fn unavailable_local_artifacts_remain_visible_while_primary_dictation_continues(
         SAMPLE_RATE / 4,
         None,
     );
+}
+
+#[test]
+fn fixed_primary_evidence_counts_samples_between_millisecond_ticks() {
+    let mut language = LiveLanguageSession::<ScriptedDetector>::new(
+        None,
+        "en-US".into(),
+        None,
+        LiveLanguageMode::FixedPrimary,
+    );
+    language.begin_session();
+    for sequence in 0..2 {
+        language.push(frame(sequence, 167)).unwrap();
+    }
+    let evidence = language.finish().unwrap().evidence.unwrap();
+    assert_eq!(evidence.source_end_sample, 334);
+    assert_eq!(evidence.spans[0].end_sample, 334);
 }

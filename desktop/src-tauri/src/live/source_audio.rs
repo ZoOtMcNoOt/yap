@@ -6,12 +6,9 @@
 
 use std::{collections::VecDeque, sync::Arc};
 
-use crate::audio::frame::PreparedFrame;
+use crate::audio::frame::{PreparedFrame, PreparedFramePosition};
 
 const SAMPLE_RATE_HZ: u32 = 16_000;
-const SAMPLES_PER_MILLISECOND: u64 = (SAMPLE_RATE_HZ / 1_000) as u64;
-const MAX_FRAME_CLOCK_SKEW_SAMPLES: u64 = SAMPLES_PER_MILLISECOND;
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) struct SourceSampleRange {
     pub(super) start_sample: u64,
@@ -88,7 +85,7 @@ impl SharedAudioSlice {
 pub(super) struct SourceAudioHoldback {
     maximum_samples: usize,
     retained_samples: usize,
-    next_sample: Option<u64>,
+    previous_frame: Option<PreparedFramePosition>,
     slices: VecDeque<SharedAudioSlice>,
 }
 
@@ -100,7 +97,7 @@ impl SourceAudioHoldback {
         Ok(Self {
             maximum_samples,
             retained_samples: 0,
-            next_sample: None,
+            previous_frame: None,
             slices: VecDeque::new(),
         })
     }
@@ -109,21 +106,17 @@ impl SourceAudioHoldback {
         &mut self,
         frame: PreparedFrame,
     ) -> Result<SourceSampleRange, SourceAudioError> {
-        let observed = observed_frame_range(&frame)?;
-        let observed_start = observed.start_sample;
-        let start_sample = match self.next_sample {
-            Some(expected) if within_clock_skew(expected, observed_start) => expected,
-            Some(expected) => {
+        let position = frame_position(&frame, self.previous_frame)?;
+        let start_sample = position.start_sample;
+        if let Some(expected) = self.source_end_sample() {
+            if start_sample != expected {
                 return Err(SourceAudioError::Discontinuity {
                     expected_sample: expected,
-                    observed_sample: observed_start,
-                })
+                    observed_sample: start_sample,
+                });
             }
-            None => observed_start,
-        };
-        let end_sample = start_sample
-            .checked_add(frame.samples.len() as u64)
-            .ok_or(SourceAudioError::SourcePositionOverflow)?;
+        }
+        let end_sample = position.end_sample;
         let retained_samples = self
             .retained_samples
             .checked_add(frame.samples.len())
@@ -138,7 +131,7 @@ impl SourceAudioHoldback {
             samples: frame.samples,
         });
         self.retained_samples = retained_samples;
-        self.next_sample = Some(end_sample);
+        self.previous_frame = Some(position);
         Ok(SourceSampleRange {
             start_sample,
             end_sample,
@@ -153,7 +146,7 @@ impl SourceAudioHoldback {
     }
 
     pub(super) fn source_end_sample(&self) -> Option<u64> {
-        self.next_sample
+        self.previous_frame.map(|frame| frame.end_sample)
     }
 
     pub(super) fn copy_range(
@@ -238,7 +231,7 @@ impl SourceAudioHoldback {
     pub(super) fn reset(&mut self) {
         self.slices.clear();
         self.retained_samples = 0;
-        self.next_sample = None;
+        self.previous_frame = None;
     }
 
     fn validate_available_range(&self, range: SourceSampleRange) -> Result<(), SourceAudioError> {
@@ -255,26 +248,14 @@ impl SourceAudioHoldback {
     }
 }
 
-pub(super) fn observed_frame_range(
+pub(super) fn frame_position(
     frame: &PreparedFrame,
-) -> Result<SourceSampleRange, SourceAudioError> {
+    previous: Option<PreparedFramePosition>,
+) -> Result<PreparedFramePosition, SourceAudioError> {
     validate_frame(frame)?;
-    let start_sample = frame
-        .metadata
-        .start_ms
-        .checked_mul(SAMPLES_PER_MILLISECOND)
-        .ok_or(SourceAudioError::SourcePositionOverflow)?;
-    let end_sample = start_sample
-        .checked_add(frame.samples.len() as u64)
-        .ok_or(SourceAudioError::SourcePositionOverflow)?;
-    Ok(SourceSampleRange {
-        start_sample,
-        end_sample,
-    })
-}
-
-fn within_clock_skew(expected: u64, observed: u64) -> bool {
-    expected.abs_diff(observed) <= MAX_FRAME_CLOCK_SKEW_SAMPLES
+    frame
+        .source_position(previous)
+        .ok_or(SourceAudioError::SourcePositionOverflow)
 }
 
 fn validate_frame(frame: &PreparedFrame) -> Result<(), SourceAudioError> {
@@ -407,6 +388,20 @@ mod tests {
             holdback.push(frame(0, 2, &[2.0; 4])),
             Err(SourceAudioError::Discontinuity { .. })
         ));
+    }
+
+    #[test]
+    fn a_whole_missing_millisecond_is_not_clock_rounding() {
+        let mut holdback = SourceAudioHoldback::new(320).unwrap();
+        holdback.push(frame(0, 0, &[0.0; 160])).unwrap();
+        assert_eq!(
+            holdback.push(frame(11, 1, &[1.0; 160])),
+            Err(SourceAudioError::Discontinuity {
+                expected_sample: 160,
+                observed_sample: 176
+            })
+        );
+        assert_eq!(holdback.source_end_sample(), Some(160));
     }
 
     #[test]

@@ -7,6 +7,7 @@ pub use chunk::{
     ChunkBuildContext, ChunkReplayKey, ContentIdentity, RetryMetadata, VadSegment,
     CHUNK_SCHEMA_VERSION,
 };
+pub(crate) use sample::PreparedFramePosition;
 pub use sample::{
     AudioFrame, AudioGap, GapCause, ManifestError, PreparedFrame, TrackConfigurationRevision,
 };

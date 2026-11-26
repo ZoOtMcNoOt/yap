@@ -118,7 +118,10 @@ def run(bundle, models, switch):
         with launch(executable, env, offline) as app:
             perform(app, "review", stem, recordings / f"{stem}.txt")
             require(check_session(commit) == before, "Saved recording changed on offline restart")
-            require(digest(cold_audio) == manifest["audioSha256"], "Cold-stop audio changed on restart")
+            for path, original_hash in cold_hashes.items():
+                require(digest(path) == original_hash, f"Cold-stop {path.name} changed on restart")
+            require(not list(recordings.glob(f"{cold_stem}.transcript.*")) and not (recordings / f"{cold_stem}.txt").exists(),
+                    "Offline restart published text for the cold stop")
         print(json.dumps(before, sort_keys=True), flush=True)
 
 

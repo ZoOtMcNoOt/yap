@@ -26,7 +26,8 @@ ARCHIVE_SHA256 = "adbdd5e9fef87300c37cebfcfc4f1ebe56845c860c8a760af0a1dd65ce9bee
 def stage_model(directory):
     archive = directory / "model.tar.bz2"
     url = f"https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/{RELEASE}.tar.bz2"
-    subprocess.run(["curl", "-fsSL", "--retry", "2", url, "-o", str(archive)], check=True)
+    subprocess.run(["curl", "-fsSL", "--connect-timeout", "15", "--retry", "5", "--retry-all-errors",
+                    "--retry-max-time", "180", url, "-o", str(archive)], check=True)
     with archive.open("rb") as stream:
         if hashlib.file_digest(stream, "sha256").hexdigest() != ARCHIVE_SHA256:
             raise ValueError("The Nemotron release archive does not match its SHA-256")

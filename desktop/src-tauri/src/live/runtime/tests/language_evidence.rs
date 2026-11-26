@@ -36,24 +36,26 @@ fn stop_persists_worker_language_evidence_before_recording_finalization() {
             .unwrap(),
         ))
         .unwrap();
-    recording_sink
-        .try_send(RecordingInput::PreparedFrame(PreparedFrame {
-            metadata: AudioFrame {
-                session_id: session_id.clone(),
-                track_id,
-                sequence: 0,
-                sample_rate_hz: 16_000,
-                channels: 1,
-                start_ms: 0,
-                duration_ms: 1,
-                sample_count: 1,
-            },
-            samples: Arc::from([0.25]),
-        }))
-        .unwrap();
+    for (sequence, start_ms) in [(0, 0), (1, 10)] {
+        recording_sink
+            .try_send(RecordingInput::PreparedFrame(PreparedFrame {
+                metadata: AudioFrame {
+                    session_id: session_id.clone(),
+                    track_id: track_id.clone(),
+                    sequence,
+                    sample_rate_hz: 16_000,
+                    channels: 1,
+                    start_ms,
+                    duration_ms: 10,
+                    sample_count: 167,
+                },
+                samples: Arc::from([0.25; 167]),
+            }))
+            .unwrap();
+    }
 
     let evidence = LiveLanguageEvidence::try_new(
-        1,
+        334,
         "en-US".into(),
         LiveLanguageMode::Automatic,
         LiveLanguageStatus::Complete,
@@ -61,7 +63,7 @@ fn stop_persists_worker_language_evidence_before_recording_finalization() {
         Some("test-lid@sha256:fixture".into()),
         vec![LanguageSpan {
             start_sample: 0,
-            end_sample: 1,
+            end_sample: 334,
             language_bcp47: "en-US".into(),
             decision_revision: 1,
             disposition: LanguageSpanDisposition::ConfirmedPrimary,
@@ -110,7 +112,7 @@ fn stop_persists_worker_language_evidence_before_recording_finalization() {
         &std::fs::read(directory.join(format!("live-{session_id}.capture.json"))).unwrap(),
     )
     .unwrap();
-    assert_eq!(sidecar["languageEvidence"]["sourceEndSample"], 1);
+    assert_eq!(sidecar["languageEvidence"]["sourceEndSample"], 334);
     assert_eq!(
         sidecar["languageEvidence"]["detectorComponentRevision"],
         "test-lid@sha256:fixture"
