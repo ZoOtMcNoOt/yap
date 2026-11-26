@@ -6,6 +6,7 @@ import json
 import os
 import plistlib
 import signal
+import socket
 import subprocess
 import sys
 import tempfile
@@ -63,8 +64,11 @@ def main() -> None:
             env.update(NO_AT_BRIDGE="0", GTK_MODULES="gail:atk-bridge")
         log = profile / "logs/yap.log"
         previous_starts = log.read_text().count(" app start") if log.exists() else 0
+        command = [executable]
+        if args.macos_app and args.check_saved_history:
+            command = [*macos_offline_prefix(), executable]
         process = subprocess.Popen(
-            [executable],
+            command,
             env=env,
             start_new_session=True,
         )
@@ -116,6 +120,29 @@ def main() -> None:
                 timeout=120,
             )
     print(f"Verified package resources and fresh-profile startup on {sys.platform}.")
+
+
+def macos_offline_prefix() -> list[str]:
+    prefix = ["/usr/bin/sandbox-exec", "-p", "(version 1)(allow default)(deny network-outbound (remote ip))"]
+    # A live listener distinguishes a policy denial from a missing server.
+    with socket.socket() as listener:
+        listener.bind(("127.0.0.1", 0))
+        listener.listen()
+        port = listener.getsockname()[1]
+        with socket.create_connection(("127.0.0.1", port), timeout=2):
+            pass
+        probe = """import errno, socket, sys
+try:
+    socket.create_connection(("127.0.0.1", int(sys.argv[1])), timeout=2)
+except OSError as error:
+    if error.errno not in (errno.EPERM, errno.EACCES):
+        raise
+else:
+    raise SystemExit("The Mac offline profile allowed an IP connection")
+"""
+        subprocess.run([*prefix, sys.executable, "-c", probe, str(port)], check=True, timeout=10)
+    print("Verified the macOS outbound IP denial before opening saved History.", flush=True)
+    return prefix
 
 
 def verify_debian_history(reference: Path) -> None:
