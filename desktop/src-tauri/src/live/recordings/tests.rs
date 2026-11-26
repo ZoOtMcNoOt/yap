@@ -201,7 +201,10 @@ fn assert_unavailable_recording_transcript(session: &str, panicking: bool) {
         runtime.install_unavailable_recording_for_test(session_id.clone());
     }
 
-    let saved = save_session_files_to_dir(&runtime, &live_view(Some("survives"), None), &dir)
+    let stop = runtime.stop();
+    assert!(save_stop_result(&dir, &runtime, &stop, &live_view(None, None)).is_err());
+    assert_eq!(std::fs::read_dir(&dir).unwrap().count(), 0);
+    let saved = save_stop_result(&dir, &runtime, &stop, &live_view(Some("survives"), None))
         .unwrap()
         .unwrap();
     let transcript = dir.join(format!("live-{session_id}.txt"));

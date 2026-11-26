@@ -325,6 +325,7 @@ export function useSettingsControl({
     },
     live: {
       busy: live.liveBusy,
+      startPending: live.liveStartPending,
       clearPasteShortcut: live.clearLivePasteShortcut,
       clearShortcut: live.clearLiveShortcut,
       inputDevices: live.liveInputDevices,

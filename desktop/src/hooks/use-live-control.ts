@@ -1,5 +1,5 @@
 import { isTauri } from "@tauri-apps/api/core";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import type { LiveCaptureMode, LiveInputDeviceView, LiveSessionView } from "@/lib/live-session";
@@ -32,59 +32,86 @@ const initialLiveView: LiveSessionView = {
   visibility: "enabled",
 };
 
+type LiveCommand = { run: () => Promise<LiveSessionView> };
+
 export function useLiveControl() {
   const [liveView, setLiveView] = useState<LiveSessionView>(initialLiveView);
   const [liveInputDevices, setLiveInputDevices] = useState<LiveInputDeviceView[]>([]);
-  const [liveBusy, setLiveBusy] = useState(false);
+  const [pending, setPending] = useState<LiveCommand | null>(null);
+  const currentCommand = useRef<LiveCommand | null>(null);
   const [liveSettingsError, setLiveSettingsError] = useState("");
 
+  const viewRevision = useRef(0);
+  const acceptLiveView = useCallback((view: LiveSessionView) => {
+    viewRevision.current++;
+    setLiveView(view);
+  }, []);
+  const refreshLiveView = useCallback(async () => {
+    const revision = ++viewRevision.current;
+    const view = await liveStatus();
+    if (viewRevision.current === revision) setLiveView(view);
+  }, []);
   const refreshLiveState = useCallback(async () => {
     if (!isTauri()) return;
-
-    const [live, devices] = await Promise.all([liveStatus(), listInputDevices()]);
-    setLiveView(live);
-    setLiveInputDevices(devices);
-  }, []);
+    await Promise.all([refreshLiveView(), listInputDevices().then(setLiveInputDevices)]);
+  }, [refreshLiveView]);
 
   useEffect(() => {
     if (!isTauri()) return;
 
     let cancelled = false;
     let unlistenLive: (() => void) | undefined;
-    void listenLiveSession(setLiveView).then((stop) => {
+    void listenLiveSession(acceptLiveView).then((stop) => {
       if (cancelled) {
         stop();
         return;
       }
       unlistenLive = stop;
+      // Recover a completion that happened before this window mounted, even
+      // if model setup or microphone enumeration is unavailable.
+      return refreshLiveView();
+    }).catch((error) => {
+      if (!cancelled) setLiveSettingsError(String(error));
     });
 
     return () => {
       cancelled = true;
+      viewRevision.current++;
       unlistenLive?.();
     };
-  }, []);
+  }, [acceptLiveView, refreshLiveView]);
 
   const updateLive = useCallback(
     async (action: () => Promise<LiveSessionView>, message?: string) => {
-      if (!isTauri() || liveBusy) return;
+      if (!isTauri()) return;
+      const previous = currentCommand.current;
+      if (previous && !(previous.run === startLiveSession && action === stopLiveSession)) return;
 
-      setLiveBusy(true);
+      const command = { run: action };
+      currentCommand.current = command;
+      setPending(command);
       try {
         setLiveSettingsError("");
         const view = await action();
-        setLiveView(view);
-        setLiveInputDevices(await listInputDevices());
+        if (currentCommand.current !== command) return;
+        acceptLiveView(view);
+        const devices = await listInputDevices();
+        if (currentCommand.current !== command) return;
+        setLiveInputDevices(devices);
         if (message) toast.success(message);
       } catch (error) {
+        if (currentCommand.current !== command) return;
         const nextMessage = String(error);
         setLiveSettingsError(nextMessage);
         toast.error(nextMessage);
       } finally {
-        setLiveBusy(false);
+        if (currentCommand.current === command) {
+          currentCommand.current = null;
+          setPending(null);
+        }
       }
     },
-    [liveBusy],
+    [acceptLiveView],
   );
 
   const updateLiveOverlay = useCallback(
@@ -149,7 +176,8 @@ export function useLiveControl() {
   return {
     clearLivePasteShortcut,
     clearLiveShortcut,
-    liveBusy,
+    liveBusy: pending !== null,
+    liveStartPending: pending?.run === startLiveSession,
     liveInputDevices,
     liveSettingsError,
     liveView,

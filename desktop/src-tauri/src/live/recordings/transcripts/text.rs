@@ -6,6 +6,7 @@ use crate::live;
 pub(crate) fn transcript_text(view: &live::state::LiveSessionView) -> Option<String> {
     view.final_text
         .as_deref()
+        .filter(|text| !text.trim().is_empty())
         .or(view.partial_text.as_deref())
         .map(clean_transcript_text)
         .filter(|text| !text.is_empty())
@@ -19,10 +20,6 @@ pub(crate) fn completed_transcript_text(view: &live::state::LiveSessionView) -> 
 }
 
 pub(crate) fn clean_transcript_text(text: &str) -> String {
-    if text.trim() == "No live transcript captured." {
-        return "Transcript unavailable for this live recording.".into();
-    }
-
     let mut cleaned = text
         .split_whitespace()
         .map(fix_word_casing)

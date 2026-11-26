@@ -68,6 +68,25 @@ fn start_arms_without_claiming_mic_capture() {
 }
 
 #[test]
+fn stopping_during_microphone_start_cannot_republish_previous_words() {
+    let state = LiveSessionState::new(LiveSettings::default());
+    state.update(|view| {
+        view.final_text = Some("previous dictation".into());
+        view.partial_text = Some("older partial".into());
+    });
+    state.remember_completed_transcript("previous dictation");
+    state
+        .try_begin_local_start(LiveCaptureMode::Toggle, None, None)
+        .unwrap();
+    let saving = state.try_begin_saving(false).unwrap();
+    assert!(crate::live::recordings::transcript_text(&saving).is_none());
+    assert_eq!(
+        state.last_completed_transcript().as_deref(),
+        Some("previous dictation")
+    );
+}
+
+#[test]
 fn only_an_armed_local_start_can_be_cancelled_back_to_idle() {
     let state = LiveSessionState::new(LiveSettings::default());
     state
