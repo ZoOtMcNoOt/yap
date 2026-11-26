@@ -4,6 +4,24 @@ Tauri/React desktop client for explicit local dictation, organization-server rec
 
 Use Node 24 and pinned pnpm 11.7.0. The [cloud runbook](../docs/runbooks/cloud-development.md) installs Rust and native build dependencies. [Current status](../docs/CURRENT-STATUS.md) distinguishes portable checks from Windows/model qualification.
 
+## Build a development installer
+
+From `desktop/`, run `pnpm install --frozen-lockfile` and
+`pnpm tauri build --debug --ci -- --locked` on the target desktop.
+
+| Host | Package under `src-tauri/target/debug/bundle/` | Hosted startup check |
+| --- | --- | --- |
+| Windows x64 | NSIS installer in `nsis/` | The Windows installer workflow exercises installation and launch. |
+| Apple silicon macOS | Disk image in `dmg/` | The runner copies Yap.app off the disk image, ejects it and launches the installed copy with a fresh profile. |
+| Linux x64 | Debian package in `deb/` | The runner installs the package in Debian 13, checks its desktop entry and waits for a visible X11 window. |
+
+The macOS check also verifies the bundle identifier and microphone permission
+description. Both new checks compare each installed resource to its source.
+These checks cover development packages. Signing, microphone capture and
+real-model dictation have separate qualification steps.
+
+## Windows development
+
 Repo-owned Windows automation and installer validation require PowerShell Core 7.4 or newer (`pwsh.exe`). The scripts fail fast under legacy Windows PowerShell or an older Core runtime.
 
 ```powershell
