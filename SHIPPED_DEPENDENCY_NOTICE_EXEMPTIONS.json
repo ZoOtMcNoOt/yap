@@ -4,7 +4,7 @@
     {
       "ecosystem": "javascript",
       "name": "gsap",
-      "version": "3.15.0",
+      "version": "3.15.1",
       "sourceFile": "README.md",
       "reason": "The installed package archive omits a standalone license file; its own README contains the package license notice and copyright."
     },

@@ -2,7 +2,7 @@
   "schemaVersion": 3,
   "target": "x86_64-pc-windows-msvc",
   "generatedFrom": {
-    "noticeExemptionsSha256": "293c5bb746fe73d56b81d8f97bf2c4f2371251b742a384891418bcbf2b524878"
+    "noticeExemptionsSha256": "d9b7258ac70b4890f07465ac630ee6fd86ffa482c336143b19ed4814d87c670d"
   },
   "packages": {
     "javascript": [
@@ -104,7 +104,7 @@
       },
       {
         "name": "@radix-ui/primitive",
-        "version": "1.1.7",
+        "version": "1.2.0",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -120,7 +120,7 @@
       },
       {
         "name": "@radix-ui/react-accessible-icon",
-        "version": "1.1.15",
+        "version": "1.2.0",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -136,7 +136,7 @@
       },
       {
         "name": "@radix-ui/react-accordion",
-        "version": "1.2.20",
+        "version": "1.3.1",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -152,7 +152,7 @@
       },
       {
         "name": "@radix-ui/react-alert-dialog",
-        "version": "1.1.23",
+        "version": "1.2.1",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -168,7 +168,7 @@
       },
       {
         "name": "@radix-ui/react-arrow",
-        "version": "1.1.15",
+        "version": "1.1.17",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -184,7 +184,7 @@
       },
       {
         "name": "@radix-ui/react-aspect-ratio",
-        "version": "1.1.15",
+        "version": "1.2.0",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -200,7 +200,7 @@
       },
       {
         "name": "@radix-ui/react-avatar",
-        "version": "1.2.6",
+        "version": "1.3.1",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -216,7 +216,7 @@
       },
       {
         "name": "@radix-ui/react-checkbox",
-        "version": "1.3.11",
+        "version": "1.4.1",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -232,7 +232,7 @@
       },
       {
         "name": "@radix-ui/react-collapsible",
-        "version": "1.1.20",
+        "version": "1.2.1",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -248,7 +248,7 @@
       },
       {
         "name": "@radix-ui/react-collection",
-        "version": "1.1.15",
+        "version": "1.2.0",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -280,7 +280,7 @@
       },
       {
         "name": "@radix-ui/react-context",
-        "version": "1.2.2",
+        "version": "1.3.0",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -296,7 +296,7 @@
       },
       {
         "name": "@radix-ui/react-context-menu",
-        "version": "2.3.7",
+        "version": "2.4.1",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -312,7 +312,7 @@
       },
       {
         "name": "@radix-ui/react-dialog",
-        "version": "1.1.23",
+        "version": "1.3.1",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -328,7 +328,7 @@
       },
       {
         "name": "@radix-ui/react-direction",
-        "version": "1.1.4",
+        "version": "1.2.0",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -344,7 +344,7 @@
       },
       {
         "name": "@radix-ui/react-dismissable-layer",
-        "version": "1.1.19",
+        "version": "1.2.1",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -360,7 +360,7 @@
       },
       {
         "name": "@radix-ui/react-dropdown-menu",
-        "version": "2.1.24",
+        "version": "2.2.1",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -376,7 +376,7 @@
       },
       {
         "name": "@radix-ui/react-focus-guards",
-        "version": "1.1.6",
+        "version": "1.2.0",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -392,7 +392,7 @@
       },
       {
         "name": "@radix-ui/react-focus-scope",
-        "version": "1.1.16",
+        "version": "1.3.1",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -408,7 +408,7 @@
       },
       {
         "name": "@radix-ui/react-form",
-        "version": "0.1.16",
+        "version": "0.3.0",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -424,7 +424,7 @@
       },
       {
         "name": "@radix-ui/react-hover-card",
-        "version": "1.1.23",
+        "version": "1.2.1",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -456,7 +456,7 @@
       },
       {
         "name": "@radix-ui/react-label",
-        "version": "2.1.15",
+        "version": "2.1.17",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -472,7 +472,7 @@
       },
       {
         "name": "@radix-ui/react-menu",
-        "version": "2.1.24",
+        "version": "2.2.1",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -488,7 +488,7 @@
       },
       {
         "name": "@radix-ui/react-menubar",
-        "version": "1.1.24",
+        "version": "1.2.1",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -504,7 +504,7 @@
       },
       {
         "name": "@radix-ui/react-navigation-menu",
-        "version": "1.2.22",
+        "version": "1.4.1",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -520,7 +520,7 @@
       },
       {
         "name": "@radix-ui/react-one-time-password-field",
-        "version": "0.1.16",
+        "version": "0.2.1",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -536,7 +536,7 @@
       },
       {
         "name": "@radix-ui/react-password-toggle-field",
-        "version": "0.1.11",
+        "version": "0.2.1",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -552,7 +552,7 @@
       },
       {
         "name": "@radix-ui/react-popover",
-        "version": "1.1.23",
+        "version": "1.3.1",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -568,7 +568,7 @@
       },
       {
         "name": "@radix-ui/react-popper",
-        "version": "1.3.7",
+        "version": "1.4.0",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -584,7 +584,7 @@
       },
       {
         "name": "@radix-ui/react-portal",
-        "version": "1.1.17",
+        "version": "1.2.0",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -600,7 +600,7 @@
       },
       {
         "name": "@radix-ui/react-presence",
-        "version": "1.1.10",
+        "version": "1.1.11",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -616,7 +616,7 @@
       },
       {
         "name": "@radix-ui/react-primitive",
-        "version": "2.1.10",
+        "version": "2.2.0",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -632,7 +632,7 @@
       },
       {
         "name": "@radix-ui/react-progress",
-        "version": "1.1.16",
+        "version": "1.2.1",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -648,7 +648,7 @@
       },
       {
         "name": "@radix-ui/react-radio-group",
-        "version": "1.4.7",
+        "version": "1.5.1",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -664,7 +664,7 @@
       },
       {
         "name": "@radix-ui/react-roving-focus",
-        "version": "1.1.19",
+        "version": "1.2.1",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -680,7 +680,7 @@
       },
       {
         "name": "@radix-ui/react-scroll-area",
-        "version": "1.2.18",
+        "version": "1.4.0",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -696,7 +696,7 @@
       },
       {
         "name": "@radix-ui/react-select",
-        "version": "2.3.7",
+        "version": "2.4.1",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -712,7 +712,7 @@
       },
       {
         "name": "@radix-ui/react-separator",
-        "version": "1.1.15",
+        "version": "1.2.0",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -728,7 +728,7 @@
       },
       {
         "name": "@radix-ui/react-slider",
-        "version": "1.4.7",
+        "version": "1.6.1",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -744,7 +744,7 @@
       },
       {
         "name": "@radix-ui/react-slot",
-        "version": "1.3.3",
+        "version": "1.5.0",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -760,7 +760,7 @@
       },
       {
         "name": "@radix-ui/react-switch",
-        "version": "1.3.7",
+        "version": "1.4.1",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -776,7 +776,7 @@
       },
       {
         "name": "@radix-ui/react-tabs",
-        "version": "1.1.21",
+        "version": "1.2.1",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -792,7 +792,7 @@
       },
       {
         "name": "@radix-ui/react-toast",
-        "version": "1.2.23",
+        "version": "1.3.1",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -808,7 +808,7 @@
       },
       {
         "name": "@radix-ui/react-toggle",
-        "version": "1.1.18",
+        "version": "1.2.1",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -824,7 +824,7 @@
       },
       {
         "name": "@radix-ui/react-toggle-group",
-        "version": "1.1.19",
+        "version": "1.2.1",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -840,7 +840,7 @@
       },
       {
         "name": "@radix-ui/react-toolbar",
-        "version": "1.1.19",
+        "version": "1.2.1",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -856,7 +856,7 @@
       },
       {
         "name": "@radix-ui/react-tooltip",
-        "version": "1.2.16",
+        "version": "1.4.1",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -872,7 +872,7 @@
       },
       {
         "name": "@radix-ui/react-use-callback-ref",
-        "version": "1.1.4",
+        "version": "1.1.5",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -888,7 +888,7 @@
       },
       {
         "name": "@radix-ui/react-use-controllable-state",
-        "version": "1.2.6",
+        "version": "1.3.0",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -920,7 +920,7 @@
       },
       {
         "name": "@radix-ui/react-use-escape-keydown",
-        "version": "1.1.5",
+        "version": "1.1.6",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -1000,7 +1000,7 @@
       },
       {
         "name": "@radix-ui/react-use-size",
-        "version": "1.1.4",
+        "version": "1.1.5",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -1016,7 +1016,7 @@
       },
       {
         "name": "@radix-ui/react-visually-hidden",
-        "version": "1.2.11",
+        "version": "1.2.13",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -1048,7 +1048,7 @@
       },
       {
         "name": "@tauri-apps/api",
-        "version": "2.12.1",
+        "version": "2.12.5",
         "licenseExpression": "Apache-2.0 OR MIT",
         "licenseTerms": [
           "Apache-2.0",
@@ -1064,10 +1064,6 @@
           {
             "sourceFile": "LICENSE-MIT",
             "sha256": "9dd42ea92cff2ede5cd477cbfcce051b2d0115c0ac7f368ee88cb545055dff1d"
-          },
-          {
-            "sourceFile": "LICENSE.spdx",
-            "sha256": "5e834fe9788c524210deda859c46a550ffa5aa0cba9ea0572f0d81120e97c008"
           }
         ]
       },
@@ -1201,7 +1197,7 @@
       },
       {
         "name": "gsap",
-        "version": "3.15.0",
+        "version": "3.15.1",
         "licenseExpression": "Standard 'no charge' license: https://gsap.com/standard-license.",
         "licenseTerms": [
           "GSAP-Standard"
@@ -1212,13 +1208,13 @@
         "noticeDocuments": [
           {
             "sourceFile": "README.md",
-            "sha256": "66a79667b0538b19634b5a000a9a3debe588c98d390424e73e5d4de847270828"
+            "sha256": "af5842848530b4f645a822a08813c52789982e1d895189f0b3faeb034070225e"
           }
         ]
       },
       {
         "name": "radix-ui",
-        "version": "1.6.7",
+        "version": "1.8.1",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -1234,7 +1230,7 @@
       },
       {
         "name": "react",
-        "version": "19.3.0",
+        "version": "19.3.1",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -1250,7 +1246,7 @@
       },
       {
         "name": "react-dom",
-        "version": "19.3.0",
+        "version": "19.3.1",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -1347,7 +1343,7 @@
       },
       {
         "name": "tailwind-merge",
-        "version": "3.7.0",
+        "version": "3.7.1",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -1363,7 +1359,7 @@
       },
       {
         "name": "tslib",
-        "version": "2.8.1",
+        "version": "2.9.1",
         "licenseExpression": "0BSD",
         "licenseTerms": [
           "0BSD"
