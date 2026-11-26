@@ -64,13 +64,37 @@ jobs:
       - name: Check installed Debian package
         if: runner.os == 'Linux'
         run: |
-          docker run --rm --init --mount "type=bind,src=$GITHUB_WORKSPACE,dst=/checks,readonly" \
-            --workdir /checks debian:13-slim@sha256:8aa5a7bf5a1955bddbe7d74fcdd0b91ab30e74362a8b73af672b0481b35b44a0 sh -ec '
+          container=$(docker run -d --init --network bridge \
+            --mount "type=bind,src=$GITHUB_WORKSPACE,dst=/checks,readonly" --workdir /checks \
+            debian:13-slim@sha256:8aa5a7bf5a1955bddbe7d74fcdd0b91ab30e74362a8b73af672b0481b35b44a0 sleep infinity)
+          trap 'docker rm -f "$container" >/dev/null' EXIT
+          docker exec "$container" sh -ec '
               apt-get -o APT::Update::Error-Mode=any update
               DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-                ./desktop/src-tauri/target/debug/bundle/deb/*.deb python3 xvfb xauth x11-utils dbus-x11
+                ./desktop/src-tauri/target/debug/bundle/deb/*.deb python3 python3-pyatspi xvfb xauth x11-utils dbus-x11
+            '
+          docker network disconnect bridge "$container"
+          docker exec "$container" sh -ec '
+              test "$(ls /sys/class/net)" = lo
+              echo "Only the loopback interface is present for the desktop lifecycle check."
               useradd --create-home yap-smoke
-              runuser -u yap-smoke -- dbus-run-session -- xvfb-run -a python3 verification/test-desktop-package.py
+              test_home=$(runuser -u yap-smoke -- mktemp -d)
+              profile="$test_home/.local/share/com.mcnatg1.yap"
+              check_launch() {
+                runuser -u yap-smoke -- dbus-run-session -- xvfb-run -a \
+                  python3 verification/test-desktop-package.py --test-home "$test_home" "$@"
+              }
+              check_profile() {
+                runuser -u yap-smoke -- python3 verification/package-profile.py "$1" "$profile"
+              }
+              check_launch
+              check_profile seed
+              dpkg -r yap
+              test ! -e /usr/bin/yap-desktop
+              check_profile verify
+              dpkg -i ./desktop/src-tauri/target/debug/bundle/deb/*.deb
+              check_launch --check-saved-history
+              check_profile verify
             '
       - name: Install and launch the macOS app after ejecting its disk image
         if: runner.os == 'macOS'
