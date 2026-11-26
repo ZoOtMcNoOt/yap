@@ -53,6 +53,8 @@ jobs:
           rustup show active-toolchain
           pnpm --dir .. install --frozen-lockfile
           pnpm --dir .. tauri build --debug --ci -- --locked
+      - name: Transcribe the licensed recording with the pinned desktop recognizer
+        run: python3 verification/test-desktop-dictation.py
       - name: Check installed Debian package
         if: runner.os == 'Linux'
         run: |

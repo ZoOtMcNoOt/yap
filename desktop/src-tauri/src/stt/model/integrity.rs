@@ -35,7 +35,7 @@ pub fn verify_artifact(
 
 /// Installation verifies the retained staging object, without reopening its
 /// pathname or relaxing the Windows sharing boundary on admitted artifacts.
-pub(super) fn verify_open_artifact(
+pub(crate) fn verify_open_artifact(
     file: &File,
     expected_bytes: u64,
     expected_sha256: &str,

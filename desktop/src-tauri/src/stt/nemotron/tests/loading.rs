@@ -1,6 +1,5 @@
 use super::*;
 
-#[cfg(windows)]
 #[test]
 fn load_verification_hashes_current_artifacts_even_when_markers_claim_ready() {
     let dir = TestDir::new();
@@ -93,22 +92,31 @@ fn load_lease_keeps_snapshot_artifacts_immutable_until_the_engine_retires() {
     assert!(!snapshot_root.exists());
 }
 
-#[cfg(not(windows))]
+#[cfg(any(target_os = "linux", target_os = "macos"))]
 #[test]
-fn native_model_loading_fails_closed_off_the_supported_windows_target() {
+fn native_model_reads_verified_bytes_after_source_replacement_and_removal() {
     let dir = TestDir::new();
     for artifact in TEST_ARTIFACTS {
         write_verified_artifact(dir.path(), artifact);
     }
-    let loader_called = std::cell::Cell::new(false);
-
-    let result = load_local_fallback_at_with_artifacts(dir.path(), true, TEST_ARTIFACTS, |_| {
-        loader_called.set(true);
-        Ok(())
-    });
-
-    assert!(matches!(result, Err(SttError::ModelCorrupt)));
-    assert!(!loader_called.get());
+    let loaded = load_local_fallback_at_with_artifacts(dir.path(), true, TEST_ARTIFACTS, |paths| {
+        std::fs::write(dir.path().join(TEST_ARTIFACTS[0].file), b"xyz").unwrap();
+        std::fs::remove_file(dir.path().join(TEST_ARTIFACTS[3].file)).unwrap();
+        assert_eq!(
+            std::fs::read(&paths.encoder).unwrap(),
+            TEST_ARTIFACT_CONTENTS
+        );
+        assert_eq!(
+            std::fs::read(&paths.tokens).unwrap(),
+            TEST_ARTIFACT_CONTENTS
+        );
+        #[cfg(target_os = "linux")]
+        assert!(std::fs::write(&paths.encoder, b"xyz").is_err());
+        Ok(paths.decoder.clone())
+    })
+    .unwrap();
+    let (path, _guard) = loaded.into_parts();
+    assert_eq!(std::fs::read(path).unwrap(), TEST_ARTIFACT_CONTENTS);
 }
 
 #[cfg(windows)]
