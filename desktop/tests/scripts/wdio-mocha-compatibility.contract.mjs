@@ -10,6 +10,12 @@ import { MochaAdapter } from "@wdio/mocha-framework";
 const adapterRequire = createRequire(import.meta.resolve("@wdio/mocha-framework"));
 const mochaRequire = createRequire(adapterRequire.resolve("mocha"));
 
+test("WebdriverIO can load the Tauri service and launcher from the locked packages", async () => {
+  const { default: service, launcher } = await import("@wdio/tauri-service");
+  assert.equal(typeof service, "function");
+  assert.equal(typeof launcher, "function");
+});
+
 test("the adapter's Mocha preserves unified and inline assertion diffs", () => {
   const Base = mochaRequire("./lib/reporters/base.js");
   const previous = { inlineDiffs: Base.inlineDiffs, useColors: Base.useColors };
