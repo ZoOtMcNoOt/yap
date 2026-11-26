@@ -72,15 +72,6 @@ def main() -> None:
             time.sleep(3)
             if process.poll() is not None:
                 raise RuntimeError("Packaged app exited immediately after startup")
-            if args.macos_app:
-                subprocess.run(
-                    [
-                        "swift", str(Path(__file__).with_name("test-macos-reopen.swift")),
-                        str(process.pid), str(args.macos_app.resolve()), str(log),
-                    ],
-                    check=True,
-                    timeout=120,
-                )
         finally:
             try:
                 os.killpg(process.pid, signal.SIGTERM)
@@ -90,6 +81,15 @@ def main() -> None:
                 process.wait()
             except ProcessLookupError:
                 process.wait()
+        if args.macos_app:
+            subprocess.run(
+                [
+                    "swift", str(Path(__file__).with_name("test-macos-reopen.swift")),
+                    str(args.macos_app.resolve()), str(profile / "hidden-launch"),
+                ],
+                check=True,
+                timeout=120,
+            )
     print(f"Verified package resources and fresh-profile startup on {sys.platform}.")
 
 

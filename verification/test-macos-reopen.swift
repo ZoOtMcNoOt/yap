@@ -30,29 +30,52 @@ func hasWorkspaceWindow(_ pid: pid_t) -> Bool {
     }
 }
 
-guard CommandLine.arguments.count == 4, let pid = Int32(CommandLine.arguments[1]),
-      let app = NSRunningApplication(processIdentifier: pid),
-      app.bundleURL?.standardizedFileURL.path ==
-        URL(fileURLWithPath: CommandLine.arguments[2]).standardizedFileURL.path else {
-    throw ProbeFailure("Expected the smoke-test process to own the supplied app bundle")
+func openBundle(_ arguments: [String]) throws {
+    let launcher = Process()
+    launcher.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+    launcher.arguments = arguments
+    try launcher.run()
+    try waitFor("LaunchServices did not finish opening the bundle") { !launcher.isRunning }
+    guard launcher.terminationStatus == 0 else { throw ProbeFailure("LaunchServices refused to open Yap") }
 }
-let log = URL(fileURLWithPath: CommandLine.arguments[3])
-try waitFor("No visible workspace before hiding the app") { hasWorkspaceWindow(pid) }
-guard app.hide() else { throw ProbeFailure("macOS did not accept the request to hide Yap") }
-try waitFor("The running workspace did not disappear") { app.isHidden && !hasWorkspaceWindow(pid) }
-let offset = try Data(contentsOf: log).count
 
-let launcher = Process()
-launcher.executableURL = URL(fileURLWithPath: "/usr/bin/open")
-// Keep a failed launch in the smoke profile even if LaunchServices starts a process.
-let profile = log.deletingLastPathComponent().deletingLastPathComponent()
-launcher.arguments = ["--env", "YAP_APP_DATA_DIR=\(profile.path)", "-a", CommandLine.arguments[2]]
-try launcher.run()
-try waitFor("LaunchServices did not finish opening the bundle") { !launcher.isRunning }
-guard launcher.terminationStatus == 0 else { throw ProbeFailure("LaunchServices refused to open Yap") }
-try waitFor("Reopen did not activate the original process and show its workspace") {
-    let tail = try Data(contentsOf: log).dropFirst(offset)
-    return !app.isTerminated && app.isActive && hasWorkspaceWindow(pid)
-        && String(decoding: tail, as: UTF8.self).contains("macOS asked Yap to reopen the main window")
+func verifyReopen(bundle: URL, profile: URL) throws {
+    let log = profile.appendingPathComponent("logs/yap.log")
+    let arguments = ["--env", "YAP_APP_DATA_DIR=\(profile.path)", "-a", bundle.path]
+    guard let identity = Bundle(url: bundle)?.bundleIdentifier else {
+        throw ProbeFailure("Missing bundle identifier")
+    }
+    func instance() -> NSRunningApplication? {
+        NSRunningApplication.runningApplications(withBundleIdentifier: identity).first {
+            $0.bundleURL?.resolvingSymlinksInPath().path == bundle.resolvingSymlinksInPath().path
+        }
+    }
+    guard instance() == nil else { throw ProbeFailure("The first installed smoke process is still running") }
+    try openBundle(["-n", "-g", "-j"] + arguments)
+    try waitFor("Could not locate the installed app after hidden launch") { instance() != nil }
+    guard let app = instance() else { throw ProbeFailure("The installed app exited during launch") }
+    defer {
+        if !app.isTerminated {
+            _ = app.terminate()
+            do { try waitFor("App did not terminate") { app.isTerminated } }
+            catch { _ = app.forceTerminate() }
+        }
+    }
+    let pid = app.processIdentifier
+    try waitFor("Hidden launch did not establish a running hidden workspace") {
+        guard let contents = try? String(contentsOf: log, encoding: .utf8) else { return false }
+        return contents.contains(" app start") && app.isHidden && !hasWorkspaceWindow(pid)
+    }
+    let offset = try Data(contentsOf: log).count
+    try openBundle(arguments)
+    try waitFor("Reopen did not activate the original process and show its workspace") {
+        let tail = try Data(contentsOf: log).dropFirst(offset)
+        return !app.isTerminated && app.isActive && hasWorkspaceWindow(pid)
+            && String(decoding: tail, as: UTF8.self).contains("macOS asked Yap to reopen the main window")
+    }
+    print("LaunchServices reopened the hidden workspace in the original Yap process \(pid).")
 }
-print("LaunchServices reopened the hidden workspace in the original Yap process \(pid).")
+
+guard CommandLine.arguments.count == 3 else { throw ProbeFailure("Expected an app bundle and fresh profile directory") }
+try verifyReopen(bundle: URL(fileURLWithPath: CommandLine.arguments[1]),
+                 profile: URL(fileURLWithPath: CommandLine.arguments[2]))
