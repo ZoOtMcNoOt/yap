@@ -86,18 +86,17 @@ fn start_owned_background_work(
         // a direct response to the pointer: at 125 ms the pill visibly lags the
         // hand. The other two passes stay on their original cadence by counting
         // ticks rather than by running more often.
-        let mut activation_ticks = 0_u8;
+        let mut cursor_ticks = 0_u8;
         lifecycle.spawn_periodic(
             "live-overlay-monitor",
             std::time::Duration::from_millis(40),
             move || {
                 live::overlay_window::sync_reveal(&overlay_app);
-                activation_ticks = activation_ticks.saturating_add(1);
-                if activation_ticks < 3 {
+                cursor_ticks = cursor_ticks.saturating_add(1);
+                if cursor_ticks < 3 {
                     return;
                 }
-                activation_ticks = 0;
-                consume_existing_instance_activation_request(&overlay_app);
+                cursor_ticks = 0;
                 live::overlay_window::follow_cursor_if_idle(&overlay_app);
                 recovery_ticks = recovery_ticks.saturating_add(1);
                 if recovery_ticks >= 16 {
@@ -212,7 +211,12 @@ pub(crate) fn run() {
     let app_data_directory = paths::app_data_dir();
 
     // This guard remains in this stack frame until Tauri's blocking event loop returns.
-    let _instance_lease = match acquire_instance_lease_at(&app_data_directory) {
+    let _instance_lease = match acquire_primary_instance_at(
+        &app_data_directory,
+        INSTANCE_ACTIVATION_HANDOFF_POLLS,
+        INSTANCE_ACTIVATION_HANDOFF_POLL_INTERVAL,
+        std::thread::sleep,
+    ) {
         Ok(lease) => {
             crate::diagnostics::log(&format!(
                 "single instance: took the lease in {}",
@@ -250,17 +254,6 @@ pub(crate) fn run() {
         }
         Err(error) => stop_for_instance_lease_error(&error),
     };
-    if let Err(error) = prepare_primary_instance_activation_state_at(
-        &paths::app_data_dir(),
-        INSTANCE_ACTIVATION_HANDOFF_POLLS,
-        INSTANCE_ACTIVATION_HANDOFF_POLL_INTERVAL,
-        std::thread::sleep,
-    ) {
-        stop_for_instance_lease_error(&std::io::Error::new(
-            error.kind(),
-            format!("could not prepare the primary activation state: {error}"),
-        ));
-    }
     if let Err(error) = paths::migrate_legacy_app_data() {
         stop_for_migration_error(&error);
     }
@@ -268,6 +261,10 @@ pub(crate) fn run() {
         crate::diagnostics::log(&format!("panic: {panic}"));
     }));
     crate::diagnostics::log("app start");
+
+    let desktop_lifecycle = runtime::DesktopLifecycle::new();
+    let activation_app = start_instance_activation_monitor(&desktop_lifecycle, app_data_directory)
+        .unwrap_or_else(|error| stop_for_instance_lease_error(&error));
 
     let stt_state = stt::dispatch::SttState::new();
     let live_settings = live::settings::load();
@@ -280,7 +277,6 @@ pub(crate) fn run() {
         stt::ambernet_language_detector::AcousticLanguageDetectorInstallState::new();
     let live_runtime_for_monitor = live_runtime.clone();
     let live_runtime_for_exit = live_runtime.clone();
-    let desktop_lifecycle = runtime::DesktopLifecycle::new();
 
     let builder = tauri::Builder::default()
         .plugin(navigation_guard())
@@ -330,6 +326,10 @@ pub(crate) fn run() {
         .build(tauri::generate_context!())
         .expect("error while running tauri application")
         .run(move |app_handle, event| match event {
+            tauri::RunEvent::Ready => {
+                let _ = activation_app.set(app_handle.clone());
+                crate::diagnostics::log("single instance: workspace ready for activation");
+            }
             // LaunchServices can reopen the existing app without starting another process.
             // Its visible window may be the live overlay while the workspace is hidden.
             #[cfg(target_os = "macos")]

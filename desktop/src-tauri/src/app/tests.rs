@@ -1,12 +1,11 @@
 use super::{
-    acquire_instance_lease_at, begin_instance_activation_shutdown_at,
-    complete_existing_instance_activation_handoff_at,
-    consume_existing_instance_activation_request_at, exit_request_disposition,
+    acquire_instance_lease_at, acquire_primary_instance_at, begin_instance_activation_shutdown_at,
+    complete_existing_instance_activation_handoff_at, exit_request_disposition,
     instance_lease_startup_message, is_allowed_app_navigation,
-    prepare_primary_instance_activation_state_at, publish_existing_instance_activation_request_at,
+    publish_existing_instance_activation_request_at,
     reopen_instance_activation_after_abandoned_shutdown_at, report_activation_request_result,
     request_existing_instance_activation_at,
-    request_existing_instance_activation_at_with_before_publish,
+    request_existing_instance_activation_at_with_before_publish, service_instance_activation_at,
     take_existing_instance_activation_request_at, try_acquire_instance_activation_handoff_lease_at,
     write_startup_migration_diagnostic, ExitRequestDisposition, InstanceActivationHandoff,
     INSTANCE_ACTIVATION_REQUEST, INSTANCE_ACTIVATION_REQUEST_FILE, INSTANCE_SHUTDOWN,
@@ -19,6 +18,65 @@ use std::{
     },
     time::Duration,
 };
+
+fn consume_existing_instance_activation_request_at(
+    root: &std::path::Path,
+    mut activate: impl FnMut(),
+) -> std::io::Result<bool> {
+    service_instance_activation_at(root, &mut false, || {
+        activate();
+        true
+    })
+}
+
+#[test]
+fn cold_launch_acknowledges_then_reveals_once_when_ready() {
+    let directory = std::env::temp_dir().join(format!(
+        "yap-cold-activation-{}-{}",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    ));
+    let root = directory.as_path();
+    std::fs::create_dir(root).unwrap();
+    let request = root.join(INSTANCE_ACTIVATION_REQUEST_FILE);
+    let mut pending = false;
+    for _ in 0..2 {
+        request_existing_instance_activation_at(&request).unwrap();
+        assert!(service_instance_activation_at(root, &mut pending, || false).unwrap());
+        assert!(pending);
+        let result = complete_existing_instance_activation_handoff_at(
+            root,
+            1,
+            Duration::ZERO,
+            || Ok(None::<()>),
+            |_| panic!("request was already accepted"),
+        )
+        .unwrap();
+        assert!(matches!(result, InstanceActivationHandoff::Acknowledged));
+    }
+    begin_instance_activation_shutdown_at(root, 1, Duration::ZERO, |_| {}).unwrap();
+    assert!(!service_instance_activation_at(root, &mut pending, || {
+        panic!("a pending request must not reveal the workspace during shutdown")
+    })
+    .unwrap());
+    reopen_instance_activation_after_abandoned_shutdown_at(root, 1, Duration::ZERO, |_| {})
+        .unwrap();
+    let mut reveals = 0;
+    for expected_request in [true, false] {
+        let requested = service_instance_activation_at(root, &mut pending, || {
+            reveals += 1;
+            true
+        })
+        .unwrap();
+        assert_eq!(requested, expected_request);
+    }
+    assert_eq!(reveals, 1);
+    assert!(!pending);
+    std::fs::remove_dir_all(directory).unwrap();
+}
 
 #[test]
 fn exit_request_requires_semantic_quit_authorization() {
@@ -487,11 +545,19 @@ fn new_primary_clears_stale_shutdown_and_request_markers() {
     begin_instance_activation_shutdown_at(&root, 1, Duration::ZERO, |_| {}).unwrap();
     assert_eq!(std::fs::read(&shutdown).unwrap(), INSTANCE_SHUTDOWN);
 
-    let instance_lease = acquire_instance_lease_at(&root).unwrap();
-    prepare_primary_instance_activation_state_at(&root, 1, Duration::ZERO, |_| {}).unwrap();
+    let instance_lease = acquire_primary_instance_at(&root, 1, Duration::ZERO, |_| {}).unwrap();
 
     assert!(!shutdown.exists());
     assert!(!request.exists());
+    request_existing_instance_activation_at(&request).unwrap();
+    assert!(matches!(
+        acquire_primary_instance_at(&root, 1, Duration::ZERO, |_| {}),
+        Err(error) if error.kind() == std::io::ErrorKind::WouldBlock
+    ));
+    assert!(
+        request.exists(),
+        "a contender must leave the owner's request intact"
+    );
     drop(instance_lease);
     std::fs::remove_dir_all(root).unwrap();
 }

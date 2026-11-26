@@ -341,19 +341,21 @@ pub(super) fn clear_owned_instance_activation_state_at(
     )
 }
 
-pub(super) fn prepare_primary_instance_activation_state_at(
+pub(super) fn acquire_primary_instance_at(
     app_data_directory: &std::path::Path,
     max_polls: usize,
     poll_interval: std::time::Duration,
     pause: impl FnMut(std::time::Duration),
-) -> std::io::Result<()> {
+) -> std::io::Result<exclusive_file_lease::ExclusiveFileLease> {
     let _handoff_lease = acquire_instance_activation_handoff_lease_at(
         app_data_directory,
         max_polls,
         poll_interval,
         pause,
     )?;
-    clear_owned_instance_activation_state_at(app_data_directory)
+    let instance = acquire_instance_lease_at(app_data_directory)?;
+    clear_owned_instance_activation_state_at(app_data_directory)?;
+    Ok(instance)
 }
 
 pub(super) fn publish_existing_instance_activation_request_at(
@@ -579,41 +581,58 @@ pub(super) fn request_existing_instance_activation_or_acquire_lease(
     )
 }
 
-pub(super) fn consume_existing_instance_activation_request_at(
+pub(super) fn service_instance_activation_at(
     app_data_directory: &std::path::Path,
-    mut activate: impl FnMut(),
+    pending: &mut bool,
+    mut try_show_workspace: impl FnMut() -> bool,
 ) -> std::io::Result<bool> {
-    match try_acquire_instance_activation_handoff_lease_at(app_data_directory)? {
-        None => Ok(false),
-        Some(_handoff_lease) => {
-            if instance_shutdown_pending_at(&app_data_directory.join(INSTANCE_SHUTDOWN_FILE))? {
-                Ok(false)
-            } else {
-                let activated = take_existing_instance_activation_request_at(
-                    &app_data_directory.join(INSTANCE_ACTIVATION_REQUEST_FILE),
-                )?;
-                if activated {
-                    activate();
-                }
-                Ok(activated)
-            }
-        }
+    let Some(_handoff_lease) =
+        try_acquire_instance_activation_handoff_lease_at(app_data_directory)?
+    else {
+        return Ok(false);
+    };
+    if instance_shutdown_pending_at(&app_data_directory.join(INSTANCE_SHUTDOWN_FILE))? {
+        return Ok(false);
     }
+    let requested = take_existing_instance_activation_request_at(
+        &app_data_directory.join(INSTANCE_ACTIVATION_REQUEST_FILE),
+    )?;
+    *pending |= requested;
+    if *pending && try_show_workspace() {
+        *pending = false;
+    }
+    Ok(requested)
 }
 
-pub(super) fn consume_existing_instance_activation_request(app: &tauri::AppHandle) {
-    let result = consume_existing_instance_activation_request_at(&paths::app_data_dir(), || {
-        // The other half of the trace in `run()`. Between the two, a second
-        // launch that goes wrong says which side stopped: the launcher never
-        // reported the lease as held, or it did and this never fired.
-        crate::diagnostics::log("single instance: a second launch asked this Yap to show itself");
-        live::actions::show_main_window(app);
-    });
-    report_activation_request_result(
-        result,
-        &ACTIVATION_REQUEST_ERROR_LOGGED,
-        crate::diagnostics::log,
-    );
+pub(super) fn start_instance_activation_monitor(
+    lifecycle: &runtime::DesktopLifecycle,
+    directory: std::path::PathBuf,
+) -> std::io::Result<std::sync::Arc<std::sync::OnceLock<tauri::AppHandle>>> {
+    let ready_app = std::sync::Arc::new(std::sync::OnceLock::new());
+    let app = std::sync::Arc::clone(&ready_app);
+    // The lease owner can accept a request while WebView2 is starting.
+    // Repeated requests all mean the same thing: reveal the original workspace.
+    let mut pending = false;
+    lifecycle.spawn_periodic(
+        "instance-activation",
+        std::time::Duration::from_millis(120),
+        move || {
+            let result = service_instance_activation_at(&directory, &mut pending, || {
+                let Some(app) = app.get() else { return false };
+                live::actions::show_main_window(app)
+            });
+            if report_activation_request_result(
+                result,
+                &ACTIVATION_REQUEST_ERROR_LOGGED,
+                crate::diagnostics::log,
+            ) {
+                crate::diagnostics::log(
+                    "single instance: accepted a request to show the workspace",
+                );
+            }
+        },
+    )?;
+    Ok(ready_app)
 }
 
 pub(super) fn instance_lease_startup_message(error: &std::io::Error) -> String {
