@@ -3,6 +3,7 @@
 
 param(
   [string]$BundleDirectory = "",
+  [switch]$CheckOfflineHistory,
   [string]$ExpectedInstallerSha256 = "",
   [ValidateRange(1, 900)]
   [int]$ProcessTimeoutSeconds = 180,
@@ -76,20 +77,21 @@ function Invoke-BoundedProcess {
     [string]$FilePath,
     [string[]]$ArgumentList = @(),
     [Parameter(Mandatory)]
-    [string]$Label
+    [string]$Label,
+    [int]$TimeoutSeconds = $ProcessTimeoutSeconds
   )
 
   $arguments = @{}
   if ($ArgumentList.Count -gt 0) { $arguments.ArgumentList = $ArgumentList }
   $process = Start-Process -FilePath $FilePath @arguments -NoNewWindow -PassThru
   try {
-    $timeoutMilliseconds = [int][TimeSpan]::FromSeconds($ProcessTimeoutSeconds).TotalMilliseconds
+    $timeoutMilliseconds = [int][TimeSpan]::FromSeconds($TimeoutSeconds).TotalMilliseconds
     if (-not $process.WaitForExit($timeoutMilliseconds)) {
       $process.Kill($true)
       if (-not $process.WaitForExit(10000)) {
         throw "$Label timed out and its process tree could not be reaped."
       }
-      throw "$Label exceeded the $ProcessTimeoutSeconds second deadline."
+      throw "$Label exceeded the $TimeoutSeconds second deadline."
     }
     if ($process.ExitCode -ne 0) {
       throw "$Label failed with exit code $($process.ExitCode)."
@@ -108,7 +110,8 @@ function Wait-ForPathAbsence {
     [Parameter(Mandatory)]
     [string[]]$LiteralPaths,
     [Parameter(Mandatory)]
-    [string]$Label
+    [string]$Label,
+    [int]$TimeoutSeconds = $ProcessTimeoutSeconds
   )
 
   $timer = [Diagnostics.Stopwatch]::StartNew()
@@ -173,14 +176,17 @@ function Test-InstalledWorkspace {
       Start-Sleep -Milliseconds 100
     }
     $window = [InstalledWorkspace]::Find($appProcess.Id, $LaunchTimeoutSeconds)
-    $browserTimer = [Diagnostics.Stopwatch]::StartNew()
-    do {
-      $children = @(Get-CimInstance Win32_Process -Filter "Name = 'msedgewebview2.exe'" | Where-Object ParentProcessId -eq $appProcess.Id)
-      $browserPaths = @($children | ForEach-Object ExecutablePath | Where-Object { $_ } | Sort-Object -Unique)
-      if ($browserPaths.Count) { break }
-      Start-Sleep -Milliseconds 150
-    } while ($browserTimer.Elapsed.TotalSeconds -lt $LaunchTimeoutSeconds)
-    if ($browserPaths.Count -eq 0) { throw "The installed app did not own an identifiable WebView2 browser." }
+    if ($CheckOfflineHistory) {
+      $browserTimer = [Diagnostics.Stopwatch]::StartNew()
+      do {
+        $children = @(Get-CimInstance Win32_Process -Filter "Name = 'msedgewebview2.exe'" | Where-Object ParentProcessId -eq $appProcess.Id)
+        $browserPaths = @($children | ForEach-Object ExecutablePath | Where-Object { $_ } | Sort-Object -Unique)
+        if ($browserPaths.Count) { break }
+        Start-Sleep -Milliseconds 150
+      } while ($browserTimer.Elapsed.TotalSeconds -lt $LaunchTimeoutSeconds)
+      if ($browserPaths.Count -eq 0) { throw "The installed app did not own an identifiable WebView2 browser." }
+      $evidence.browserExecutables = $browserPaths
+    }
     if ($ReadHistory) {
       foreach ($browserPath in $browserPaths) {
         if ($browserPath -notin $firstInstall.browserExecutables) { throw "The reinstalled app used a different WebView2 executable." }
@@ -191,13 +197,17 @@ function Test-InstalledWorkspace {
         "-NoProfile", "-NonInteractive", "-STA", "-File", "`"$reader`"", "-WindowHandle", $window.ToInt64(), "-ReferenceFile", "`"$reference`""
       ) -Label "Read the reinstalled transcript through Windows UI Automation"
     }
-    $evidence.browserExecutables = $browserPaths
     [InstalledWorkspace]::Minimize($window, $LaunchTimeoutSeconds)
-    Invoke-BoundedProcess -FilePath $appExecutable -Label "Second launch with minimized workspace"
+    Invoke-BoundedProcess -FilePath $appExecutable -TimeoutSeconds $LaunchTimeoutSeconds -Label "Second launch with minimized workspace"
     [InstalledWorkspace]::WaitForRestore($window, $appProcess.Id, $LaunchTimeoutSeconds)
     [InstalledWorkspace]::CloseToTray($window, $LaunchTimeoutSeconds)
-    Invoke-BoundedProcess -FilePath $appExecutable -Label "Second launch after close to tray"
+    Invoke-BoundedProcess -FilePath $appExecutable -TimeoutSeconds $LaunchTimeoutSeconds -Label "Second launch after close to tray"
     [InstalledWorkspace]::WaitForRestore($window, $appProcess.Id, $LaunchTimeoutSeconds)
+  } catch {
+    if (Test-Path -LiteralPath $logPath) {
+      Get-Content -LiteralPath $logPath -Tail 70 | Where-Object { $_ -match 'single instance:| app start$|panic:|startup failed' } | ForEach-Object { Write-Host $_ }
+    }
+    throw
   } finally {
     if (-not $appProcess.HasExited) {
       $appProcess.Kill($true)
@@ -238,7 +248,12 @@ if (
 
 Test-PackageProfile verify
 Invoke-BoundedProcess -FilePath $installer.FullName -ArgumentList @("/S") -Label "Stock NSIS reinstall"
-$reinstalled = & (Join-Path $PSScriptRoot "test-installed-history-offline.ps1") -AppExecutable $appExecutable -BrowserExecutables $firstInstall.browserExecutables -CheckWorkspace { Test-InstalledWorkspace -ReadHistory }
+$reinstalled = if ($CheckOfflineHistory) {
+  & (Join-Path $PSScriptRoot "test-installed-history-offline.ps1") -AppExecutable $appExecutable `
+    -BrowserExecutables $firstInstall.browserExecutables -CheckWorkspace { Test-InstalledWorkspace -ReadHistory }
+} else {
+  Test-InstalledWorkspace
+}
 Test-PackageProfile verify
 Invoke-BoundedProcess -FilePath $uninstaller -ArgumentList @("/S") -Label "Final stock NSIS uninstall"
 Wait-ForPathAbsence -LiteralPaths @($uninstallRegistryPath, $installLocation) -Label "Final uninstall cleanup"
@@ -259,7 +274,7 @@ $result = [ordered]@{
   restoredOriginalMinimizedAndHiddenWindow = $true
   reinstallPreservedRecordingAndTwoRevisions = $true
   reinstallPreservedLocalDictation = $true
-  offlineHistoryDisplayedCompleteDictation = $true
+  offlineHistoryDisplayedCompleteDictation = [bool]$CheckOfflineHistory
   reinstallPreservedOrganizationRegistrationAndSignOut = $true
   stockSilentUninstallPreservedAppData = $true
   stockSilentUninstallPreservedProductRegistry = $true

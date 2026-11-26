@@ -628,6 +628,7 @@ pub(super) fn instance_lease_startup_message(error: &std::io::Error) -> String {
 }
 
 pub(super) fn stop_for_instance_lease_error(error: &std::io::Error) -> ! {
+    crate::diagnostics::log(&format!("single instance: startup stopped: {error}"));
     let message = instance_lease_startup_message(error);
 
     #[cfg(windows)]

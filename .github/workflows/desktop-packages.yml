@@ -141,9 +141,8 @@ jobs:
           pnpm tauri build --debug --ci --bundles nsis -- --locked
       - name: Inspect available Windows audio endpoints
         run: |
-          $devices = @(Get-PnpDevice -PresentOnly -Class AudioEndpoint -ErrorAction SilentlyContinue)
+          $devices = @(Get-CimInstance Win32_PnPEntity -Filter "PNPClass = 'AudioEndpoint'" -ErrorAction Stop | Where-Object Present)
           if ($devices.Count) { $devices | Format-Table Status, FriendlyName } else { Write-Host "No present Windows audio endpoints." }
-          exit 0
       - name: Reinstall the stock Windows package and reopen saved History offline
         working-directory: desktop
-        run: ./tests/scripts/smoke-nsis.ps1 -BundleDirectory ./src-tauri/target/debug/bundle/nsis
+        run: ./tests/scripts/smoke-nsis.ps1 -BundleDirectory ./src-tauri/target/debug/bundle/nsis -CheckOfflineHistory
