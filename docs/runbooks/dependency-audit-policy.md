@@ -175,6 +175,14 @@ must fail the inventory check.
 - Verify the actual consumer, renew provenance/notices and record the exact
   checked revision before treating a dependency update as release-ready.
 
+## November 26 frontend audit
+
+With Vite 8.3.3, Undici 6.29.1 and 7.30.1, and serialize-javascript 7.1.3,
+the frozen desktop lockfile passed the high/critical gate with no exceptions.
+The full audit still reports two moderate findings in glob and minimatch in
+the WebdriverIO tooling. Repeat the full audit and adapter compatibility tests
+when updating that tooling.
+
 ## Earlier decisions
 
 The August 3, 2026 compatible `brace-expansion` backports (`1.1.18` / `2.1.4`)
