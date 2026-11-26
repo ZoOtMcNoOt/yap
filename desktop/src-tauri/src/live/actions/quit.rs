@@ -199,6 +199,9 @@ impl QuitCoordinator {
 
 pub(crate) fn show_main_window(app: &tauri::AppHandle) {
     if let Some(window) = app.get_webview_window(authorization::MAIN_WINDOW_LABEL) {
+        #[cfg(target_os = "macos")]
+        let _ = app.show();
+        let _ = window.unminimize();
         let _ = window.show();
         let _ = window.set_focus();
     }
