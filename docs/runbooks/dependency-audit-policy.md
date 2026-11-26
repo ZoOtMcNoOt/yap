@@ -2,8 +2,8 @@
 
 Audit findings are release inputs, not something to hide to obtain a green build.
 Yap currently has **no frontend advisory exceptions and no Rust advisory ignores**.
-High/critical frontend findings and Rust vulnerability-class findings block
-release. Warning-class findings require review at the actual shipping target.
+High/critical frontend findings, Rust vulnerability findings and RustSec
+unsoundness warnings block release. Review maintenance warnings for each shipping target.
 
 ## Run the gates
 
@@ -29,6 +29,12 @@ cargo audit --target-os windows --target-arch x86_64
 CI also checks the complete locked Windows dependency graph through the
 [Windows boundary guard](../../verification/test-windows-rust-dependency-boundary.ps1).
 Failure to inspect that graph is a failure, not evidence of absence.
+
+The same CI job audits the unfiltered desktop, server orchestrator and GLib
+verification lockfiles with the same advisory database and `--deny unsound`.
+The orchestrator's former Tokio 1.53.1 pin failed this check for
+`RUSTSEC-2026-0386`. Tokio 1.54.1 clears it. Dependabot checks the
+orchestrator workspace weekly.
 
 Audit the core Python server from the repository root with Python 3.12 and uv:
 

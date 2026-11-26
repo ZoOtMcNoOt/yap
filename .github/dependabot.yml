@@ -47,6 +47,17 @@ updates:
         versions:
           - 0.18.0
           - 0.18.1
+  - package-ecosystem: cargo
+    directory: /server/orchestrator
+    schedule:
+      interval: weekly
+    groups:
+      orchestrator-minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
   - package-ecosystem: uv
     directory: /server
     schedule:

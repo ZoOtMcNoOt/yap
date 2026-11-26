@@ -56,6 +56,18 @@ try {
     finally {
         Pop-Location
     }
+
+    foreach ($Lockfile in @(
+        'desktop/src-tauri/Cargo.lock'
+        'server/orchestrator/Cargo.lock'
+        'verification/glib-backport-regression/Cargo.lock'
+    )) {
+        Write-Host "Auditing all targets in $Lockfile"
+        & $CargoAudit audit --no-fetch --deny unsound --file (Join-Path $Repository $Lockfile)
+        if ($LASTEXITCODE -ne 0) {
+            throw "cargo-audit failed for $Lockfile with exit code $LASTEXITCODE."
+        }
+    }
 }
 finally {
     Remove-Item -LiteralPath $WorkRoot -Recurse -Force -ErrorAction SilentlyContinue
