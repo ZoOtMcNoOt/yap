@@ -53,6 +53,14 @@ jobs:
           rustup show active-toolchain
           pnpm --dir .. install --frozen-lockfile
           pnpm --dir .. tauri build --debug --ci -- --locked
+      - name: Verify native model snapshot reads and cleanup
+        working-directory: desktop/src-tauri
+        run: |
+          set -o pipefail
+          cargo test --locked --lib stt::nemotron::tests::loading:: -- --test-threads=1 | tee "$RUNNER_TEMP/model-snapshot-tests.log"
+          grep -Eq 'test result: ok\. [1-9][0-9]* passed; 0 failed; 0 ignored;' "$RUNNER_TEMP/model-snapshot-tests.log"
+      - name: Transcribe the licensed recording with the pinned desktop recognizer
+        run: python3 verification/test-desktop-dictation.py
       - name: Check installed Debian package
         if: runner.os == 'Linux'
         run: |

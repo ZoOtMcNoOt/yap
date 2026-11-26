@@ -14,6 +14,8 @@ use crate::stt::error::SttError;
 pub use download::{download_verified_file, DownloadRequest};
 pub use import::import_verified_file;
 pub use install_state::ModelInstallState;
+#[cfg(any(target_os = "linux", target_os = "macos"))]
+pub(crate) use integrity::verify_open_artifact;
 pub use integrity::{sha256_file, verify_artifact};
 pub use operation::DownloadOperation;
 pub(crate) use path_safety::{

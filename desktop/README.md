@@ -4,6 +4,14 @@ Tauri/React desktop client for explicit local dictation, organization-server rec
 
 Use Node 24 and pinned pnpm 11.7.0. The [cloud runbook](../docs/runbooks/cloud-development.md) installs Rust and native build dependencies. [Current status](../docs/CURRENT-STATUS.md) distinguishes portable checks from Windows/model qualification.
 
+## Verify local dictation
+
+From the repository root, run `python verification/test-desktop-dictation.py`
+on Windows, macOS or Linux to download and verify the pinned Nemotron model.
+Pass `--installed-models PATH` to use an existing Yap models directory offline.
+The native recognizer must transcribe the reference recording, return empty
+text for silence, and transcribe the recording again after the session resets.
+
 ## Build a development installer
 
 From `desktop/`, run `pnpm install --frozen-lockfile` and

@@ -3,35 +3,91 @@ use std::time::Instant;
 
 use yap_desktop_lib::audio::preprocess::{downmix_to_mono, LinearResampler};
 use yap_desktop_lib::live::stream::{self, LiveStreamEngine};
-use yap_desktop_lib::stt::parity::word_error_rate;
+use yap_desktop_lib::stt::{nemotron, parity::word_error_rate};
 
 fn main() {
     let args = std::env::args().skip(1).collect::<Vec<_>>();
-    if args.is_empty() {
-        eprintln!("usage: cargo run --example nemotron_profile -- <clip.wav> [reference.txt]");
-        std::process::exit(2);
+    if args == ["--verify-model"] {
+        let view = nemotron::verify_model(true);
+        if view.status != nemotron::FallbackModelStatus::Ready {
+            eprintln!("Nemotron file verification failed: {:?}", view.status);
+            std::process::exit(1);
+        }
+        return;
     }
+    let batch = args.first().is_some_and(|value| value == "--batch");
+    let paths = if batch && args.len() > 1 {
+        &args[1..]
+    } else if !batch && (1..=2).contains(&args.len()) {
+        &args[..1]
+    } else {
+        eprintln!("usage: nemotron_profile <clip.wav> [reference.txt] | --batch <clip.wav>... | --verify-model");
+        std::process::exit(2);
+    };
 
-    let wav = read_wav(Path::new(&args[0])).unwrap_or_else(|err| {
-        eprintln!("failed to read wav: {err}");
-        std::process::exit(1);
+    let reference = args.get(1).filter(|_| !batch).map(|path| {
+        let text = std::fs::read_to_string(path).unwrap_or_else(|err| {
+            eprintln!("failed to read reference: {err}");
+            std::process::exit(1);
+        });
+        if text.trim().is_empty() {
+            eprintln!("reference transcript is empty");
+            std::process::exit(1);
+        }
+        text
     });
-    let audio_ms = wav.samples.len() as u64 * 1000 / 16_000;
 
-    let load_started = Instant::now();
-    let mut engine = LiveStreamEngine::new().unwrap_or_else(|err| {
+    let mut model = None;
+    for (index, path) in paths.iter().enumerate() {
+        let wav = read_wav(Path::new(path)).unwrap_or_else(|err| {
+            eprintln!("failed to read {path}: {err}");
+            std::process::exit(1);
+        });
+        let (engine, load_ms) = model.get_or_insert_with(load_recognizer);
+        if index > 0 {
+            engine.reset();
+        }
+        let result = decode_clip(engine, &wav.samples);
+        if batch {
+            println!(
+                "{}",
+                serde_json::json!({
+                    "input": path,
+                    "samples": wav.samples.len(),
+                    "decode_ms": result.decode_ms,
+                    "transcript": result.text
+                })
+            );
+        } else {
+            print_profile(path, &wav, *load_ms, result, reference.as_deref());
+        }
+    }
+}
+
+fn load_recognizer() -> (LiveStreamEngine, u128) {
+    let started = Instant::now();
+    let engine = LiveStreamEngine::new().unwrap_or_else(|err| {
         eprintln!("failed to load Nemotron: {}", err.user_message());
         std::process::exit(1);
     });
-    let load_ms = load_started.elapsed().as_millis();
+    (engine, started.elapsed().as_millis())
+}
 
+struct ClipResult {
+    text: String,
+    decode_ms: u128,
+    first_text_ms: Option<u128>,
+    chunks: usize,
+}
+
+fn decode_clip(engine: &mut LiveStreamEngine, samples: &[f32]) -> ClipResult {
     let chunk = stream::chunk_samples();
     let mut final_text = String::new();
     let mut first_text_ms = None;
     let mut chunks = 0usize;
     let decode_started = Instant::now();
 
-    for samples in wav.samples.chunks(chunk) {
+    for samples in samples.chunks(chunk) {
         chunks += 1;
         if let Some(text) = engine.accept_samples(samples) {
             if first_text_ms.is_none() {
@@ -47,11 +103,32 @@ fn main() {
         final_text = text;
     }
 
-    let decode_ms = decode_started.elapsed().as_millis();
+    ClipResult {
+        text: final_text,
+        decode_ms: decode_started.elapsed().as_millis(),
+        first_text_ms,
+        chunks,
+    }
+}
+
+fn print_profile(
+    path: &str,
+    wav: &WavAudio,
+    load_ms: u128,
+    result: ClipResult,
+    reference: Option<&str>,
+) {
+    let ClipResult {
+        text,
+        decode_ms,
+        first_text_ms,
+        chunks,
+    } = result;
+    let audio_ms = wav.samples.len() as u64 * 1000 / 16_000;
     let rtf = decode_ms as f64 / audio_ms.max(1) as f64;
 
     println!("model=Nemotron 3.5 ASR Streaming 0.6B INT8");
-    println!("input={}", args[0]);
+    println!("input={path}");
     println!("source_rate={} channels={}", wav.source_rate, wav.channels);
     println!("audio_ms={audio_ms}");
     println!("chunk_ms={}", yap_desktop_lib::stt::nemotron::CHUNK_MS);
@@ -66,13 +143,12 @@ fn main() {
             .unwrap_or_else(|| "none".into())
     );
 
-    if let Some(reference_path) = args.get(1) {
-        let reference = std::fs::read_to_string(reference_path).unwrap_or_default();
-        let wer = word_error_rate(&reference, &final_text) * 100.0;
+    if let Some(reference) = reference {
+        let wer = word_error_rate(reference, &text) * 100.0;
         println!("wer={wer:.2}");
     }
 
-    println!("transcript={}", final_text.trim());
+    println!("transcript={}", text.trim());
 }
 
 struct WavAudio {
