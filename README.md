@@ -39,7 +39,7 @@ queued and leaves saved reading and local controls available.
 
 Yap is in active development. UI journeys, native boundaries, file preparation and
 database workflows can be tested without model hardware. Actual transcription
-quality, Windows behavior and enterprise deployment still require qualification
+quality, installed behavior on Windows, macOS and Linux, and enterprise deployment require qualification
 in their intended environments. [Current status](docs/CURRENT-STATUS.md) records
 the checks and remaining work.
 
@@ -87,7 +87,7 @@ pnpm --dir desktop test:e2e
 
 The [cloud guide](docs/runbooks/cloud-development.md) covers native builds,
 local PostgreSQL and server checks. Start with [desktop development](desktop/README.md)
-for Windows or [server development](server/README.md) for service configuration.
+for Windows, macOS and Linux installers, or [server development](server/README.md) for service configuration.
 These development checks do not need a GPU or model weights.
 
 ## Find your way around

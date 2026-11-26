@@ -5,7 +5,7 @@ export const journeyTranscript = "We agreed to publish the reviewed interview on
 
 // This fixture exercises renderer/native command and event boundaries. It does
 // not simulate inference accuracy, file admission, or native durability.
-export async function installRecordingJourneyBridge(page: Page, restoredStatus?: "queued_server" | "failed" | "complete", pickedName = "interview.mp3") {
+export async function installRecordingJourneyBridge(page: Page, restoredStatus?: "queued_server" | "failed" | "complete", pickedName = "interview.mp3", text = journeyTranscript) {
   await installQueuedServerBridge(page, "offline");
   await page.addInitScript(({ text, restoredStatus, pickedName }) => {
     type Job = {
@@ -136,5 +136,5 @@ export async function installRecordingJourneyBridge(page: Page, restoredStatus?:
       }
       return baseInvoke(command, args);
     };
-  }, { text: journeyTranscript, restoredStatus, pickedName });
+  }, { text, restoredStatus, pickedName });
 }

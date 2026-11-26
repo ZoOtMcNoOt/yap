@@ -9,7 +9,13 @@ use super::callback::{new_callback_boundary, CaptureCallback, CapturePorts, Capt
 const DEFAULT_BUFFER_CAPACITY_SAMPLES: usize = 8192;
 const PACKET_CHANNEL_CAPACITY: usize = 8;
 
+#[cfg(any(target_os = "macos", test))]
+mod stream_owner;
+
 pub struct CaptureAdapter {
+    #[cfg(target_os = "macos")]
+    stream: stream_owner::StreamOwner,
+    #[cfg(not(target_os = "macos"))]
     stream: cpal::Stream,
     worker: JoinHandle<()>,
 }
@@ -24,44 +30,61 @@ impl CaptureAdapter {
     where
         W: FnOnce(CapturePorts, mpsc::Receiver<cpal::StreamError>) + Send + 'static,
     {
-        let capacity = buffer_capacity_samples(config.buffer_size, config.channels)?;
-        let (callback, ports) = new_callback_boundary(
-            config.channels,
-            config.sample_rate.0,
-            capacity,
-            PACKET_CHANNEL_CAPACITY,
-            0,
-        )?;
-        let (errors, error_receiver) = mpsc::sync_channel(1);
-        let stream = match sample_format {
-            cpal::SampleFormat::F32 => {
-                build_capture_stream::<f32>(&device, &config, callback, errors)
-            }
-            cpal::SampleFormat::I16 => {
-                build_capture_stream::<i16>(&device, &config, callback, errors)
-            }
-            cpal::SampleFormat::U16 => {
-                build_capture_stream::<u16>(&device, &config, callback, errors)
-            }
-            format => Err(format!("Unsupported microphone format: {format}")),
-        }?;
-        let worker = std::thread::spawn(move || run_worker(ports, error_receiver));
-        if let Err(error) = stream.play() {
-            drop(stream);
-            let message = format!("Microphone access failed: {error}");
-            return match join_capture_worker(worker) {
-                Ok(()) => Err(message),
-                Err(join_error) => Err(format!("{message}; {join_error}")),
-            };
-        }
+        let open = move || open_capture(device, config, sample_format, run_worker);
+        #[cfg(target_os = "macos")]
+        let (stream, worker) = stream_owner::StreamOwner::open(open)?;
+        #[cfg(not(target_os = "macos"))]
+        let (stream, worker) = open()?;
         Ok(Self { stream, worker })
     }
 
     pub fn shutdown(self) -> Result<(), String> {
         let Self { stream, worker } = self;
+        #[cfg(target_os = "macos")]
+        let stopped = stream.shutdown();
+        #[cfg(not(target_os = "macos"))]
         drop(stream);
-        join_capture_worker(worker)
+        let drained = join_capture_worker(worker);
+        #[cfg(target_os = "macos")]
+        stopped?;
+        drained
     }
+}
+
+fn open_capture<W>(
+    device: cpal::Device,
+    config: cpal::StreamConfig,
+    sample_format: cpal::SampleFormat,
+    run_worker: W,
+) -> Result<(cpal::Stream, JoinHandle<()>), String>
+where
+    W: FnOnce(CapturePorts, mpsc::Receiver<cpal::StreamError>) + Send + 'static,
+{
+    let capacity = buffer_capacity_samples(config.buffer_size, config.channels)?;
+    let (callback, ports) = new_callback_boundary(
+        config.channels,
+        config.sample_rate.0,
+        capacity,
+        PACKET_CHANNEL_CAPACITY,
+        0,
+    )?;
+    let (errors, error_receiver) = mpsc::sync_channel(1);
+    let stream = match sample_format {
+        cpal::SampleFormat::F32 => build_capture_stream::<f32>(&device, &config, callback, errors),
+        cpal::SampleFormat::I16 => build_capture_stream::<i16>(&device, &config, callback, errors),
+        cpal::SampleFormat::U16 => build_capture_stream::<u16>(&device, &config, callback, errors),
+        format => Err(format!("Unsupported microphone format: {format}")),
+    }?;
+    let worker = std::thread::spawn(move || run_worker(ports, error_receiver));
+    if let Err(error) = stream.play() {
+        drop(stream);
+        let message = format!("Microphone access failed: {error}");
+        return match join_capture_worker(worker) {
+            Ok(()) => Err(message),
+            Err(join_error) => Err(format!("{message}; {join_error}")),
+        };
+    }
+    Ok((stream, worker))
 }
 
 pub(crate) fn join_capture_worker(worker: JoinHandle<()>) -> Result<(), String> {

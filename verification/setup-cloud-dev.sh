@@ -39,10 +39,7 @@ download_checked \
   04517472cf57d7f9cbd93897da9bed467c73ca6063c29d7655ebc20aa1d6023f
 tar -xzf "$tools_root/downloads/powershell-7.6.0-linux-x64.tar.gz" -C "$tools_root/powershell"
 chmod +x "$tools_root/powershell/pwsh"
-download_checked \
-  https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.8/sherpa-onnx-v1.13.8-linux-x64-static-lib.tar.bz2 \
-  "$tools_root/sherpa/sherpa-onnx-v1.13.8-linux-x64-static-lib.tar.bz2" \
-  e1fdc5b67530e15741ef897fa5ffff297056f3bf0c6d829a27af9225a4c4b5a6
+python3 "$repo_root/verification/stage-desktop-speech-runtime.py" linux-x86_64 "$tools_root/sherpa"
 
 # A user-owned prefix supplies native headers/libraries without administrator
 # access. Package signatures and the session's proxy/TLS trust remain enabled.
