@@ -16,6 +16,7 @@ from pathlib import Path
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--macos-app", type=Path)
+    parser.add_argument("--test-home", type=Path, help="Reuse the disposable user's default profile")
     args = parser.parse_args()
     source = Path(__file__).resolve().parents[1] / "desktop/src-tauri"
     config = json.loads((source / "tauri.conf.json").read_text())
@@ -47,14 +48,23 @@ def main() -> None:
 
     with tempfile.TemporaryDirectory(prefix="yap-package-") as directory:
         profile = Path(directory).resolve()
+        env = {**os.environ, "YAP_APP_DATA_DIR": str(profile)}
+        if args.test_home:
+            home = args.test_home.resolve(strict=True)
+            env["HOME"] = str(home)
+            for key in ("YAP_APP_DATA_DIR", "XDG_DATA_HOME", "LOCALAPPDATA"):
+                env.pop(key, None)
+            data_dir = "Library/Application Support" if sys.platform == "darwin" else ".local/share"
+            profile = home / data_dir / config["identifier"]
+        log = profile / "logs/yap.log"
+        previous_starts = log.read_text().count(" app start") if log.exists() else 0
         process = subprocess.Popen(
             [executable],
-            env={**os.environ, "YAP_APP_DATA_DIR": str(profile)},
+            env=env,
             start_new_session=True,
         )
         try:
             deadline = time.monotonic() + 30
-            log = profile / "logs/yap.log"
             while time.monotonic() < deadline:
                 if process.poll() is not None:
                     raise RuntimeError(
@@ -62,13 +72,13 @@ def main() -> None:
                     )
                 if (
                     log.exists()
-                    and " app start" in log.read_text()
+                    and log.read_text().count(" app start") > previous_starts
                     and (sys.platform != "linux" or linux_window_is_visible())
                 ):
                     break
                 time.sleep(0.25)
             else:
-                raise RuntimeError("Packaged app did not start in its fresh profile")
+                raise RuntimeError("Packaged app did not start in its expected profile")
             time.sleep(3)
             if process.poll() is not None:
                 raise RuntimeError("Packaged app exited immediately after startup")
@@ -85,7 +95,7 @@ def main() -> None:
             subprocess.run(
                 [
                     "swift", str(Path(__file__).with_name("test-macos-reopen.swift")),
-                    str(args.macos_app.resolve()), str(profile / "hidden-launch"),
+                    str(args.macos_app.resolve()), str(Path(directory) / "hidden-launch"),
                 ],
                 check=True,
                 timeout=120,

@@ -70,7 +70,23 @@ jobs:
               DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
                 ./desktop/src-tauri/target/debug/bundle/deb/*.deb python3 xvfb xauth x11-utils dbus-x11
               useradd --create-home yap-smoke
-              runuser -u yap-smoke -- dbus-run-session -- xvfb-run -a python3 verification/test-desktop-package.py
+              test_home=$(runuser -u yap-smoke -- mktemp -d)
+              profile="$test_home/.local/share/com.mcnatg1.yap"
+              check_launch() {
+                runuser -u yap-smoke -- dbus-run-session -- xvfb-run -a \
+                  python3 verification/test-desktop-package.py --test-home "$test_home"
+              }
+              check_profile() {
+                runuser -u yap-smoke -- python3 verification/package-profile.py "$1" "$profile"
+              }
+              check_launch
+              check_profile seed
+              dpkg -r yap
+              test ! -e /usr/bin/yap-desktop
+              check_profile verify
+              dpkg -i ./desktop/src-tauri/target/debug/bundle/deb/*.deb
+              check_launch
+              check_profile verify
             '
       - name: Install and launch the macOS app after ejecting its disk image
         if: runner.os == 'macOS'
