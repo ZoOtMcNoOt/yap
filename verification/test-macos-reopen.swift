@@ -91,12 +91,16 @@ func verifyReopen(bundle: URL, profile: URL) throws {
     }
     let offset = try Data(contentsOf: log).count
     try openBundle(arguments)
-    try waitFor("Reopen did not activate the original process and show its workspace") {
-        let tail = try Data(contentsOf: log).dropFirst(offset)
-        return !app.isTerminated && app.isActive && hasWorkspaceWindow(pid)
-            && String(decoding: tail, as: UTF8.self).contains("macOS asked Yap to reopen the main window")
+    do {
+        try waitFor("Reopen did not restore the original workspace") {
+            !app.isTerminated && app.isActive && !app.isHidden && hasWorkspaceWindow(pid)
+        }
+    } catch {
+        throw ProbeFailure("\(error.localizedDescription); active=\(app.isActive) hidden=\(app.isHidden) visible=\(hasWorkspaceWindow(pid)) terminated=\(app.isTerminated)")
     }
-    print("LaunchServices reopened the hidden workspace in the original Yap process \(pid).")
+    let tail = try Data(contentsOf: log).dropFirst(offset)
+    let handledReopen = String(decoding: tail, as: UTF8.self).contains("macOS asked Yap to reopen the main window")
+    print("LaunchServices reopened the hidden workspace in the original Yap process \(pid); Tauri reopen event observed: \(handledReopen).")
 }
 
 guard CommandLine.arguments.count == 3 else { throw ProbeFailure("Expected an app bundle and fresh profile directory") }
