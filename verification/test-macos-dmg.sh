@@ -39,7 +39,7 @@ install_copy() {
   attached=false
 }
 launch() {
-  python3 "$checks/test-desktop-package.py" --macos-app "$applications/Yap.app" --test-home "$test_home"
+  python3 "$checks/test-desktop-package.py" --macos-app "$applications/Yap.app" --test-home "$test_home" "$@"
 }
 
 install_copy "$1"
@@ -48,6 +48,6 @@ python3 "$checks/package-profile.py" seed "$profile"
 rm -rf "$applications/Yap.app"
 python3 "$checks/package-profile.py" verify "$profile"
 install_copy "$1"
-launch
+launch --check-saved-history
 python3 "$checks/package-profile.py" verify "$profile"
 shasum -a 256 "$1"

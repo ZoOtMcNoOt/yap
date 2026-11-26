@@ -17,7 +17,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--macos-app", type=Path)
     parser.add_argument("--test-home", type=Path, help="Reuse the disposable user's default profile")
+    parser.add_argument("--check-saved-history", action="store_true", help="Read the saved transcript from the reinstalled workspace")
     args = parser.parse_args()
+    if args.check_saved_history and not args.test_home:
+        parser.error("--check-saved-history requires the disposable home with the saved profile")
     source = Path(__file__).resolve().parents[1] / "desktop/src-tauri"
     config = json.loads((source / "tauri.conf.json").read_text())
     if sys.platform == "darwin" and args.macos_app:
@@ -56,6 +59,8 @@ def main() -> None:
                 env.pop(key, None)
             data_dir = "Library/Application Support" if sys.platform == "darwin" else ".local/share"
             profile = home / data_dir / config["identifier"]
+        if args.check_saved_history and sys.platform == "linux":
+            env.update(NO_AT_BRIDGE="0", GTK_MODULES="gail:atk-bridge")
         log = profile / "logs/yap.log"
         previous_starts = log.read_text().count(" app start") if log.exists() else 0
         process = subprocess.Popen(
@@ -82,6 +87,16 @@ def main() -> None:
             time.sleep(3)
             if process.poll() is not None:
                 raise RuntimeError("Packaged app exited immediately after startup")
+            if args.check_saved_history:
+                checks = Path(__file__).resolve().parent
+                reference = checks / "fixtures/package-profile/local-dictation/live-s-package-dictation.txt"
+                if args.macos_app:
+                    subprocess.run(
+                        ["swift", str(checks / "test-macos-saved-history.swift"), str(process.pid), str(reference)],
+                        check=True, timeout=90,
+                    )
+                else:
+                    verify_debian_history(reference)
         finally:
             try:
                 os.killpg(process.pid, signal.SIGTERM)
@@ -101,6 +116,31 @@ def main() -> None:
                 timeout=120,
             )
     print(f"Verified package resources and fresh-profile startup on {sys.platform}.")
+
+
+def verify_debian_history(reference: Path) -> None:
+    from desktop_accessibility import has_text, wait_for
+
+    name = "live-s-package-dictation"
+    review = f"Review recording {name}"
+
+    def is_button(node, label):
+        return node.getRoleName() == "button" and node.name == label
+
+    button = wait_for(
+        "onboarding or saved recording",
+        lambda n: is_button(n, "Skip for now") or is_button(n, review),
+    )
+    if button.name == "Skip for now":
+        if not button.queryAction().doAction(0):
+            raise RuntimeError("Could not dismiss onboarding")
+        button = wait_for(review, lambda n: is_button(n, review))
+    if not button.queryAction().doAction(0):
+        raise RuntimeError("Could not open the saved recording from History")
+    wait_for("transcript action", lambda n: is_button(n, f"Open transcript for {name}"))
+    text = reference.read_text()
+    wait_for("complete saved transcript", lambda n: has_text(n, text))
+    print("The installed Debian client reopened the saved dictation from History and displayed the complete reference transcript.")
 
 
 def linux_window_is_visible() -> bool:
