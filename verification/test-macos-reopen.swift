@@ -51,8 +51,11 @@ func verifyReopen(bundle: URL, profile: URL) throws {
         }
     }
     guard instance() == nil else { throw ProbeFailure("The first installed smoke process is still running") }
-    try openBundle(["-n", "-g", "-j"] + arguments)
-    try waitFor("Could not locate the installed app after hidden launch") { instance() != nil }
+    let controller = NSApplication.shared
+    controller.setActivationPolicy(.accessory)
+    controller.finishLaunching()
+    try openBundle(["-n"] + arguments)
+    try waitFor("Could not locate the installed app after launch") { instance() != nil }
     guard let app = instance() else { throw ProbeFailure("The installed app exited during launch") }
     defer {
         if !app.isTerminated {
@@ -62,9 +65,29 @@ func verifyReopen(bundle: URL, profile: URL) throws {
         }
     }
     let pid = app.processIdentifier
-    try waitFor("Hidden launch did not establish a running hidden workspace") {
-        guard let contents = try? String(contentsOf: log, encoding: .utf8) else { return false }
-        return contents.contains(" app start") && app.isHidden && !hasWorkspaceWindow(pid)
+    do {
+        try waitFor("Installed workspace never appeared") {
+            guard let contents = try? String(contentsOf: log, encoding: .utf8) else { return false }
+            return contents.contains(" app start") && hasWorkspaceWindow(pid)
+        }
+        try openBundle(arguments)
+        try waitFor("LaunchServices did not activate the installed workspace") { app.isActive }
+        if !app.hide() {
+            // Send the standard Hide shortcut only to the disposable app.
+            guard CGPreflightPostEventAccess(),
+                  let down = CGEvent(keyboardEventSource: nil, virtualKey: 4, keyDown: true),
+                  let up = CGEvent(keyboardEventSource: nil, virtualKey: 4, keyDown: false) else {
+                throw ProbeFailure("macOS declined to hide the active app and input automation is unavailable")
+            }
+            down.flags = .maskCommand
+            up.flags = .maskCommand
+            down.postToPid(pid)
+            up.postToPid(pid)
+        }
+        try waitFor("The installed workspace did not disappear") { app.isHidden && !hasWorkspaceWindow(pid) }
+    } catch {
+        let started = (try? String(contentsOf: log, encoding: .utf8).contains(" app start")) ?? false
+        throw ProbeFailure("\(error.localizedDescription); profileStarted=\(started) active=\(app.isActive) hidden=\(app.isHidden) visible=\(hasWorkspaceWindow(pid)) policy=\(app.activationPolicy.rawValue)")
     }
     let offset = try Data(contentsOf: log).count
     try openBundle(arguments)
