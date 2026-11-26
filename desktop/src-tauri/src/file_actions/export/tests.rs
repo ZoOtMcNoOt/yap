@@ -101,6 +101,15 @@ fn export_preserves_utf8_bytes_and_the_committed_original() {
 }
 
 #[test]
+fn export_writes_a_null_character_and_the_text_after_it() {
+    let fixture = Fixture::new();
+    let target = fixture.output.join("original.txt");
+    let text = "First\0second 知識 🦀";
+    export_selected_transcript(text, &target, &fixture.data, || Ok(text.to_owned())).unwrap();
+    assert_eq!(std::fs::read(target).unwrap(), text.as_bytes());
+}
+
+#[test]
 fn export_supplies_txt_extension_without_changing_the_selected_folder() {
     let fixture = Fixture::new();
     fixture.export(&fixture.output.join("meeting")).unwrap();

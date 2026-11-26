@@ -82,6 +82,30 @@ pub fn capture_target() -> Option<InjectionTarget> {
 
 #[cfg(target_os = "windows")]
 fn write_clipboard(app: &tauri::AppHandle, text: &str) -> Result<(), String> {
+    let owner = app
+        .get_webview_window(crate::authorization::MAIN_WINDOW_LABEL)
+        .ok_or_else(|| "Yap main window is unavailable for clipboard fallback.".to_string())?
+        .hwnd()
+        .map_err(|error| format!("Failed to read Yap clipboard owner: {error}"))?;
+
+    write_windows_clipboard(owner, text)
+}
+
+#[cfg(any(test, target_os = "windows"))]
+fn windows_clipboard_text(text: &str) -> Result<Vec<u16>, String> {
+    if text.contains('\0') {
+        return Err("Transcript contains a null character.".into());
+    }
+    let mut wide = text.encode_utf16().collect::<Vec<_>>();
+    wide.push(0);
+    Ok(wide)
+}
+
+#[cfg(target_os = "windows")]
+fn write_windows_clipboard(
+    owner: windows::Win32::Foundation::HWND,
+    text: &str,
+) -> Result<(), String> {
     use std::ptr::copy_nonoverlapping;
 
     use windows::Win32::{
@@ -92,14 +116,7 @@ fn write_clipboard(app: &tauri::AppHandle, text: &str) -> Result<(), String> {
         },
     };
 
-    let owner = app
-        .get_webview_window(crate::authorization::MAIN_WINDOW_LABEL)
-        .ok_or_else(|| "Yap main window is unavailable for clipboard fallback.".to_string())?
-        .hwnd()
-        .map_err(|error| format!("Failed to read Yap clipboard owner: {error}"))?;
-
-    let mut wide = text.encode_utf16().collect::<Vec<_>>();
-    wide.push(0);
+    let wide = windows_clipboard_text(text)?;
     let byte_len = wide.len() * std::mem::size_of::<u16>();
 
     let handle = unsafe {
@@ -174,6 +191,9 @@ fn write_clipboard(_app: &tauri::AppHandle, _text: &str) -> Result<(), String> {
     Err("Focused-field injection is currently available only on Windows.".into())
 }
 
+#[cfg(all(test, target_os = "windows"))]
+mod windows_tests;
+
 #[cfg(test)]
 mod tests {
     use super::{
@@ -187,6 +207,21 @@ mod tests {
             normalized_injection_text("  hello from Yap\n"),
             Some("hello from Yap".into())
         );
+    }
+
+    #[test]
+    fn windows_clipboard_text_preserves_unicode_and_refuses_truncated_transcripts() {
+        let transcript = "first line\r\n知識 • café 🦀";
+        let wide = super::windows_clipboard_text(transcript).unwrap();
+        assert_eq!(wide.last(), Some(&0));
+        assert_eq!(
+            String::from_utf16(&wide[..wide.len() - 1]).unwrap(),
+            transcript
+        );
+
+        for malformed in ["\0before", "part one\0part two", "after\0"] {
+            assert!(super::windows_clipboard_text(malformed).is_err());
+        }
     }
 
     #[test]
