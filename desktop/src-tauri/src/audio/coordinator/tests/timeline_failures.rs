@@ -228,3 +228,33 @@ fn loss_application_failure_cannot_publish_complete() {
     );
     std::fs::remove_dir_all(directory).unwrap();
 }
+
+#[test]
+fn losses_observed_before_older_packets_keep_their_source_order() {
+    let (ports, recording, _) = ports(16, None);
+    let mut coordinator = Coordinator::new(session(), track(), ports);
+    let losses = LossAccumulator::new();
+    losses.record(960, 480, GapCause::OversizedCallback);
+    coordinator.consume(&packet(0), &losses).unwrap();
+    coordinator
+        .consume_loss(LossSnapshot {
+            first_source_position_frames: 1920,
+            dropped_frames: 480,
+            generation: 3,
+            cause: GapCause::CallbackPoolExhausted,
+        })
+        .unwrap();
+    coordinator.consume(&packet(480), &losses).unwrap();
+    coordinator.consume(&packet(1440), &losses).unwrap();
+    coordinator.handoff_recording_completion();
+    assert_eq!(recv_recording_frame(&recording).metadata.start_ms, 0);
+    assert_eq!(recv_recording_frame(&recording).metadata.start_ms, 10);
+    assert_eq!(recv_recording_gap(&recording).source_position_frames, 960);
+    assert_eq!(recv_recording_frame(&recording).metadata.start_ms, 30);
+    assert_eq!(recv_recording_gap(&recording).source_position_frames, 1920);
+    assert!(coordinator
+        .outcome(SinkKind::Recording)
+        .unwrap()
+        .error
+        .is_none());
+}

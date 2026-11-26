@@ -65,6 +65,10 @@ impl Timeline {
         Ok(())
     }
 
+    pub(crate) fn end_source_position(&self, track_id: &TrackId) -> Option<u64> {
+        self.tracks.get(track_id)?.last_end_source_position_frames
+    }
+
     pub fn map_clock(&mut self, mapping: ClockMappingRevision) -> Result<(), TimelineError> {
         let state = self
             .tracks

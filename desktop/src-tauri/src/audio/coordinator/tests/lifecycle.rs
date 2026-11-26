@@ -221,10 +221,9 @@ fn pending_loss_registration_blocks_rate_change_until_the_old_clock_applies_it()
                 GapCause::SinkUnavailable,
                 || {
                     registration_started.wait();
-                },
-                || {
                     release_registration.wait();
                 },
+                || {},
             );
         })
     };

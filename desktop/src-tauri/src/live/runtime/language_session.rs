@@ -1,5 +1,5 @@
 use crate::{
-    audio::frame::PreparedFrame,
+    audio::frame::{PreparedFrame, PreparedFramePosition},
     language::{
         live_diarization::{LanguageDecisionOutcome, LanguageSpan, LanguageSpanDisposition},
         live_evidence::{
@@ -14,7 +14,7 @@ use super::super::{
         LanguagePipelineBatch, LanguagePipelineError, LanguageWindowDetector, LiveLanguagePipeline,
     },
     language_router::{LanguageAudioAction, LanguageRoutingError},
-    source_audio::{observed_frame_range, SourceAudioError},
+    source_audio::{frame_position, SourceAudioError},
 };
 
 pub(super) struct LanguageFramePlan {
@@ -42,6 +42,7 @@ where
     degradation: Option<LiveLanguageDegradation>,
     spans: Vec<LanguageSpan>,
     source_end_sample: Option<u64>,
+    previous_frame: Option<PreparedFramePosition>,
 }
 
 pub(super) type ResidentLanguageSession = LiveLanguageSession<AmberNetSileroLanguageDetector>;
@@ -65,12 +66,14 @@ where
             degradation: None,
             spans: Vec::new(),
             source_end_sample: None,
+            previous_frame: None,
         }
     }
 
     pub(super) fn begin_session(&mut self) -> bool {
         self.spans.clear();
         self.source_end_sample = None;
+        self.previous_frame = None;
         self.degradation = self.initial_degradation;
         self.active = self.pipeline.is_some() && self.degradation.is_none();
         if self.active {
@@ -85,7 +88,7 @@ where
     }
 
     pub(super) fn push(&mut self, frame: PreparedFrame) -> Result<LanguageFramePlan, String> {
-        let observed = match observed_frame_range(&frame) {
+        let observed = match frame_position(&frame, self.previous_frame) {
             Ok(range) => range,
             Err(_) => {
                 let degradation_started =
@@ -98,6 +101,7 @@ where
                 });
             }
         };
+        self.previous_frame = Some(observed);
         self.source_end_sample = Some(observed.end_sample);
         if !self.active {
             return Ok(LanguageFramePlan {

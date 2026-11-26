@@ -123,8 +123,15 @@ impl LiveRuntime {
     }
 
     pub(super) fn request_model_warmup(&self) -> Result<bool, String> {
-        self.model_warmup
-            .request("live-model-warmup", LiveInferenceBundle::load)
+        self.model_warmup.request("live-model-warmup", || {
+            let started = std::time::Instant::now();
+            let model = LiveInferenceBundle::load()?;
+            crate::diagnostics::log(&format!(
+                "live inference bundle loaded elapsed_ms={}",
+                started.elapsed().as_millis()
+            ));
+            Ok(model)
+        })
     }
 
     pub fn unload_if_idle(&self, threshold: Duration) {

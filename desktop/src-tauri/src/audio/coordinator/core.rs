@@ -79,26 +79,22 @@ impl Coordinator {
     ) -> Result<f32, String> {
         self.drain_losses(losses)?;
         if self.capture_config.is_none() {
-            let first_source_position_frames = self
-                .pending_losses
-                .front()
-                .map_or(packet.source_position_frames, |loss| {
-                    loss.first_source_position_frames
-                });
-            self.ensure_configuration(packet, first_source_position_frames, 0)?;
-            while let Some(loss) = self.pending_losses.pop_front() {
-                self.apply_loss(loss)?;
-            }
-        } else {
-            while let Some(loss) = self.pending_losses.pop_front() {
-                self.apply_loss(loss)?;
-            }
-            self.ensure_configuration(
-                packet,
-                packet.source_position_frames,
-                self.last_session_end_ms,
-            )?;
+            let origin =
+                self.pending_losses
+                    .front()
+                    .map_or(packet.source_position_frames, |loss| {
+                        packet
+                            .source_position_frames
+                            .min(loss.first_source_position_frames)
+                    });
+            self.ensure_configuration(packet, origin, 0)?;
         }
+        self.apply_losses_through(packet.source_position_frames)?;
+        self.ensure_configuration(
+            packet,
+            packet.source_position_frames,
+            self.last_session_end_ms,
+        )?;
 
         let channels = usize::from(packet.channels);
         if channels == 0

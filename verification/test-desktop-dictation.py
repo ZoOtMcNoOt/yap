@@ -26,7 +26,8 @@ ARCHIVE_SHA256 = "adbdd5e9fef87300c37cebfcfc4f1ebe56845c860c8a760af0a1dd65ce9bee
 def stage_model(directory):
     archive = directory / "model.tar.bz2"
     url = f"https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/{RELEASE}.tar.bz2"
-    subprocess.run(["curl", "-fsSL", "--retry", "2", url, "-o", str(archive)], check=True)
+    subprocess.run(["curl", "-fsSL", "--connect-timeout", "15", "--retry", "5", "--retry-all-errors",
+                    "--retry-max-time", "180", url, "-o", str(archive)], check=True)
     with archive.open("rb") as stream:
         if hashlib.file_digest(stream, "sha256").hexdigest() != ARCHIVE_SHA256:
             raise ValueError("The Nemotron release archive does not match its SHA-256")
@@ -70,10 +71,13 @@ def check_sessions(output, inputs, samples, audio_ms, reference):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
+    model_source = parser.add_mutually_exclusive_group()
+    model_source.add_argument(
         "--installed-models", type=Path,
         help="Use an existing Yap models directory for an offline run",
     )
+    model_source.add_argument("--stage-model-in", type=Path,
+                              help="Keep the verified models in a new directory for the installed desktop test")
     args = parser.parse_args()
     fixture = json.loads((ROOT / "server/model-pools.lock.json").read_bytes())["fixture"]
     audio = ROOT / fixture["path"]
@@ -88,11 +92,15 @@ def main():
 
     command = ["cargo", "run", "--locked", "--example", "nemotron_profile", "--"]
     with TemporaryDirectory(prefix="yap-dictation-") as tmp:
-        models = args.installed_models.resolve() if args.installed_models else Path(tmp) / "models"
+        stage = Path(tmp)
+        if args.stage_model_in:
+            stage = args.stage_model_in.resolve()
+            stage.mkdir(mode=0o700)
+        models = args.installed_models.resolve() if args.installed_models else stage / "models"
         env = {**os.environ, "YAP_APP_DATA_DIR": tmp, "YAP_MODELS_DIR": str(models)}
         cwd = ROOT / "desktop/src-tauri"
         if args.installed_models is None:
-            stage_model(Path(tmp))
+            stage_model(stage)
             subprocess.run([*command, "--verify-model"], cwd=cwd, env=env, check=True)
         silence = Path(tmp) / "silence.wav"
         with wave.open(str(silence), "wb") as wav:

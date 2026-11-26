@@ -146,6 +146,45 @@ pub struct PreparedFrame {
     pub samples: Arc<[f32]>,
 }
 
+/// Position of a prepared mono frame on the 16 kHz language timeline.
+#[derive(Clone, Copy)]
+pub(crate) struct PreparedFramePosition {
+    pub(crate) start_sample: u64,
+    pub(crate) end_sample: u64,
+    end_ms: u64,
+}
+
+impl PreparedFrame {
+    pub(crate) fn source_position(
+        &self,
+        previous: Option<PreparedFramePosition>,
+    ) -> Option<PreparedFramePosition> {
+        const RATE: u32 = crate::language::span_contract::LANGUAGE_SPAN_SAMPLE_RATE_HZ;
+        const SAMPLES_PER_MS: u64 = (RATE / 1000) as u64;
+        if self.metadata.sample_rate_hz != RATE
+            || self.metadata.channels != 1
+            || self.metadata.sample_count != self.samples.len()
+        {
+            return None;
+        }
+        let start_ms = self.metadata.start_ms;
+        let observed = start_ms.checked_mul(SAMPLES_PER_MS)?;
+        // CPAL timestamps are projected to whole milliseconds. Adjacent packets
+        // retain the fractional millisecond already counted in the samples.
+        let start_sample = previous
+            .filter(|prior| {
+                (prior.end_ms == start_ms || prior.end_sample / SAMPLES_PER_MS == start_ms)
+                    && prior.end_sample.abs_diff(observed) <= SAMPLES_PER_MS
+            })
+            .map_or(observed, |prior| prior.end_sample);
+        Some(PreparedFramePosition {
+            start_sample,
+            end_sample: start_sample.checked_add(u64::try_from(self.samples.len()).ok()?)?,
+            end_ms: start_ms.checked_add(u64::from(self.metadata.duration_ms))?,
+        })
+    }
+}
+
 impl AudioFrame {
     pub fn duration_ms_from_samples(sample_count: usize, sample_rate_hz: u32) -> u32 {
         if sample_rate_hz == 0 {
