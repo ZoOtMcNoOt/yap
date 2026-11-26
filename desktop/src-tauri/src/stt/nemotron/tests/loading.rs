@@ -116,7 +116,10 @@ fn native_model_reads_verified_bytes_after_source_replacement_and_removal() {
             std::fs::read(&paths.tokens).unwrap(),
             TEST_ARTIFACT_CONTENTS
         );
+        #[cfg(target_os = "linux")]
         assert!(std::fs::write(&paths.encoder, b"xyz").is_err());
+        #[cfg(target_os = "macos")]
+        assert!(second_open.metadata().unwrap().permissions().readonly());
         Ok(paths.decoder.clone())
     })
     .unwrap();
