@@ -40,7 +40,7 @@ cpal = "0.16"
 symphonia = { version = "=0.6.1", default-features = false, features = ["mp3", "flac", "ogg", "vorbis", "aac", "isomp4"] }
 # Canonical WAV writing. Zero transitive dependencies.
 hound = "3.5"
-sherpa-onnx = "1.13.4"
+sherpa-onnx = "=1.13.4"
 ort = { version = "=2.0.0-rc.13", default-features = false, features = ["std", "api-24", "alternative-backend"] }
 realfft = "=3.5.0"
 tauri-plugin-wdio = { version = "1.4.0", optional = true }
@@ -48,7 +48,7 @@ tauri-plugin-wdio = { version = "1.4.0", optional = true }
 # See docs/evidence/dependency-refresh/2026-10-03/verification.md.
 tauri-plugin-wdio-webdriver = { git = "https://github.com/webdriverio/desktop-mobile", rev = "fb4a544bcc49605f6c6fb34f04b292abf428a72a", optional = true }
 time = { version = "0.3.53", default-features = false, features = ["formatting", "parsing"] }
-rusqlite = { version = "0.40.1", default-features = false, features = ["bundled"] }
+rusqlite = { version = "0.41.0", default-features = false, features = ["bundled"] }
 dirs = "7"
 sys-locale = "0.3.2"
 zeroize = "1.9.0"

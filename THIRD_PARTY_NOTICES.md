@@ -143,9 +143,9 @@ https://creativecommons.org/licenses/by/4.0/.
 ## sherpa-onnx
 
 Yap uses `sherpa-onnx` 1.13.4 for its in-process Nemotron ASR and Silero VAD.
-The same pinned Windows native archive supplies the single statically linked
+The pinned Windows native archive supplies the single statically linked
 ONNX Runtime used by the AmberNet detector. The exact source revision and
-archive are recorded in `desktop/model-artifacts.lock.json`.
+the Windows x64, Linux x64 and Apple silicon archive identities are recorded in `desktop/model-artifacts.lock.json`.
 
 - Repository: https://github.com/k2-fsa/sherpa-onnx
 - Revision: `142807252687d81b40d6315f23470a1512a00de3` (`v1.13.4`)
@@ -327,7 +327,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## rusqlite and libsqlite3-sys
 
-This software includes rusqlite 0.40.1 and libsqlite3-sys 0.38.1:
+This software includes rusqlite 0.41.1 and libsqlite3-sys 0.39.1:
 
 - Repository: https://github.com/rusqlite/rusqlite
 - Copyright (c) 2014 The rusqlite developers
@@ -357,7 +357,7 @@ SOFTWARE.
 
 ## SQLite
 
-The bundled build includes SQLite 3.53.2. SQLite is in the public domain. See
+The bundled build includes SQLite 3.54.1. SQLite is in the public domain. See
 SQLite's public-domain dedication at https://www.sqlite.org/copyright.html.
 
 ## GLib 0.18.5 security backport

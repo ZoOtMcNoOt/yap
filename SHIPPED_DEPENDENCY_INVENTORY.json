@@ -1993,7 +1993,7 @@
       },
       {
         "name": "cookie",
-        "version": "0.18.1",
+        "version": "0.18.3",
         "licenseExpression": "MIT OR Apache-2.0",
         "licenseTerms": [
           "Apache-2.0",
@@ -2771,7 +2771,7 @@
       },
       {
         "name": "form_urlencoded",
-        "version": "1.2.2",
+        "version": "1.2.3",
         "licenseExpression": "MIT OR Apache-2.0",
         "licenseTerms": [
           "Apache-2.0",
@@ -3688,7 +3688,7 @@
       },
       {
         "name": "libsqlite3-sys",
-        "version": "0.38.2",
+        "version": "0.39.1",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -4705,7 +4705,7 @@
       },
       {
         "name": "rusqlite",
-        "version": "0.40.2",
+        "version": "0.41.1",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -4763,7 +4763,7 @@
       },
       {
         "name": "rustls",
-        "version": "0.23.45",
+        "version": "0.23.46",
         "licenseExpression": "Apache-2.0 OR ISC OR MIT",
         "licenseTerms": [
           "Apache-2.0",
@@ -4831,7 +4831,7 @@
       },
       {
         "name": "rustls-webpki",
-        "version": "0.103.15",
+        "version": "0.103.17",
         "licenseExpression": "ISC",
         "licenseTerms": [
           "ISC"
@@ -5295,7 +5295,7 @@
       },
       {
         "name": "sherpa-onnx",
-        "version": "1.13.8",
+        "version": "1.13.4",
         "licenseExpression": "Apache-2.0",
         "licenseTerms": [
           "Apache-2.0"
@@ -5311,7 +5311,7 @@
       },
       {
         "name": "sherpa-onnx-sys",
-        "version": "1.13.8",
+        "version": "1.13.4",
         "licenseExpression": "Apache-2.0",
         "licenseTerms": [
           "Apache-2.0"
@@ -6177,7 +6177,7 @@
       },
       {
         "name": "tokio",
-        "version": "1.53.2",
+        "version": "1.54.1",
         "licenseExpression": "MIT",
         "licenseTerms": [
           "MIT"
@@ -6638,7 +6638,7 @@
       },
       {
         "name": "url",
-        "version": "2.5.8",
+        "version": "2.5.9",
         "licenseExpression": "MIT OR Apache-2.0",
         "licenseTerms": [
           "Apache-2.0",

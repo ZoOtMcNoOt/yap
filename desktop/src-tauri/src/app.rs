@@ -330,6 +330,13 @@ pub(crate) fn run() {
         .build(tauri::generate_context!())
         .expect("error while running tauri application")
         .run(move |app_handle, event| match event {
+            // LaunchServices can reopen the existing app without starting another process.
+            // Its visible window may be the live overlay while the workspace is hidden.
+            #[cfg(target_os = "macos")]
+            tauri::RunEvent::Reopen { .. } => {
+                crate::diagnostics::log("macOS asked Yap to reopen the main window");
+                live::actions::show_main_window(app_handle);
+            }
             tauri::RunEvent::WebviewEvent {
                 label,
                 event: tauri::WebviewEvent::DragDrop(tauri::DragDropEvent::Drop { paths, .. }),

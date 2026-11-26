@@ -2,8 +2,8 @@
 
 Audit findings are release inputs, not something to hide to obtain a green build.
 Yap currently has **no frontend advisory exceptions and no Rust advisory ignores**.
-High/critical frontend findings and Rust vulnerability-class findings block
-release. Warning-class findings require review at the actual shipping target.
+High/critical frontend findings, Rust vulnerability findings and RustSec
+unsoundness warnings block release. Review maintenance warnings for each shipping target.
 
 ## Run the gates
 
@@ -30,6 +30,12 @@ CI also checks the complete locked Windows dependency graph through the
 [Windows boundary guard](../../verification/test-windows-rust-dependency-boundary.ps1).
 Failure to inspect that graph is a failure, not evidence of absence.
 
+The same CI job audits the unfiltered desktop, server orchestrator and GLib
+verification lockfiles with the same advisory database and `--deny unsound`.
+The orchestrator's former Tokio 1.53.1 pin failed this check for
+`RUSTSEC-2026-0386`. Tokio 1.54.1 clears it. Dependabot checks the
+orchestrator workspace weekly.
+
 Audit the core Python server from the repository root with Python 3.12 and uv:
 
 ```bash
@@ -47,6 +53,20 @@ the server environment, and the command downloads no models.
 This gate covers the core lock, not model overlays or container base images.
 The [core server evidence](../evidence/server-dependencies/2026-10-03/verification.md)
 records fixed versions, behavioral checks and separate unresolved NeMo findings.
+
+## November 26 desktop Rust audit
+
+At RustSec revision `c9f6c91a44dbad9d71742329e9df061279f9c4be`, public
+main at `4074a5a3` reported 28 vulnerability advisories across 13 packages.
+The updated lockfile passed both the full audit and the Windows x64 audit
+with zero vulnerabilities. No advisory ignores were added. Five unmaintained
+warnings remain in the full lockfile for chrono, proc-macro-error, zbus_names,
+zvariant and zvariant_derive. Recheck them before promotion.
+
+The SQLite wrapper now resolves to 0.41.1. Pinning the sherpa-onnx crate to
+1.13.4 matches the recorded native speech runtime and removes the vulnerable
+ZIP dependency path. The shipped dependency inventory and notices were
+regenerated from the locked sources.
 
 ## October 7 dependency remediation
 
@@ -174,6 +194,17 @@ must fail the inventory check.
   and renewed review of every open target-specific alert.
 - Verify the actual consumer, renew provenance/notices and record the exact
   checked revision before treating a dependency update as release-ready.
+
+## November 26 frontend audit
+
+With Vite 8.3.3, Undici 6.29.1 and 7.30.1, and serialize-javascript 7.1.3,
+the frozen desktop lockfile passed the high/critical gate with no exceptions.
+The WebdriverIO development dependencies now resolve glob 14.0.2 and
+minimatch 11.0.9 for the affected paths. The full audit reported zero
+advisories across 598 dependencies. Mocha, WebdriverIO and archiver each
+selected the expected nested test file and excluded an unrelated file.
+When these dependencies change, rerun the full audit and check file discovery
+alongside the adapter compatibility tests.
 
 ## Earlier decisions
 

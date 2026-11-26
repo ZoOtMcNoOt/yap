@@ -141,6 +141,10 @@ export function useTranscriptFileActions(
 
     try {
       const text = await loadTranscriptText(item.outputPath);
+      if (text.includes("\0")) {
+        toast.error("Use Export to keep the null characters in this transcript.");
+        return;
+      }
       await navigator.clipboard.writeText(text);
       toast.success(
         text.trim() ? "Transcript copied" : "Empty transcript copied",

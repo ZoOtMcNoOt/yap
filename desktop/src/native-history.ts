@@ -197,6 +197,11 @@ export function savedLiveSessionActionIdentity(
   };
 }
 
+export function isAudioOnlySavedRecording(entry: TranscriptHistoryEntry) {
+  return Boolean(savedLiveSessionActionIdentity(entry))
+    && transcriptPathIdentity(entry.outputPath) === transcriptPathIdentity(entry.sourcePath);
+}
+
 export function recoverableLiveSessionActionIdentity(
   entry: TranscriptHistoryEntry,
 ): RecoverableLiveSessionActionIdentity | undefined {

@@ -14,6 +14,36 @@ fn stable_path_strings_remove_windows_verbatim_prefixes() {
 }
 
 #[test]
+fn audio_history_points_to_a_matching_text_file_without_verifying_its_contents() {
+    let dir = test_dir("unverified-transcript");
+    let session = SessionId::new("s-unverified-transcript").unwrap();
+    let mut recording = StreamingRecording::create(&dir, session.clone()).unwrap();
+    recording.append_pcm16(&[1, 0]).unwrap();
+    recording.finalize().unwrap();
+    let list = || list_session_files_from_dir(&dir).unwrap().pop().unwrap();
+    assert!(list().warning.is_none());
+
+    let path = dir.join(format!("live-{session}.txt"));
+    std::fs::write(&path, "Original words\n").unwrap();
+    let entry = list();
+    assert_eq!(entry.source_path, entry.output_path);
+    assert!(entry
+        .warning
+        .as_deref()
+        .is_some_and(|warning| warning.contains("Show in folder")));
+    assert!(open_committed_live_transcript_from_dir(&path, &dir).is_err());
+    assert_eq!(std::fs::read(&path).unwrap(), b"Original words\n");
+    assert!(!dir
+        .join(format!("live-{session}.transcript.r1.json"))
+        .exists());
+
+    std::fs::remove_file(&path).unwrap();
+    std::fs::create_dir(&path).unwrap();
+    assert!(list().warning.is_none());
+    std::fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
 fn normal_history_scan_ignores_pre_release_timestamp_pairs() {
     let dir = std::env::temp_dir().join(format!("yap-live-scan-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
