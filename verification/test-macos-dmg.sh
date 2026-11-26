@@ -2,8 +2,8 @@
 # Install into a disposable Applications directory and launch after ejecting the image.
 set -euo pipefail
 
-if [[ $# != 1 || ! -f $1 || $1 != *.dmg ]]; then
-  echo "Expected one built Yap disk image." >&2
+if [[ $# -lt 1 || $# -gt 2 || ! -f $1 || $1 != *.dmg || ${2:---live} != --live ]]; then
+  echo "Expected a built Yap disk image and optional --live." >&2
   exit 1
 fi
 
@@ -50,4 +50,8 @@ python3 "$checks/package-profile.py" verify "$profile"
 install_copy "$1"
 launch --check-saved-history
 python3 "$checks/package-profile.py" verify "$profile"
+if [[ ${2:-} == --live ]]; then
+  python3 "$checks/test-macos-live-dictation.py" "$applications/Yap.app" \
+    "$RUNNER_TEMP/installed-dictation/models" "$YAP_TEST_AUDIO_SWITCH"
+fi
 shasum -a 256 "$1"

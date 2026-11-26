@@ -1,4 +1,4 @@
-// Read a saved dictation through the installed application's accessibility tree.
+// Operate the installed Yap workspace through macOS Accessibility.
 import ApplicationServices
 import Foundation
 
@@ -49,32 +49,48 @@ func press(_ button: AXUIElement, _ label: String) throws {
     }
 }
 
-guard CommandLine.arguments.count == 3, let pid = Int32(CommandLine.arguments[1]) else {
-    throw HistoryFailure("Expected the installed Yap process ID and reference transcript path")
+guard CommandLine.arguments.count >= 3, let pid = Int32(CommandLine.arguments[1]) else {
+    throw HistoryFailure("Expected the installed Yap process ID and workspace action")
 }
 guard AXIsProcessTrusted() else {
-    throw HistoryFailure("The runner has not granted Accessibility access to read the installed Yap workspace")
+    throw HistoryFailure("The runner has not granted Accessibility access to the installed Yap workspace")
+}
+let app = AXUIElementCreateApplication(pid)
+
+func clickButton(_ label: String) throws {
+    var dismissed = false
+    try waitFor(label) {
+        if !dismissed, let skip = find(app, role: kAXButtonRole, label: "Skip for now") {
+            try press(skip, "Skip for now")
+            dismissed = true
+            return false
+        }
+        guard let button = find(app, role: kAXButtonRole, label: label),
+              attribute(button, kAXEnabledAttribute) as? Bool == true else { return false }
+        try press(button, label)
+        return true
+    }
 }
 
-let app = AXUIElementCreateApplication(pid)
-let recording = "live-s-package-dictation"
-let reference = try String(contentsOfFile: CommandLine.arguments[2], encoding: .utf8)
-    .trimmingCharacters(in: .whitespacesAndNewlines)
-var dismissedOnboarding = false
-try waitFor("Review recording \(recording)") {
-    if !dismissedOnboarding, let skip = find(app, role: kAXButtonRole, label: "Skip for now") {
-        try press(skip, "Skip for now")
-        dismissedOnboarding = true
-        return false
+switch Array(CommandLine.arguments.dropFirst(2)) {
+case ["settings"]:
+    try clickButton("Settings")
+    try clickButton("General")
+case ["start"]:
+    try clickButton("Start")
+case ["stop"]:
+    try clickButton("Stop")
+default:
+    guard CommandLine.arguments.count == 5, CommandLine.arguments[2] == "review" else {
+        throw HistoryFailure("Expected settings, start, stop, or review with a recording name and transcript path")
     }
-    guard let review = find(app, role: kAXButtonRole, label: "Review recording \(recording)") else {
-        return false
+    let recording = CommandLine.arguments[3]
+    let reference = try String(contentsOfFile: CommandLine.arguments[4], encoding: .utf8)
+        .trimmingCharacters(in: .whitespacesAndNewlines)
+    try clickButton("Review recording \(recording)")
+    try waitFor("saved transcript and its open action") {
+        find(app, role: kAXButtonRole, label: "Open transcript for \(recording)") != nil &&
+            find(app, role: kAXStaticTextRole, label: reference) != nil
     }
-    try press(review, "Review recording")
-    return true
+    print("The installed Mac client reopened \(recording) from History and displayed the complete transcript.")
 }
-try waitFor("saved transcript and its open action") {
-    find(app, role: kAXButtonRole, label: "Open transcript for \(recording)") != nil &&
-        find(app, role: kAXStaticTextRole, label: reference) != nil
-}
-print("The installed Mac client reopened the saved dictation from History and displayed the complete reference transcript.")

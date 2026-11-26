@@ -96,7 +96,8 @@ def main() -> None:
                 reference = checks / "fixtures/package-profile/local-dictation/live-s-package-dictation.txt"
                 if args.macos_app:
                     subprocess.run(
-                        ["swift", str(checks / "test-macos-saved-history.swift"), str(process.pid), str(reference)],
+                        ["swift", str(checks / "test-macos-saved-history.swift"), str(process.pid),
+                         "review", "live-s-package-dictation", str(reference)],
                         check=True, timeout=90,
                     )
                 else:

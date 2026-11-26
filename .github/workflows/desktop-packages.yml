@@ -36,6 +36,9 @@ jobs:
         with:
           node-version-file: .node-version
           package-manager-cache: false
+      - name: Prepare the virtual CoreAudio input for installed dictation
+        if: runner.os == 'macOS'
+        run: bash verification/setup-macos-loopback.sh
       - name: Install Linux desktop dependencies
         if: runner.os == 'Linux'
         run: |
@@ -62,7 +65,12 @@ jobs:
             grep -Eq 'test result: ok\. [1-9][0-9]* passed; 0 failed; 0 ignored;' "$RUNNER_TEMP/native-dictation-tests.log"
           done
       - name: Transcribe the licensed recording with the pinned desktop recognizer
-        run: python3 verification/test-desktop-dictation.py
+        run: |
+          if [[ "$RUNNER_OS" == macOS ]]; then
+            python3 verification/test-desktop-dictation.py --stage-model-in "$RUNNER_TEMP/installed-dictation"
+          else
+            python3 verification/test-desktop-dictation.py
+          fi
       - name: Check installed Debian package
         if: runner.os == 'Linux'
         run: |
@@ -100,4 +108,4 @@ jobs:
             '
       - name: Install and launch the macOS app after ejecting its disk image
         if: runner.os == 'macOS'
-        run: bash verification/test-macos-dmg.sh desktop/src-tauri/target/debug/bundle/dmg/*.dmg
+        run: bash verification/test-macos-dmg.sh desktop/src-tauri/target/debug/bundle/dmg/*.dmg --live
