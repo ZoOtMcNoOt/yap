@@ -638,6 +638,16 @@ fn transcript_revisions_are_create_new_and_monotonic() {
         &[],
     )
     .unwrap();
+    let first_path = transcript_revision_path(&dir, &session, 1);
+    let mut legacy: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(&first_path).unwrap()).unwrap();
+    assert_eq!(legacy["modelRevision"], crate::stt::nemotron::REVISION);
+    // Older clients stored "local" in both revision fields.
+    legacy["modelRevision"] = "local".into();
+    legacy["modelProvenance"][0]["revision"] = "local".into();
+    let historical_bytes = serde_json::to_vec(&legacy).unwrap();
+    std::fs::write(&first_path, &historical_bytes).unwrap();
+
     write_transcript_revision(
         &dir,
         &manifest.session_id,
@@ -649,9 +659,8 @@ fn transcript_revisions_are_create_new_and_monotonic() {
     )
     .unwrap();
 
-    assert!(transcript_revision_path(&dir, &session, 1).is_file());
-    assert!(transcript_revision_path(&dir, &session, 2).is_file());
-    let revision = std::fs::read_to_string(transcript_revision_path(&dir, &session, 1)).unwrap();
+    assert_eq!(std::fs::read(first_path).unwrap(), historical_bytes);
+    let revision = std::fs::read_to_string(transcript_revision_path(&dir, &session, 2)).unwrap();
     let revision: serde_json::Value = serde_json::from_str(&revision).unwrap();
     assert_eq!(revision["textFile"], format!("live-{session}.txt"));
     assert_eq!(revision["textSha256"], transcript_receipt.sha256());
