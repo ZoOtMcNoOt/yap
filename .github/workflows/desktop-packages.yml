@@ -53,6 +53,14 @@ jobs:
           rustup show active-toolchain
           pnpm --dir .. install --frozen-lockfile
           pnpm --dir .. tauri build --debug --ci -- --locked
+      - name: Run the linked ONNX dependency regression
+        working-directory: desktop/src-tauri
+        shell: bash
+        run: |
+          set -o pipefail
+          test_name=stt::ambernet_language_detector::tests::shipped_runtime_classifies_successive_feature_tensors
+          cargo test --locked --lib "$test_name" -- --exact | tee "$RUNNER_TEMP/onnx-test.log"
+          grep -Fqx "test $test_name ... ok" "$RUNNER_TEMP/onnx-test.log"
       - name: Check installed Debian package
         if: runner.os == 'Linux'
         run: |

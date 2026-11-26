@@ -22,7 +22,8 @@ use ort::{
 use crate::{
     language::{
         acoustic_language_classification::{
-            AcousticLanguageClassificationError, AcousticLanguageLogitResolver,
+            AcousticLanguageClassification, AcousticLanguageClassificationError,
+            AcousticLanguageLogitResolver,
         },
         live_catalog::LocalLanguageCatalog,
         live_diarization::{AcousticLanguageObservation, LanguageDiarizationError},
@@ -81,7 +82,7 @@ const RAW_AMBERNET_LANGUAGE_CODES: [&str; OUTPUT_LABEL_COUNT] = [
     "tg", "th", "tk", "tl", "tr", "tt", "uk", "ur", "uz", "vi", "war", "yi", "yo", "zh",
 ];
 
-static ONNX_RUNTIME_INITIALIZATION: OnceLock<Result<(), ()>> = OnceLock::new();
+static ONNX_ENVIRONMENT: OnceLock<Result<ort::environment::Environment, ()>> = OnceLock::new();
 
 pub struct AmberNetLanguageIdentifier {
     // Field order is deliberate: the native session must drop before the model
@@ -143,9 +144,9 @@ impl AmberNetLanguageIdentifier {
     }
 
     fn load_at(root: &Path, catalog: &LocalLanguageCatalog) -> Result<Self, SttError> {
-        initialize_static_onnx_runtime()?;
+        let environment = static_onnx_environment()?;
         let guard = ModelLoadGuard::open(root, ARTIFACTS)?;
-        let builder = Session::builder().map_err(|_| SttError::ModelCorrupt)?;
+        let builder = Session::builder(environment).map_err(|_| SttError::ModelCorrupt)?;
         let builder = builder
             .with_intra_threads(1)
             .map_err(|_| SttError::ModelCorrupt)?;
@@ -182,10 +183,7 @@ impl AmberNetLanguageIdentifier {
     fn classify(
         &mut self,
         samples: &[f32],
-    ) -> Result<
-        crate::language::acoustic_language_classification::AcousticLanguageClassification,
-        AmberNetLanguageError,
-    > {
+    ) -> Result<AcousticLanguageClassification, AmberNetLanguageError> {
         let features = self
             .frontend
             .process(samples)
@@ -193,26 +191,33 @@ impl AmberNetLanguageIdentifier {
                 FeatureExtractionError::InvalidWindow => AmberNetLanguageError::InvalidWindow,
                 FeatureExtractionError::FftFailed => AmberNetLanguageError::InferenceFailed,
             })?;
-        let input =
-            TensorRef::<f32>::from_array_view(([1_usize, MEL_BINS, PADDED_FRAMES], features))
-                .map_err(|_| AmberNetLanguageError::InferenceFailed)?;
-        let outputs = self
-            .session
-            .run(ort::inputs!["processed_signal" => input])
-            .map_err(|_| AmberNetLanguageError::InferenceFailed)?;
-        let output = outputs
-            .get("logits")
-            .ok_or(AmberNetLanguageError::InvalidResult)?
-            .downcast_ref::<DynTensorValueType>()
-            .map_err(|_| AmberNetLanguageError::InvalidResult)?;
-        let (shape, logits) = output
-            .try_extract_tensor::<f32>()
-            .map_err(|_| AmberNetLanguageError::InvalidResult)?;
-        if **shape != [1, OUTPUT_LABEL_COUNT as i64] {
-            return Err(AmberNetLanguageError::InvalidResult);
-        }
-        self.resolver.classify(logits).map_err(classification_error)
+        classify_features(&mut self.session, features, &self.resolver)
     }
+}
+
+fn classify_features(
+    session: &mut Session,
+    features: &[f32],
+    resolver: &AcousticLanguageLogitResolver,
+) -> Result<AcousticLanguageClassification, AmberNetLanguageError> {
+    let input = TensorRef::<f32>::from_array_view(([1_usize, MEL_BINS, PADDED_FRAMES], features))
+        .map_err(|_| AmberNetLanguageError::InferenceFailed)?;
+    let outputs = session
+        .run(ort::inputs!["processed_signal" => input])
+        .map_err(|_| AmberNetLanguageError::InferenceFailed)?;
+    let output = outputs
+        .get("logits")
+        .ok_or(AmberNetLanguageError::InvalidResult)?
+        .view()
+        .downcast::<DynTensorValueType>()
+        .map_err(|_| AmberNetLanguageError::InvalidResult)?;
+    let (shape, logits) = output
+        .try_extract_tensor::<f32>()
+        .map_err(|_| AmberNetLanguageError::InvalidResult)?;
+    if **shape != [1, OUTPUT_LABEL_COUNT as i64] {
+        return Err(AmberNetLanguageError::InvalidResult);
+    }
+    resolver.classify(logits).map_err(classification_error)
 }
 
 impl AmberNetSileroLanguageDetector {
@@ -282,32 +287,33 @@ pub fn root_dir() -> PathBuf {
     crate::stt::model::models_dir().join(MODEL_DIRECTORY)
 }
 
-fn initialize_static_onnx_runtime() -> Result<(), SttError> {
-    match ONNX_RUNTIME_INITIALIZATION.get_or_init(|| {
-        // Keep sherpa-onnx's statically linked ONNX Runtime in the final binary.
-        let link_anchor = sherpa_onnx::SpeakerEmbeddingExtractorConfig::default();
-        if link_anchor.provider.as_deref() != Some("cpu") {
-            return Err(());
-        }
-        // SAFETY: OrtGetApiBase is supplied by the one sherpa-onnx static
-        // archive. We check both pointers before copying the immutable API table,
-        // and OnceLock guarantees one process-wide registration attempt.
-        let api = unsafe {
-            let base = ort::sys::OrtGetApiBase();
-            if base.is_null() {
+fn static_onnx_environment() -> Result<&'static ort::environment::Environment, SttError> {
+    ONNX_ENVIRONMENT
+        .get_or_init(|| {
+            // Keep sherpa-onnx's statically linked ONNX Runtime in the final binary.
+            let link_anchor = sherpa_onnx::SpeakerEmbeddingExtractorConfig::default();
+            if link_anchor.provider.as_deref() != Some("cpu") {
                 return Err(());
             }
-            let api = ((*base).GetApi)(ort::sys::ORT_API_VERSION);
-            if api.is_null() {
-                return Err(());
-            }
-            (*api).clone()
-        };
-        ort::set_api(api).then_some(()).ok_or(())
-    }) {
-        Ok(()) => Ok(()),
-        Err(()) => Err(SttError::SidecarCrash),
-    }
+            // SAFETY: OrtGetApiBase is supplied by the one sherpa-onnx static
+            // archive. We check both pointers before copying the immutable API table,
+            // and OnceLock guarantees one process-wide registration attempt.
+            let api = unsafe {
+                let base = ort::sys::OrtGetApiBase();
+                if base.is_null() {
+                    return Err(());
+                }
+                let api = ((*base).GetApi)(ort::sys::ORT_API_VERSION);
+                if api.is_null() {
+                    return Err(());
+                }
+                (*api).clone()
+            };
+            ort::set_api(api).then_some(()).ok_or(())?;
+            ort::init().with_telemetry(false).build().map_err(|_| ())
+        })
+        .as_ref()
+        .map_err(|_| SttError::SidecarCrash)
 }
 
 fn normalized_language_codes() -> Vec<String> {
@@ -334,6 +340,36 @@ fn classification_error(_: AcousticLanguageClassificationError) -> AmberNetLangu
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn shipped_runtime_classifies_successive_feature_tensors() {
+        let mut session = Session::builder(static_onnx_environment().unwrap())
+            .unwrap()
+            .with_intra_threads(1)
+            .unwrap()
+            .with_inter_threads(1)
+            .unwrap()
+            .commit_from_memory(include_bytes!(
+                "ambernet_language_detector/tests/first_107_features.onnx"
+            ))
+            .unwrap();
+        let catalog = LocalLanguageCatalog::try_new("en-US", ["en-US", "ja-JP"]).unwrap();
+        let codes = normalized_language_codes();
+        let resolver =
+            AcousticLanguageLogitResolver::try_new(&catalog, OUTPUT_LABEL_COUNT, codes.clone())
+                .unwrap();
+
+        // The synthetic graph flattens the input and returns its first 107 values as logits.
+        let mut features = vec![0.0; MEL_BINS * PADDED_FRAMES];
+        for (code, locale) in [("en", "en-US"), ("ja", "ja-JP")] {
+            features.fill(0.0);
+            let index = codes.iter().position(|label| label == code).unwrap();
+            features[index] = 20.0;
+            let result = classify_features(&mut session, &features, &resolver).unwrap();
+            assert_eq!(result.language_bcp47.as_deref(), Some(locale));
+            assert!(result.score > 0.99);
+        }
+    }
 
     #[test]
     fn locked_label_map_has_expected_aliases_and_revision() {

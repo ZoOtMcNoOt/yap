@@ -180,8 +180,8 @@ SOFTWARE.
 
 ## Rust ONNX and FFT bindings
 
-The AmberNet client runtime uses `ort` and `ort-sys` 2.0.0-rc.13 under
-MIT OR Apache-2.0, `realfft` 3.5.0 under MIT, and `rustfft` 6.4.1 under
+The AmberNet client runtime uses `ort` and `ort-sys` 2.0.0-rc.15 under
+MIT OR Apache-2.0, `realfft` 3.5.1 under MIT, and `rustfft` 6.4.1 under
 MIT OR Apache-2.0. Package versions are frozen in
 `desktop/src-tauri/Cargo.lock`.
 

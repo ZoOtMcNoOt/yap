@@ -31,13 +31,6 @@
     },
     {
       "ecosystem": "rust",
-      "name": "realfft",
-      "version": "3.5.0",
-      "sourceFile": "Cargo.toml.orig",
-      "reason": "The installed crate archive omits a standalone license file; its original crate metadata is the exact installed declaration available for review."
-    },
-    {
-      "ecosystem": "rust",
       "name": "selectors",
       "version": "0.38.0",
       "sourceFile": "Cargo.toml.orig",
