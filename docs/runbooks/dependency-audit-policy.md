@@ -193,9 +193,12 @@ must fail the inventory check.
 
 With Vite 8.3.3, Undici 6.29.1 and 7.30.1, and serialize-javascript 7.1.3,
 the frozen desktop lockfile passed the high/critical gate with no exceptions.
-The full audit still reports two moderate findings in glob and minimatch in
-the WebdriverIO tooling. Repeat the full audit and adapter compatibility tests
-when updating that tooling.
+The WebdriverIO development dependencies now resolve glob 14.0.2 and
+minimatch 11.0.9 for the affected paths. The full audit reported zero
+advisories across 598 dependencies. Mocha, WebdriverIO and archiver each
+selected the expected nested test file and excluded an unrelated file.
+When these dependencies change, rerun the full audit and check file discovery
+alongside the adapter compatibility tests.
 
 ## Earlier decisions
 
