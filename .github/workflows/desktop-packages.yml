@@ -1,0 +1,75 @@
+name: Desktop package smoke
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            sherpa_platform: linux-x64
+            sha256: e1fdc5b67530e15741ef897fa5ffff297056f3bf0c6d829a27af9225a4c4b5a6
+          - runner: macos-15
+            sherpa_platform: osx-arm64
+            sha256: 9091bf160dc7fdacedbc906b212badf53c2993f4e5277a0e03998e96c31d60da
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    env:
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_INCREMENTAL: "0"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+      - name: Install Linux desktop dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev libasound2-dev librsvg2-dev
+      - name: Verify native speech runtime archive
+        env:
+          SHERPA_PLATFORM: ${{ matrix.sherpa_platform }}
+          ARCHIVE_SHA256: ${{ matrix.sha256 }}
+        run: |
+          archive="sherpa-onnx-v1.13.8-${SHERPA_PLATFORM}-static-lib.tar.bz2"
+          cd "$RUNNER_TEMP"
+          curl -fsSL --retry 2 "https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.8/$archive" -o "$archive"
+          echo "$ARCHIVE_SHA256  $archive" | shasum -a 256 --check
+          echo "SHERPA_ONNX_ARCHIVE_DIR=$RUNNER_TEMP" >> "$GITHUB_ENV"
+      - name: Build native desktop package
+        working-directory: desktop/src-tauri
+        run: |
+          rustup show active-toolchain
+          pnpm --dir .. install --frozen-lockfile
+          pnpm --dir .. tauri build --debug --ci -- --locked
+      - name: Check installed Debian package
+        if: runner.os == 'Linux'
+        run: |
+          docker run --rm --init --mount "type=bind,src=$GITHUB_WORKSPACE,dst=/checks,readonly" \
+            --workdir /checks debian:13-slim@sha256:8aa5a7bf5a1955bddbe7d74fcdd0b91ab30e74362a8b73af672b0481b35b44a0 sh -ec '
+              apt-get -o APT::Update::Error-Mode=any update
+              DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+                ./desktop/src-tauri/target/debug/bundle/deb/*.deb python3 xvfb xauth x11-utils dbus-x11
+              useradd --create-home yap-smoke
+              runuser -u yap-smoke -- dbus-run-session -- xvfb-run -a python3 verification/test-desktop-package.py
+            '
+      - name: Install and launch the macOS app after ejecting its disk image
+        if: runner.os == 'macOS'
+        run: bash verification/test-macos-dmg.sh desktop/src-tauri/target/debug/bundle/dmg/*.dmg

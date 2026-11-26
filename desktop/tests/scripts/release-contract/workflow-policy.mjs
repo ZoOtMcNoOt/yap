@@ -27,13 +27,16 @@ const reviewedActionRepositories = Object.freeze({
 // contract unrunnable without desktop dependencies installed.
 const USES = /^\s*-?\s*uses:\s*(\S+)[^\S\n]*(?:#.*)?$/gm;
 
+export const workflowPaths = Object.freeze([
+  ".github/workflows/ci.yml",
+  ".github/workflows/desktop-packages.yml",
+  ".github/workflows/nsis-smoke.yml",
+  ".github/workflows/release.yml",
+]);
+
 function pinnedActionRevisions() {
   const observed = new Map();
-  for (const workflowPath of [
-    ".github/workflows/ci.yml",
-    ".github/workflows/nsis-smoke.yml",
-    ".github/workflows/release.yml",
-  ]) {
+  for (const workflowPath of workflowPaths) {
     const source = readFileSync(path.join(policyRepoRoot, workflowPath), "utf8");
     for (const [, uses] of source.matchAll(USES)) {
       const separator = uses.lastIndexOf("@");
@@ -74,12 +77,6 @@ export const reviewedActions = Object.freeze(
 
 export const reviewedActionUses = new Set(Object.values(reviewedActions));
 
-export const workflowPaths = Object.freeze([
-  ".github/workflows/ci.yml",
-  ".github/workflows/nsis-smoke.yml",
-  ".github/workflows/release.yml",
-]);
-
 export const exactCacheKeys = Object.freeze({
   cargo: "cargo-deps-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('desktop/src-tauri/Cargo.lock') }}",
   serverOrchestratorCargo: "cargo-server-orchestrator-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('server/orchestrator/Cargo.lock') }}",
@@ -94,6 +91,7 @@ export const expectedCacheFamilies = Object.freeze({
     rust: Object.freeze(["cargo"]),
     "server-orchestrator": Object.freeze(["serverOrchestratorCargo"]),
   }),
+  ".github/workflows/desktop-packages.yml": Object.freeze({}),
   ".github/workflows/nsis-smoke.yml": Object.freeze({
     "nsis-bundle-smoke": Object.freeze(["cargo", "pnpm"]),
   }),
