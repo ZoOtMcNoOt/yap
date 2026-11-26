@@ -197,14 +197,20 @@ impl QuitCoordinator {
     }
 }
 
-pub(crate) fn show_main_window(app: &tauri::AppHandle) {
-    if let Some(window) = app.get_webview_window(authorization::MAIN_WINDOW_LABEL) {
-        #[cfg(target_os = "macos")]
-        let _ = app.show();
-        let _ = window.unminimize();
-        let _ = window.show();
-        let _ = window.set_focus();
+pub(crate) fn show_main_window(app: &tauri::AppHandle) -> bool {
+    let Some(window) = app.get_webview_window(authorization::MAIN_WINDOW_LABEL) else {
+        return false;
+    };
+    #[cfg(target_os = "macos")]
+    let app_shown = app.show().is_ok();
+    let restored = window.unminimize().is_ok();
+    let shown = window.show().is_ok();
+    let _ = window.set_focus();
+    #[cfg(target_os = "macos")]
+    if !app_shown {
+        return false;
     }
+    restored && shown
 }
 
 pub(crate) fn quit_from_app(app: &tauri::AppHandle) {

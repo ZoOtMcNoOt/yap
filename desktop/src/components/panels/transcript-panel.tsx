@@ -357,6 +357,8 @@ export function TranscriptPanel({
                   </div>
                 ) : (
                   <pre
+                    aria-label="Transcript text"
+                    role="region"
                     className="whitespace-pre-wrap break-words font-sans text-[15px] leading-7 text-foreground"
                     data-testid={speakerProjection?.mode === "plain" ? "single-speaker-transcript" : undefined}
                   >

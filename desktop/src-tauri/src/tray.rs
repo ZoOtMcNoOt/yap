@@ -12,7 +12,9 @@ const QUIT: &str = "quit";
 
 fn dispatch_menu_action(app: &tauri::AppHandle, action: &str) -> bool {
     match action {
-        SHOW_APP => actions::show_main_window(app),
+        SHOW_APP => {
+            actions::show_main_window(app);
+        }
         START_DICTATING => actions::start_live_from_app(app),
         STOP_RECORDING => actions::stop_live_from_app(app),
         QUIT => actions::quit_from_app(app),

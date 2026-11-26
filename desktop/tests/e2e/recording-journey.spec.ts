@@ -42,7 +42,7 @@ for (const format of ["flac", "ogg", "m4a", "mp4"]) {
       name: `interview.${format}`,
       exact: true,
     });
-    await expect(review.locator("pre")).toHaveText(journeyTranscript);
+    await expect(review.getByRole("region", { name: "Transcript text", exact: true })).toHaveText(journeyTranscript);
     await page.keyboard.press("Escape");
     await page
       .getByRole("button", { name: "Search past transcripts", exact: true })
@@ -138,7 +138,7 @@ test("a recording can be cancelled, re-added, retried after failure, and read/co
     name: "interview.mp3",
     exact: true,
   });
-  await expect(review.locator("pre")).toHaveText(journeyTranscript);
+  await expect(review.getByRole("region", { name: "Transcript text", exact: true })).toHaveText(journeyTranscript);
   await review
     .getByRole("button", {
       name: "Copy transcript for interview.mp3",
@@ -257,7 +257,7 @@ test("an unreadable saved transcript has a recoverable error instead of endless 
   await review
     .getByRole("button", { name: "Retry reading transcript" })
     .click();
-  await expect(review.locator("pre")).toHaveText(journeyTranscript);
+  await expect(review.getByRole("region", { name: "Transcript text", exact: true })).toHaveText(journeyTranscript);
   await expect(review.getByRole("alert")).toHaveCount(0);
   await review
     .getByRole("button", {
