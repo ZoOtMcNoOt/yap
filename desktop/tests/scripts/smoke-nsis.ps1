@@ -26,7 +26,6 @@ if (-not ($isHostedDisposable -or $isExplicitDisposable)) {
 }
 
 $desktopRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\.."))
-$repoRoot = [System.IO.Path]::GetFullPath((Join-Path $desktopRoot ".."))
 if ([string]::IsNullOrWhiteSpace($BundleDirectory)) {
   $BundleDirectory = Join-Path $desktopRoot "src-tauri\target\release\bundle\nsis"
 }
@@ -67,21 +66,22 @@ foreach ($path in @(
   }
 }
 
+$python = (Get-Command python -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
+& $python -c "import sqlite3, sys; sys.exit(sys.version_info.major != 3)"
+if ($LASTEXITCODE -ne 0) { throw "The recording preservation check requires Python 3 with SQLite." }
+
 function Invoke-BoundedProcess {
   param(
     [Parameter(Mandatory)]
     [string]$FilePath,
-    [Parameter(Mandatory)]
-    [string[]]$ArgumentList,
+    [string[]]$ArgumentList = @(),
     [Parameter(Mandatory)]
     [string]$Label
   )
 
-  $process = Start-Process `
-    -FilePath $FilePath `
-    -ArgumentList $ArgumentList `
-    -NoNewWindow `
-    -PassThru
+  $arguments = @{}
+  if ($ArgumentList.Count -gt 0) { $arguments.ArgumentList = $ArgumentList }
+  $process = Start-Process -FilePath $FilePath @arguments -NoNewWindow -PassThru
   try {
     $timeoutMilliseconds = [int][TimeSpan]::FromSeconds($ProcessTimeoutSeconds).TotalMilliseconds
     if (-not $process.WaitForExit($timeoutMilliseconds)) {
@@ -147,50 +147,76 @@ foreach ($path in @($appExecutable, $uninstaller)) {
   }
 }
 
-$resourceHashes = [ordered]@{}
-foreach ($resourceName in @(
-    "SHIPPED_DEPENDENCY_INVENTORY.json",
-    "SHIPPED_DEPENDENCY_NOTICES.json",
-    "THIRD_PARTY_NOTICES.md",
-    "THIRD_PARTY_PROVENANCE.json"
-  )) {
-  $expectedResource = Join-Path $repoRoot $resourceName
-  $installedResource = Join-Path $installLocation $resourceName
-  foreach ($path in @($expectedResource, $installedResource)) {
-    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
-      throw "Required release resource is missing: $path"
-    }
-  }
-  $expectedResourceSha256 = (Get-FileHash -LiteralPath $expectedResource -Algorithm SHA256).Hash
-  $installedResourceSha256 = (Get-FileHash -LiteralPath $installedResource -Algorithm SHA256).Hash
-  if ($installedResourceSha256 -cne $expectedResourceSha256) {
-    throw "Installed $resourceName does not match the reviewed repository input."
-  }
-  $resourceHashes[$resourceName] = $installedResourceSha256
+
+Add-Type -Path (Join-Path $PSScriptRoot "InstalledWorkspace.cs")
+function Get-AppStartCount([string]$Path) {
+  if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return 0 }
+  return @(Select-String -LiteralPath $Path -Pattern '^\d+ app start$').Count
 }
 
-$appProcess = Start-Process -FilePath $appExecutable -PassThru
-try {
-  $launchTimer = [Diagnostics.Stopwatch]::StartNew()
+function Test-InstalledWorkspace {
+  param([switch]$ReadHistory)
+  $registeredVersion = Get-ItemPropertyValue -LiteralPath $uninstallRegistryPath -Name DisplayVersion
+  $evidence = & (Join-Path $PSScriptRoot "get-installed-package-evidence.ps1") -InstallLocation $installLocation -RegisteredVersion $registeredVersion
   $logPath = Join-Path $appDataRoot "logs\yap.log"
-  while (-not (Test-Path -LiteralPath $logPath -PathType Leaf)) {
-    if ($appProcess.HasExited) {
-      throw "The installed Yap process exited before creating its canonical Tauri app-data log."
+  $previousStarts = Get-AppStartCount $logPath
+  $appProcess = Start-Process -FilePath $appExecutable -PassThru
+  try {
+    $launchTimer = [Diagnostics.Stopwatch]::StartNew()
+    while ((Get-AppStartCount $logPath) -le $previousStarts) {
+      if ($appProcess.HasExited) {
+        throw "The installed Yap process exited before creating its canonical Tauri app-data log."
+      }
+      if ($launchTimer.Elapsed.TotalSeconds -ge $LaunchTimeoutSeconds) {
+        throw "Installed Yap did not record a new startup in $logPath within $LaunchTimeoutSeconds seconds."
+      }
+      Start-Sleep -Milliseconds 100
     }
-    if ($launchTimer.Elapsed.TotalSeconds -ge $LaunchTimeoutSeconds) {
-      throw "Installed Yap did not create $logPath within $LaunchTimeoutSeconds seconds."
+    $window = [InstalledWorkspace]::Find($appProcess.Id, $LaunchTimeoutSeconds)
+    $browserTimer = [Diagnostics.Stopwatch]::StartNew()
+    do {
+      $children = @(Get-CimInstance Win32_Process -Filter "Name = 'msedgewebview2.exe'" | Where-Object ParentProcessId -eq $appProcess.Id)
+      $browserPaths = @($children | ForEach-Object ExecutablePath | Where-Object { $_ } | Sort-Object -Unique)
+      if ($browserPaths.Count) { break }
+      Start-Sleep -Milliseconds 150
+    } while ($browserTimer.Elapsed.TotalSeconds -lt $LaunchTimeoutSeconds)
+    if ($browserPaths.Count -eq 0) { throw "The installed app did not own an identifiable WebView2 browser." }
+    if ($ReadHistory) {
+      foreach ($browserPath in $browserPaths) {
+        if ($browserPath -notin $firstInstall.browserExecutables) { throw "The reinstalled app used a different WebView2 executable." }
+      }
+      $reader = Join-Path $PSScriptRoot "read-installed-history.ps1"
+      $reference = Join-Path $desktopRoot "../verification/fixtures/package-profile/local-dictation/live-s-package-dictation.txt"
+      Invoke-BoundedProcess -FilePath "$env:SystemRoot/System32/WindowsPowerShell/v1.0/powershell.exe" -ArgumentList @(
+        "-NoProfile", "-NonInteractive", "-STA", "-File", "`"$reader`"", "-WindowHandle", $window.ToInt64(), "-ReferenceFile", "`"$reference`""
+      ) -Label "Read the reinstalled transcript through Windows UI Automation"
     }
-    Start-Sleep -Milliseconds 100
+    $evidence.browserExecutables = $browserPaths
+    [InstalledWorkspace]::Minimize($window, $LaunchTimeoutSeconds)
+    Invoke-BoundedProcess -FilePath $appExecutable -Label "Second launch with minimized workspace"
+    [InstalledWorkspace]::WaitForRestore($window, $appProcess.Id, $LaunchTimeoutSeconds)
+    [InstalledWorkspace]::CloseToTray($window, $LaunchTimeoutSeconds)
+    Invoke-BoundedProcess -FilePath $appExecutable -Label "Second launch after close to tray"
+    [InstalledWorkspace]::WaitForRestore($window, $appProcess.Id, $LaunchTimeoutSeconds)
+  } finally {
+    if (-not $appProcess.HasExited) {
+      $appProcess.Kill($true)
+      if (-not $appProcess.WaitForExit(10000)) {
+        throw "The installed Yap process tree could not be reaped."
+      }
+    }
+    $appProcess.Dispose()
   }
-} finally {
-  if (-not $appProcess.HasExited) {
-    $appProcess.Kill($true)
-    if (-not $appProcess.WaitForExit(10000)) {
-      throw "The installed Yap process tree could not be reaped."
-    }
-  }
-  $appProcess.Dispose()
+  return $evidence
 }
+
+$profileCheck = Join-Path $desktopRoot "../verification/package-profile.py"
+function Test-PackageProfile([string]$Action) {
+  & $python $profileCheck $Action $appDataRoot | Out-Host
+  if ($LASTEXITCODE -ne 0) { throw "Installed profile check failed during $Action." }
+}
+$firstInstall = Test-InstalledWorkspace
+Test-PackageProfile seed
 
 Invoke-BoundedProcess -FilePath $uninstaller -ArgumentList @("/S") -Label "Stock NSIS uninstall"
 Wait-ForPathAbsence `
@@ -210,6 +236,14 @@ if (
   throw "Stock silent uninstall did not preserve the expected product install-location record."
 }
 
+Test-PackageProfile verify
+Invoke-BoundedProcess -FilePath $installer.FullName -ArgumentList @("/S") -Label "Stock NSIS reinstall"
+$reinstalled = & (Join-Path $PSScriptRoot "test-installed-history-offline.ps1") -AppExecutable $appExecutable -BrowserExecutables $firstInstall.browserExecutables -CheckWorkspace { Test-InstalledWorkspace -ReadHistory }
+Test-PackageProfile verify
+Invoke-BoundedProcess -FilePath $uninstaller -ArgumentList @("/S") -Label "Final stock NSIS uninstall"
+Wait-ForPathAbsence -LiteralPaths @($uninstallRegistryPath, $installLocation) -Label "Final uninstall cleanup"
+Test-PackageProfile verify
+
 $afterSha256 = (Get-FileHash -LiteralPath $installer.FullName -Algorithm SHA256).Hash
 if ($afterSha256 -cne $beforeSha256) {
   throw "The NSIS installer changed during lifecycle verification."
@@ -220,7 +254,13 @@ $result = [ordered]@{
   installer = $installer.FullName
   installerSha256 = $afterSha256
   appDataRoot = $appDataRoot
-  installedResourceSha256 = $resourceHashes
+  installedVersion = $reinstalled.installedVersion
+  installedResourceSha256 = $reinstalled.installedResourceSha256
+  restoredOriginalMinimizedAndHiddenWindow = $true
+  reinstallPreservedRecordingAndTwoRevisions = $true
+  reinstallPreservedLocalDictation = $true
+  offlineHistoryDisplayedCompleteDictation = $true
+  reinstallPreservedOrganizationRegistrationAndSignOut = $true
   stockSilentUninstallPreservedAppData = $true
   stockSilentUninstallPreservedProductRegistry = $true
   lifecycleBoundary = if ($isHostedDisposable) { "github-hosted" } else { "explicit-disposable-windows" }
