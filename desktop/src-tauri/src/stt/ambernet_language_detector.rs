@@ -81,7 +81,7 @@ const RAW_AMBERNET_LANGUAGE_CODES: [&str; OUTPUT_LABEL_COUNT] = [
     "tg", "th", "tk", "tl", "tr", "tt", "uk", "ur", "uz", "vi", "war", "yi", "yo", "zh",
 ];
 
-static ONNX_RUNTIME_INITIALIZATION: OnceLock<Result<(), ()>> = OnceLock::new();
+static ONNX_ENVIRONMENT: OnceLock<Result<ort::environment::Environment, ()>> = OnceLock::new();
 
 pub struct AmberNetLanguageIdentifier {
     // Field order is deliberate: the native session must drop before the model
@@ -143,9 +143,9 @@ impl AmberNetLanguageIdentifier {
     }
 
     fn load_at(root: &Path, catalog: &LocalLanguageCatalog) -> Result<Self, SttError> {
-        initialize_static_onnx_runtime()?;
+        let environment = static_onnx_environment()?;
         let guard = ModelLoadGuard::open(root, ARTIFACTS)?;
-        let builder = Session::builder().map_err(|_| SttError::ModelCorrupt)?;
+        let builder = Session::builder(environment).map_err(|_| SttError::ModelCorrupt)?;
         let builder = builder
             .with_intra_threads(1)
             .map_err(|_| SttError::ModelCorrupt)?;
@@ -203,7 +203,8 @@ impl AmberNetLanguageIdentifier {
         let output = outputs
             .get("logits")
             .ok_or(AmberNetLanguageError::InvalidResult)?
-            .downcast_ref::<DynTensorValueType>()
+            .view()
+            .downcast::<DynTensorValueType>()
             .map_err(|_| AmberNetLanguageError::InvalidResult)?;
         let (shape, logits) = output
             .try_extract_tensor::<f32>()
@@ -282,32 +283,33 @@ pub fn root_dir() -> PathBuf {
     crate::stt::model::models_dir().join(MODEL_DIRECTORY)
 }
 
-fn initialize_static_onnx_runtime() -> Result<(), SttError> {
-    match ONNX_RUNTIME_INITIALIZATION.get_or_init(|| {
-        // Keep sherpa-onnx's statically linked ONNX Runtime in the final binary.
-        let link_anchor = sherpa_onnx::SpeakerEmbeddingExtractorConfig::default();
-        if link_anchor.provider.as_deref() != Some("cpu") {
-            return Err(());
-        }
-        // SAFETY: OrtGetApiBase is supplied by the one sherpa-onnx static
-        // archive. We check both pointers before copying the immutable API table,
-        // and OnceLock guarantees one process-wide registration attempt.
-        let api = unsafe {
-            let base = ort::sys::OrtGetApiBase();
-            if base.is_null() {
+fn static_onnx_environment() -> Result<&'static ort::environment::Environment, SttError> {
+    ONNX_ENVIRONMENT
+        .get_or_init(|| {
+            // Keep sherpa-onnx's statically linked ONNX Runtime in the final binary.
+            let link_anchor = sherpa_onnx::SpeakerEmbeddingExtractorConfig::default();
+            if link_anchor.provider.as_deref() != Some("cpu") {
                 return Err(());
             }
-            let api = ((*base).GetApi)(ort::sys::ORT_API_VERSION);
-            if api.is_null() {
-                return Err(());
-            }
-            (*api).clone()
-        };
-        ort::set_api(api).then_some(()).ok_or(())
-    }) {
-        Ok(()) => Ok(()),
-        Err(()) => Err(SttError::SidecarCrash),
-    }
+            // SAFETY: OrtGetApiBase is supplied by the one sherpa-onnx static
+            // archive. We check both pointers before copying the immutable API table,
+            // and OnceLock guarantees one process-wide registration attempt.
+            let api = unsafe {
+                let base = ort::sys::OrtGetApiBase();
+                if base.is_null() {
+                    return Err(());
+                }
+                let api = ((*base).GetApi)(ort::sys::ORT_API_VERSION);
+                if api.is_null() {
+                    return Err(());
+                }
+                (*api).clone()
+            };
+            ort::set_api(api).then_some(()).ok_or(())?;
+            ort::init().with_telemetry(false).build().map_err(|_| ())
+        })
+        .as_ref()
+        .map_err(|_| SttError::SidecarCrash)
 }
 
 fn normalized_language_codes() -> Vec<String> {
