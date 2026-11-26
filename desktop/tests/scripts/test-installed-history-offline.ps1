@@ -1,4 +1,5 @@
 #requires -Version 7.4
+#requires -PSEdition Core
 param(
   [Parameter(Mandatory)][string]$AppExecutable,
   [Parameter(Mandatory)][string[]]$BrowserExecutables,

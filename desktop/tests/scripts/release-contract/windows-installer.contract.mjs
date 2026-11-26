@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { access } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { access, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
 
@@ -58,10 +60,9 @@ test("NSIS uses stock Tauri behavior inside a disposable Windows boundary", asyn
   assert.match(smoke, /function Wait-ForPathAbsence[\s\S]*?Start-Sleep -Milliseconds 100/);
   assert.match(smoke, /-LiteralPaths @\(\$uninstallRegistryPath, \$installLocation\)/);
   assert.match(smoke, /ExpectedInstallerSha256/);
-  assert.match(smoke, /THIRD_PARTY_NOTICES\.md/);
-  assert.match(smoke, /THIRD_PARTY_PROVENANCE\.json/);
-  assert.match(smoke, /SHIPPED_DEPENDENCY_INVENTORY\.json/);
-  assert.match(smoke, /SHIPPED_DEPENDENCY_NOTICES\.json/);
+  assert.match(smoke, /Get-ItemPropertyValue -LiteralPath \$uninstallRegistryPath -Name DisplayVersion/);
+  assert.match(smoke, /get-installed-package-evidence\.ps1.* -InstallLocation \$installLocation -RegisteredVersion \$registeredVersion/);
+  assert.match(smoke, /installedResourceSha256 = \$reinstalled\.installedResourceSha256/);
   assert.match(smoke, /stockSilentUninstallPreservedProductRegistry/);
   assert.match(smoke, /@\("\/S"\)/);
   assert.match(smoke, /preserved/i);
@@ -84,6 +85,48 @@ test("NSIS uses stock Tauri behavior inside a disposable Windows boundary", asyn
   }
 });
 
+test("the installer receipt checks the registered version and hashes every declared resource", async (t) => {
+  const pwsh = process.platform === "win32" ? "pwsh.exe" : "pwsh";
+  const scripts = path.join(repoRoot, "desktop/tests/scripts");
+  const install = await mkdtemp(path.join(tmpdir(), "Yap installed resources "));
+  t.after(() => rm(install, { recursive: true, force: true }));
+  const config = JSON.parse(await readRepoFile("desktop/src-tauri/tauri.conf.json"));
+  const expected = {};
+  for (const [source, destination] of Object.entries(config.bundle.resources)) {
+    const bytes = await readFile(path.resolve(repoRoot, "desktop/src-tauri", source));
+    const file = path.join(install, destination);
+    await mkdir(path.dirname(file), { recursive: true });
+    await writeFile(file, bytes);
+    expected[destination] = createHash("sha256").update(bytes).digest("hex").toUpperCase();
+  }
+  const verify = (version = config.version) => spawnSync(pwsh, [
+    "-NoProfile", "-NonInteractive", "-Command",
+    '$ErrorActionPreference = "Stop"; & ./get-installed-package-evidence.ps1 -InstallLocation $env:YAP_TEST_INSTALL -RegisteredVersion $env:YAP_TEST_VERSION | ConvertTo-Json -Compress',
+  ], { cwd: scripts, env: { ...process.env, YAP_TEST_INSTALL: install, YAP_TEST_VERSION: version }, timeout: 30_000, encoding: "utf8" });
+  const valid = verify();
+  if (process.platform !== "win32" && valid.error?.code === "ENOENT") {
+    t.skip("PowerShell Core is unavailable on this host");
+    return;
+  }
+  assert.equal(valid.status, 0, valid.stderr);
+  assert.deepEqual(JSON.parse(valid.stdout), { installedVersion: config.version, installedResourceSha256: expected });
+  const wrongVersion = verify(config.version + "-wrong");
+  assert.equal(wrongVersion.status, 1);
+  assert.match(wrongVersion.stderr, /differs from the expected/);
+
+  const lock = path.join(install, "model-artifacts.lock.json");
+  const original = await readFile(lock);
+  await writeFile(lock, Buffer.concat([original, Buffer.from("\n")]));
+  const changed = verify();
+  assert.equal(changed.status, 1);
+  assert.match(changed.stderr, /model-artifacts\.lock\.json/);
+  await writeFile(lock, original);
+  await rm(path.join(install, "licenses/APACHE-2.0.txt"));
+  const missing = verify();
+  assert.equal(missing.status, 1);
+  assert.match(missing.stderr, /APACHE-2\.0\.txt/);
+});
+
 test("tracked PowerShell automation declares its reviewed runtime boundary", async () => {
   const powerShellFiles = execFileSync(
     "git",
@@ -101,6 +144,7 @@ test("tracked PowerShell automation declares its reviewed runtime boundary", asy
   const coreRuntimeRequirement =
     /^#requires -Version 7\.4\r?\n#requires -PSEdition Core\b/i;
   const inboxRuntimeFiles = new Set([
+    "desktop/tests/scripts/read-installed-history.ps1",
     "verification/private-gate-artifacts.ps1",
     "verification/read-windows-build-tools-optional-diagnostics-settings.ps1",
   ]);
