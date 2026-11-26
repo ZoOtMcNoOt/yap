@@ -22,7 +22,8 @@ use ort::{
 use crate::{
     language::{
         acoustic_language_classification::{
-            AcousticLanguageClassificationError, AcousticLanguageLogitResolver,
+            AcousticLanguageClassification, AcousticLanguageClassificationError,
+            AcousticLanguageLogitResolver,
         },
         live_catalog::LocalLanguageCatalog,
         live_diarization::{AcousticLanguageObservation, LanguageDiarizationError},
@@ -182,10 +183,7 @@ impl AmberNetLanguageIdentifier {
     fn classify(
         &mut self,
         samples: &[f32],
-    ) -> Result<
-        crate::language::acoustic_language_classification::AcousticLanguageClassification,
-        AmberNetLanguageError,
-    > {
+    ) -> Result<AcousticLanguageClassification, AmberNetLanguageError> {
         let features = self
             .frontend
             .process(samples)
@@ -193,27 +191,33 @@ impl AmberNetLanguageIdentifier {
                 FeatureExtractionError::InvalidWindow => AmberNetLanguageError::InvalidWindow,
                 FeatureExtractionError::FftFailed => AmberNetLanguageError::InferenceFailed,
             })?;
-        let input =
-            TensorRef::<f32>::from_array_view(([1_usize, MEL_BINS, PADDED_FRAMES], features))
-                .map_err(|_| AmberNetLanguageError::InferenceFailed)?;
-        let outputs = self
-            .session
-            .run(ort::inputs!["processed_signal" => input])
-            .map_err(|_| AmberNetLanguageError::InferenceFailed)?;
-        let output = outputs
-            .get("logits")
-            .ok_or(AmberNetLanguageError::InvalidResult)?
-            .view()
-            .downcast::<DynTensorValueType>()
-            .map_err(|_| AmberNetLanguageError::InvalidResult)?;
-        let (shape, logits) = output
-            .try_extract_tensor::<f32>()
-            .map_err(|_| AmberNetLanguageError::InvalidResult)?;
-        if **shape != [1, OUTPUT_LABEL_COUNT as i64] {
-            return Err(AmberNetLanguageError::InvalidResult);
-        }
-        self.resolver.classify(logits).map_err(classification_error)
+        classify_features(&mut self.session, features, &self.resolver)
     }
+}
+
+fn classify_features(
+    session: &mut Session,
+    features: &[f32],
+    resolver: &AcousticLanguageLogitResolver,
+) -> Result<AcousticLanguageClassification, AmberNetLanguageError> {
+    let input = TensorRef::<f32>::from_array_view(([1_usize, MEL_BINS, PADDED_FRAMES], features))
+        .map_err(|_| AmberNetLanguageError::InferenceFailed)?;
+    let outputs = session
+        .run(ort::inputs!["processed_signal" => input])
+        .map_err(|_| AmberNetLanguageError::InferenceFailed)?;
+    let output = outputs
+        .get("logits")
+        .ok_or(AmberNetLanguageError::InvalidResult)?
+        .view()
+        .downcast::<DynTensorValueType>()
+        .map_err(|_| AmberNetLanguageError::InvalidResult)?;
+    let (shape, logits) = output
+        .try_extract_tensor::<f32>()
+        .map_err(|_| AmberNetLanguageError::InvalidResult)?;
+    if **shape != [1, OUTPUT_LABEL_COUNT as i64] {
+        return Err(AmberNetLanguageError::InvalidResult);
+    }
+    resolver.classify(logits).map_err(classification_error)
 }
 
 impl AmberNetSileroLanguageDetector {
@@ -336,6 +340,36 @@ fn classification_error(_: AcousticLanguageClassificationError) -> AmberNetLangu
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn shipped_runtime_classifies_successive_feature_tensors() {
+        let mut session = Session::builder(static_onnx_environment().unwrap())
+            .unwrap()
+            .with_intra_threads(1)
+            .unwrap()
+            .with_inter_threads(1)
+            .unwrap()
+            .commit_from_memory(include_bytes!(
+                "ambernet_language_detector/tests/first_107_features.onnx"
+            ))
+            .unwrap();
+        let catalog = LocalLanguageCatalog::try_new("en-US", ["en-US", "ja-JP"]).unwrap();
+        let codes = normalized_language_codes();
+        let resolver =
+            AcousticLanguageLogitResolver::try_new(&catalog, OUTPUT_LABEL_COUNT, codes.clone())
+                .unwrap();
+
+        // The synthetic graph flattens the input and returns its first 107 values as logits.
+        let mut features = vec![0.0; MEL_BINS * PADDED_FRAMES];
+        for (code, locale) in [("en", "en-US"), ("ja", "ja-JP")] {
+            features.fill(0.0);
+            let index = codes.iter().position(|label| label == code).unwrap();
+            features[index] = 20.0;
+            let result = classify_features(&mut session, &features, &resolver).unwrap();
+            assert_eq!(result.language_bcp47.as_deref(), Some(locale));
+            assert!(result.score > 0.99);
+        }
+    }
 
     #[test]
     fn locked_label_map_has_expected_aliases_and_revision() {
