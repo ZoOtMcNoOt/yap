@@ -16,6 +16,7 @@ import {
   prunePreviewSearchFailures,
   shouldSearchTranscriptBodies,
 } from "@/lib/history-preview-loader";
+import { isAudioOnlySavedRecording, isRecoverableTranscriptHistoryEntry } from "@/native-history";
 import { pruneTextCache, rememberText, rememberTexts } from "@/lib/text-cache";
 
 const maxHistoryPreviewCacheEntries = maxTranscriptHistoryEntries;
@@ -57,9 +58,14 @@ export function useHistorySearch({
   }, [previewTextByPath]);
 
   const searchableEntries = useMemo(() => previewSearchEntries(entries), [entries]);
-  const searchableOutputPaths = useMemo(
-    () => searchableEntries.map((entry) => entry.outputPath),
+  const entriesWithTranscript = useMemo(
+    () => searchableEntries.filter((entry) => !isAudioOnlySavedRecording(entry)
+      && !(isRecoverableTranscriptHistoryEntry(entry) && entry.sourcePath === entry.outputPath)),
     [searchableEntries],
+  );
+  const searchableOutputPaths = useMemo(
+    () => entriesWithTranscript.map((entry) => entry.outputPath),
+    [entriesWithTranscript],
   );
   const searchableOutputPathSet = useMemo(
     () => new Set(searchableOutputPaths),
@@ -157,7 +163,7 @@ export function useHistorySearch({
 
     const controller = new AbortController();
     const generation = previewSearchGenerationRef.current.begin();
-    const pendingEntries = searchableEntries.filter(
+    const pendingEntries = entriesWithTranscript.filter(
       (entry) => previewTextByPathRef.current[entry.outputPath] === undefined,
     );
 
@@ -238,7 +244,7 @@ export function useHistorySearch({
     normalizedQuery,
     onLoadPreviewText,
     retryGeneration,
-    searchableEntries,
+    entriesWithTranscript,
     searchableOutputPathSet,
   ]);
 
