@@ -218,7 +218,17 @@ impl LossAccumulator {
         } else {
             match snapshot? {
                 Some(snapshot) => Ok(TryDrain::Snapshot(snapshot)),
-                None => Ok(TryDrain::Empty),
+                None => {
+                    // A registered callback can read its generation after the flip
+                    // and publish into the next slot before its ticket completes.
+                    // Give that slot a drain before consumers change clocks or exit.
+                    let next_slot = &self.slots[((pending.generation + 1) & 1) as usize];
+                    if next_slot.claimed_runs.load(Ordering::Acquire) != 0 {
+                        Ok(TryDrain::Pending)
+                    } else {
+                        Ok(TryDrain::Empty)
+                    }
+                }
             }
         }
     }

@@ -29,10 +29,8 @@ impl Coordinator {
 
     fn poll_losses_inner(&mut self, losses: &LossAccumulator) -> Result<(), String> {
         self.drain_losses(losses)?;
-        if self.capture_config.is_some() {
-            while let Some(loss) = self.pending_losses.pop_front() {
-                self.apply_loss(loss)?;
-            }
+        if let Some(end) = self.timeline.end_source_position(&self.track_id) {
+            self.apply_losses_through(end)?;
         }
         Ok(())
     }
@@ -46,15 +44,36 @@ impl Coordinator {
     }
 
     fn consume_loss_inner(&mut self, loss: LossSnapshot) -> Result<(), String> {
-        if self.capture_config.is_none() {
-            if !self.pending_losses.push(loss) {
-                self.ports
-                    .recording
-                    .degrade("recording pending-loss capacity exhausted");
-            }
-            return Ok(());
+        self.queue_loss(loss);
+        if let Some(end) = self.timeline.end_source_position(&self.track_id) {
+            self.apply_losses_through(end)?;
         }
-        self.apply_loss(loss)
+        Ok(())
+    }
+
+    fn queue_loss(&mut self, loss: LossSnapshot) {
+        if !self.pending_losses.push(loss) {
+            self.ports
+                .recording
+                .degrade("recording pending-loss capacity exhausted");
+        }
+    }
+
+    // Callback losses and audio travel on separate queues. A loss can arrive before
+    // an older packet that is still waiting in the audio queue.
+    pub(super) fn apply_losses_through(&mut self, position: u64) -> Result<(), String> {
+        while self
+            .pending_losses
+            .front()
+            .is_some_and(|loss| loss.first_source_position_frames <= position)
+        {
+            let loss = self
+                .pending_losses
+                .pop_front()
+                .expect("pending loss was present");
+            self.apply_loss(loss)?;
+        }
+        Ok(())
     }
 
     pub(super) fn apply_loss(&mut self, loss: LossSnapshot) -> Result<(), String> {
@@ -88,7 +107,11 @@ impl Coordinator {
     }
 
     fn finish_pending_recording_losses(&mut self) {
-        if !self.pending_losses.is_empty() {
+        if self.capture_config.is_some() {
+            if let Err(error) = self.apply_losses_through(u64::MAX) {
+                self.ports.recording.degrade(&error);
+            }
+        } else if !self.pending_losses.is_empty() {
             self.pending_losses.clear();
             self.ports
                 .recording
@@ -179,11 +202,7 @@ impl Coordinator {
         for _ in 0..LOSS_DRAIN_ATTEMPT_LIMIT {
             match losses.try_drain() {
                 Ok(TryDrain::Snapshot(loss)) => {
-                    if !self.pending_losses.push(loss) {
-                        self.ports
-                            .recording
-                            .degrade("recording pending-loss capacity exhausted");
-                    }
+                    self.queue_loss(loss);
                 }
                 Ok(TryDrain::Pending) => {
                     #[cfg(test)]

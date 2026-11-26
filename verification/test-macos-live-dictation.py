@@ -91,7 +91,9 @@ def run(bundle, models, switch):
             cold_audio = recordings / manifest["audioFile"]
             require(manifest["status"] == "complete" and read_fixture_pcm(cold_audio)
                     and digest(cold_audio) == manifest["audioSha256"], "Cold stop lost the saved audio")
-            require("live ASR adapter spawned" not in log.read_text(), "Recognition became ready before the cold recording committed")
+            require("live inference bundle loaded" not in log.read_text()
+                    and "live ASR adapter spawned" not in log.read_text(),
+                    "Recognition became ready before the cold recording committed")
             cold_sidecar = cold.parent / manifest["captureSidecarFile"]
             require(digest(cold_sidecar) == manifest["captureSidecarSha256"], "Cold-stop capture sidecar changed")
             cold_hashes = {p: digest(p) for p in (cold, cold_audio, cold_sidecar)}
@@ -100,6 +102,7 @@ def run(bundle, models, switch):
                     "Cold stop published transcript text")
             print(f"Cold stop saved {cold_audio.stat().st_size} bytes of audio before recognition.", flush=True)
 
+            wait_for("idle recognizer warmup", lambda: "live inference bundle loaded" in log.read_text(), app, log)
             prior_log = log.stat().st_size
             verify_loopback()
             perform(app, "start")

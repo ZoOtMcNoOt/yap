@@ -237,6 +237,17 @@ fn try_drain_does_not_flip_a_second_generation_while_pending() {
 
     release_registration.wait();
     callback.join().unwrap();
+    assert_eq!(losses.try_drain(), Ok(super::TryDrain::Pending));
+    assert_eq!(losses.active_generation.load(Ordering::SeqCst), 1);
+    assert_eq!(
+        losses.try_drain(),
+        Ok(super::TryDrain::Snapshot(LossSnapshot {
+            first_source_position_frames: 0,
+            dropped_frames: 10,
+            cause: GapCause::CallbackPoolExhausted,
+            generation: 1,
+        }))
+    );
     assert_eq!(losses.try_drain(), Ok(super::TryDrain::Empty));
 }
 
