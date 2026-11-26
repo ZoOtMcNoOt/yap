@@ -55,6 +55,31 @@ fn transcript_correction_source_binds_exact_committed_text_and_revision() {
 }
 
 #[test]
+fn long_dictation_reopens_when_its_finalized_segments_exceed_the_correction_limit() {
+    let dir = test_dir("long-dictation-with-segments");
+    let session = SessionId::new("s-long-dictation").unwrap();
+    let text = "word ".repeat(7_000);
+    let text = text.trim_end();
+    let mut recording = StreamingRecording::create(&dir, session.clone()).unwrap();
+    recording.append_pcm16(&[1, 0]).unwrap();
+    save_finalized_capture_to_dir(
+        &dir,
+        &live_view(Some(text), None),
+        Some(recording.finalize().unwrap()),
+        &[finalized_segment(text)],
+    )
+    .unwrap();
+
+    let saved = list_session_files_from_dir(&dir).unwrap().pop().unwrap();
+    let path = dir.join(format!("live-{session}.txt"));
+    assert_eq!(Path::new(&saved.output_path), path);
+    let source = read_committed_live_transcript_correction_source_from_dir(&path, &dir).unwrap();
+    assert_eq!(source.text, text);
+    assert!(source.segments.is_empty());
+    std::fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
 fn timingless_committed_history_remains_raw_and_deletable_but_not_correctable() {
     let dir = test_dir("timingless-correction-source");
     let session = SessionId::new("s-timingless-correction-source").unwrap();
