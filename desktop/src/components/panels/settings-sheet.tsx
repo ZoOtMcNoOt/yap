@@ -47,6 +47,7 @@ export type SettingsSheetProps = {
   fallbackActionPending: boolean;
   fallbackModel: FallbackModelView | null;
   liveBusy: boolean;
+  liveStartPending: boolean;
   liveInputDevices: LiveInputDeviceView[];
   languageDetector: AcousticLanguageDetectorControl;
   liveLanguageRouting: LiveLanguageRoutingControl;
@@ -89,6 +90,7 @@ export function SettingsSheet({
   fallbackActionPending,
   fallbackModel,
   liveBusy,
+  liveStartPending,
   liveInputDevices,
   languageDetector,
   liveLanguageRouting,
@@ -133,7 +135,7 @@ export function SettingsSheet({
   const server = useServerSettingsDraft(open);
   const terminology = useTerminology(open && section === "personalization", serverSnapshot, primaryLanguageStatus?.confirmedLanguageBcp47 ?? "en-US");
   const liveActive = liveSettingsLocked(liveView.status);
-  const liveOverlayAction = projectLiveOverlayAction(liveView.status, liveBusy);
+  const liveOverlayAction = projectLiveOverlayAction(liveView.status, liveBusy && !(liveStartPending && liveActive));
   const fallbackLifecycle = projectFallbackLifecycle(fallbackModel, {
     commandPending: fallbackActionPending,
     liveStatus: liveView.status,

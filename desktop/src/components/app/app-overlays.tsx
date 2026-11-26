@@ -89,6 +89,7 @@ export function AppOverlays({
         fallbackActionPending={settings.fallback.actionPending}
         fallbackModel={settings.fallback.model}
         liveBusy={settings.live.busy}
+        liveStartPending={settings.live.startPending}
         liveInputDevices={settings.live.inputDevices}
         liveLanguageRouting={settings.languageRouting}
         liveSettingsError={settings.live.settingsError}

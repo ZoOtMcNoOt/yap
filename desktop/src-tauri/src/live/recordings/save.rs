@@ -1,37 +1,19 @@
 use super::*;
 
-pub fn save_session_files(
-    live_runtime: &live::runtime::LiveRuntime,
-    view: &live::state::LiveSessionView,
-) -> Result<Option<SavedLiveSession>, String> {
-    save_session_files_to_dir(live_runtime, view, &recordings_dir())
-}
-
 pub(crate) fn save_stop_result(
+    dir: &Path,
+    live_runtime: &live::runtime::LiveRuntime,
     stop: &live::runtime::LiveStopResult,
     view: &live::state::LiveSessionView,
 ) -> Result<Option<SavedLiveSession>, String> {
     match &stop.recording {
-        Ok(capture) => save_finalized_capture_to_dir(
-            &recordings_dir(),
-            view,
-            capture.clone(),
-            &stop.transcript_segments,
-        ),
-        Err(error) => Err(error.clone()),
-    }
-}
-
-pub(super) fn save_session_files_to_dir(
-    live_runtime: &live::runtime::LiveRuntime,
-    view: &live::state::LiveSessionView,
-    dir: &std::path::Path,
-) -> Result<Option<SavedLiveSession>, String> {
-    match live_runtime.finalize_recording() {
-        Ok(capture) => save_finalized_capture_to_dir(dir, view, capture, &[]),
+        Ok(capture) => {
+            save_finalized_capture_to_dir(dir, view, capture.clone(), &stop.transcript_segments)
+        }
         Err(error) => {
-            let (session_id, cached_error) =
-                live_runtime.recording_finalization_failure().ok_or(error)?;
+            let (session_id, cached_error) = live_runtime
+                .recording_finalization_failure()
+                .ok_or_else(|| error.clone())?;
             save_unavailable_capture_transcript_to_dir(dir, view, session_id, cached_error)
         }
     }
@@ -47,8 +29,9 @@ pub(super) fn save_unavailable_capture_transcript_to_dir(
         .map_err(|err| format!("Failed to create live recordings folder: {err}"))?;
     let name = format!("live-{session_id}");
     let transcript_path = dir.join(format!("{name}.txt"));
-    let transcript = transcript_text(view)
-        .unwrap_or_else(|| "Transcript unavailable for this live recording.".into());
+    let Some(transcript) = transcript_text(view) else {
+        return Err(capture_error);
+    };
     write_new_text_file(&transcript_path, &format!("{transcript}\n"))
         .map_err(|error| format!("Failed to save live transcript: {error}"))?;
     let output_path = stable_existing_path_string(&transcript_path);
@@ -150,12 +133,13 @@ where
             None => Ok(None),
         };
     }
+    let name = format!("live-{}", capture.session_id);
+    let Some(transcript) = transcript_text(view) else {
+        return saved_audio_without_transcript(dir, &capture, name).map(Some);
+    };
     std::fs::create_dir_all(dir)
         .map_err(|err| format!("Failed to create live recordings folder: {err}"))?;
-    let name = format!("live-{}", capture.session_id);
     let transcript_path = dir.join(format!("{name}.txt"));
-    let transcript = transcript_text(view)
-        .unwrap_or_else(|| "Transcript unavailable for this live recording.".into());
     let transcript_receipt = write_new_text_file_with(
         &transcript_path,
         &format!("{transcript}\n"),
@@ -169,12 +153,17 @@ where
         .then_some(TRANSCRIPT_DEGRADED_WARNING.to_string());
     let created_at_ms = unix_millis_now()?;
     let output_path = stable_existing_path_string(&transcript_path);
-    let status =
-        if capture.status == recording::CaptureStatus::Partial || view.transcription_degraded {
-            ResultStatus::Partial
-        } else {
-            ResultStatus::Complete
-        };
+    let status = if capture.status == recording::CaptureStatus::Partial
+        || view.transcription_degraded
+        || view
+            .final_text
+            .as_deref()
+            .is_none_or(|text| text.trim().is_empty())
+    {
+        ResultStatus::Partial
+    } else {
+        ResultStatus::Complete
+    };
     let revision_warning = capture
         .revalidate_capture_sidecar()
         .and_then(|_| {
@@ -245,6 +234,43 @@ where
         )),
         recovery_state: None,
     }))
+}
+
+fn saved_audio_without_transcript(
+    dir: &Path,
+    capture: &RecordingFinalizeResult,
+    name: String,
+) -> Result<SavedLiveSession, String> {
+    let (path, commit, recovery_state, warning) = if let Some(committed) = &capture.committed {
+        (
+            stable_existing_path_string(&dir.join(&committed.manifest.audio_file)),
+            Some(stable_existing_path_string(
+                &dir.join(format!("{name}.commit.json")),
+            )),
+            None,
+            "Recording saved without a transcript.",
+        )
+    } else {
+        let recoverable = recovery::recoverable_session_from_dir(dir, &capture.session_id)?;
+        let artifact = recovery::recoverable_session_artifact_path(&recoverable)
+            .ok_or("No recording or transcript could be saved.")?;
+        (
+            artifact.to_owned(),
+            None,
+            Some("recoverable".to_owned()),
+            "Recording needs recovery. No transcript was captured.",
+        )
+    };
+    Ok(SavedLiveSession {
+        session_id: capture.session_id.to_string(),
+        name,
+        source_path: path.clone(),
+        output_path: path,
+        created_at_ms: unix_millis_now()?,
+        warning: Some(warning.into()),
+        capture_commit_path: commit,
+        recovery_state,
+    })
 }
 
 pub(super) fn combine_warning(base: Option<String>, next: impl AsRef<str>) -> Option<String> {

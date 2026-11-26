@@ -8,6 +8,7 @@ use crate::audio::results::{ResultAuthority, ResultStatus, TranscriptResultRevis
 use crate::live::transcript_segments::{
     bind_finalized_transcript_segments, FinalizedTranscriptSegment,
 };
+use crate::stt::nemotron;
 
 pub(in crate::live::recordings) struct TranscriptRevisionPublication<'a> {
     pub(in crate::live::recordings) capture_sidecar_sha256: &'a str,
@@ -63,7 +64,7 @@ where
         transcript_segments,
     } = publication;
     let revision = next_transcript_revision(dir, session_id)?;
-    let model = ModelRevision::new(crate::stt::nemotron::MODEL_ID, "local", "local")
+    let model = ModelRevision::new(nemotron::MODEL_ID, nemotron::REVISION, "local")
         .map_err(|error| format!("Failed to describe local transcript model: {error}"))?;
     let result = if revision == 1 {
         TranscriptResultRevision::new(
@@ -272,9 +273,12 @@ pub(in crate::live::recordings) fn transcript_result_value(
     );
     object.insert(
         "modelId".into(),
-        serde_json::Value::from(crate::stt::nemotron::MODEL_ID),
+        serde_json::Value::from(nemotron::MODEL_ID),
     );
-    object.insert("modelRevision".into(), serde_json::Value::from("local"));
+    object.insert(
+        "modelRevision".into(),
+        serde_json::Value::from(nemotron::REVISION),
+    );
     object.insert(
         "createdAtUtc".into(),
         serde_json::Value::from(

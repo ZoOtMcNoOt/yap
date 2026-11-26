@@ -113,6 +113,88 @@ fn timingless_committed_history_remains_raw_and_deletable_but_not_correctable() 
 }
 
 #[test]
+fn capture_without_recognition_reopens_as_audio_after_restart() {
+    let dir = test_dir("audio-without-recognition");
+    let session = SessionId::new("s-no-recognition").unwrap();
+    let mut recording = StreamingRecording::create(&dir, session.clone()).unwrap();
+    recording.append_pcm16(&[10, 0, 20, 0]).unwrap();
+    let capture = recording.finalize().unwrap();
+    let saved =
+        save_finalized_capture_to_dir(&dir, &live_view(Some("  "), None), Some(capture), &[])
+            .unwrap()
+            .unwrap();
+
+    let restored = list_session_files_from_dir(&dir).unwrap().pop().unwrap();
+    assert_eq!(restored.output_path, saved.output_path);
+    assert_eq!(saved.output_path, saved.source_path);
+    assert_eq!(restored.capture_commit_path, saved.capture_commit_path);
+    let samples: Vec<_> = hound::WavReader::open(saved.output_path)
+        .unwrap()
+        .into_samples::<i16>()
+        .map(Result::unwrap)
+        .collect();
+    assert_eq!(samples, [10, 20]);
+    assert!(!dir.join(format!("live-{session}.txt")).exists());
+    assert!(!transcript_revision_path(&dir, &session, 1).exists());
+    std::fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
+fn capture_failure_without_words_keeps_the_recovery_artifact() {
+    let dir = test_dir("partial-without-recognition");
+    let session = SessionId::new("s-interrupted-mic").unwrap();
+    let mut recording =
+        StreamingRecording::create_with_fault(&dir, session.clone(), CommitFaultPoint::AudioSync)
+            .unwrap();
+    recording.append_pcm16(&[42, 0]).unwrap();
+    let capture = recording.finalize().unwrap();
+    let saved = save_finalized_capture_to_dir(&dir, &live_view(None, None), Some(capture), &[])
+        .unwrap()
+        .unwrap();
+    assert_eq!(saved.recovery_state.as_deref(), Some("recoverable"));
+    assert!(saved.capture_commit_path.is_none());
+    let recovered =
+        recover_live_session_in_dir(&dir, session.to_string(), saved.source_path).unwrap();
+    assert!(recovered.capture_commit_path.is_some());
+    assert_eq!(
+        hound::WavReader::open(recovered.output_path)
+            .unwrap()
+            .into_samples::<i16>()
+            .next()
+            .unwrap()
+            .unwrap(),
+        42
+    );
+    assert!(!dir.join(format!("live-{session}.txt")).exists());
+    assert!(!transcript_revision_path(&dir, &session, 1).exists());
+    std::fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
+fn unfinished_recognition_preserves_actual_words_as_partial() {
+    let dir = test_dir("only-partial-words");
+    let session = SessionId::new("s-partial-words").unwrap();
+    let mut recording = StreamingRecording::create(&dir, session.clone()).unwrap();
+    recording.append_pcm16(&[1, 0]).unwrap();
+    let capture = recording.finalize().unwrap();
+    let view = live_view(Some(" "), Some("No live transcript captured."));
+    let saved = save_finalized_capture_to_dir(&dir, &view, Some(capture), &[])
+        .unwrap()
+        .unwrap();
+    assert_eq!(
+        std::fs::read_to_string(saved.output_path).unwrap(),
+        "No live transcript captured.\n"
+    );
+    let revision: serde_json::Value = serde_json::from_slice(
+        &std::fs::read(transcript_revision_path(&dir, &session, 1)).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(revision["status"], "partial");
+    assert!(completed_transcript_text(&view).is_none());
+    std::fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
 fn header_only_live_capture_without_text_is_discarded() {
     let dir = test_dir("discard-header-only-capture");
     let session = SessionId::new("s-header-only-capture").unwrap();
@@ -556,6 +638,16 @@ fn transcript_revisions_are_create_new_and_monotonic() {
         &[],
     )
     .unwrap();
+    let first_path = transcript_revision_path(&dir, &session, 1);
+    let mut legacy: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(&first_path).unwrap()).unwrap();
+    assert_eq!(legacy["modelRevision"], crate::stt::nemotron::REVISION);
+    // Older clients stored "local" in both revision fields.
+    legacy["modelRevision"] = "local".into();
+    legacy["modelProvenance"][0]["revision"] = "local".into();
+    let historical_bytes = serde_json::to_vec(&legacy).unwrap();
+    std::fs::write(&first_path, &historical_bytes).unwrap();
+
     write_transcript_revision(
         &dir,
         &manifest.session_id,
@@ -567,13 +659,21 @@ fn transcript_revisions_are_create_new_and_monotonic() {
     )
     .unwrap();
 
-    assert!(transcript_revision_path(&dir, &session, 1).is_file());
-    assert!(transcript_revision_path(&dir, &session, 2).is_file());
-    let revision = std::fs::read_to_string(transcript_revision_path(&dir, &session, 1)).unwrap();
+    assert_eq!(std::fs::read(first_path).unwrap(), historical_bytes);
+    let revision = std::fs::read_to_string(transcript_revision_path(&dir, &session, 2)).unwrap();
     let revision: serde_json::Value = serde_json::from_str(&revision).unwrap();
     assert_eq!(revision["textFile"], format!("live-{session}.txt"));
     assert_eq!(revision["textSha256"], transcript_receipt.sha256());
     assert_eq!(revision["modelId"], crate::stt::nemotron::MODEL_ID);
+    assert_eq!(revision["modelRevision"], crate::stt::nemotron::REVISION);
+    assert_eq!(
+        revision["modelProvenance"][0]["modelId"],
+        revision["modelId"]
+    );
+    assert_eq!(
+        revision["modelProvenance"][0]["revision"],
+        revision["modelRevision"]
+    );
     let sessions = list_session_files_from_dir(&dir).unwrap();
     assert_eq!(sessions.len(), 1);
     assert_eq!(sessions[0].output_path, text_path.display().to_string());

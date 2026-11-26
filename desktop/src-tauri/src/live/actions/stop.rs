@@ -113,7 +113,12 @@ pub(super) fn finalize_live_runtime_with_mode(
         |text| live::injection::inject_text(&app, injection_target, text),
         || {
             let stop = live_runtime.finish_stop(finish_report);
-            live::recordings::save_stop_result(&stop, &before_stop)
+            live::recordings::save_stop_result(
+                &live::recordings::recordings_dir(),
+                live_runtime,
+                &stop,
+                &before_stop,
+            )
         },
     );
     apply_injection_result(live, effects.injection);

@@ -139,6 +139,8 @@ impl LiveSessionState {
             return None;
         }
         view.error = None;
+        view.partial_text = None;
+        view.final_text = None;
         view.input_device_id = input_device_id;
         view.input_device_label = input_device_label;
         view.level = Some(0.0);

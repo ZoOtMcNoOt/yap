@@ -256,3 +256,50 @@ test("local model install failure/retry/cancel and ready projection stay indepen
   expect((await calls(page)).filter((entry) => entry.command === "fallback_model_install")).toHaveLength(3);
   expect((await calls(page)).some((entry) => entry.command === "sign_in_to_server")).toBe(false);
 });
+
+test("Settings can stop capture while local model startup is pending", async ({ page }) => {
+  await installWorkspaceAcceptanceBridge(page);
+  await page.addInitScript(() => {
+    const host = globalThis as unknown as {
+      __TAURI_INTERNALS__: { invoke(command: string, args?: unknown): Promise<unknown> };
+      __recordingJourney: { emitNativeEvent(name: string, payload: unknown): void };
+      finishColdStart: () => Promise<void>;
+      stopCount: number;
+    };
+    const invoke = host.__TAURI_INTERNALS__.invoke;
+    host.stopCount = 0;
+    host.__TAURI_INTERNALS__.invoke = async (command, args) => {
+      if (command === "start_live_session") {
+        const idle = await invoke("live_status") as object;
+        const listening = { ...idle, status: "listening" };
+        host.__recordingJourney.emitNativeEvent("live-session", listening);
+        await new Promise<void>((resolve) => {
+          host.finishColdStart = async () => {
+            resolve();
+            await new Promise((done) => setTimeout(done, 0));
+          };
+        });
+        return listening;
+      }
+      if (command === "stop_live_session") {
+        host.stopCount++;
+        return invoke("live_status");
+      }
+      return invoke(command, args);
+    };
+  });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  const settings = page.getByRole("dialog", { name: "Settings" });
+  const start = settings.getByRole("button", { name: "Start", exact: true });
+  await start.click();
+  await expect(settings.getByRole("button", { name: "Check", exact: true })).toBeDisabled();
+  await settings.getByRole("button", { name: "Stop", exact: true }).click();
+  await expect(start).toBeEnabled();
+  expect(await page.evaluate(async () => {
+    const host = globalThis as unknown as { finishColdStart(): Promise<void>; stopCount: number };
+    await host.finishColdStart();
+    return host.stopCount;
+  })).toBe(1);
+  await expect(start).toBeEnabled();
+});

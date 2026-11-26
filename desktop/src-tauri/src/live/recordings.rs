@@ -41,7 +41,6 @@ use recovery::*;
 use recovery::{delete_recoverable_live_session_in_dir, recover_live_session_in_dir};
 #[cfg(test)]
 pub(crate) use save::save_finalized_capture_to_dir_for_test;
-pub use save::save_session_files;
 pub(crate) use save::save_stop_result;
 #[cfg(test)]
 use save::*;
