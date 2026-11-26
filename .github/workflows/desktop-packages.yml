@@ -29,31 +29,6 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
-      - name: Inspect native model snapshot file behavior
-        if: runner.os == 'macOS'
-        run: |
-          python3 - <<'PYTHON'
-          import os
-          import tempfile
-          from pathlib import Path
-          with tempfile.TemporaryDirectory() as directory:
-              source = Path(directory) / "model"
-              source.write_bytes(b"model")
-              with source.open("rb") as file:
-                  item = os.fstat(file.fileno())
-                  for linked in (True, False):
-                      if not linked:
-                          source.unlink()
-                      for path in (Path(f"/dev/fd/{file.fileno()}"), Path(f"/.vol/{item.st_dev}/{item.st_ino}")):
-                          try:
-                              file.seek(0)
-                              with path.open("rb") as first, path.open("rb") as second:
-                                  first.read(1)
-                                  print(path.parent, "linked", linked, "regular", path.is_file(), "fresh bytes", second.read())
-                          except OSError as error:
-                              print(path, "linked", linked, "errno", error.errno)
-                  assert Path(f"/.vol/{item.st_dev}/{item.st_ino}").read_bytes() == b"model"
-          PYTHON
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6
         with:
           version: 11.7.0

@@ -11,7 +11,16 @@ use crate::stt::{
 };
 
 pub(super) struct UnixModelLoadGuard {
-    artifacts: Vec<(File, PathBuf)>,
+    artifacts: Vec<Snapshot>,
+    #[cfg(target_os = "macos")]
+    _directory: tempfile::TempDir,
+}
+
+struct Snapshot {
+    file: File,
+    path: PathBuf,
+    #[cfg(target_os = "macos")]
+    expected: Artifact,
 }
 
 impl UnixModelLoadGuard {
@@ -19,12 +28,17 @@ impl UnixModelLoadGuard {
         if model_directory_state(root) != ModelDirectoryState::Usable {
             return Err(SttError::ModelCorrupt);
         }
+        #[cfg(target_os = "macos")]
+        let directory = tempfile::Builder::new()
+            .prefix("yap-model-")
+            .tempdir()
+            .map_err(|_| SttError::ModelCorrupt)?;
         let mut snapshots = Vec::with_capacity(artifacts.len());
         for artifact in artifacts {
             let (source, _) =
                 crate::bounded_file::open_regular_file(&root.join(artifact.file), artifact.bytes)
                     .map_err(|_| SttError::ModelCorrupt)?;
-            let snapshot = snapshot_file(|writer| {
+            let copy = |writer: &mut File| {
                 let copied = io::copy(&mut source.take(artifact.bytes + 1), writer)?;
                 if copied != artifact.bytes {
                     return Err(io::Error::new(
@@ -33,30 +47,51 @@ impl UnixModelLoadGuard {
                     ));
                 }
                 Ok(())
-            })
-            .map_err(|_| SttError::ModelCorrupt)?;
+            };
+            #[cfg(target_os = "linux")]
+            let snapshot = snapshot_file(copy);
+            #[cfg(target_os = "macos")]
+            let snapshot = snapshot_file(&directory.path().join(snapshots.len().to_string()), copy);
+            let snapshot = snapshot.map_err(|_| SttError::ModelCorrupt)?;
             verify_open_artifact(&snapshot, artifact.bytes, artifact.sha256, || false)?;
             (&snapshot).rewind().map_err(|_| SttError::ModelCorrupt)?;
             let path = native_model_path(&snapshot).map_err(|_| SttError::ModelCorrupt)?;
-            snapshots.push((snapshot, path));
+            snapshots.push(Snapshot {
+                file: snapshot,
+                path,
+                #[cfg(target_os = "macos")]
+                expected: *artifact,
+            });
         }
         Ok(Self {
             artifacts: snapshots,
+            #[cfg(target_os = "macos")]
+            _directory: directory,
         })
     }
 
     pub(super) fn path(&self, index: usize) -> &Path {
-        &self.artifacts[index].1
+        &self.artifacts[index].path
     }
 
     pub(super) fn revalidate_after_native_load(&self) -> Result<(), SttError> {
         use std::os::unix::fs::MetadataExt;
-        for (file, path) in &self.artifacts {
-            let held = file.metadata().map_err(|_| SttError::ModelCorrupt)?;
-            let visible = std::fs::metadata(path).map_err(|_| SttError::ModelCorrupt)?;
+        for snapshot in &self.artifacts {
+            let held = snapshot
+                .file
+                .metadata()
+                .map_err(|_| SttError::ModelCorrupt)?;
+            let visible = std::fs::metadata(&snapshot.path).map_err(|_| SttError::ModelCorrupt)?;
             if (held.dev(), held.ino()) != (visible.dev(), visible.ino()) {
                 return Err(SttError::ModelCorrupt);
             }
+            #[cfg(target_os = "macos")]
+            verify_open_artifact(
+                &snapshot.file,
+                snapshot.expected.bytes,
+                snapshot.expected.sha256,
+                || false,
+            )?;
         }
         Ok(())
     }
@@ -110,26 +145,15 @@ fn snapshot_file(write: impl FnOnce(&mut File) -> io::Result<()>) -> io::Result<
 }
 
 #[cfg(target_os = "macos")]
-fn snapshot_file(write: impl FnOnce(&mut File) -> io::Result<()>) -> io::Result<File> {
-    use std::os::unix::fs::{MetadataExt, OpenOptionsExt, PermissionsExt};
-    let temporary = tempfile::Builder::new()
-        .permissions(std::fs::Permissions::from_mode(0o400))
-        .tempfile()?;
-    let (mut writer, name) = temporary.into_parts();
-    let reader = File::options()
-        .read(true)
-        .custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK)
-        .open(&name)?;
-    let created = writer.metadata()?;
-    let opened = reader.metadata()?;
-    if (opened.dev(), opened.ino()) != (created.dev(), created.ino()) {
-        return Err(io::Error::new(
-            io::ErrorKind::InvalidData,
-            "model snapshot changed",
-        ));
-    }
-    // Remove the name before copying. Sherpa receives only the independent read descriptor.
-    name.close()?;
+fn snapshot_file(name: &Path, write: impl FnOnce(&mut File) -> io::Result<()>) -> io::Result<File> {
+    use std::os::unix::fs::OpenOptionsExt;
+    // Keep a link in the guard's private directory so Darwin can reopen the inode by ID.
+    let mut writer = File::options()
+        .write(true)
+        .create_new(true)
+        .mode(0o400)
+        .custom_flags(libc::O_NOFOLLOW)
+        .open(name)?;
     write(&mut writer)?;
-    Ok(reader)
+    File::open(native_model_path(&writer)?)
 }

@@ -116,13 +116,14 @@ fn native_model_reads_verified_bytes_after_source_replacement_and_removal() {
             std::fs::read(&paths.tokens).unwrap(),
             TEST_ARTIFACT_CONTENTS
         );
-        #[cfg(target_os = "linux")]
         assert!(std::fs::write(&paths.encoder, b"xyz").is_err());
         Ok(paths.decoder.clone())
     })
     .unwrap();
-    let (path, _guard) = loaded.into_parts();
-    assert_eq!(std::fs::read(path).unwrap(), TEST_ARTIFACT_CONTENTS);
+    let (path, guard) = loaded.into_parts();
+    assert_eq!(std::fs::read(&path).unwrap(), TEST_ARTIFACT_CONTENTS);
+    drop(guard);
+    assert!(!path.exists());
 }
 
 #[cfg(windows)]
