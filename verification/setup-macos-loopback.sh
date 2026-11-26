@@ -9,6 +9,8 @@ curl -fLsS --retry 2 https://existential.audio/downloads/BlackHole2ch-0.7.1.pkg 
 echo '57b540f27a3e29c37e310e01bee0fdfab76733087e47f997ef9dccf851400dcf  BlackHole.pkg' | shasum -a 256 -c -
 pkgutil --check-signature BlackHole.pkg
 sudo /usr/sbin/installer -pkg BlackHole.pkg -target /
+# Reload HAL drivers on this disposable runner before starting the app.
+sudo /usr/bin/killall -TERM coreaudiod
 curl -fLsS --retry 2 https://github.com/deweller/switchaudio-osx/archive/refs/tags/1.2.2.tar.gz -o switchaudio.tar.gz
 echo '3d12b57cbd6063a643a12f12287af99c87894c33449c6bcac0a71fd15776b3ed  switchaudio.tar.gz' | shasum -a 256 -c -
 tar -xzf switchaudio.tar.gz

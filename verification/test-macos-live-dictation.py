@@ -91,6 +91,10 @@ def run(bundle, models, switch):
             cold_audio = recordings / manifest["audioFile"]
             require(manifest["status"] == "complete" and read_fixture_pcm(cold_audio)
                     and digest(cold_audio) == manifest["audioSha256"], "Cold stop lost the saved audio")
+            require("live ASR adapter spawned" not in log.read_text(), "Recognition became ready before the cold recording committed")
+            cold_sidecar = cold.parent / manifest["captureSidecarFile"]
+            require(digest(cold_sidecar) == manifest["captureSidecarSha256"], "Cold-stop capture sidecar changed")
+            cold_hashes = {p: digest(p) for p in (cold, cold_audio, cold_sidecar)}
             cold_stem = cold.name.removesuffix(".commit.json")
             require(not list(recordings.glob(f"{cold_stem}.transcript.*")) and not (recordings / f"{cold_stem}.txt").exists(),
                     "Cold stop published transcript text")
