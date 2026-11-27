@@ -24,7 +24,7 @@ from yap_server.private_artifact import (
 
 _MAX_PLAN_BYTES = 256 * 1024
 _RUNTIME_LOCK_SHA256 = (
-    "a5eeedf04339d3d2e53cdc1ed3e695102494a6f3fd9cb7718f2b2f0c6b5cbdd6"
+    "e73bc3f1a37db274bdda5edcc24621821ce5db6d4c075b5aabce17f3237c7c7a"
 )
 _PUBLIC_REVISION = "500809d7e9ae643d3cc945f6c91e7ed0693456bd"
 _MEETING_IDS = (

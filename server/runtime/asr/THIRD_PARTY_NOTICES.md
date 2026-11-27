@@ -38,7 +38,7 @@ license records.
 | `joblib` | 1.5.3 | BSD-3-Clause | https://github.com/joblib/joblib |
 | `lazy-loader` | 0.5 | BSD-3-Clause | https://github.com/scientific-python/lazy-loader |
 | `librosa` | 0.11.0 | ISC | https://github.com/librosa/librosa |
-| `msgpack` | 1.2.1 | Apache-2.0 | https://github.com/msgpack/msgpack-python |
+| `msgpack` | 1.2.3 | Apache-2.0 | https://github.com/msgpack/msgpack-python |
 | `narwhals` | 2.24.0 | MIT | https://github.com/narwhals-dev/narwhals |
 | `pooch` | 1.9.0 | BSD-3-Clause | https://github.com/fatiando/pooch |
 | `scikit-learn` | 1.9.0 | BSD-3-Clause | https://github.com/scikit-learn/scikit-learn |

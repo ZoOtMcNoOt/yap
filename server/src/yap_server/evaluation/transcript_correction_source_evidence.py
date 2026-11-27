@@ -32,15 +32,15 @@ _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _LANGUAGE = re.compile(r"^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$")
 _SOURCE_FILES = {
     "en-US": (
-        "server/fleurs-en-us-cohere-comparator.plan.json",
+        "server/evaluation-inputs/transcript-correction/fleurs-en-us-cohere-comparator.plan.json",
         "server/fleurs-en-us-test.lock.json",
     ),
     "es-419": (
-        "server/fleurs-cohere-comparator.plan.json",
+        "server/evaluation-inputs/transcript-correction/fleurs-cohere-comparator.plan.json",
         "server/fleurs-es-419-test.lock.json",
     ),
 }
-_MODEL_LOCK_PATH = "server/model-pools.lock.json"
+_MODEL_LOCK_PATH = "server/evaluation-inputs/transcript-correction/model-pools.lock.json"
 
 
 @dataclass(frozen=True, slots=True)

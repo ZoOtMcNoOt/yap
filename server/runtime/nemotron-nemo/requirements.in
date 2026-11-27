@@ -22,7 +22,7 @@ lightning==2.4.0
 lightning-utilities==0.15.3
 lxml==6.1.1
 more-itertools==11.1.0
-msgpack==1.2.1
+msgpack==1.2.3
 msgspec==0.21.1
 narwhals==2.24.0
 nv-one-logger-core==2.3.1
@@ -32,7 +32,7 @@ overrides==7.7.0
 packaging==24.2
 pooch==1.9.0
 portalocker==3.2.0
-pytorch-lightning==2.6.5
+pytorch-lightning==2.6.6
 sacrebleu==2.6.0
 scikit-learn==1.9.0
 sentencepiece==0.2.2

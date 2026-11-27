@@ -23,7 +23,7 @@ class MeetingAcceptancePlanTests(unittest.TestCase):
 
         self.assertEqual(
             plan.runtime_lock_sha256,
-            "a5eeedf04339d3d2e53cdc1ed3e695102494a6f3fd9cb7718f2b2f0c6b5cbdd6",
+            "e73bc3f1a37db274bdda5edcc24621821ce5db6d4c075b5aabce17f3237c7c7a",
         )
         self.assertEqual(
             plan.public_comparator.revision,

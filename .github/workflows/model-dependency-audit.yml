@@ -1,0 +1,40 @@
+name: Model runtime dependency audit
+
+on:
+  schedule:
+    - cron: '23 7 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.11.21"
+          enable-cache: false
+      - name: Audit every model requirements lock
+        shell: bash
+        run: |
+          shopt -s globstar nullglob
+          locks=(server/runtime/**/requirements.lock)
+          if (( ${#locks[@]} == 0 )); then
+            echo "No model requirements locks found" >&2
+            exit 1
+          fi
+          result=0
+          for lock in "${locks[@]}"; do
+            echo "::group::$lock"
+            uv tool run --from pip-audit==2.10.1 pip-audit \
+              --require-hashes --disable-pip --strict --progress-spinner off \
+              --timeout 30 -r "$lock" || result=1
+            echo "::endgroup::"
+          done
+          exit "$result"

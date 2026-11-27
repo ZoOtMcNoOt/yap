@@ -118,7 +118,7 @@
       "torchvision": "0.27.0a0+499ca510.nv26.6.54250401"
     },
     "requirementsLock": "server/runtime/tiron/requirements.lock",
-    "requirementsLockSha256": "2c7a57149eebfb4b574a4a9714b45103d1026eb86e47a5b251eace4518b3b4ab",
+    "requirementsLockSha256": "b50b2b0faa3b1ba54265e670cb9ebc5f531a0a446d0cdc52ad0a4274e831518c",
     "sourceBuilds": [
       {
         "id": "torchaudio",

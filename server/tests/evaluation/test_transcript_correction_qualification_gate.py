@@ -23,7 +23,7 @@ class TranscriptCorrectionQualificationGateTests(unittest.TestCase):
             {
                 "server/transcript-correction-acceptance.json",
                 "server/fleurs-en-us-test.lock.json",
-                "server/fleurs-en-us-cohere-comparator.plan.json",
+                "server/evaluation-inputs/transcript-correction/fleurs-en-us-cohere-comparator.plan.json",
                 "server/src/yap_server/agents/transcript_correction_masking.py",
                 "server/src/yap_server/agents/transcript_correction_service.py",
                 "server/src/yap_server/evaluation/transcript_correction_corpus.py",

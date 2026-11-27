@@ -12,8 +12,8 @@ lazy-loader==0.5 \
     --hash=sha256:ab0ea149e9c554d4ffeeb21105ac60bed7f3b4fd69b1d2360a4add51b170b005
 librosa==0.11.0 \
     --hash=sha256:0b6415c4fd68bff4c29288abe67c6d80b587e0e1e2cfb0aad23e4559504a7fa1
-msgpack==1.2.1 \
-    --hash=sha256:60926b75d00c8e816ef98f3034f484a8bc64242d66839cef4cf7e503142316a0
+msgpack==1.2.3 \
+    --hash=sha256:f3d7b3d0018746b5997dd6b14a1870b07cc4c327d9101145d94a1fc264a51a06
 narwhals==2.24.0 \
     --hash=sha256:42fdedf44e5b2ca7505630d45b4ac3058f38d8485cba9fe1652ca23152df7489
 pooch==1.9.0 \

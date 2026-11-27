@@ -13,23 +13,24 @@ from yap_server.evaluation.fleurs_comparator_plan import (
 )
 from yap_server.evaluation.fleurs_corpus import load_fleurs_release_lock
 from yap_server.evaluation.transcript_correction_source_evidence import (
+    _load_source_evidence_lock,
     load_private_transcript_correction_source_evidence,
 )
 from yap_server.pools.model_lock import load_model_pool_lock
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
-_MODEL_LOCK = "server/model-pools.lock.json"
+_MODEL_LOCK = "server/evaluation-inputs/transcript-correction/model-pools.lock.json"
 _SOURCES = (
     (
         "en-US",
-        "server/fleurs-en-us-cohere-comparator.plan.json",
+        "server/evaluation-inputs/transcript-correction/fleurs-en-us-cohere-comparator.plan.json",
         "server/fleurs-en-us-test.lock.json",
         "screen",
     ),
     (
         "es-419",
-        "server/fleurs-cohere-comparator.plan.json",
+        "server/evaluation-inputs/transcript-correction/fleurs-cohere-comparator.plan.json",
         "server/fleurs-es-419-test.lock.json",
         "full",
     ),
@@ -176,6 +177,13 @@ def _build_private_sources(root: Path) -> tuple[tuple[Path, ...], dict[str, obje
 
 
 class TranscriptCorrectionSourceEvidenceTests(unittest.TestCase):
+    def test_recorded_source_evidence_reopens_its_original_comparator_inputs(self) -> None:
+        sources = _load_source_evidence_lock(REPOSITORY_ROOT)
+        self.assertEqual(
+            {source.language_bcp47: source.selection.case_count for source in sources.values()},
+            {"en-US": 647, "es-419": 908},
+        )
+
     def test_exact_locked_source_evidence_is_admitted(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary).resolve() / "repository"
