@@ -30,6 +30,7 @@ const USES = /^\s*-?\s*uses:\s*(\S+)[^\S\n]*(?:#.*)?$/gm;
 export const workflowPaths = Object.freeze([
   ".github/workflows/ci.yml",
   ".github/workflows/desktop-packages.yml",
+  ".github/workflows/model-dependency-audit.yml",
   ".github/workflows/nsis-smoke.yml",
   ".github/workflows/release.yml",
 ]);
@@ -92,6 +93,7 @@ export const expectedCacheFamilies = Object.freeze({
     "server-orchestrator": Object.freeze(["serverOrchestratorCargo"]),
   }),
   ".github/workflows/desktop-packages.yml": Object.freeze({}),
+  ".github/workflows/model-dependency-audit.yml": Object.freeze({}),
   ".github/workflows/nsis-smoke.yml": Object.freeze({
     "nsis-bundle-smoke": Object.freeze(["cargo", "pnpm"]),
   }),
