@@ -56,6 +56,20 @@ records fixed versions, behavioral checks and separate unresolved NeMo findings.
 
 ## November 26 Python model runtime audit
 
+The Model runtime dependency audit runs every Monday at 07:23 UTC on the
+default branch and supports manual runs from GitHub Actions. It discovers each
+`requirements.lock` under `server/runtime` and reports findings for all locks
+even when an earlier one fails. To repeat the check for one runtime:
+
+```bash
+uv tool run --from pip-audit==2.10.1 pip-audit \
+  --require-hashes --disable-pip --strict -r server/runtime/nemotron-nemo/requirements.lock
+```
+
+The check queries advisories for the hashed Python pins without installing
+model packages. The container image and its preinstalled packages still need
+their own audit. Any reported finding or collection error fails the workflow.
+
 The five model overlay locks cover 2 ASR evaluation, 14 ASR, 5 LID,
 50 NeMo and 18 Tiron package pins. Msgpack 1.2.3 clears CVE-2026-114613
 in ASR, NeMo and Tiron. The NeMo overlay also updates pytorch-lightning to
